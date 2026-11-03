@@ -2,7 +2,9 @@
 import Base from '../layouts/Base.astro';
 import { renderEmptyStaff } from '../lib/staff.js';
 import { pathFor, strings, locales, type Locale } from '../i18n';
+import MobileGate from './MobileGate.astro';
 import '../styles/editor.css';
+import '../styles/mobile-gate.css';
 
 interface Props {
   locale: Locale;
@@ -24,7 +26,9 @@ const clientStrings = Object.fromEntries([
   <main class="score-page" id="top">
     <h1 class="sr-only">{s.scoreSeoH1}</h1>
 
-    <section id="editor" class="score-editor" aria-label={s.scoreLabel}>
+    <MobileGate locale={locale} />
+
+    <section id="editor"class="score-editor" aria-label={s.scoreLabel}>
       <div class="score-workspace">
         <div class="score-main">
           <div id="scoreTabs" class="score-doc-tabs" role="tablist" aria-label={s.scoreTabs} data-default-title={s.scoreH1}>

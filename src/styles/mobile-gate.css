@@ -1,0 +1,133 @@
+/* mobile-gate.css — Phones get an explanation instead of the editor (editing a score on a small screen is
+   impractical), plus a short animated tour of what the editor does. Wide screens never see it. */
+
+.mobile-gate { display: none; }
+
+@media (max-width: 899px) {
+  .mobile-gate { display: block; }
+  .score-editor { display: none; }
+}
+
+.mobile-gate__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100svh - 6rem);
+  padding: 1rem 0 2rem;
+  text-align: center;
+}
+.mobile-gate__logo { width: 5.5rem; height: 7.1rem; color: var(--ink); }
+.mobile-gate__name {
+  margin: 0.6rem 0 1.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.mobile-gate h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 7vw, 2.1rem);
+  line-height: 1.15;
+}
+.mobile-gate__lead { max-width: 28rem; margin: 0.9rem 0 1.6rem; color: var(--ink-soft); font-size: 1.02rem; }
+.mobile-gate__cta {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+  text-decoration: none;
+}
+.mobile-gate__cta--ghost { background: none; color: var(--ink); border: 1px solid var(--rule); }
+.mobile-gate__hint { margin: 2.2rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
+.mobile-gate__hint::after { content: "↓"; display: block; font-size: 1.2rem; }
+
+.mobile-gate__features { padding: 1rem 0 3rem; text-align: center; }
+.mobile-gate__features ul {
+  display: grid;
+  gap: 1rem;
+  margin: 1.4rem 0 2rem;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+.feature {
+  padding: 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.8rem;
+  background: var(--surface);
+}
+.feature__demo { height: 7.5rem; margin-bottom: 0.8rem; border-radius: 0.5rem; background: var(--paper); overflow: hidden; }
+.feature__demo svg { display: block; width: 100%; height: 100%; color: var(--ink); }
+.feature__icon { display: inline-block; vertical-align: -0.3rem; margin-right: 0.4rem; color: var(--accent-brand); }
+.feature h3 { display: inline; margin: 0; font-size: 1.05rem; }
+.feature p { margin: 0.4rem 0 0; color: var(--ink-soft); font-size: 0.95rem; }
+
+.feature .staff path { stroke: var(--rule); stroke-width: 1; fill: none; }
+.feature .n ellipse { fill: currentColor; }
+.feature .n path, .feature .arrow path, .feature .doc path { stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.feature .t { font: 600 11px var(--mono); text-anchor: middle; fill: currentColor; }
+.feature .cursor { fill: var(--accent-brand); opacity: 0.18; }
+.feature .doc rect { fill: none; stroke: currentColor; stroke-width: 2; }
+.feature .badges text { font: 700 9px var(--sans); fill: var(--ink-soft); text-anchor: middle; }
+.feature .bar-track { fill: var(--rule); }
+.feature .bar-fill { fill: var(--accent-brand); transform-box: fill-box; transform-origin: left; }
+.feature .check { opacity: 0; transform-box: fill-box; transform-origin: center; }
+.feature .check circle { fill: var(--paper); stroke: var(--accent-brand); stroke-width: 2.5; }
+.feature .check path { fill: none; stroke: var(--accent-brand); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+/* The resting state above is what reduced-motion visitors see; the loops only run when motion is welcome. */
+@media (prefers-reduced-motion: no-preference) {
+  .feature .n { opacity: 0; animation: gate-note 4.5s infinite; }
+  .feature .n2 { animation-delay: 0.6s; }
+  .feature .n3 { animation-delay: 1.2s; }
+  @keyframes gate-note {
+    0% { opacity: 0; transform: translateY(-8px); }
+    10%, 80% { opacity: 1; transform: none; }
+    92%, 100% { opacity: 0; }
+  }
+
+  .feature .cursor { animation: gate-cursor 4.5s infinite; }
+  @keyframes gate-cursor {
+    0%, 8% { transform: translateX(0); }
+    33%, 41% { transform: translateX(30px); }
+    66%, 74% { transform: translateX(60px); }
+    100% { transform: translateX(0); }
+  }
+  .feature .t { animation: gate-fret 4.5s infinite; }
+  .feature .t2 { animation-delay: 0.3s; }
+  .feature .t3 { animation-delay: 0.6s; }
+  @keyframes gate-fret {
+    0%, 45% { opacity: 1; }
+    50% { opacity: 0.2; }
+    55%, 100% { opacity: 1; }
+  }
+
+  .feature .arrow { animation: gate-down 2.4s infinite; }
+  @keyframes gate-down {
+    0% { transform: translateY(-6px); opacity: 0; }
+    35%, 70% { transform: translateY(10px); opacity: 1; }
+    100% { transform: translateY(14px); opacity: 0; }
+  }
+  .feature .badges text { opacity: 0; animation: gate-badge 2.4s infinite; }
+  @keyframes gate-badge { 0%, 40% { opacity: 0; } 60%, 90% { opacity: 1; } 100% { opacity: 0; } }
+
+  .feature .bar-fill { animation: gate-fill 3.2s infinite; }
+  .feature .check { animation: gate-check 3.2s infinite; }
+  @keyframes gate-fill { 0% { transform: scaleX(0); } 55%, 100% { transform: scaleX(1); } }
+  @keyframes gate-check {
+    0%, 55% { opacity: 0; transform: scale(0.5); }
+    70%, 90% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature .n, .feature .badges text { opacity: 1; }
+  .feature .check { opacity: 1; }
+  .feature .bar-fill { display: none; }
+}

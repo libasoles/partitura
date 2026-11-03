@@ -491,5 +491,33 @@
         "Podemos atualizar estes termos. A data acima indica a última revisão; continuar usando o Partitura após uma mudança significa que você a aceita."
       ]
     ]
+  },
+  "mobileGate": {
+    "title": "O Partitura só funciona no computador",
+    "body": "Editar uma partitura no celular é muito difícil por causa do tamanho da tela. Abra esta página em um computador para escrever sua partitura. Enquanto isso, você pode consultar os tutoriais.",
+    "tutorials": "Ver os tutoriais",
+    "scroll": "O que você pode fazer",
+    "features": [
+      [
+        "notes",
+        "Notas e pausas",
+        "Coloque figuras, pontos e acidentes direto na pauta."
+      ],
+      [
+        "tab",
+        "Tablatura para violão",
+        "A digitação é gerada sozinha e você pode editar cada casa."
+      ],
+      [
+        "export",
+        "Baixe sua partitura",
+        "Exporte em PDF, MusicXML ou MIDI para imprimir ou abrir em outros programas."
+      ],
+      [
+        "save",
+        "Salvamento automático",
+        "Sua partitura fica no navegador; continue quando quiser."
+      ]
+    ]
   }
 }
