@@ -491,5 +491,33 @@
         "Podemos actualizar estos términos. La fecha de arriba indica la última revisión; seguir usando Partitura después de un cambio implica que lo aceptás."
       ]
     ]
+  },
+  "mobileGate": {
+    "title": "Partitura funciona solo en computadora",
+    "body": "Editar una partitura en el celular es muy difícil por el tamaño de la pantalla. Abrí esta página desde una compu para escribir tu partitura. Mientras tanto, podés consultar los tutoriales.",
+    "tutorials": "Ver los tutoriales",
+    "scroll": "Qué se puede hacer",
+    "features": [
+      [
+        "notes",
+        "Notas y silencios",
+        "Colocá figuras, puntillos y alteraciones directo en el pentagrama."
+      ],
+      [
+        "tab",
+        "Tablatura para guitarra",
+        "La digitación se genera sola y podés editar cada traste."
+      ],
+      [
+        "export",
+        "Descargá tu partitura",
+        "Exportá a PDF, MusicXML o MIDI para imprimir o abrir en otros programas."
+      ],
+      [
+        "save",
+        "Guardado automático",
+        "Tu partitura queda en tu navegador; seguís cuando quieras."
+      ]
+    ]
   }
 }
