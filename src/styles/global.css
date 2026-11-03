@@ -328,3 +328,44 @@ a { color: var(--blue-france); }
 .legal h2 { margin: 2rem 0 0.4rem; font-size: 1.15rem; }
 .legal p { margin: 0 0 1rem; }
 .legal-updated { color: var(--ink-soft); font-size: 0.9rem; }
+
+.beta-badge {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 20;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--ink-soft);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink-soft);
+  font: 600 0.75rem/1.4 var(--sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.beta-badge:hover { color: var(--ink); border-color: var(--ink); }
+
+.beta-dialog {
+  max-width: 26rem;
+  padding: 1.5rem;
+  border: 0;
+  border-radius: 0.75rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  box-shadow: 0 10px 40px rgb(0 0 0 / 0.25);
+}
+.beta-dialog::backdrop { background: rgb(0 0 0 / 0.4); }
+.beta-dialog h2 { margin: 0 0 0.75rem; font-size: 1.15rem; }
+.beta-dialog p { margin: 0 0 0.75rem; line-height: 1.5; }
+.beta-dialog form { margin: 1rem 0 0; text-align: right; }
+.beta-close {
+  padding: 0.4rem 1rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: var(--ink);
+  color: var(--paper);
+  font: 600 0.85rem var(--sans);
+  cursor: pointer;
+}

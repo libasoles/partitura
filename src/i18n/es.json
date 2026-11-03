@@ -221,7 +221,12 @@
     "menuExportXml": "MusicXML",
     "menuExportMidi": "MIDI",
     "menuExportPdf": "PDF",
-    "footerTerms": "Términos y condiciones"
+    "footerTerms": "Términos y condiciones",
+    "betaLabel": "Beta",
+    "betaTitle": "Acerca de la versión beta",
+    "betaClose": "Cerrar",
+    "betaP1": "Diseñamos una interfaz minimalista. No tiene todas las herramientas profesionales de otros editores, pero nos esforzamos en que sea fácil de usar.",
+    "betaP2": "Algunas cosas todavía pueden funcionar mal. El software beta es libre para los usuarios, pero sigue en fase de experimentación."
   },
   "tutorials": {
     "metaTitle": "Tutoriales · Partitura",
