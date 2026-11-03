@@ -5,6 +5,10 @@ clave y armadura, con tablatura de guitarra, y descargar el resultado en PDF o M
 
 Disponible en español, inglés y portugués, y renderizado en el servidor para que todo el contenido sea indexable.
 
+![Editor de partituras con notas en el pentagrama](docs/editor.png)
+
+![Editor con tablatura de guitarra bajo cada pentagrama](docs/tablatura.png)
+
 ## Características
 
 - **Notas y silencios** de redonda a fusa, con puntillo y alteraciones (sostenido, bemol, becuadro).
