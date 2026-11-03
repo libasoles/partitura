@@ -224,8 +224,8 @@
     "footerTerms": "Terms and conditions"
   },
   "tutorials": {
-    "metaTitle": "Tutorials · Partitura",
-    "metaDescription": "Learn to use the score editor step by step, with animations: notes and rests, editing, measures, repeats, dynamics, guitar tablature and files.",
+    "metaTitle": "Partitura tutorials: write music scores and guitar tabs online",
+    "metaDescription": "Free step-by-step tutorials with animations for the Partitura online score editor: notes and rests, editing, measures, repeats, dynamics, guitar tablature, MusicXML, MIDI and PDF.",
     "h1": "Tutorials",
     "intro": "Short guides, one per topic, each with an animated example. Pick one from the menu on the left.",
     "back": "All tutorials",
@@ -448,7 +448,103 @@
         ],
         "tip": "Clearing your browser data loses the scores: export as MusicXML the ones you want to keep."
       }
-    }
+    },
+    "seo": {
+      "start": [
+        "How to write your first music score online",
+        "Write your first score online for free: pick a note, click the staff and keep writing. Step-by-step guide to the Partitura editor, with animation."
+      ],
+      "features": [
+        "Partitura features: what the online score editor can do",
+        "Notes, rests, measures, clef, key signature, barlines, guitar tablature and PDF, MusicXML and MIDI downloads: everything the free online score editor offers."
+      ],
+      "shortcuts": [
+        "Keyboard shortcuts for writing music scores",
+        "Every key for notes, rests, accidentals and dots in the Partitura score editor. Write music faster with the keyboard."
+      ],
+      "dots": [
+        "Dotted notes: add a dot to a note or rest",
+        "How to add or remove a dot on a note or rest in the online score editor with a double click, and how a dot changes its length."
+      ],
+      "delete-barline": [
+        "How to delete a barline in a music score",
+        "Select a barline and remove it in the online score editor, step by step with a worked example."
+      ],
+      "edit-tab": [
+        "How to edit guitar tablature online",
+        "Change the fret of a note in the guitar tab without touching the staff, in the free Partitura score editor."
+      ],
+      "move-tab": [
+        "Move a guitar tab number to another string or beat",
+        "Drag a fret number to another string or beat in the tablature and see the staff update, in the online score editor."
+      ],
+      "faq": [
+        "Partitura FAQ: free use, download formats and guitar",
+        "Answers about the free online score editor: is it free, which formats can you download (PDF, MusicXML, MIDI) and how guitar tablature works."
+      ],
+      "notes-rests": [
+        "How to write notes and rests in a music score",
+        "Pick a note value or rest, click the staff and keep writing. Learn to enter notes and rests in the online score editor."
+      ],
+      "accidentals": [
+        "Sharps, flats and naturals: alter notes in a score",
+        "How to add sharps, flats and naturals to a note with one key and one click in the online score editor."
+      ],
+      "select-move": [
+        "Select, move and delete notes in a music score",
+        "Pick one or several notes and move or delete them without rewriting, in the free online score editor."
+      ],
+      "copy": [
+        "Duplicate, copy and paste music in a score",
+        "Repeat a motif or a whole measure with a few keystrokes: how to duplicate, copy and paste in the online score editor."
+      ],
+      "tuplets": [
+        "How to write triplets and tuplets in a score",
+        "Turn consecutive notes into a triplet, quintuplet or other tuplet in the online score editor, step by step."
+      ],
+      "ties": [
+        "Ties and beams: join notes in a music score",
+        "Join two notes with a tie or group eighth notes with a beam in the free online score editor."
+      ],
+      "signatures": [
+        "Change time signature, clef and key signature",
+        "How to set or change the time signature, clef and key signature anywhere in a score with the online editor."
+      ],
+      "measures": [
+        "Add, insert and move measures in a music score",
+        "Build the structure of your score measure by measure: add, insert, move and delete measures in the online editor."
+      ],
+      "repeats": [
+        "Repeats, da capo, segno and endings in a score",
+        "How to add repeat barlines, da capo, segno and first and second endings in the free online score editor."
+      ],
+      "dynamics": [
+        "Hairpins and dynamics: crescendo and diminuendo",
+        "Add crescendo and diminuendo hairpins and dynamic marks like p, mf and f to your score in the online editor."
+      ],
+      "tab-toggle": [
+        "Show guitar tablature under the staff automatically",
+        "Turn on a tab under every system, with the fingering already worked out, in the free online score editor."
+      ],
+      "refinger": [
+        "Play a note on another guitar string in the tab",
+        "Change a note's string in the tablature to play the same sound elsewhere on the fretboard."
+      ],
+      "barre": [
+        "How to mark barre chords in guitar tablature",
+        "Mark a barre with its fret over the notes it covers in the online score and tab editor."
+      ],
+      "files": [
+        "Open MusicXML and MIDI, export PDF, MusicXML or MIDI",
+        "Load a MusicXML or MIDI file and download your score as PDF, MusicXML or MIDI from the free online score editor."
+      ],
+      "scores": [
+        "Work on several scores and auto-save in your browser",
+        "Keep several scores open at once; everything is saved automatically in your browser, no account needed."
+      ]
+    },
+    "related": "Related tutorials",
+    "tryItLink": "Open the Partitura score editor"
   },
   "tutorialsPath": "tutorials",
   "termsPath": "terms",

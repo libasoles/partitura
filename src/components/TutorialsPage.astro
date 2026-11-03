@@ -1,7 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { locales, pathFor, strings, tutorialsPath, type Locale } from '../i18n';
-import { categories, slugs, tutorialBody, type Slug } from '../lib/tutorials';
+import { categories, related, slugs, tutorialBody, type Slug } from '../lib/tutorials';
 import '../styles/editor.css';
 import '../styles/tab-demo.css';
 import '../styles/tutorials.css';
@@ -16,8 +16,10 @@ const s = strings(locale);
 const t = s.tutorials;
 const paths = Object.fromEntries(locales.map((l) => [l, tutorialsPath(l, slug)])) as Record<Locale, string>;
 const item = slug ? t.items[slug] : undefined;
-const title = item ? `${item[0]} · ${s.ui.siteName}` : t.metaTitle;
-const description = item ? item[1] : t.metaDescription;
+const seoTitles = t.seo as Record<string, string[]>;
+const seo = slug ? seoTitles[slug] : undefined;
+const title = seo ? `${seo[0]} · ${s.ui.siteName}` : t.metaTitle;
+const description = seo ? seo[1] : t.metaDescription;
 const faq = slug === 'faq' ? s.scoreFaq.map(([q, a]) => ({ q, a })) : undefined;
 const index = slugs.indexOf(slug as Slug);
 const prev = slug && index > 0 ? slugs[index - 1] : undefined;
@@ -36,7 +38,7 @@ const categoryNames = t.categories as Record<string, string>;
         <a class:list={['docs-nav__home', { 'is-current': !slug }]} href={tutorialsPath(locale)} aria-current={slug ? undefined : 'page'}>{t.h1}</a>
         {categories.map((c) => (
           <section class="docs-nav__group">
-            <h2>{categoryNames[c.id]}</h2>
+            <p class="docs-nav__title">{categoryNames[c.id]}</p>
             <ul>
               {c.slugs.map((sl) => (
                 <li>
@@ -55,7 +57,17 @@ const categoryNames = t.categories as Record<string, string>;
           <h1>{item[0]}</h1>
           <p class="tutorial-lead">{item[1]}</p>
           <div set:html={tutorialBody(slug, s)} />
-          <nav class="tutorial-next" aria-label={t.h1}>
+          <section class="tutorial-related">
+            <h2 class="tutorial-h">{t.related}</h2>
+            <ul>
+              {related[slug].map((r) => (
+                <li><a href={tutorialsPath(locale, r)}>{seoTitles[r][0]}</a></li>
+              ))}
+              <li><a href={pathFor(locale)}>{t.tryItLink}</a></li>
+              <li><a href={tutorialsPath(locale)}>{t.back}</a></li>
+            </ul>
+          </section>
+          <nav class="tutorial-next"aria-label={t.h1}>
             {prev ? <a class="tutorial-next__prev" href={tutorialsPath(locale, prev)}><small>← {t.prev}</small>{t.items[prev][0]}</a> : <span />}
             {next ? <a class="tutorial-next__next" href={tutorialsPath(locale, next)}><small>{t.next} →</small>{t.items[next][0]}</a> : <a class="tutorial-next__next" href={pathFor(locale)}><small>→</small>{s.ui.editorLink}</a>}
           </nav>
@@ -70,7 +82,7 @@ const categoryNames = t.categories as Record<string, string>;
               <ul>
                 {c.slugs.map((sl) => (
                   <li>
-                    <a href={tutorialsPath(locale, sl)}>{t.items[sl][0]}</a>
+                    <a href={tutorialsPath(locale, sl)}>{seoTitles[sl][0]}</a>
                     <span>{t.items[sl][1]}</span>
                   </li>
                 ))}
@@ -90,7 +102,10 @@ const categoryNames = t.categories as Record<string, string>;
       if (box && window.matchMedia('(max-width: 899px)').matches) box.removeAttribute('open');
       var current = document.querySelector('.docs-nav a.is-current');
       var column = document.querySelector('.docs-nav');
-      if (current && column && column.scrollHeight > column.clientHeight) current.scrollIntoView({ block: 'center' });
+      // Measured after the browser's own layout pass: reading scrollHeight here, right after the write above, would force one.
+      if (current && column) requestAnimationFrame(function () {
+        if (column.scrollHeight > column.clientHeight) current.scrollIntoView({ block: 'center' });
+      });
     })();
   </script>
 </Base>

@@ -73,3 +73,30 @@ export function tutorialBody(slug: Slug, s: Strings): string {
     default: return guide(slug, s);
   }
 }
+
+/** Topically close tutorials, shown below each guide with descriptive anchor text (in addition to previous/next). */
+export const related: Record<Slug, Slug[]> = {
+  start: ['notes-rests', 'shortcuts', 'files'],
+  features: ['start', 'tab-toggle', 'files'],
+  'notes-rests': ['dots', 'accidentals', 'shortcuts'],
+  accidentals: ['notes-rests', 'signatures', 'shortcuts'],
+  shortcuts: ['notes-rests', 'accidentals', 'select-move'],
+  dots: ['notes-rests', 'ties', 'tuplets'],
+  'select-move': ['copy', 'measures', 'shortcuts'],
+  copy: ['select-move', 'measures', 'repeats'],
+  tuplets: ['notes-rests', 'ties', 'dots'],
+  ties: ['dots', 'tuplets', 'notes-rests'],
+  signatures: ['measures', 'accidentals', 'repeats'],
+  measures: ['signatures', 'delete-barline', 'copy'],
+  'delete-barline': ['measures', 'repeats', 'signatures'],
+  repeats: ['measures', 'dynamics', 'delete-barline'],
+  dynamics: ['repeats', 'notes-rests', 'signatures'],
+  'tab-toggle': ['edit-tab', 'refinger', 'barre'],
+  'edit-tab': ['move-tab', 'tab-toggle', 'refinger'],
+  'move-tab': ['edit-tab', 'refinger', 'barre'],
+  refinger: ['move-tab', 'edit-tab', 'barre'],
+  barre: ['tab-toggle', 'refinger', 'edit-tab'],
+  files: ['scores', 'faq', 'start'],
+  scores: ['files', 'faq', 'start'],
+  faq: ['start', 'features', 'files'],
+};

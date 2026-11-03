@@ -15,7 +15,10 @@
     "postinstall": "node scripts/vendor.mjs",
     "predev": "node scripts/vendor.mjs",
     "prebuild": "node scripts/vendor.mjs",
-    "lighthouse": "node scripts/lighthouse.mjs"
+    "postbuild": "node scripts/compress.mjs",
+    "serve": "node scripts/serve.mjs",
+    "lighthouse": "node scripts/lighthouse.mjs",
+    "og": "node scripts/og.mjs"
   },
   "dependencies": {
     "@fontsource-variable/montserrat": "^5.3.0",
@@ -29,6 +32,7 @@
   "devDependencies": {
     "@astrojs/check": "latest",
     "@astrojs/sitemap": "latest",
+    "esbuild": "^0.27.7",
     "lighthouse": "^13.6.0",
     "typescript": "^5.9.0"
   }

@@ -224,8 +224,8 @@
     "footerTerms": "Termos e condições"
   },
   "tutorials": {
-    "metaTitle": "Tutoriais · Partitura",
-    "metaDescription": "Aprenda a usar o editor de partituras passo a passo, com animações: notas e pausas, edição, compassos, repetições, dinâmicas, tablatura de violão e arquivos.",
+    "metaTitle": "Tutoriais do Partitura: escreva partituras e tablaturas online",
+    "metaDescription": "Tutoriais grátis e passo a passo, com animações, do editor de partituras online Partitura: notas e pausas, edição, compassos, repetições, dinâmicas, tablatura de violão, MusicXML, MIDI e PDF.",
     "h1": "Tutoriais",
     "intro": "Guias curtos, um por tema, cada um com um exemplo animado. Escolha um no menu à esquerda.",
     "back": "Todos os tutoriais",
@@ -448,7 +448,103 @@
         ],
         "tip": "Se você limpar os dados do navegador, as partituras se perdem: exporte em MusicXML as que quiser guardar."
       }
-    }
+    },
+    "seo": {
+      "start": [
+        "Como escrever sua primeira partitura online",
+        "Escreva sua primeira partitura online e grátis: escolha uma figura, clique na pauta e siga escrevendo. Guia passo a passo do editor Partitura, com animação."
+      ],
+      "features": [
+        "O que você pode fazer no editor de partituras Partitura",
+        "Notas, pausas, compassos, clave, armadura, barras, tablatura de violão e downloads em PDF, MusicXML e MIDI: tudo o que o editor grátis oferece."
+      ],
+      "shortcuts": [
+        "Atalhos de teclado para escrever partituras",
+        "Todas as teclas de figuras, pausas, alterações e pontos do editor de partituras Partitura. Escreva música mais rápido com o teclado."
+      ],
+      "dots": [
+        "Ponto de aumento: como colocar um ponto em nota ou pausa",
+        "Como colocar ou tirar o ponto de uma nota ou pausa com duplo clique no editor de partituras online, e como ele muda a duração."
+      ],
+      "delete-barline": [
+        "Como apagar uma barra de compasso em uma partitura",
+        "Selecione uma barra de compasso e remova-a no editor de partituras online, passo a passo com um exemplo."
+      ],
+      "edit-tab": [
+        "Como editar uma tablatura de violão online",
+        "Mude a casa de uma nota na tablatura sem mexer na pauta, no editor de partituras grátis Partitura."
+      ],
+      "move-tab": [
+        "Mover um número da tablatura para outra corda ou tempo",
+        "Arraste um número de casa para outra corda ou tempo da tablatura e veja a pauta se atualizar."
+      ],
+      "faq": [
+        "Perguntas frequentes do Partitura: grátis, downloads e violão",
+        "Respostas sobre o editor de partituras online: se é grátis, quais formatos você pode baixar (PDF, MusicXML, MIDI) e como funciona a tablatura de violão."
+      ],
+      "notes-rests": [
+        "Como escrever notas e pausas em uma partitura",
+        "Escolha uma figura ou uma pausa, clique na pauta e siga escrevendo. Aprenda a inserir notas e pausas no editor online."
+      ],
+      "accidentals": [
+        "Sustenidos, bemóis e bequadros: alterar notas",
+        "Como colocar sustenidos, bemóis e bequadros em uma nota com uma tecla e um clique no editor de partituras online."
+      ],
+      "select-move": [
+        "Selecionar, mover e apagar notas em uma partitura",
+        "Escolha uma ou várias notas e mova ou apague sem reescrever, no editor de partituras online grátis."
+      ],
+      "copy": [
+        "Duplicar, copiar e colar música em uma partitura",
+        "Repita um motivo ou um compasso inteiro com poucas teclas: como duplicar, copiar e colar no editor de partituras online."
+      ],
+      "tuplets": [
+        "Como escrever quiálteras: tercinas, quintinas e mais",
+        "Transforme figuras seguidas em tercina, quintina ou outra quiáltera no editor de partituras online, passo a passo."
+      ],
+      "ties": [
+        "Ligaduras e barras: unir notas em uma partitura",
+        "Una duas notas com uma ligadura ou agrupe colcheias com uma barra no editor de partituras online grátis."
+      ],
+      "signatures": [
+        "Mudar compasso, clave e armadura em uma partitura",
+        "Como definir ou mudar o compasso, a clave e a armadura em qualquer ponto da partitura com o editor online."
+      ],
+      "measures": [
+        "Adicionar, inserir e mover compassos em uma partitura",
+        "Monte a estrutura da sua partitura compasso por compasso: adicionar, inserir, mover e apagar compassos no editor online."
+      ],
+      "repeats": [
+        "Repetições, da capo, segno e casas em partituras",
+        "Como colocar barras de repetição, da capo, segno e casas de primeira e segunda vez no editor de partituras online grátis."
+      ],
+      "dynamics": [
+        "Reguladores e dinâmicas: crescendo e diminuendo",
+        "Coloque reguladores de crescendo e diminuendo e sinais de intensidade como p, mf e f na sua partitura com o editor online."
+      ],
+      "tab-toggle": [
+        "Mostrar a tablatura de violão sob a pauta",
+        "Ative uma tablatura sob cada pauta, com a digitação já resolvida, no editor de partituras online grátis."
+      ],
+      "refinger": [
+        "Tocar uma nota em outra corda do violão na tablatura",
+        "Mude a corda de uma nota na tablatura para tocar o mesmo som em outra parte do braço."
+      ],
+      "barre": [
+        "Como marcar pestanas em uma tablatura de violão",
+        "Marque uma pestana com sua casa sobre as notas que ela cobre no editor online de partituras e tablaturas."
+      ],
+      "files": [
+        "Abrir MusicXML e MIDI, exportar PDF, MusicXML ou MIDI",
+        "Carregue um arquivo MusicXML ou MIDI e baixe sua partitura em PDF, MusicXML ou MIDI no editor de partituras online grátis."
+      ],
+      "scores": [
+        "Trabalhar com várias partituras e salvamento automático",
+        "Mantenha várias partituras abertas ao mesmo tempo; tudo é salvo sozinho no navegador, sem conta."
+      ]
+    },
+    "related": "Tutoriais relacionados",
+    "tryItLink": "Abrir o editor de partituras Partitura"
   },
   "tutorialsPath": "tutoriais",
   "termsPath": "termos",
