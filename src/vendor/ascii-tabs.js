@@ -1197,7 +1197,7 @@ class AsciiTabs extends Base {
         html += '<div class="ascii-tabs-staff">';
         for (let s = 0; s < STRING_COUNT; s++) {
           html += '<span class="ascii-tabs-line">';
-          if (labels !== 'none') html += `<span class="ascii-tabs-label" style="flex-basis:${gutter}ch">${names[s]}</span>`;
+          if (labels !== 'none') html += `<span class="ascii-tabs-label" style="flex-basis:${gutter}ch">${geometry && labels === 'notes' ? names[s].replace('|', '').trim() : names[s]}</span>`;
           if (geometry) html += `<span class="ascii-tabs-area" data-t="${t}" data-s="${s}" style="width:${geometry.width}px">`;
           for (let c = start; c < end; c++) {
             const isCur = this.#cur && this.#cur.t === t && this.#cur.c === c && this.#cur.s === s;

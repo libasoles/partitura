@@ -1175,7 +1175,7 @@ export default function start() {
       const mark = document.createElement('span');
       mark.className = 'score-tab-clef';
       mark.textContent = letter;
-      mark.style.fontSize = font * 1.25 + 'px';
+      mark.style.fontSize = font * 1.05 + 'px';
       mark.style.left = x + 'px';
       mark.style.top = (ys[0] + step * (1.5 + i)) + 'px';
       stage.appendChild(mark);

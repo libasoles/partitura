@@ -28,9 +28,25 @@ test('first tab opens tuning popup, recalculates frets, undoes and persists', as
   await page.goto('/es/');
   const trigger = page.locator('.score-tuning-trigger');
   await expect(trigger).toHaveCount(1);
-  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['e|', 'B|', 'G|', 'D|', 'A|', 'E|']);
+  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['e', 'B', 'G', 'D', 'A', 'E']);
   const fret = page.locator('ascii-tabs').first().locator('.ascii-tabs-fret');
   await expect(fret).toHaveText(['0']);
+  const geometry = await page.locator('ascii-tabs').first().evaluate(tab => {
+    const label = tab.querySelector('.ascii-tabs-label');
+    const cell = tab.querySelector('.ascii-tabs-cell');
+    const area = tab.querySelector('.ascii-tabs-area');
+    const lines = tab.querySelectorAll('.ascii-tabs-line');
+    return {
+      labelFont: parseFloat(getComputedStyle(label).fontSize),
+      fretFont: parseFloat(getComputedStyle(cell).fontSize),
+      cellY: cell.getBoundingClientRect().top + cell.getBoundingClientRect().height / 2,
+      stringY: area.getBoundingClientRect().top + area.getBoundingClientRect().height / 2,
+      step: lines[1].getBoundingClientRect().top - lines[0].getBoundingClientRect().top,
+    };
+  });
+  expect(geometry.labelFont / geometry.fretFont).toBeCloseTo(0.7);
+  expect(geometry.step / geometry.fretFont).toBeCloseTo(1.1);
+  expect(Math.abs(geometry.cellY - geometry.stringY)).toBeLessThan(1);
   await trigger.scrollIntoViewIfNeeded();
   await page.screenshot({ path: testInfo.outputPath('tuning-labels.png') });
   await trigger.click();
@@ -40,17 +56,17 @@ test('first tab opens tuning popup, recalculates frets, undoes and persists', as
   await expect(page.locator('#scoreTuningPopup')).not.toBeVisible();
   await trigger.click();
   await page.locator('[data-tuning="drop-d"]').click();
-  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['e|', 'B|', 'G|', 'D|', 'A|', 'D|']);
+  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['e', 'B', 'G', 'D', 'A', 'D']);
   await expect(fret).toHaveText(['2']);
   await page.keyboard.press('ControlOrMeta+z');
-  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['e|', 'B|', 'G|', 'D|', 'A|', 'E|']);
+  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['e', 'B', 'G', 'D', 'A', 'E']);
   await expect(fret).toHaveText(['0']);
   await trigger.click();
   await page.locator('[data-tuning="dadgad"]').click();
-  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['d|', 'A|', 'G|', 'D|', 'A|', 'D|']);
+  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['d', 'A', 'G', 'D', 'A', 'D']);
   await page.waitForTimeout(500);
   await page.reload();
-  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['d|', 'A|', 'G|', 'D|', 'A|', 'D|']);
+  await expect(page.locator('ascii-tabs .ascii-tabs-label')).toHaveText(['d', 'A', 'G', 'D', 'A', 'D']);
   const labels = await trigger.boundingBox();
   const area = await page.locator('ascii-tabs').first().locator('.ascii-tabs-area').first().boundingBox();
   expect(labels.x + labels.width).toBeLessThanOrEqual(area.x + 1);

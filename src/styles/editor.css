@@ -753,14 +753,15 @@
   pointer-events: none;
 }
 
-/* Frets in regular weight and strings a little closer than the component's 1.5em. */
+/* Compact string spacing; keep the line, cell and positioned area in sync. */
 .score-tab .ascii-tabs-fret {
   font-weight: 400;
 }
 .score-tab .ascii-tabs-line,
-.score-tab .ascii-tabs-cell {
-  height: 1.35em;
-  line-height: 1.35em;
+.score-tab .ascii-tabs-cell,
+.score-tab .ascii-tabs-area {
+  height: 1.1em;
+  line-height: 1.1em;
 }
 
 .score-tab-bar {
@@ -1752,7 +1753,13 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   background: transparent;
   cursor: pointer;
 }
-.score-tab .ascii-tabs-label { color: var(--ink); }
+.score-tab .ascii-tabs-label {
+  display: flex;
+  align-items: center;
+  font-size: 0.7em;
+  line-height: 1;
+  color: var(--ink);
+}
 .score-stage:has(> .score-tuning-trigger:hover) .ascii-tabs-label,
 .score-stage:has(> .score-tuning-trigger:focus-visible) .ascii-tabs-label { color: var(--blue-france); }
 .score-tuning-trigger:focus-visible { outline: 2px solid var(--blue-france); }
