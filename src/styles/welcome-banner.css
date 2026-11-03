@@ -46,8 +46,19 @@
   .welcome-banner__cards svg { margin-top: 0.1rem; color: var(--ink-soft); }
   .welcome-banner__cards h2 { margin: 0 0 0.15rem; font-size: 0.95rem; }
   .welcome-banner__cards p { margin: 0; font-size: 0.85rem; color: var(--ink-soft); }
-  .welcome-banner__more { margin: 1rem 0 0; font-size: 0.9rem; }
-  .welcome-banner__more a { color: var(--accent); }
+  .welcome-banner__more { margin: 0; padding-top: 1.8rem; text-align: center; }
+  .welcome-banner__more a {
+    display: inline-block;
+    padding: 0.6rem 1.6rem;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .welcome-banner__more a:hover { background: var(--accent); }
+  .welcome-banner__more a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .welcome-banner__close {
     position: absolute;
