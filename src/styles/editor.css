@@ -1756,9 +1756,9 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-tab .ascii-tabs-label {
   display: flex;
   align-items: center;
-  font-size: 0.7em;
+  font-size: 0.8em;
   line-height: 1;
-  color: var(--ink);
+  color: #8a8a8a;
 }
 .score-stage:has(> .score-tuning-trigger:hover) .ascii-tabs-label,
 .score-stage:has(> .score-tuning-trigger:focus-visible) .ascii-tabs-label { color: var(--blue-france); }

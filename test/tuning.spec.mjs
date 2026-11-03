@@ -44,7 +44,7 @@ test('first tab opens tuning popup, recalculates frets, undoes and persists', as
       step: lines[1].getBoundingClientRect().top - lines[0].getBoundingClientRect().top,
     };
   });
-  expect(geometry.labelFont / geometry.fretFont).toBeCloseTo(0.7);
+  expect(geometry.labelFont / geometry.fretFont).toBeCloseTo(0.8);
   expect(geometry.step / geometry.fretFont).toBeCloseTo(1.1);
   expect(Math.abs(geometry.cellY - geometry.stringY)).toBeLessThan(1);
   await trigger.scrollIntoViewIfNeeded();
