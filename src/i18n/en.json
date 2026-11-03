@@ -494,31 +494,35 @@
     ]
   },
   "mobileGate": {
-    "title": "Partitura only works on desktop",
-    "body": "Editing a score on a phone is very hard because of the small screen. Open this page on a computer to write your score. In the meantime, you can browse the tutorials.",
-    "tutorials": "See the tutorials",
+    "title": "Desktop only",
     "scroll": "What you can do",
     "features": [
       [
-        "notes",
-        "Notes and rests",
-        "Place notes, dots and accidentals right on the staff."
+        "voices",
+        "Multiple voices",
+        "Write two or more voices on the same staff, each with its own stems and rests."
       ],
       [
-        "tab",
-        "Guitar tablature",
-        "Fingering is generated for you and you can edit every fret."
+        "menu",
+        "Context menus",
+        "Select notes and pick slur, triplet and more from the menu."
+      ],
+      [
+        "barre",
+        "Barre chords",
+        "Mark the barre on the tablature with its fret, from start to end."
+      ],
+      [
+        "hairpin",
+        "Hairpins and dynamics",
+        "Crescendo and diminuendo between two dynamics, like p and f."
       ],
       [
         "export",
         "Download your score",
         "Export to PDF, MusicXML or MIDI to print it or open it in other apps."
-      ],
-      [
-        "save",
-        "Autosave",
-        "Your score stays in your browser; pick up whenever you want."
       ]
-    ]
+    ],
+    "tutorials": "See the tutorials"
   }
 }

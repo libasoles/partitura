@@ -494,31 +494,35 @@
     ]
   },
   "mobileGate": {
-    "title": "O Partitura só funciona no computador",
-    "body": "Editar uma partitura no celular é muito difícil por causa do tamanho da tela. Abra esta página em um computador para escrever sua partitura. Enquanto isso, você pode consultar os tutoriais.",
-    "tutorials": "Ver os tutoriais",
+    "title": "Só no computador",
     "scroll": "O que você pode fazer",
     "features": [
       [
-        "notes",
-        "Notas e pausas",
-        "Coloque figuras, pontos e acidentes direto na pauta."
+        "voices",
+        "Várias vozes",
+        "Escreva duas ou mais vozes na mesma pauta, cada uma com suas hastes e pausas."
       ],
       [
-        "tab",
-        "Tablatura para violão",
-        "A digitação é gerada sozinha e você pode editar cada casa."
+        "menu",
+        "Menus contextuais",
+        "Selecione figuras e escolha ligadura, quiáltera e mais no menu."
+      ],
+      [
+        "barre",
+        "Pestanas",
+        "Marque a pestana na tablatura com sua casa, do início ao fim."
+      ],
+      [
+        "hairpin",
+        "Reguladores e dinâmicas",
+        "Crescendo e diminuendo entre duas dinâmicas, como p e f."
       ],
       [
         "export",
         "Baixe sua partitura",
         "Exporte em PDF, MusicXML ou MIDI para imprimir ou abrir em outros programas."
-      ],
-      [
-        "save",
-        "Salvamento automático",
-        "Sua partitura fica no navegador; continue quando quiser."
       ]
-    ]
+    ],
+    "tutorials": "Ver os tutoriais"
   }
 }

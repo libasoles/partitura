@@ -8,12 +8,16 @@ interface Props {
 const { locale } = Astro.props;
 const s = strings(locale);
 const g = s.mobileGate;
+const ui = s.scoreUiStrings;
+// The barre label is the first letter of the editor's own word for it, plus the fret ("C5").
+const barreLabel = `${ui.barre.charAt(0)}5`;
 // Lucide icons (stroke 2, 24 grid), one per feature. Keys are quoted: the Astro compiler reads a bare `export:` as a statement.
 const icons: Record<string, string> = {
-  'notes': '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
-  'tab': '<path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>',
+  'voices': '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  'menu': '<path d="M12.586 12.586 19 19"/><path d="M3.688 3.037a.497.497 0 0 0-.651.651l6.5 15.998a.501.501 0 0 0 .947-.062l1.569-6.083a2 2 0 0 1 1.448-1.479l6.124-1.579a.5.5 0 0 0 .063-.947z"/>',
+  'barre': '<path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>',
+  'hairpin': '<path d="M3 12 21 5M3 12l18 7"/>',
   'export': '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
-  'save': '<path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/>',
 };
 ---
 
@@ -22,7 +26,6 @@ const icons: Record<string, string> = {
     <svg class="mobile-gate__logo" viewBox="20 -245 800 1035" fill="currentColor" aria-hidden="true"><g transform="translate(-43 -87)"><g transform="translate(229 687) rotate(12) scale(0.88 1.14) translate(-229 -687)"><path d="M207 597 C172 556 152 525 143 473 L167 492 C119 447 109 387 120 326 L145 354 C128 262 146 178 196 119 C232 75 285 43 340 25 C356 21 362 28 359 46 C354 93 342 144 336 173 L312 214 L345 185 C370 265 381 336 368 397 C361 430 347 452 323 478 L359 450 C353 494 330 528 306 556 L339 535 C319 574 287 601 259 624 C240 644 231 664 229 687 C218 652 213 620 207 597Z"/><path d="M229 687 C195 536 201 375 255 208 C221 395 223 553 238 619 C233 648 230 671 229 687Z" style="fill: var(--paper)"/></g></g><path transform="translate(-8 0)" d="M229 687 L389 573 C485 493 583 458 679 498 C600 474 518 492 398 585 L229 698Z"/><ellipse cx="180" cy="657" rx="60.5" ry="26.9" transform="rotate(35 180 657)"/></svg>
     <p class="mobile-gate__name">{s.ui.siteName}</p>
     <h2 id="mobileGateTitle">{g.title}</h2>
-    <p class="mobile-gate__lead">{g.body}</p>
     <a class="mobile-gate__cta" href={tutorialsPath(locale)}>{g.tutorials}</a>
     <p class="mobile-gate__hint" aria-hidden="true">{g.scroll}</p>
   </div>
@@ -33,21 +36,58 @@ const icons: Record<string, string> = {
       {g.features.map(([key, title, body]) => (
         <li class={`feature feature--${key}`}>
           <div class="feature__demo" aria-hidden="true">
-            {key === 'notes' && (
+            {key === 'voices' && (
               <svg viewBox="0 0 120 60">
-                <g class="staff"><path d="M4 14h112M4 24h112M4 34h112M4 44h112M4 54h112" /></g>
-                <g class="n n1"><ellipse cx="28" cy="44" rx="6" ry="4.4" /><path d="M34 44V16" /></g>
-                <g class="n n2"><ellipse cx="56" cy="34" rx="6" ry="4.4" /><path d="M62 34V6" /></g>
-                <g class="n n3"><ellipse cx="84" cy="24" rx="6" ry="4.4" /><path d="M90 24V-4" /></g>
+                <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112" /></g>
+                <g class="n v1 a1"><ellipse cx="30" cy="24" rx="5.5" ry="4" /><path d="M35.5 24V4" /></g>
+                <g class="n v1 a2"><ellipse cx="60" cy="16" rx="5.5" ry="4" /><path d="M65.5 16V-4" /></g>
+                <g class="n v1 a3"><ellipse cx="90" cy="24" rx="5.5" ry="4" /><path d="M95.5 24V4" /></g>
+                <g class="n v2 b1"><ellipse cx="30" cy="40" rx="5.5" ry="4" /><path d="M24.5 40V58" /></g>
+                <g class="n v2 b2"><ellipse cx="60" cy="48" rx="5.5" ry="4" /><path d="M54.5 48V66" /></g>
+                <g class="n v2 b3"><ellipse cx="90" cy="40" rx="5.5" ry="4" /><path d="M84.5 40V58" /></g>
               </svg>
             )}
-            {key === 'tab' && (
+            {key === 'menu' && (
               <svg viewBox="0 0 120 60">
-                <g class="staff"><path d="M4 8h112M4 18h112M4 28h112M4 38h112M4 48h112M4 58h112" /></g>
-                <rect class="cursor" x="22" y="1" width="16" height="58" rx="3" />
-                <text class="t t1" x="30" y="31">3</text>
-                <text class="t t2" x="60" y="21">2</text>
-                <text class="t t3" x="90" y="41">5</text>
+                <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112" /></g>
+                <rect class="sel" x="8" y="10" width="54" height="38" rx="5" />
+                <g class="m"><ellipse cx="18" cy="36" rx="4.5" ry="3.3" /><path d="M22.5 36V14" /></g>
+                <g class="m"><ellipse cx="36" cy="36" rx="4.5" ry="3.3" /><path d="M40.5 36V14" /></g>
+                <g class="m"><ellipse cx="54" cy="36" rx="4.5" ry="3.3" /><path d="M58.5 36V14" /></g>
+                <path class="slur" pathLength="1" d="M18 42Q36 54 54 42" />
+                <g class="three"><path d="M18 10h12M42 10h12" /><text x="36" y="12">3</text></g>
+                <g class="menubox">
+                  <rect class="menubox__bg" x="66" y="8" width="50" height="34" rx="4" />
+                  <rect class="item i1" x="68" y="10" width="46" height="14" rx="3" />
+                  <rect class="item i2" x="68" y="26" width="46" height="14" rx="3" />
+                  <text class="label" x="72" y="20">{ui.link}</text>
+                  <text class="label" x="72" y="36">{ui.triplet}</text>
+                </g>
+              </svg>
+            )}
+            {key === 'barre' && (
+              <svg viewBox="0 0 120 60">
+                <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112M4 56h112" /></g>
+                <g class="barre">
+                  <text class="barre__label" x="26" y="9">{barreLabel}</text>
+                  <path class="barre__line" d="M40 7H96V13" />
+                </g>
+                <text class="t" x="44" y="38">5</text>
+                <text class="t" x="62" y="30">5</text>
+                <text class="t" x="80" y="22">7</text>
+                <text class="t" x="94" y="46">5</text>
+              </svg>
+            )}
+            {key === 'hairpin' && (
+              <svg viewBox="0 0 120 60">
+                <g class="staff"><path d="M4 8h112M4 14h112M4 20h112M4 26h112M4 32h112" /></g>
+                <g class="m"><ellipse cx="26" cy="26" rx="4.5" ry="3.2" /><path d="M30.5 26V6" /></g>
+                <g class="m"><ellipse cx="48" cy="20" rx="4.5" ry="3.2" /><path d="M52.5 20V0" /></g>
+                <g class="m"><ellipse cx="70" cy="14" rx="4.5" ry="3.2" /><path d="M74.5 14V-6" /></g>
+                <g class="m"><ellipse cx="92" cy="8" rx="4.5" ry="3.2" /><path d="M96.5 8V-12" /></g>
+                <text class="dyn dyn1" x="12" y="52">p</text>
+                <text class="dyn dyn2" x="104" y="52">f</text>
+                <path class="hp" d="M24 47L92 41M24 47L92 53" />
               </svg>
             )}
             {key === 'export' && (
@@ -55,13 +95,6 @@ const icons: Record<string, string> = {
                 <g class="doc"><rect x="40" y="6" width="40" height="48" rx="4" /><path d="M48 20h24M48 30h24M48 40h14" /></g>
                 <g class="arrow"><path d="M60 -4v14M54 5l6 6 6-6" /></g>
                 <g class="badges"><text x="18" y="34">PDF</text><text x="102" y="34">XML</text></g>
-              </svg>
-            )}
-            {key === 'save' && (
-              <svg viewBox="0 0 120 60">
-                <rect class="bar-track" x="20" y="26" width="80" height="8" rx="4" />
-                <rect class="bar-fill" x="20" y="26" width="80" height="8" rx="4" />
-                <g class="check"><circle cx="60" cy="30" r="14" /><path d="m53 30 5 5 9-10" /></g>
               </svg>
             )}
           </div>
