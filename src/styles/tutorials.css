@@ -213,3 +213,6 @@
   .d-a { animation: none !important; }
   .d-gone { display: none; }
 }
+
+.editor-link { display: inline-flex; align-items: center; gap: 0.5rem; }
+.editor-link img { display: block; }
