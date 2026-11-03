@@ -316,7 +316,7 @@ a { color: var(--blue-france); }
   font-size: 0.85rem;
   text-align: right;
 }
-.site-footer a { color: var(--ink-soft); }
+.site-footer a { color: var(--ink-soft); text-decoration: none; }
 .site-footer a:hover { color: var(--ink); }
 
 .legal {
