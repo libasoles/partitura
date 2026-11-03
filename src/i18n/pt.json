@@ -500,12 +500,17 @@
       [
         "voices",
         "Várias vozes",
-        "Escreva duas ou mais vozes na mesma pauta, cada uma com suas hastes e pausas."
+        "Escreva duas ou mais vozes na mesma pauta, cada uma com suas pausas."
       ],
       [
-        "menu",
-        "Menus contextuais",
-        "Selecione figuras e escolha ligadura, quiáltera e mais no menu."
+        "slur",
+        "Ligaduras entre compassos",
+        "Selecione duas notas, mesmo de compassos diferentes, e ligue-as pelo menu."
+      ],
+      [
+        "triplet",
+        "Quiálteras",
+        "Selecione três colcheias e transforme-as em quiáltera pelo menu contextual."
       ],
       [
         "barre",
@@ -515,7 +520,7 @@
       [
         "hairpin",
         "Reguladores e dinâmicas",
-        "Crescendo e diminuendo entre duas dinâmicas, como p e f."
+        "Crescendo e diminuendo entre duas dinâmicas, como p e f, sobre qualquer figura."
       ],
       [
         "export",
@@ -523,6 +528,7 @@
         "Exporte em PDF, MusicXML ou MIDI para imprimir ou abrir em outros programas."
       ]
     ],
-    "tutorials": "Ver os tutoriais"
+    "tutorials": "Ver os tutoriais",
+    "body": "Editar uma partitura no celular é muito difícil por causa do tamanho da tela."
   }
 }
