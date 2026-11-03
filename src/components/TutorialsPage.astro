@@ -1,9 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
 import { locales, pathFor, strings, tutorialsPath, type Locale } from '../i18n';
-import { slugs, tutorialBody, type Slug } from '../lib/tutorials';
+import { categories, slugs, tutorialBody, type Slug } from '../lib/tutorials';
 import '../styles/editor.css';
 import '../styles/tab-demo.css';
+import '../styles/tutorials.css';
 
 interface Props {
   locale: Locale;
@@ -19,37 +20,77 @@ const title = item ? `${item[0]} · ${s.ui.siteName}` : t.metaTitle;
 const description = item ? item[1] : t.metaDescription;
 const faq = slug === 'faq' ? s.scoreFaq.map(([q, a]) => ({ q, a })) : undefined;
 const index = slugs.indexOf(slug as Slug);
+const prev = slug && index > 0 ? slugs[index - 1] : undefined;
 const next = slug && index < slugs.length - 1 ? slugs[index + 1] : undefined;
+const categoryNames = t.categories as Record<string, string>;
 ---
 
 <Base locale={locale} title={title} description={description} paths={paths} faq={faq}>
-  <main class="tutorials">
-    {slug && item ? (
-      <article class="tutorial-body">
-        <a class="tutorial-back" href={tutorialsPath(locale)}>← {t.back}</a>
-        <h1>{item[0]}</h1>
-        <p class="tutorial-lead">{item[1]}</p>
-        <div set:html={tutorialBody(slug, s)} />
-        <nav class="tutorial-next" aria-label={t.h1}>
-          {next && <a href={tutorialsPath(locale, next)}>{t.next}: {t.items[next][0]} →</a>}
-          <a href={pathFor(locale)}>{s.ui.editorLink}</a>
-        </nav>
-      </article>
-    ) : (
-      <>
-        <h1>{t.h1}</h1>
-        <p class="tutorial-lead">{t.intro}</p>
-        <ul class="tutorial-cards">
-          {slugs.map((sl) => (
-            <li>
-              <a href={tutorialsPath(locale, sl)}>
-                <h2>{t.items[sl][0]}</h2>
-                <p>{t.items[sl][1]}</p>
-              </a>
-            </li>
+  <div class="docs">
+    <nav class="docs-nav" aria-label={t.navLabel}>
+      <details class="docs-nav__box" open>
+        <summary>
+          <span>{item ? item[0] : t.navLabel}</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <a class:list={['docs-nav__home', { 'is-current': !slug }]} href={tutorialsPath(locale)} aria-current={slug ? undefined : 'page'}>{t.h1}</a>
+        {categories.map((c) => (
+          <section class="docs-nav__group">
+            <h2>{categoryNames[c.id]}</h2>
+            <ul>
+              {c.slugs.map((sl) => (
+                <li>
+                  <a class:list={{ 'is-current': sl === slug }} href={tutorialsPath(locale, sl)} aria-current={sl === slug ? 'page' : undefined}>{t.items[sl][0]}</a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </details>
+    </nav>
+
+    <main class="docs-main tutorials">
+      {slug && item ? (
+        <article class="tutorial-body">
+          <h1>{item[0]}</h1>
+          <p class="tutorial-lead">{item[1]}</p>
+          <div set:html={tutorialBody(slug, s)} />
+          <nav class="tutorial-next" aria-label={t.h1}>
+            {prev ? <a class="tutorial-next__prev" href={tutorialsPath(locale, prev)}><small>← {t.prev}</small>{t.items[prev][0]}</a> : <span />}
+            {next ? <a class="tutorial-next__next" href={tutorialsPath(locale, next)}><small>{t.next} →</small>{t.items[next][0]}</a> : <a class="tutorial-next__next" href={pathFor(locale)}><small>→</small>{s.ui.editorLink}</a>}
+          </nav>
+        </article>
+      ) : (
+        <>
+          <h1>{t.h1}</h1>
+          <p class="tutorial-lead">{t.intro}</p>
+          {categories.map((c) => (
+            <section class="docs-topic">
+              <h2>{categoryNames[c.id]}</h2>
+              <ul>
+                {c.slugs.map((sl) => (
+                  <li>
+                    <a href={tutorialsPath(locale, sl)}>{t.items[sl][0]}</a>
+                    <span>{t.items[sl][1]}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
-      </>
-    )}
-  </main>
+          <p><a href={pathFor(locale)}>{s.ui.editorLink} →</a></p>
+        </>
+      )}
+    </main>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var box = document.querySelector('.docs-nav__box');
+      // On narrow screens the list is a drop-down that starts closed; on wide ones it is the sidebar, always open.
+      if (box && window.matchMedia('(max-width: 899px)').matches) box.removeAttribute('open');
+      var current = document.querySelector('.docs-nav a.is-current');
+      var column = document.querySelector('.docs-nav');
+      if (current && column && column.scrollHeight > column.clientHeight) current.scrollIntoView({ block: 'center' });
+    })();
+  </script>
 </Base>
