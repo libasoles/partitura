@@ -306,3 +306,26 @@ a { color: var(--blue-france); }
     to { opacity: 1; transform: translateY(0); }
   }
 }
+
+/* ----- Footer and legal pages ----- */
+
+.site-footer {
+  max-width: var(--page);
+  margin: 0 auto;
+  padding: 1.5rem var(--gutter) 2rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.85rem;
+  text-align: center;
+}
+.site-footer a { color: var(--ink-soft); }
+.site-footer a:hover { color: var(--ink); }
+
+.legal {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 2rem var(--gutter) 3rem;
+}
+.legal h1 { margin: 0 0 0.4rem; font-size: 2rem; line-height: 1.2; }
+.legal h2 { margin: 2rem 0 0.4rem; font-size: 1.15rem; }
+.legal p { margin: 0 0 1rem; }
+.legal-updated { color: var(--ink-soft); font-size: 0.9rem; }

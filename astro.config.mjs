@@ -1,6 +1,6 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import { locales, pathFor, rootPath, tutorialsPath } from './src/i18n/index.ts';
+import { locales, pathFor, rootPath, termsPath, tutorialsPath } from './src/i18n/index.ts';
 import { slugs } from './src/lib/tutorials.ts';
 
 // The public origin. Canonical URLs, hreflang, Open Graph and the sitemap are built from it, so set it for production:
@@ -12,6 +12,7 @@ const site = (process.env.SITE_URL || 'https://partitura.example').replace(/\/+$
 const groups = [
   Object.fromEntries(locales.map((l) => [l, pathFor(l)])),
   Object.fromEntries(locales.map((l) => [l, tutorialsPath(l)])),
+  Object.fromEntries(locales.map((l) => [l, termsPath(l)])),
   ...slugs.map((slug) => Object.fromEntries(locales.map((l) => [l, tutorialsPath(l, slug)]))),
 ];
 const alternates = new Map();

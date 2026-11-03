@@ -1,7 +1,7 @@
 ---
 import '@fontsource-variable/montserrat';
 import '../styles/global.css';
-import { locales, ogLocales, pathFor, rootPath, strings, tutorialsPath, type Locale } from '../i18n';
+import { locales, ogLocales, pathFor, rootPath, strings, termsPath, tutorialsPath, type Locale } from '../i18n';
 import { pageJsonLd } from '../lib/jsonld';
 
 interface Props {
@@ -85,6 +85,9 @@ const jsonLd = pageJsonLd({
       </div>
     </header>
     <slot />
+    <footer class="site-footer">
+      <a href={termsPath(locale)}>{s.ui.footerTerms}</a>
+    </footer>
     <script is:inline>
       (function () {
         var toggle = document.getElementById('siteMenuToggle');

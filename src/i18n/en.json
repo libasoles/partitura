@@ -219,7 +219,8 @@
     "menuExport": "Export",
     "menuExportXml": "MusicXML",
     "menuExportMidi": "MIDI",
-    "menuExportPdf": "PDF"
+    "menuExportPdf": "PDF",
+    "footerTerms": "Terms and conditions"
   },
   "tutorials": {
     "metaTitle": "Tutorials · Partitura",
@@ -448,5 +449,47 @@
       }
     }
   },
-  "tutorialsPath": "tutorials"
+  "tutorialsPath": "tutorials",
+  "termsPath": "terms",
+  "terms": {
+    "metaTitle": "Terms and conditions · Partitura",
+    "metaDescription": "Terms of use for Partitura, the free score editor: using the service, your scores, intellectual property and liability.",
+    "h1": "Terms and conditions",
+    "updated": "Last updated: November 3, 2026",
+    "back": "Back to the editor",
+    "sections": [
+      [
+        "Acceptance",
+        "By using Partitura you agree to these terms. If you do not agree, do not use the service."
+      ],
+      [
+        "The service",
+        "Partitura is a free score editor that runs in your browser. No sign-up is needed. We may change, suspend or remove features at any time, with or without notice."
+      ],
+      [
+        "Your scores and your data",
+        "The scores you write are stored only in your browser (local storage) and are not sent to any server. Because we hold no copy, we cannot recover them: clearing your browser data or switching devices loses them. Export your work (PDF, MusicXML or MIDI) to keep it."
+      ],
+      [
+        "Intellectual property",
+        "Your compositions and arrangements are yours; we only provide the tool to write them. You are responsible for having the rights to any content you load or transcribe, such as copyrighted works by others. The design, code and brand of Partitura belong to their authors; the third-party software we use keeps its own licences."
+      ],
+      [
+        "Acceptable use",
+        "Please do not use the service for unlawful activity, to try to compromise or overload it, or to infringe the rights of others."
+      ],
+      [
+        "No warranties",
+        "Partitura is provided \"as is\" and \"as available\", without warranties of any kind. We do not promise that it is error-free, that it will run without interruption, or that its output is fit for a particular purpose, such as professional engraving or printing."
+      ],
+      [
+        "Limitation of liability",
+        "To the extent the law allows, we are not liable for loss of data, work or income, or for any other damage arising from using the service or being unable to use it."
+      ],
+      [
+        "Changes to these terms",
+        "We may update these terms. The date above shows the latest revision; continuing to use Partitura after a change means you accept it."
+      ]
+    ]
+  }
 }

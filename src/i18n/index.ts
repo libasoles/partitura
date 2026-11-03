@@ -29,6 +29,11 @@ export function urlFor(locale: Locale, site: URL | string): string {
 
 export const ogLocales: Record<Locale, string> = { es: 'es_ES', en: 'en_US', pt: 'pt_BR' };
 
+/** The terms page: /terminos/, /en/terms/, /pt/termos/. */
+export function termsPath(locale: Locale): string {
+  return `${pathFor(locale)}${strings(locale).termsPath}/`;
+}
+
 /** The tutorials section: /tutoriales/, /en/tutorials/, /pt/tutoriais/ (plus a slug for one tutorial). */
 export function tutorialsPath(locale: Locale, slug?: string): string {
   const base = `${pathFor(locale)}${strings(locale).tutorialsPath}/`;

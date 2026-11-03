@@ -219,7 +219,8 @@
     "menuExport": "Exportar",
     "menuExportXml": "MusicXML",
     "menuExportMidi": "MIDI",
-    "menuExportPdf": "PDF"
+    "menuExportPdf": "PDF",
+    "footerTerms": "Términos y condiciones"
   },
   "tutorials": {
     "metaTitle": "Tutoriales · Partitura",
@@ -448,5 +449,47 @@
       }
     }
   },
-  "tutorialsPath": "tutoriales"
+  "tutorialsPath": "tutoriales",
+  "termsPath": "terminos",
+  "terms": {
+    "metaTitle": "Términos y condiciones · Partitura",
+    "metaDescription": "Condiciones de uso de Partitura, el editor de partituras gratuito: uso del servicio, tus partituras, propiedad intelectual y responsabilidad.",
+    "h1": "Términos y condiciones",
+    "updated": "Última actualización: 3 de noviembre de 2026",
+    "back": "Volver al editor",
+    "sections": [
+      [
+        "Aceptación",
+        "Al usar Partitura aceptás estos términos. Si no estás de acuerdo con ellos, no uses el servicio."
+      ],
+      [
+        "El servicio",
+        "Partitura es un editor de partituras gratuito que funciona en tu navegador. No hace falta registrarse. Podemos cambiar, suspender o retirar funciones en cualquier momento, con o sin aviso."
+      ],
+      [
+        "Tus partituras y tus datos",
+        "Las partituras que escribís se guardan solo en tu navegador (almacenamiento local) y no se envían a ningún servidor. Como no tenemos una copia, no podemos recuperarlas: si borrás los datos del navegador o cambiás de dispositivo se pierden. Exportá tu trabajo (PDF, MusicXML o MIDI) para conservarlo."
+      ],
+      [
+        "Propiedad intelectual",
+        "Tus composiciones y arreglos son tuyos, y nos limitamos a darte la herramienta para escribirlos. Vos sos responsable de contar con los derechos necesarios sobre el contenido que cargues o transcribas, por ejemplo obras de terceros protegidas por derechos de autor. El diseño, el código y la marca de Partitura pertenecen a sus autores; el software de terceros que usamos conserva sus propias licencias."
+      ],
+      [
+        "Uso aceptable",
+        "Te pedimos que no uses el servicio para actividades ilegales, para intentar vulnerarlo o sobrecargarlo, ni para infringir derechos de otras personas."
+      ],
+      [
+        "Sin garantías",
+        "Partitura se ofrece «tal cual» y «según disponibilidad», sin garantías de ningún tipo. No aseguramos que esté libre de errores, que funcione sin interrupciones ni que el resultado sea adecuado para un fin particular, como una edición profesional o una impresión."
+      ],
+      [
+        "Limitación de responsabilidad",
+        "En la medida que la ley lo permita, no somos responsables por pérdidas de datos, de trabajo o de ingresos, ni por otros daños derivados del uso del servicio o de la imposibilidad de usarlo."
+      ],
+      [
+        "Cambios en estos términos",
+        "Podemos actualizar estos términos. La fecha de arriba indica la última revisión; seguir usando Partitura después de un cambio implica que lo aceptás."
+      ]
+    ]
+  }
 }

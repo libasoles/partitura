@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import { locales, pathFor, strings, termsPath, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const s = strings(locale);
+const t = s.terms;
+const paths = Object.fromEntries(locales.map((l) => [l, termsPath(l)])) as Record<Locale, string>;
+---
+
+<Base locale={locale} title={t.metaTitle} description={t.metaDescription} paths={paths}>
+  <main class="legal">
+    <h1>{t.h1}</h1>
+    <p class="legal-updated">{t.updated}</p>
+    {t.sections.map(([heading, body]) => (
+      <section>
+        <h2>{heading}</h2>
+        <p>{body}</p>
+      </section>
+    ))}
+    <p><a href={pathFor(locale)}>← {t.back}</a></p>
+  </main>
+</Base>
