@@ -223,10 +223,10 @@
     "menuExportPdf": "PDF",
     "footerTerms": "Termos e condições",
     "betaLabel": "Beta",
-    "betaP1": "Um software Beta continua em experimentação, embora esteja disponível para quem quiser usá-lo.",
-    "betaP1b": "Algumas coisas ainda podem não funcionar bem.",
-    "betaP2": "Projetamos uma interface minimalista. Ela não tem todas as ferramentas profissionais de outros editores, mas nos esforçamos para que seja fácil de usar.",
-    "betaP3": "Não temos planos de cobrar por estas funcionalidades: sinta-se livre para escrever suas partituras. Você também pode exportá-las para um software mais poderoso, depois de criar aqui o primeiro rascunho."
+    "betaP1": "Um software Beta continua em experimentação. Está disponível para uso, embora algumas coisas possam não funcionar bem.",
+    "betaP2": "Não temos planos de cobrar por estas funcionalidades.",
+    "betaP3": "Projetamos uma interface minimalista. Ela não tem todas as ferramentas profissionais de outros editores, mas nos esforçamos para que seja fácil de usar.",
+    "betaP4": "Você pode criar seus rascunhos aqui e exportá-los para um software mais poderoso para continuar."
   },
   "tutorials": {
     "metaTitle": "Tutoriais · Partitura",

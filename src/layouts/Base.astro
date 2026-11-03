@@ -99,9 +99,10 @@ const jsonLd = pageJsonLd({
     <slot />
     <button type="button" class="beta-badge" id="betaOpen" aria-expanded="false" aria-controls="betaPopover">{s.ui.betaLabel}</button>
     <div class="beta-popover" id="betaPopover" role="region" aria-label={s.ui.betaLabel} hidden>
-      <p>{s.ui.betaP1}<br />{s.ui.betaP1b}</p>
+      <p>{s.ui.betaP1}</p>
       <p>{s.ui.betaP2}</p>
       <p>{s.ui.betaP3}</p>
+      <p>{s.ui.betaP4}</p>
     </div>
     <footer class="site-footer">
       <a href={termsPath(locale)}>{s.ui.footerTerms}</a>
