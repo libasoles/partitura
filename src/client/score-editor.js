@@ -3208,6 +3208,13 @@ export default function start() {
     };
   }
 
+  // The menu is where every importer/exporter lives, so opening it (or reaching for it) is the cue to fetch that module now.
+  const menuToggle = document.getElementById('siteMenuToggle');
+  if (menuToggle) {
+    const warmExporter = () => exporter().catch(() => { exporterReady = null; });
+    ['pointerenter', 'focus', 'click'].forEach((type) => menuToggle.addEventListener(type, warmExporter, { once: true }));
+  }
+
   const menuFile = document.getElementById('menuFile');
   const menuLoad = document.getElementById('menuLoad');
   if (menuFile && menuLoad) {
