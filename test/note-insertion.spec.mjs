@@ -33,7 +33,7 @@ test('adding an eighth below the first eighth preserves both measures', async ({
   await page.mouse.up();
   const result = await page.evaluate(() => window.scoreEditor.score);
   const expected = structuredClone(score.rows[0][0]);
-  expected.splice(2, 0, { d: 'e', n: 28, v: 1, at: 12 });
+  expected.splice(2, 0, { d: 'e', n: 28, v: 2, at: 12 });
   expect(result.rows[0][0]).toEqual(expected);
   expect(result.rows[0][1]).toEqual(score.rows[0][1]);
   const ids = await page.locator('#scoreStage g.note, #scoreStage g.rest').evaluateAll(nodes => nodes.map(node => node.id));

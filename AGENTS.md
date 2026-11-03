@@ -76,6 +76,13 @@ No es una PWA: no hay manifest ni service worker.
   localStorage.
 - Ninguno es una copia de seguridad: limpiar los datos del sitio borra todo.
 
+### Voces y conducción
+
+- Fundamentación, fuentes, reglas y límites: `docs/voice-leading.md`.
+- No inferir una única voz porque dos notas coincidan en inicio y duración. Conservar la continuidad de las líneas y las voces explícitas, incluidos cruces de registro.
+- Formar un acorde de notación es una decisión explícita; no equivale a analizar las voces contrapuntísticas del acorde.
+- Recalcular voces no debe fusionarlas para hacerlas caber ni cambiar los inicios o las duraciones. Verificar homorritmia, cruces, independencia del bajo y persistencia.
+
 ## Pendiente
 
 - Páginas de contenido adicionales (guías, ejemplos) para ampliar el posicionamiento.

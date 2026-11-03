@@ -9,6 +9,7 @@ test('beaming selected lower chord notes preserves every chord and supports undo
     { n: 32, d: 'e', at: 36 }, { n: 38, d: 'e', at: 36 },
     { n: 28, d: 'q', at: 48 }, { n: 35, d: 'q', at: 48 },
   ];
+  score.rows[0][0].forEach(ev => { ev.v = 1; }); // An explicitly written chord texture.
   await page.addInitScript(score => {
     if (!sessionStorage.getItem('seeded')) {
       localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [score] }));
