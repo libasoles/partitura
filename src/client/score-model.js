@@ -256,7 +256,7 @@ const api = (function () {
 
   // Lugar `at` (pista de orden, en la cuadricula) para soltar `ev` en el tiempo `t`; null si repite una nota que ya
   // suena ahi o si el compas, contado en orden, ya no la admite.
-  function placement(others, ev, t, score, mi) {
+  function placement(others, ev, t, score, mi, preserveVoice = false) {
     const limit = capacity(score, mi);
     const size = length(ev);
     if (size > limit) return null;
@@ -266,7 +266,8 @@ const api = (function () {
     if (!ev.rest && others.some((o, i) => !o.rest && starts[i] === at && o.n === ev.n && o.acc === ev.acc)) return null;
     if (!ev.rest) {
       const trial = clone(others);
-      insertNote(trial, Object.assign({}, ev), at);
+      // Al mover se conserva la voz; agregar una nota puede incorporarla a un acorde.
+      (preserveVoice ? insertAt : insertNote)(trial, Object.assign({}, ev), at);
       if (measureLength(trial) > limit) return null;
     }
     return { at, d: ev.d, dot: ev.dot };
