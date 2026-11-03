@@ -6,6 +6,7 @@
 @media (max-width: 899px) {
   .mobile-gate { display: block; }
   .score-editor { display: none; }
+  .site-header--editor .site-menu { display: none; }
 }
 
 .mobile-gate__hero {
@@ -32,7 +33,7 @@
   font-size: clamp(1.6rem, 7vw, 2.1rem);
   line-height: 1.15;
 }
-.mobile-gate__lead { max-width: 28rem; margin: 0.9rem 0 1.6rem; color: var(--ink-soft); font-size: 1.02rem; }
+.mobile-gate__hero h2 { margin-bottom: 1.6rem; }
 .mobile-gate__cta {
   display: inline-block;
   padding: 0.7rem 1.4rem;
@@ -46,7 +47,7 @@
 .mobile-gate__hint { margin: 2.2rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
 .mobile-gate__hint::after { content: "↓"; display: block; font-size: 1.2rem; }
 
-.mobile-gate__features { padding: 1rem 0 3rem; text-align: center; }
+.mobile-gate__features { padding: 4.5rem 0 3rem; text-align: center; }
 .mobile-gate__features ul {
   display: grid;
   gap: 1rem;
@@ -67,45 +68,91 @@
 .feature h3 { display: inline; margin: 0; font-size: 1.05rem; }
 .feature p { margin: 0.4rem 0 0; color: var(--ink-soft); font-size: 0.95rem; }
 
+.feature svg [class] { transform-box: fill-box; }
 .feature .staff path { stroke: var(--rule); stroke-width: 1; fill: none; }
-.feature .n ellipse { fill: currentColor; }
-.feature .n path, .feature .arrow path, .feature .doc path { stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
-.feature .t { font: 600 11px var(--mono); text-anchor: middle; fill: currentColor; }
-.feature .cursor { fill: var(--accent-brand); opacity: 0.18; }
+.feature .n ellipse, .feature .m ellipse { fill: currentColor; }
+.feature .n path, .feature .m path, .feature .arrow path, .feature .doc path {
+  stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round;
+}
+.feature .v1 { color: var(--accent-brand); }
+.feature .t { font: 600 10px var(--mono); text-anchor: middle; fill: currentColor; }
 .feature .doc rect { fill: none; stroke: currentColor; stroke-width: 2; }
 .feature .badges text { font: 700 9px var(--sans); fill: var(--ink-soft); text-anchor: middle; }
-.feature .bar-track { fill: var(--rule); }
-.feature .bar-fill { fill: var(--accent-brand); transform-box: fill-box; transform-origin: left; }
-.feature .check { opacity: 0; transform-box: fill-box; transform-origin: center; }
-.feature .check circle { fill: var(--paper); stroke: var(--accent-brand); stroke-width: 2.5; }
-.feature .check path { fill: none; stroke: var(--accent-brand); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+
+.feature .sel { fill: var(--accent-brand); opacity: 0.14; }
+.feature .slur { fill: none; stroke: var(--accent-brand); stroke-width: 1.8; stroke-linecap: round; stroke-dasharray: 1; }
+.feature .three path { stroke: var(--accent-brand); stroke-width: 1.4; fill: none; }
+.feature .three text { font: italic 700 9px var(--serif); text-anchor: middle; fill: var(--accent-brand); }
+.feature .menubox__bg { fill: var(--paper); stroke: var(--rule); stroke-width: 1.2; filter: drop-shadow(0 1px 2px #0003); }
+.feature .item { fill: var(--accent-brand); opacity: 0; }
+.feature .label { font: 600 7px var(--sans); fill: var(--ink); }
+
+.feature .barre__label { font: 700 8px var(--sans); text-anchor: middle; fill: var(--accent-brand); }
+.feature .barre__line { fill: none; stroke: var(--accent-brand); stroke-width: 1.4; stroke-dasharray: 3 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.feature .dyn { font: italic 700 13px var(--serif); text-anchor: middle; fill: currentColor; }
+.feature .hp { fill: none; stroke: var(--accent-brand); stroke-width: 1.8; stroke-linecap: round; transform-origin: left center; }
 
 /* The resting state above is what reduced-motion visitors see; the loops only run when motion is welcome. */
 @media (prefers-reduced-motion: no-preference) {
-  .feature .n { opacity: 0; animation: gate-note 4.5s infinite; }
-  .feature .n2 { animation-delay: 0.6s; }
-  .feature .n3 { animation-delay: 1.2s; }
+  .mobile-gate__hint::after { animation: gate-bounce 1.6s ease-in-out infinite; }
+  @keyframes gate-bounce {
+    0%, 100% { transform: translateY(-4px); }
+    50% { transform: translateY(8px); }
+  }
+
+  /* Voices: the upper voice is written first, then the lower one over the same beats. */
+  .feature .n { opacity: 0; animation: gate-note 6s ease-out infinite; }
+  .feature .a2 { animation-delay: 0.4s; }
+  .feature .a3 { animation-delay: 0.8s; }
+  .feature .b1 { animation-delay: 1.6s; }
+  .feature .b2 { animation-delay: 2s; }
+  .feature .b3 { animation-delay: 2.4s; }
   @keyframes gate-note {
-    0% { opacity: 0; transform: translateY(-8px); }
-    10%, 80% { opacity: 1; transform: none; }
+    0% { opacity: 0; transform: translateY(-6px); }
+    8%, 80% { opacity: 1; transform: none; }
     92%, 100% { opacity: 0; }
   }
 
-  .feature .cursor { animation: gate-cursor 4.5s infinite; }
-  @keyframes gate-cursor {
-    0%, 8% { transform: translateX(0); }
-    33%, 41% { transform: translateX(30px); }
-    66%, 74% { transform: translateX(60px); }
-    100% { transform: translateX(0); }
+  /* Context menu: select, open the menu, pick "slur", then "triplet". */
+  .feature .sel { animation: gate-sel 8s infinite; }
+  @keyframes gate-sel { 0%, 4% { opacity: 0; } 10%, 88% { opacity: 0.14; } 96%, 100% { opacity: 0; } }
+  .feature .menubox { transform-origin: top left; animation: gate-menu 8s ease-out infinite; }
+  @keyframes gate-menu {
+    0%, 14% { opacity: 0; transform: scale(0.85); }
+    20%, 86% { opacity: 1; transform: scale(1); }
+    94%, 100% { opacity: 0; }
   }
-  .feature .t { animation: gate-fret 4.5s infinite; }
-  .feature .t2 { animation-delay: 0.3s; }
-  .feature .t3 { animation-delay: 0.6s; }
-  @keyframes gate-fret {
-    0%, 45% { opacity: 1; }
-    50% { opacity: 0.2; }
-    55%, 100% { opacity: 1; }
+  .feature .i1 { animation: gate-i1 8s infinite; }
+  @keyframes gate-i1 { 0%, 32% { opacity: 0; } 36%, 46% { opacity: 0.2; } 50%, 100% { opacity: 0; } }
+  .feature .i2 { animation: gate-i2 8s infinite; }
+  @keyframes gate-i2 { 0%, 62% { opacity: 0; } 66%, 74% { opacity: 0.2; } 78%, 100% { opacity: 0; } }
+  .feature .slur { animation: gate-slur 8s ease-in-out infinite; }
+  @keyframes gate-slur {
+    0%, 46% { stroke-dashoffset: 1; opacity: 1; }
+    56%, 90% { stroke-dashoffset: 0; opacity: 1; }
+    97%, 100% { stroke-dashoffset: 0; opacity: 0; }
   }
+  .feature .three { animation: gate-three 8s infinite; }
+  @keyframes gate-three { 0%, 74% { opacity: 0; } 80%, 90% { opacity: 1; } 97%, 100% { opacity: 0; } }
+
+  /* Barre: the label lands and the dashed line draws across the strings it covers. */
+  .feature .barre { animation: gate-barre 5s ease-in-out infinite; transform-origin: left center; }
+  @keyframes gate-barre {
+    0% { opacity: 0; transform: scaleX(0.1); }
+    30%, 85% { opacity: 1; transform: scaleX(1); }
+    96%, 100% { opacity: 0; }
+  }
+
+  /* Dynamic hairpin: p, then the crescendo opens until f. */
+  .feature .hp { animation: gate-hp 5s ease-in-out infinite; }
+  .feature .dyn1 { animation: gate-dyn1 5s infinite; }
+  .feature .dyn2 { animation: gate-dyn2 5s infinite; }
+  .feature .m { opacity: 0; animation: gate-m 5s infinite; }
+  @keyframes gate-hp { 0%, 10% { transform: scaleX(0); } 70%, 90% { transform: scaleX(1); } 98%, 100% { transform: scaleX(1); opacity: 0; } }
+  @keyframes gate-dyn1 { 0% { opacity: 0; } 8%, 90% { opacity: 1; } 98%, 100% { opacity: 0; } }
+  @keyframes gate-dyn2 { 0%, 65% { opacity: 0; } 75%, 90% { opacity: 1; } 98%, 100% { opacity: 0; } }
+  @keyframes gate-m { 0% { opacity: 0; } 6%, 90% { opacity: 1; } 98%, 100% { opacity: 0; } }
 
   .feature .arrow { animation: gate-down 2.4s infinite; }
   @keyframes gate-down {
@@ -115,19 +162,10 @@
   }
   .feature .badges text { opacity: 0; animation: gate-badge 2.4s infinite; }
   @keyframes gate-badge { 0%, 40% { opacity: 0; } 60%, 90% { opacity: 1; } 100% { opacity: 0; } }
-
-  .feature .bar-fill { animation: gate-fill 3.2s infinite; }
-  .feature .check { animation: gate-check 3.2s infinite; }
-  @keyframes gate-fill { 0% { transform: scaleX(0); } 55%, 100% { transform: scaleX(1); } }
-  @keyframes gate-check {
-    0%, 55% { opacity: 0; transform: scale(0.5); }
-    70%, 90% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; }
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feature .n, .feature .badges text { opacity: 1; }
-  .feature .check { opacity: 1; }
-  .feature .bar-fill { display: none; }
+  .feature .slur { stroke-dashoffset: 0; }
+  .feature .menubox, .feature .three { opacity: 1; }
+  .feature .item.i1 { opacity: 0.2; }
 }
