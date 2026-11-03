@@ -3,3 +3,10 @@ dist/
 .astro/
 public/vendor/verovio-toolkit-wasm.js
 .DS_Store
+.claude/
+.vscode/
+.idea/
+.env
+.env.*
+*.log
+coverage/
