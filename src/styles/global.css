@@ -311,11 +311,10 @@ a { color: var(--blue-france); }
 
 .site-footer {
   max-width: var(--page);
-  margin: 0 auto;
-  padding: 1.5rem var(--gutter) 2rem;
-  border-top: 1px solid var(--rule);
+  margin: 4rem auto 0;
+  padding: 1rem var(--gutter) 2rem;
   font-size: 0.85rem;
-  text-align: center;
+  text-align: right;
 }
 .site-footer a { color: var(--ink-soft); }
 .site-footer a:hover { color: var(--ink); }
