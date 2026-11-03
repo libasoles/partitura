@@ -1,0 +1,53 @@
+---
+import { strings, tutorialsPath, type Locale } from '../i18n';
+import { welcomeIcons } from '../lib/welcome-icons';
+import '../styles/welcome-banner.css';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const s = strings(locale);
+const t = s.tutorials;
+---
+
+<!--
+  The page's visible h1 and description, on wide screens. Closing it (cookie `banner-closed`, read by the inline script
+  in <head> before the first paint) hides everything but the h1, which stays in the DOM visually hidden: the page keeps
+  exactly one h1 and the markup crawlers get is the same either way.
+-->
+<section class="welcome-banner" aria-labelledby="welcomeBannerTitle">
+  <h1 id="welcomeBannerTitle" class="welcome-banner__title">{s.scoreSeoH1}</h1>
+  <div class="welcome-banner__body">
+    <p class="welcome-banner__lead">{t.intro}</p>
+    <ul class="welcome-banner__cards">
+      {t.welcome.cards.map((card) => (
+        <li>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={welcomeIcons[card.icon]} />
+          <div>
+            <h2>{card.title}</h2>
+            <p>{card.text}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+    <p class="welcome-banner__more"><a href={tutorialsPath(locale)}>{s.ui.navTutorials} →</a></p>
+    <button id="welcomeBannerClose" class="welcome-banner__close" type="button" aria-label={s.ui.bannerClose}>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+  </div>
+</section>
+
+<script is:inline>
+  (function () {
+    var close = document.getElementById('welcomeBannerClose');
+    if (!close) return;
+    close.addEventListener('click', function () {
+      document.documentElement.classList.add('banner-closed');
+      try { document.cookie = 'banner-closed=1; max-age=31536000; path=/; SameSite=Lax'; } catch (e) {}
+      var stage = document.getElementById('scoreStage');
+      if (stage) stage.focus();
+    });
+  })();
+</script>

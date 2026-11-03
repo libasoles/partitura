@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import { renderEmptyStaff } from '../lib/staff.js';
 import { pathFor, strings, locales, type Locale } from '../i18n';
 import MobileGate from './MobileGate.astro';
+import WelcomeBanner from './WelcomeBanner.astro';
 import '../styles/editor.css';
 import '../styles/mobile-gate.css';
 
@@ -24,7 +25,7 @@ const clientStrings = Object.fromEntries([
 
 <Base locale={locale} title={s.scorePageTitle} description={s.scoreMetaDescription} paths={paths} editor>
   <main class="score-page" id="top">
-    <h1 class="sr-only">{s.scoreSeoH1}</h1>
+    <WelcomeBanner locale={locale} />
 
     <MobileGate locale={locale} />
 
