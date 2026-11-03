@@ -97,21 +97,30 @@ const jsonLd = pageJsonLd({
       </div>
     </header>
     <slot />
-    <button type="button" class="beta-badge" id="betaOpen" aria-haspopup="dialog">{s.ui.betaLabel}</button>
-    <dialog class="beta-dialog" id="betaDialog" aria-labelledby="betaTitle">
-      <h2 id="betaTitle">{s.ui.betaTitle}</h2>
-      <p>{s.ui.betaP1}</p>
+    <button type="button" class="beta-badge" id="betaOpen" aria-expanded="false" aria-controls="betaPopover">{s.ui.betaLabel}</button>
+    <div class="beta-popover" id="betaPopover" role="region" aria-label={s.ui.betaLabel} hidden>
+      <p>{s.ui.betaP1}<br />{s.ui.betaP1b}</p>
       <p>{s.ui.betaP2}</p>
-      <form method="dialog"><button class="beta-close">{s.ui.betaClose}</button></form>
-    </dialog>
+      <p>{s.ui.betaP3}</p>
+    </div>
     <footer class="site-footer">
       <a href={termsPath(locale)}>{s.ui.footerTerms}</a>
     </footer>
     <script is:inline>
       (function () {
-        var betaDialog = document.getElementById('betaDialog');
-        document.getElementById('betaOpen').addEventListener('click', function () { betaDialog.showModal(); });
-        betaDialog.addEventListener('click', function (event) { if (event.target === betaDialog) betaDialog.close(); });
+        var betaOpen = document.getElementById('betaOpen');
+        var betaPop = document.getElementById('betaPopover');
+        function setBeta(open) {
+          betaPop.hidden = !open;
+          betaOpen.setAttribute('aria-expanded', String(open));
+        }
+        betaOpen.addEventListener('click', function () { setBeta(betaPop.hidden); });
+        document.addEventListener('click', function (event) {
+          if (!betaPop.hidden && !betaPop.contains(event.target) && !betaOpen.contains(event.target)) setBeta(false);
+        });
+        document.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape' && !betaPop.hidden) { setBeta(false); betaOpen.focus(); }
+        });
       })();
       (function () {
         var toggle = document.getElementById('siteMenuToggle');
