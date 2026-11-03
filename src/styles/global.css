@@ -86,7 +86,8 @@ a { color: var(--blue-france); }
   color: var(--ink);
   text-decoration: none;
 }
-.brand-mark { display: block; width: 3.4rem; height: 4.4rem; }
+/* Rendered larger than its layout box (negative margins) so the header height is unchanged. */
+.brand-mark { display: block; width: 4.4rem; height: 5.7rem; margin: -0.65rem -0.5rem; }
 
 .site-menu {
   position: relative;
