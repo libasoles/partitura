@@ -237,6 +237,11 @@
     "welcome": {
       "cards": [
         {
+          "icon": "online",
+          "title": "Online, nothing to install",
+          "text": "Unlike MuseScore and other desktop programs, there is nothing to download or install: it runs in the browser, on any computer."
+        },
+        {
           "icon": "account",
           "title": "No sign-up",
           "text": "There is no account to create and no login: open the page and start writing."
@@ -244,7 +249,7 @@
         {
           "icon": "scores",
           "title": "As many scores as you like",
-          "text": "You can keep several scores open at once, each in its own tab, and go back to any of them whenever you want."
+          "text": "You can keep several scores open at once, each in its own tab."
         },
         {
           "icon": "local",

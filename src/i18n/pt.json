@@ -237,6 +237,11 @@
     "welcome": {
       "cards": [
         {
+          "icon": "online",
+          "title": "Online, sem instalar nada",
+          "text": "Ao contrário do MuseScore e de outros programas, não há nada para baixar nem instalar: funciona no navegador, em qualquer computador."
+        },
+        {
           "icon": "account",
           "title": "Sem cadastro",
           "text": "Não é preciso criar conta nem fazer login: abra a página e comece a escrever."
@@ -244,7 +249,7 @@
         {
           "icon": "scores",
           "title": "Quantas partituras quiser",
-          "text": "Você pode ter várias partituras abertas ao mesmo tempo, cada uma na sua aba, e voltar a qualquer uma quando quiser."
+          "text": "Você pode ter várias partituras abertas ao mesmo tempo, cada uma na sua aba."
         },
         {
           "icon": "local",
