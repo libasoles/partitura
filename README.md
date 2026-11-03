@@ -1,5 +1,7 @@
 # Partitura
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/1911e1be-e278-4bb7-9eb3-ece8b8bb9d25/deploy-status)](https://app.netlify.com/projects/editordepartituras/deploys)
+
 Editor de partituras online, gratis y sin registro. Una página en blanco donde escribir notas, silencios, compases,
 clave y armadura, con tablatura de guitarra, y descargar el resultado en PDF o MusicXML.
 
