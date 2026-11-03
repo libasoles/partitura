@@ -65,7 +65,7 @@ const api = (function () {
     const keys = {};
     const clefs = {};
     let meter = '4/4';
-    let currentClef = 'guitar';
+    let currentClef = M.clefOf(score);
     let currentFifths = 0;
 
     children(part, 'measure').forEach((measureNode, mi) => {

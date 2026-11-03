@@ -3,8 +3,8 @@
    Sin DOM: el navegador lo carga como script clasico y los tests lo requieren.
 
    Duraciones en divisiones de negra = 24 (el tresillo de corchea, 8, y la corchea
-   con puntillo, 18, entran exactos). El MusicXML baja las alturas una octava para
-   conservar la altura sonora al cambiar de clave (sol de guitarra por defecto).
+   con puntillo, 18, entran exactos). El MusicXML aplica la transposicion de octava
+   de la clave elegida para conservar la altura sonora (sol por defecto).
 
    Campos de una figura:
    - `d`: valor base: w redonda (96), h blanca (48), q negra (24), e corchea (12), s semicorchea (6), f fusa (3).
@@ -587,7 +587,7 @@ const api = (function () {
   }
 
   function emptyScore() {
-    return { meter: '4/4', clef: 'guitar', fifths: 0, rows: Array.from({ length: MIN_ROWS }, emptyRow) };
+    return { meter: '4/4', clef: 'treble', fifths: 0, rows: Array.from({ length: MIN_ROWS }, emptyRow) };
   }
 
   // Identidad interna de las figuras: no se serializa ni depende de compas, tiempo o indice.
@@ -1156,7 +1156,7 @@ const api = (function () {
   }
 
   function clefOf(score) {
-    return score && Object.hasOwn(CLEFS, score.clef) ? score.clef : 'guitar';
+    return score && Object.hasOwn(CLEFS, score.clef) ? score.clef : 'treble';
   }
 
   function fifthsOf(score) {
