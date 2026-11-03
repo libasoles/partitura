@@ -230,8 +230,8 @@
     "betaP4": "Podés crear tus borradores acá, y exportarlos a software más potente para continuar."
   },
   "tutorials": {
-    "metaTitle": "Tutoriales · Partitura",
-    "metaDescription": "Aprendé a usar el editor de partituras paso a paso, con animaciones: notas y silencios, edición, compases, repeticiones, dinámicas, tablatura de guitarra y archivos.",
+    "metaTitle": "Tutoriales de Partitura: escribí partituras y tablaturas online",
+    "metaDescription": "Tutoriales gratis y paso a paso, con animaciones, del editor de partituras online Partitura: notas y silencios, edición, compases, repeticiones, dinámicas, tablatura de guitarra, MusicXML, MIDI y PDF.",
     "h1": "Tutoriales",
     "intro": "Partitura es un editor de partituras que funciona directamente en tu navegador. Esto es lo que conviene saber antes de empezar.",
     "welcome": {
@@ -484,7 +484,103 @@
         ],
         "tip": "Si borrás los datos del navegador se pierden las partituras: exportá en MusicXML las que quieras conservar."
       }
-    }
+    },
+    "seo": {
+      "start": [
+        "Cómo escribir tu primera partitura online",
+        "Escribí tu primera partitura online y gratis: elegí una figura, hacé clic en el pentagrama y seguí escribiendo. Guía paso a paso del editor Partitura, con animación."
+      ],
+      "features": [
+        "Qué podés hacer con el editor de partituras Partitura",
+        "Notas, silencios, compases, clave, armadura, barras, tablatura de guitarra y descargas en PDF, MusicXML y MIDI: todo lo que ofrece el editor gratis."
+      ],
+      "shortcuts": [
+        "Atajos de teclado para escribir partituras",
+        "Todas las teclas de figuras, silencios, alteraciones y puntillos del editor de partituras Partitura. Escribí música más rápido con el teclado."
+      ],
+      "dots": [
+        "Puntillo: cómo poner un puntillo a una nota o silencio",
+        "Cómo poner o sacar el puntillo de una nota o silencio con doble clic en el editor de partituras online, y cómo cambia su duración."
+      ],
+      "delete-barline": [
+        "Cómo borrar una barra de compás en una partitura",
+        "Seleccioná una barra de compás y eliminala en el editor de partituras online, paso a paso con un ejemplo."
+      ],
+      "edit-tab": [
+        "Cómo editar una tablatura de guitarra online",
+        "Cambiá el traste de una nota en la tablatura sin tocar el pentagrama, en el editor de partituras gratis Partitura."
+      ],
+      "move-tab": [
+        "Mover un número de la tablatura a otra cuerda o tiempo",
+        "Arrastrá un número de traste a otra cuerda o tiempo de la tablatura y mirá cómo se actualiza el pentagrama."
+      ],
+      "faq": [
+        "Preguntas frecuentes de Partitura: gratis, descargas y guitarra",
+        "Respuestas sobre el editor de partituras online: si es gratis, qué formatos podés descargar (PDF, MusicXML, MIDI) y cómo funciona la tablatura de guitarra."
+      ],
+      "notes-rests": [
+        "Cómo escribir notas y silencios en una partitura",
+        "Elegí una figura o un silencio, hacé clic en el pentagrama y seguí escribiendo. Aprendé a ingresar notas y silencios en el editor online."
+      ],
+      "accidentals": [
+        "Sostenidos, bemoles y becuadros: alterar notas",
+        "Cómo poner sostenidos, bemoles y becuadros a una nota con una tecla y un clic en el editor de partituras online."
+      ],
+      "select-move": [
+        "Seleccionar, mover y borrar notas en una partitura",
+        "Elegí una o varias notas y movelas o borralas sin volver a escribirlas, en el editor de partituras online gratis."
+      ],
+      "copy": [
+        "Duplicar, copiar y pegar música en una partitura",
+        "Repetí un motivo o un compás entero con unas pocas teclas: cómo duplicar, copiar y pegar en el editor de partituras online."
+      ],
+      "tuplets": [
+        "Cómo escribir tresillos y grupos irregulares",
+        "Convertí figuras seguidas en un tresillo, un quintillo u otro grupo irregular en el editor de partituras online, paso a paso."
+      ],
+      "ties": [
+        "Ligaduras y barras: unir notas en una partitura",
+        "Unir dos notas con una ligadura o agrupar corcheas con una barra en el editor de partituras online gratis."
+      ],
+      "signatures": [
+        "Cambiar compás, clave y armadura en una partitura",
+        "Cómo definir o cambiar el compás, la clave y la armadura en cualquier punto de la partitura con el editor online."
+      ],
+      "measures": [
+        "Agregar, insertar y mover compases en una partitura",
+        "Armá la estructura de tu partitura compás por compás: agregar, insertar, mover y borrar compases en el editor online."
+      ],
+      "repeats": [
+        "Repeticiones, da capo, segno y casillas en partituras",
+        "Cómo poner barras de repetición, da capo, segno y casillas de primera y segunda vez en el editor de partituras online gratis."
+      ],
+      "dynamics": [
+        "Reguladores y dinámicas: crescendo y diminuendo",
+        "Poné reguladores de crescendo y diminuendo y signos de intensidad como p, mf y f en tu partitura con el editor online."
+      ],
+      "tab-toggle": [
+        "Mostrar la tablatura de guitarra bajo el pentagrama",
+        "Activá una tablatura bajo cada renglón, con la digitación ya resuelta, en el editor de partituras online gratis."
+      ],
+      "refinger": [
+        "Tocar una nota en otra cuerda de la guitarra en la tablatura",
+        "Cambiá la cuerda de una nota en la tablatura para tocar el mismo sonido en otra parte del mástil."
+      ],
+      "barre": [
+        "Cómo marcar cejillas en una tablatura de guitarra",
+        "Marcá una cejilla con su traste sobre las notas que abarca en el editor online de partituras y tablaturas."
+      ],
+      "files": [
+        "Abrir MusicXML y MIDI, exportar a PDF, MusicXML o MIDI",
+        "Cargá un archivo MusicXML o MIDI y descargá tu partitura en PDF, MusicXML o MIDI desde el editor de partituras online gratis."
+      ],
+      "scores": [
+        "Trabajar con varias partituras y guardado automático",
+        "Mantené varias partituras abiertas a la vez; todo se guarda solo en tu navegador, sin cuenta."
+      ]
+    },
+    "related": "Tutoriales relacionados",
+    "tryItLink": "Abrir el editor de partituras Partitura"
   },
   "tutorialsPath": "tutoriales",
   "termsPath": "terminos",

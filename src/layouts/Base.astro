@@ -21,7 +21,7 @@ const s = strings(locale);
 const site = Astro.site!;
 const abs = (l: Locale) => new URL(paths[l], site).toString();
 const canonical = abs(locale);
-const ogImage = new URL('/og.png', site).toString();
+const ogImage = new URL(`/og-${locale}.png`, site).toString();
 const homeUrl = new URL(rootPath, site).toString();
 const jsonLd = pageJsonLd({
   locale,
@@ -66,7 +66,6 @@ const jsonLd = pageJsonLd({
     {editor && <script is:inline set:html={`try{if(/(?:^|; )banner-closed=1/.test(document.cookie))document.documentElement.classList.add('banner-closed')}catch(e){}`} />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
   </head>
   <body class="score-body">

@@ -32,7 +32,7 @@ npm run dev
 Requiere Node >= 22.12 (ver `.nvmrc`).
 
 ```sh
-SITE_URL=https://tu-dominio.com npm run build   # canonical, hreflang, sitemap y robots salen de SITE_URL
+SITE_URL=https://staging.ejemplo.com npm run build   # por defecto partitura.com.ar; canonical, hreflang, sitemap y robots salen de SITE_URL
 npm test                                        # después del build: verifica el HTML renderizado
 npm run check                                   # astro check (tipos)
 ```
@@ -52,7 +52,7 @@ npm run check                                   # astro check (tipos)
 ```sh
 npm install
 npm run dev
-SITE_URL=https://tu-dominio.com npm run build   # canonical, hreflang, sitemap y robots salen de SITE_URL
+SITE_URL=https://staging.ejemplo.com npm run build   # por defecto partitura.com.ar; canonical, hreflang, sitemap y robots salen de SITE_URL
 npm test                                        # después del build: verifica el HTML renderizado
 ```
 
@@ -79,8 +79,15 @@ Requiere Node >= 22.12. Astro está fijado en la 6.x porque la 7 pide Node >= 22
 - `src/client/` — el editor (`score-editor.js`, `score-model.js`, `score-fingering.js`).
 - `src/styles/` — `global.css` (layout de la página) y `editor.css` (el editor).
 - `src/vendor/ascii-tabs.js` — Vite lo empaqueta y minifica en un chunk que solo se pide al mostrar tablaturas.
-- `public/vendor/` — `jspdf` (solo al exportar PDF); Verovio se copia desde `node_modules` (`scripts/vendor.mjs`) y se pide cuando el navegador está ocioso.
-- `public/og.png`, `apple-touch-icon.png`, `icon-*.png` — generados con el editor real (ejercicio cargado) y `favicon.svg`.
+- `public/vendor/` — `jspdf` (solo al exportar PDF); Verovio se minifica con source map y se versiona (`verovio-<versión>.js`, `scripts/vendor.mjs`). En pantallas angostas (sin editor) no se pide nada; en desktop se pide al estar ocioso, o enseguida, con spinner, si hay partituras guardadas.
+
+## Compresión y caché
+
+`npm run build` deja junto a cada archivo de texto de `dist/` su `.br` y `.gz` (`scripts/compress.mjs`). El servidor debe enviarlos tal cual
+(nginx: `gzip_static on` / `brotli_static on`) y cachear `/_astro/*` y `/vendor/*` como `immutable` (nombres con hash o versión);
+`public/_headers` lo declara para Netlify / Cloudflare Pages. `npm run serve` levanta `dist/` así, para medir con Lighthouse (`node scripts/lighthouse.mjs http://localhost:4323`).
+No es una PWA: no hay manifest ni service worker.
+- `public/og-{es,en,pt}.png` (`npm run og`), `apple-touch-icon.png`  — generados con el editor real (ejercicio cargado) y `favicon.svg`.
 
 ## Guardado local
 
@@ -98,5 +105,4 @@ Requiere Node >= 22.12. Astro está fijado en la 6.x porque la 7 pide Node >= 22
 
 ## Pendiente
 
-- Imagen Open Graph (`og:image`) y dominio definitivo.
 - Páginas de contenido adicionales (guías, ejemplos) para ampliar el posicionamiento.

@@ -32,9 +32,9 @@ const clientStrings = Object.fromEntries([
     <section id="editor"class="score-editor" aria-label={s.scoreLabel}>
       <div class="score-workspace">
         <div class="score-main">
-          <div id="scoreTabs" class="score-doc-tabs" role="tablist" aria-label={s.scoreTabs} data-default-title={s.scoreH1}>
+          <div id="scoreTabs" class="score-doc-tabs" role="group" aria-label={s.scoreTabs} data-default-title={s.scoreH1}>
             <!-- The default document's tab, so "+" does not jump when the editor script swaps in the saved tabs. -->
-            <div class="score-doc-tab is-active" role="tab" aria-selected="true"><input type="text" class="score-doc-tab-input" value={s.scoreH1} aria-label={s.scoreUiStrings.titleLabel} /></div>
+            <div class="score-doc-tab is-active" aria-current="true"><input type="text" class="score-doc-tab-input" value={s.scoreH1} aria-label={s.scoreUiStrings.titleLabel} /></div>
             <button id="scoreNewTab" class="score-new-tab tooltip" type="button" data-icon="plus" aria-label={s.scoreNewTab} data-tooltip={s.scoreNewTab}></button>
           </div>
           <div class="score-toolbar" role="toolbar" aria-label={s.scoreToolbar}>

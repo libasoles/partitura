@@ -36,15 +36,13 @@ for (const file of ['dist/es/index.html', 'dist/en/index.html', 'dist/pt/index.h
   });
 }
 
-test('social preview, icons and manifest are declared', () => {
+test('social preview and icons are declared', () => {
   const html = readFileSync(new URL('../dist/es/index.html', import.meta.url), 'utf8');
-  assert.match(html, /<meta property="og:image" content="https:\/\/[^"]+\/og\.png"/);
+  assert.match(html, /<meta property="og:image" content="https:\/\/[^"]+\/og-es\.png"/);
   assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
-  assert.match(html, /<meta name="twitter:image" content="https:\/\/[^"]+\/og\.png"/);
+  assert.match(html, /<meta name="twitter:image" content="https:\/\/[^"]+\/og-es\.png"/);
   assert.match(html, /rel="apple-touch-icon" href="\/apple-touch-icon\.png"/);
-  assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
-  const manifest = JSON.parse(readFileSync(new URL('../dist/manifest.webmanifest', import.meta.url), 'utf8'));
-  assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512'));
+  assert.doesNotMatch(html, /rel="manifest"/, 'the site is not a PWA');
   assert.match(readFileSync(new URL('../dist/llms.txt', import.meta.url), 'utf8'), /^# Partitura/);
 });
 
@@ -62,5 +60,48 @@ for (const [locale, file] of Object.entries(pages)) {
     assert.match(html, /<p class="welcome-banner__lead">/);
     assert.match(html, /id="welcomeBannerClose"/);
     assert.match(html, /<head>[\s\S]*banner-closed=1[\s\S]*<\/head>/, 'the cookie is read in <head>, before the first paint');
+  });
+}
+
+const tutorialDirs = { es: 'tutoriales', en: 'tutorials', pt: 'tutoriais' };
+const graphOf = (html) => {
+  const m = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s);
+  return JSON.parse(m[1])['@graph'];
+};
+
+for (const [locale, dir] of Object.entries(tutorialDirs)) {
+  test(`${locale}: tutorials have their own JSON-LD, titles, related links and one h1`, () => {
+    const read = (p) => readFileSync(new URL(`../dist/${locale}/${dir}/${p}`, import.meta.url), 'utf8');
+    const types = (html) => graphOf(html).map((n) => n['@type']);
+
+    const index = read('index.html');
+    assert.deepEqual(types(index), ['WebSite', 'BreadcrumbList', 'CollectionPage']);
+    assert.equal(graphOf(index)[1].itemListElement.length, 2);
+    assert.equal(index.match(/<h1[ >]/g)?.length, 1);
+    assert.ok((index.match(new RegExp(`href="/${locale}/${dir}/[a-z-]+/"`, 'g')) ?? []).length >= 22, 'index links every tutorial');
+
+    const start = read('start/index.html');
+    const g = graphOf(start);
+    assert.deepEqual(types(start), ['WebSite', 'BreadcrumbList', 'HowTo']);
+    assert.equal(g[1].itemListElement.length, 3);
+    const howTo = g[2];
+    assert.ok(howTo.name && howTo.description && howTo.step.length > 0);
+    assert.equal(howTo.inLanguage, locale);
+    assert.deepEqual(howTo.isPartOf, { '@id': g[0]['@id'] });
+    assert.equal(howTo.about['@type'], 'WebApplication');
+    assert.doesNotMatch(JSON.stringify(g), /"applicationCategory"/, 'the app is described on the editor page only');
+    assert.match(start, /class="tutorial-related"/);
+    assert.match(start, new RegExp(`<a href="/${locale}/">`), 'links to the editor');
+    assert.equal(start.match(/<h1[ >]/g)?.length, 1);
+    assert.ok(start.indexOf('<h1') < start.indexOf('<h2'), 'h1 comes before any h2');
+    assert.doesNotMatch(start.match(/<title>(.*?)<\/title>/)[1], /^[^·]{0,20} ·/, 'title is descriptive');
+
+    const features = read('features/index.html');
+    assert.deepEqual(types(features), ['WebSite', 'BreadcrumbList', 'Article']);
+
+    const faq = read('faq/index.html');
+    const faqGraph = graphOf(faq);
+    assert.equal(faqGraph[2].mainEntity['@type'], 'FAQPage');
+    assert.ok(faqGraph[2].mainEntity.mainEntity.length > 0);
   });
 }

@@ -1,7 +1,7 @@
 node_modules/
 dist/
 .astro/
-public/vendor/verovio-toolkit-wasm.js
+public/vendor/verovio-*
 .DS_Store
 .claude/
 .vscode/

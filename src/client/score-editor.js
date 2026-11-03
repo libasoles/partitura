@@ -116,7 +116,7 @@
   }
 
   async function loadVerovio() {
-    await loadScript(vendorUrl('verovio-toolkit-wasm.js'));
+    await loadScript(vendorUrl(__VEROVIO_FILE__));
     await new Promise((resolve) => {
       if (window.verovio.module.calledRun) resolve();
       else window.verovio.module.onRuntimeInitialized = resolve;
@@ -150,8 +150,7 @@
       if (index === active) {
         const wrap = document.createElement('div');
         wrap.className = 'score-doc-tab is-active';
-        wrap.setAttribute('role', 'tab');
-        wrap.setAttribute('aria-selected', 'true');
+        wrap.setAttribute('aria-current', 'true');
         tabTitle = document.createElement('input');
         tabTitle.type = 'text';
         tabTitle.className = 'score-doc-tab-input';
@@ -178,8 +177,6 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'score-doc-tab';
-        button.setAttribute('role', 'tab');
-        button.setAttribute('aria-selected', 'false');
         button.textContent = tabLabel(one, index);
         button.addEventListener('click', () => switchTo(index));
         button.dataset.index = index;
@@ -3078,6 +3075,9 @@
     button.setAttribute('aria-label', item.label);
     button.dataset.tooltip = item.label;
     button.appendChild(glyphFor(item));
+    // The accessible name must contain the text the button shows (WCAG 2.5.3, "label in name"): D.C., D.S., 1., 2.
+    const shown = button.textContent.trim();
+    if (shown && !item.label.toLowerCase().includes(shown.toLowerCase())) button.setAttribute('aria-label', shown + ': ' + item.label);
     button.setAttribute('aria-pressed', 'false');
     if (item.kind === 'bar') {
       button.dataset.barline = item.bar;
@@ -3125,7 +3125,7 @@
   tabToggle.id = 'scoreTabToggle';
   tabToggle.className = 'score-palette-item score-tab-toggle tooltip';
   tabToggle.textContent = 'TAB';
-  tabToggle.setAttribute('aria-label', t.tabToggle);
+  tabToggle.setAttribute('aria-label', 'TAB: ' + t.tabToggle);
   tabToggle.dataset.tooltip = t.tabToggle;
   tabToggle.addEventListener('click', () => {
     if (score.showTabs) delete score.showTabs; else score.showTabs = true;
@@ -3414,11 +3414,17 @@
   // The 8 MB Verovio build is fetched once the page is idle, so it never competes with first paint; the server-drawn
   // staff holds the place (and the height) meanwhile.
   const whenIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
-  new Promise((resolve) => whenIdle(resolve, { timeout: 1500 })).then(loadVerovio).then(() => {
+  // Saved scores are waiting behind a spinner (main.js), so Verovio starts right after first paint; otherwise it waits for idle.
+  const loadSoon = stage.classList.contains('is-loading')
+    ? new Promise((resolve) => requestAnimationFrame(() => resolve()))
+    : new Promise((resolve) => whenIdle(resolve, { timeout: 1500 }));
+  loadSoon.then(loadVerovio).then(() => {
     stage.removeAttribute('aria-busy');
     render();
+    stage.classList.remove('is-loading');
   }, () => {
     stage.removeAttribute('aria-busy');
+    stage.classList.remove('is-loading');
     say(t.loadError);
   });
 

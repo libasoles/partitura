@@ -722,6 +722,27 @@
   overflow: hidden;
 }
 
+/* Saved scores are on their way: the spinner of the guitar-chords tool covers the default staff meanwhile. */
+.score-stage.is-loading > svg { opacity: 0.12; }
+.score-stage.is-loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin: -2.25rem 0 0 -2.25rem;
+  box-sizing: border-box;
+  border: 10px solid #e3e3e3;
+  border-top-color: #333;
+  border-radius: 50%;
+  animation: score-spin 0.9s linear infinite;
+}
+@keyframes score-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .score-stage.is-loading::after { animation-duration: 2.4s; }
+}
+
 .score-tab {
   position: absolute;
 }
