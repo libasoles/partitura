@@ -28,7 +28,7 @@ const icons: Record<string, string> = {
     <p class="mobile-gate__name">{s.ui.siteName}</p>
     <h2 id="mobileGateTitle">{g.title}</h2>
     <p class="mobile-gate__lead">{g.body}</p>
-    <a class="mobile-gate__cta" href={tutorialsPath(locale)}>{g.tutorials}</a>
+    <span class="mobile-gate__cta-gap" aria-hidden="true">&nbsp;</span>
     <p class="mobile-gate__hint" aria-hidden="true">{g.scroll}</p>
   </div>
 
@@ -45,24 +45,23 @@ const icons: Record<string, string> = {
                 <g class="n v1 a2"><ellipse cx="60" cy="16" rx="5.5" ry="4" /><path d="M65.5 16V-4" /></g>
                 <g class="n v1 a3"><ellipse cx="90" cy="24" rx="5.5" ry="4" /><path d="M95.5 24V4" /></g>
                 <g class="n v2 b1"><ellipse cx="30" cy="40" rx="5.5" ry="4" /><path d="M24.5 40V58" /></g>
-                <g class="n v2 b2"><rect x="55" y="36" width="10" height="4" /></g>
+                <g class="n v2 b2"><path d="M58 33l4.5 5-4.5 4.5 4.5 5" /><path d="M62.5 47.5q-4.5-1.5-4.5 1.5" /></g>
                 <g class="n v2 b3"><ellipse cx="90" cy="40" rx="5.5" ry="4" /><path d="M84.5 40V58" /></g>
               </svg>
             )}
             {key === 'slur' && (
               <svg viewBox="0 0 120 60">
                 <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112" /></g>
-                <path class="bar" d="M36 16V48" />
-                <rect class="sel" x="19" y="12" width="36" height="38" rx="5" />
-                <g class="m"><ellipse cx="12" cy="36" rx="4.5" ry="3.3" /><path d="M16.5 36V14" /></g>
+                <path class="bar" d="M44 16V48" />
+                <rect class="sel" x="19" y="12" width="50" height="38" rx="5" />
+                <g class="m"><ellipse cx="10" cy="36" rx="4.5" ry="3.3" /><path d="M14.5 36V14" /></g>
                 <g class="m"><ellipse cx="26" cy="36" rx="4.5" ry="3.3" /><path d="M30.5 36V14" /></g>
-                <g class="m"><ellipse cx="46" cy="36" rx="4.5" ry="3.3" /><path d="M50.5 36V14" /></g>
-                <path class="slur" pathLength="1" d="M26 42Q36 54 46 42" />
+                <g class="m"><ellipse cx="62" cy="36" rx="4.5" ry="3.3" /><path d="M66.5 36V14" /></g>
+                <path class="slur" pathLength="1" d="M26 42Q44 58 62 42" />
                 <g class="menubox">
-                  <rect class="menubox__bg" x="66" y="8" width="50" height="34" rx="4" />
-                  <rect class="item i1" x="68" y="10" width="46" height="14" rx="3" />
-                  <text class="label" x="72" y="20">{ui.link}</text>
-                  <text class="label" x="72" y="36">{ui.triplet}</text>
+                  <rect class="menubox__bg" x="76" y="8" width="40" height="18" rx="4" />
+                  <rect class="item i1" x="78" y="10" width="36" height="14" rx="3" />
+                  <text class="label" x="82" y="20">{ui.link}</text>
                 </g>
               </svg>
             )}
@@ -76,10 +75,9 @@ const icons: Record<string, string> = {
                 <path class="beam" d="M18.5 16H48.5" />
                 <g class="three"><path d="M18.5 8h10M38.5 8h10" /><text x="33.5" y="10">3</text></g>
                 <g class="menubox">
-                  <rect class="menubox__bg" x="66" y="8" width="50" height="34" rx="4" />
-                  <rect class="item i2" x="68" y="26" width="46" height="14" rx="3" />
-                  <text class="label" x="72" y="20">{ui.link}</text>
-                  <text class="label" x="72" y="36">{ui.triplet}</text>
+                  <rect class="menubox__bg" x="66" y="8" width="50" height="18" rx="4" />
+                  <rect class="item i2" x="68" y="10" width="46" height="14" rx="3" />
+                  <text class="label" x="72" y="20">{ui.triplet}</text>
                 </g>
               </svg>
             )}

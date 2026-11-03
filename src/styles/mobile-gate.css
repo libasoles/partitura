@@ -43,6 +43,8 @@
   font-weight: 600;
   text-decoration: none;
 }
+/* Same box as the button it replaced, so the hero keeps its spacing. */
+.mobile-gate__cta-gap { display: inline-block; padding: 0.7rem 0; }
 .mobile-gate__cta--ghost { background: none; color: var(--ink); border: 1px solid var(--rule); }
 .mobile-gate__hint { margin: 2.2rem 0 0; font-size: 0.85rem; color: var(--ink-soft); }
 .mobile-gate__hint::after { content: "↓"; display: block; font-size: 1.2rem; }
