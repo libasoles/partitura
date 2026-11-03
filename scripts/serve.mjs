@@ -10,7 +10,7 @@ const port = Number(process.argv[2] || 4323);
 const types = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.json': 'application/json', '.xml': 'application/xml', '.txt': 'text/plain; charset=utf-8',
-  '.png': 'image/png', '.woff2': 'font/woff2', '.map': 'application/json',
+  '.png': 'image/png', '.woff2': 'font/woff2', '.wasm': 'application/wasm', '.map': 'application/json',
 };
 // /_astro/* is content-hashed and /vendor/* is named after the version: neither changes under the same URL.
 const immutable = /^\/(_astro|vendor)\//;
