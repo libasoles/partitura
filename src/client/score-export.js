@@ -122,6 +122,11 @@ export default function createExporter(editor) {
         const clef = system.querySelector('g.clef');
         const clefBox = clef?.getBBox();
         const clefX = clefBox ? clefBox.x + clefBox.width / 2 : left + space;
+        if (Number(measures[0].id.slice(1)) === 0) M.tuningLabels(exportScore).forEach((label, string) =>
+          add('text', { x: clefX + font * 1.6, y: y + step * string,
+            'font-family': 'Arial, sans-serif', 'font-size': font * 0.8, 'text-anchor': 'middle',
+            'dominant-baseline': 'central', fill: '#000', stroke: '#fff',
+            'stroke-width': font * 0.18, 'paint-order': 'stroke' }, label));
         'TAB'.split('').forEach((letter, i) => add('text', { x: clefX, y: y + step * (1.5 + i),
           'font-family': 'Montserrat Variable, Arial, sans-serif', 'font-size': font, 'font-weight': 'bold',
           'text-anchor': 'middle', 'dominant-baseline': 'central' }, letter));
@@ -161,7 +166,7 @@ export default function createExporter(editor) {
       // conserve su proporcion; el alto sigue la relacion de A4 y se rasteriza a 1654 x 2339.
       const exportScore = JSON.parse(JSON.stringify(editor.score()));
       const attacks = M.attacks(exportScore);
-      const fingered = window.ScoreFingering.assign(attacks.map(attack => attack.midis));
+      const fingered = window.ScoreFingering.assign(attacks.map(attack => attack.midis), M.tuningOf(exportScore).opens);
       const columns = Object.assign(Object.fromEntries(attacks.map((attack, i) =>
         [attack.key, window.ScoreFingering.toColumn(fingered[i])])), exportScore.tabs);
       const pdfWidth = 2400;

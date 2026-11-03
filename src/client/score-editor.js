@@ -313,7 +313,7 @@ export default function start() {
     const tabRefs = M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs);
     const restored = history.pop();
     const previousTabs = restored.tabs;
-    M.restoreTabReferences(restored, tabRefs);
+    if (M.tuningOf(restored).id === M.tuningOf(score).id) M.restoreTabReferences(restored, tabRefs);
     if (previousTabs) restored.tabs = Object.assign({}, previousTabs, restored.tabs);
     // La visibilidad de TAB se conserva; sus referencias vuelven con las figuras.
     if (score.showTabs) restored.showTabs = true;
@@ -768,6 +768,7 @@ export default function start() {
     renderedWidth = width;
     toolkit.setOptions(layoutOptions(width, score.showTabs && tabSpace ? { spacingSystem: Math.min(48, 12 + tabSpace), pageMarginBottom: 60 + tabSpace } : undefined));
     toolkit.loadData(M.toMusicXml(score));
+    tuningPopup.hidePopover();
     meterPopup.hidePopover();
     clefPopup.hidePopover();
     dynamicsPopup.hidePopover();
@@ -1179,6 +1180,27 @@ export default function start() {
       mark.style.top = (ys[0] + step * (1.5 + i)) + 'px';
       stage.appendChild(mark);
     });
+    if (row === 0) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'score-tuning-trigger';
+      button.style.left = (x + font * 1.6) + 'px';
+      button.style.top = (ys[0] - step / 2) + 'px';
+      button.style.fontSize = font * 0.8 + 'px';
+      button.setAttribute('aria-label', t.tuning + ': ' + tuningName(M.tuningOf(score)));
+      button.setAttribute('aria-haspopup', 'dialog');
+      button.setAttribute('aria-controls', tuningPopup.id);
+      button.setAttribute('aria-expanded', 'false');
+      M.tuningLabels(score).forEach(name => {
+        const label = document.createElement('span');
+        label.textContent = name;
+        label.style.height = step + 'px';
+        button.appendChild(label);
+      });
+      button.addEventListener('pointerdown', event => event.stopPropagation());
+      button.addEventListener('click', () => openTuning(button));
+      stage.appendChild(button);
+    }
   }
 
   function mountTabs() {
@@ -1190,7 +1212,7 @@ export default function start() {
     const minStep = Math.round(font * 1.4); // para que no se pisen los trastes de dos cifras
     const origin = stage.getBoundingClientRect();
     const all = M.attacks(score);
-    const fingered = window.ScoreFingering.assign(all.map((attack) => attack.midis));
+    const fingered = window.ScoreFingering.assign(all.map((attack) => attack.midis), M.tuningOf(score).opens);
     const auto = {};
     all.forEach((attack, i) => { auto[attack.key] = window.ScoreFingering.toColumn(fingered[i]); });
     tabColumns = Object.assign({}, auto, score.tabs);
@@ -1214,6 +1236,7 @@ export default function start() {
       const tabs = document.createElement('ascii-tabs');
       tabs.className = 'score-tab';
       tabs.setAttribute('labels', 'none');
+      tabs.setAttribute('tuning', M.tuningLabels(score).join(' '));
       tabs.setAttribute('variant', 'flat');
       tabs.setAttribute('theme', 'light');
       tabs.setAttribute('lang', document.documentElement.lang);
@@ -2574,7 +2597,7 @@ export default function start() {
       if (!event.repeat) duplicateSelected();
       return;
     }
-    if (!event.metaKey && !event.ctrlKey && !event.altKey && !meterPopup.matches(':popover-open') && !clefPopup.matches(':popover-open') && !dynamicsPopup.matches(':popover-open')) {
+    if (!event.metaKey && !event.ctrlKey && !event.altKey && !meterPopup.matches(':popover-open') && !clefPopup.matches(':popover-open') && !dynamicsPopup.matches(':popover-open') && !tuningPopup.matches(':popover-open')) {
       if (event.key.toLowerCase() === 'a') {
         event.preventDefault();
         deactivateTool();
@@ -2639,6 +2662,47 @@ export default function start() {
     }, M.captureTabReferences(trial));
     stage.focus({ preventScroll: true });
   });
+
+  const tuningName = tuning => tuning.id === 'standard' ? t.standardTuning : tuning.name;
+  const tuningPopup = document.createElement('div');
+  tuningPopup.id = 'scoreTuningPopup';
+  tuningPopup.className = 'score-meter-popup score-tuning-popup';
+  tuningPopup.setAttribute('popover', 'auto');
+  tuningPopup.setAttribute('role', 'dialog');
+  tuningPopup.setAttribute('aria-label', t.tuning);
+  const tuningTitle = document.createElement('p');
+  tuningTitle.textContent = t.tuning;
+  tuningPopup.appendChild(tuningTitle);
+  M.TUNINGS.forEach(tuning => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.tuning = tuning.id;
+    button.textContent = tuningName(tuning) + ' · ' + M.tuningLabels({ tuning: tuning.id }).slice().reverse().join(' ');
+    button.addEventListener('click', () => {
+      tuningPopup.hidePopover();
+      if (M.tuningOf(score).id !== tuning.id) {
+        change(() => { score.tuning = tuning.id; delete score.tabs; }, []);
+      }
+      requestAnimationFrame(() => stage.querySelector('.score-tuning-trigger')?.focus({ preventScroll: true }));
+    });
+    tuningPopup.appendChild(button);
+  });
+  document.querySelector('.score-page').appendChild(tuningPopup);
+  tuningPopup.addEventListener('toggle', event => {
+    stage.querySelector('.score-tuning-trigger')?.setAttribute('aria-expanded', String(event.newState === 'open'));
+  });
+  function openTuning(trigger) {
+    if (tuningPopup.matches(':popover-open')) { tuningPopup.hidePopover(); return; }
+    tuningPopup.querySelectorAll('button').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.tuning === M.tuningOf(score).id));
+    });
+    tuningPopup.showPopover();
+    const anchor = trigger.getBoundingClientRect();
+    const box = tuningPopup.getBoundingClientRect();
+    tuningPopup.style.left = Math.max(8, Math.min(anchor.left, innerWidth - box.width - 8)) + 'px';
+    tuningPopup.style.top = Math.max(8, Math.min(anchor.bottom + 6, innerHeight - box.height - 8)) + 'px';
+    tuningPopup.querySelector('[aria-pressed="true"]').focus({ preventScroll: true });
+  }
 
   // ---- selector de compas -------------------------------------------------
 

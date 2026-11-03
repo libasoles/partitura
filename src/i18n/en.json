@@ -22,7 +22,7 @@
   "scoreBarTitle": "Delete a barline",
   "scoreBarBody": "Click a single, double or repeat barline to highlight it in yellow, then press Delete to remove it.",
   "scoreTabEditTitle": "Edit a tab",
-  "scoreTabEditBody": "Click a number in the tab and type the new fret; your fingering is saved and the staff does not change.",
+  "scoreTabEditBody": "Click a number in the tab and type the new fret; your fingering is saved and the staff does not change. Changing tuning recalculates all frets and replaces manual fingerings while preserving the staff notes. Tuning is saved with this score, and you can undo the change with Ctrl/Cmd+Z.",
   "scoreTabMoveTitle": "Move a tab cell",
   "scoreTabMoveBody": "Drag a number to another string or another beat and drop it wherever you want.",
   "scoreTabMoveKey": "Drag",
@@ -196,7 +196,9 @@
     "pdfError": "Could not generate the PDF.",
     "loadError": "Could not load the notation engine.",
     "importFailed": "The file could not be read. Try a MusicXML (.musicxml, .xml) or a MIDI (.mid) file.",
-    "importDone": "Score loaded."
+    "importDone": "Score loaded.",
+    "tuning": "Tuning",
+    "standardTuning": "Standard"
   },
   "ui": {
     "ogImageAlt": "Partitura, online music score editor: a staff with an exercise written in treble clef and its tab",
@@ -455,6 +457,8 @@
       "tab-toggle": {
         "steps": [
           "Press the <strong>TAB</strong> button in the palette: a six-string tablature appears under every system.",
+          "The first tablature shows the string names, from highest to lowest (E B G D A E in standard tuning). Click these names to choose Standard, Drop D, Double Drop D, DADGAD, Open D or Open G. The menu lists strings from lowest to highest.",
+          "Changing tuning recalculates all frets and replaces manual fingerings while preserving the staff notes. Tuning is saved with this score, and you can undo the change with Ctrl/Cmd+Z.",
           "The editor picks the most comfortable fingering by itself: it keeps the hand in one position, avoids jumps and does not reuse a string for different notes.",
           "The staff does not change when you touch the tablature. Press the button again to hide it."
         ],
@@ -463,7 +467,8 @@
       "refinger": {
         "steps": [
           "In the tablature, click the number of the note you want to move.",
-          "Press <kbd>Shift</kbd> + <kbd>↑</kbd> to move it to the string above or <kbd>Shift</kbd> + <kbd>↓</kbd> for the string below. The fret adjusts itself so it sounds the same."
+          "Press <kbd>Shift</kbd> + <kbd>↑</kbd> to move it to the string above or <kbd>Shift</kbd> + <kbd>↓</kbd> for the string below. The fret adjusts itself so it sounds the same.",
+          "Changing tuning recalculates all frets and replaces manual fingerings while preserving the staff notes. Tuning is saved with this score, and you can undo the change with Ctrl/Cmd+Z."
         ],
         "tip": "Only the fingering changes: the note on the staff and the sound stay the same."
       },

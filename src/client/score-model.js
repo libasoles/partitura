@@ -313,11 +313,11 @@ const api = (function () {
     const tabs = attacks(score, true).filter((attack) => columns[attack.key]).map((attack) => {
       const notes = attack.events.flatMap((ev, i) => positions.has(ev) ? [{ ...positions.get(ev), midi: attack.midis[i] }] : []);
       const column = columns[attack.key].map((fret, string) =>
-        notes.length === attack.events.length || notes.some((note) => TAB_OPENS[string] + fret === note.midi) ? fret : null);
+        notes.length === attack.events.length || notes.some((note) => tuningOf(score).opens[string] + fret === note.midi) ? fret : null);
       return { notes, column };
     }).filter((entry) => entry.notes.length);
     const signatures = fragment.map((_, offset) => ({ meter: meterAt(score, first + offset), fifths: keyAt(score, first + offset) }));
-    return { pitches, tabs, type: 'guitar-score-selection', version: 1, ...signatures[0], signatures, measures: fragment };
+    return { pitches, tabs, tuning: tuningOf(score).id, type: 'guitar-score-selection', version: 1, ...signatures[0], signatures, measures: fragment };
   }
 
   // Duplica las figuras elegidas justo despues de la ultima de ellas, conservando su ritmo relativo. Lo que no entra
@@ -455,7 +455,7 @@ const api = (function () {
       });
       if (!notes.length) return;
       const column = columns[attack.key].map((fret, string) =>
-        notes.length === attack.events.length || notes.some((note) => TAB_OPENS[string] + fret === note.midi) ? fret : null);
+        notes.length === attack.events.length || notes.some((note) => tuningOf(score).opens[string] + fret === note.midi) ? fret : null);
       savedTabs.push({ refs: notes.map((note) => tabReference(note.target)), midis: notes.map((note) => note.midi), column });
     });
     restoreTabReferences(trial, savedTabs);
@@ -483,7 +483,7 @@ const api = (function () {
     if (clean.some((m, i) => m.length !== fragment.measures[i].length) || !clean.some((m) => m.length)) return null;
     const savedTabs = captureTabReferences(score);
     // El portapapeles usa indices serializables; al pegar se les da una identidad nueva.
-    if (Array.isArray(fragment.tabs)) fragment.tabs.forEach((entry) => {
+    if (tuningOf(fragment).id === tuningOf(score).id && Array.isArray(fragment.tabs)) fragment.tabs.forEach((entry) => {
       if (!entry || !Array.isArray(entry.notes) || !entry.notes.length || !Array.isArray(entry.column)) return;
       const notes = entry.notes.map((note) => note && Number.isInteger(note.mi) && Number.isInteger(note.i) &&
         Number.isInteger(note.midi) && clean[note.mi]?.[note.i] && !clean[note.mi][note.i].rest ? note : null);
@@ -1355,7 +1355,17 @@ const api = (function () {
     return result;
   }
 
-  const TAB_OPENS = [64, 59, 55, 50, 45, 40];
+  // Open strings, highest first. IDs are persisted with the score.
+  const TUNINGS = [
+    { id: 'standard', name: 'Standard', opens: [64, 59, 55, 50, 45, 40] },
+    { id: 'drop-d', name: 'Drop D', opens: [64, 59, 55, 50, 45, 38] },
+    { id: 'double-drop-d', name: 'Double Drop D', opens: [62, 59, 55, 50, 45, 38] },
+    { id: 'dadgad', name: 'DADGAD', opens: [62, 57, 55, 50, 45, 38] },
+    { id: 'open-d', name: 'Open D', opens: [62, 57, 54, 50, 45, 38] },
+    { id: 'open-g', name: 'Open G', opens: [62, 59, 55, 50, 43, 38] },
+  ];
+  const tuningOf = (score) => TUNINGS.find(tuning => tuning.id === score.tuning) || TUNINGS[0];
+  const tuningLabels = (score) => tuningOf(score).opens.map(midi => ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'][midi % 12]);
 
   // Captura lo que se ve antes de editar, asociado a las figuras y su altura real.
   function captureTabReferences(score, columns = score.tabs || {}) {
@@ -1382,7 +1392,7 @@ const api = (function () {
       // Al partir o reunir un acorde, cada nota conserva su cuerda si siguen siendo compatibles.
       const column = new Array(TAB_STRINGS).fill(null);
       for (const { entry, midi } of entries) {
-        const string = entry.column.findIndex((fret, s) => fret !== null && TAB_OPENS[s] + fret === midi && column[s] === null);
+        const string = entry.column.findIndex((fret, s) => fret !== null && tuningOf(score).opens[s] + fret === midi && column[s] === null);
         if (string < 0) return;
         column[string] = entry.column[string];
       }
@@ -1506,7 +1516,7 @@ const api = (function () {
       if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isFinite(width) && width > 0 && width <= 1) measureWidths[index] = width;
     });
     const tabs = sanitizeTabs(data.tabs, rows.reduce((sum, row) => sum + row.length, 0));
-    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, data.showTabs === true ? { showTabs: true } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
+    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
   }
 
   // Rellena huecos con silencios ocultos: el final del compas y el espacio entre figuras sueltas.
@@ -2121,7 +2131,7 @@ const api = (function () {
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, duplicateSelection, length, gridOf, hints, onsets, settle, placement, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
-    meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 })();

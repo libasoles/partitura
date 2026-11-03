@@ -22,7 +22,7 @@
   "scoreBarTitle": "Apagar uma barra",
   "scoreBarBody": "Clique em uma barra simples, dupla ou de repetição para selecioná-la em amarelo e pressione Delete para apagá-la.",
   "scoreTabEditTitle": "Editar uma tablatura",
-  "scoreTabEditBody": "Clique em um número da tablatura e escreva o novo traste; sua digitação é salva e a pauta não muda.",
+  "scoreTabEditBody": "Clique em um número da tablatura e escreva o novo traste; sua digitação é salva e a pauta não muda. Mudar a afinação recalcula todos os trastes e substitui as digitações manuais, preservando as notas da pauta. A afinação é salva com esta partitura e você pode desfazer a mudança com Ctrl/Cmd+Z.",
   "scoreTabMoveTitle": "Mover uma célula da tablatura",
   "scoreTabMoveBody": "Arraste um número para outra corda ou outro tempo e solte onde quiser.",
   "scoreTabMoveKey": "Arrastar",
@@ -196,7 +196,9 @@
     "pdfError": "Não foi possível gerar o PDF.",
     "loadError": "Não foi possível carregar o motor de notação.",
     "importFailed": "Não foi possível ler o arquivo. Tente um MusicXML (.musicxml, .xml) ou um MIDI (.mid).",
-    "importDone": "Partitura carregada."
+    "importDone": "Partitura carregada.",
+    "tuning": "Afinação",
+    "standardTuning": "Padrão"
   },
   "ui": {
     "ogImageAlt": "Partitura, editor de partituras online: uma pauta com um exercício escrito em clave de sol e sua tablatura",
@@ -455,6 +457,8 @@
       "tab-toggle": {
         "steps": [
           "Aperte o botão <strong>TAB</strong> da paleta: aparece uma tablatura de seis cordas sob cada pauta.",
+          "A primeira tablatura mostra os nomes das cordas, da mais aguda à mais grave (E B G D A E na afinação padrão). Clique nesses nomes para escolher Padrão, Drop D, Double Drop D, DADGAD, Open D ou Open G. O menu lista as cordas da mais grave à mais aguda.",
+          "Mudar a afinação recalcula todos os trastes e substitui as digitações manuais, preservando as notas da pauta. A afinação é salva com esta partitura e você pode desfazer a mudança com Ctrl/Cmd+Z.",
           "O editor escolhe sozinho a digitação mais cômoda: mantém a mão numa posição, evita saltos e não repete corda entre notas diferentes.",
           "A pauta não muda quando você mexe na tablatura. Aperte o botão de novo para escondê-la."
         ],
@@ -463,7 +467,8 @@
       "refinger": {
         "steps": [
           "Na tablatura, clique no número da nota que quer mover.",
-          "Aperte <kbd>Shift</kbd> + <kbd>↑</kbd> para passá-la à corda de cima ou <kbd>Shift</kbd> + <kbd>↓</kbd> para a de baixo. A casa se ajusta sozinha para soar igual."
+          "Aperte <kbd>Shift</kbd> + <kbd>↑</kbd> para passá-la à corda de cima ou <kbd>Shift</kbd> + <kbd>↓</kbd> para a de baixo. A casa se ajusta sozinha para soar igual.",
+          "Mudar a afinação recalcula todos os trastes e substitui as digitações manuais, preservando as notas da pauta. A afinação é salva com esta partitura e você pode desfazer a mudança com Ctrl/Cmd+Z."
         ],
         "tip": "Só a digitação muda: a nota da pauta e o som continuam iguais."
       },

@@ -22,7 +22,7 @@
   "scoreBarTitle": "Borrar una barra",
   "scoreBarBody": "Hacé clic en una barra simple, doble o de repetición para seleccionarla en amarillo y presioná Delete para borrarla.",
   "scoreTabEditTitle": "Editar una tablatura",
-  "scoreTabEditBody": "Hacé clic sobre un número de la tablatura y escribí el traste nuevo; tu digitación se guarda y el pentagrama no cambia.",
+  "scoreTabEditBody": "Hacé clic sobre un número de la tablatura y escribí el traste nuevo; tu digitación se guarda y el pentagrama no cambia. Al cambiar la afinación, se recalculan todos los trastes y se reemplazan las digitaciones manuales, sin cambiar las notas del pentagrama. La afinación se guarda con esta partitura y podés deshacer el cambio con Ctrl/Cmd+Z.",
   "scoreTabMoveTitle": "Mover una celda de la tablatura",
   "scoreTabMoveBody": "Arrastrá un número a otra cuerda o a otro tiempo y soltalo donde quieras.",
   "scoreTabMoveKey": "Arrastrar",
@@ -196,7 +196,9 @@
     "pdfError": "No se pudo generar el PDF.",
     "loadError": "No se pudo cargar el motor de notación.",
     "importFailed": "No se pudo leer el archivo. Probá con un MusicXML (.musicxml, .xml) o un MIDI (.mid).",
-    "importDone": "Partitura cargada."
+    "importDone": "Partitura cargada.",
+    "tuning": "Afinación",
+    "standardTuning": "Estándar"
   },
   "ui": {
     "ogImageAlt": "Partitura, editor de partituras online: un pentagrama con un ejercicio escrito en clave de sol y su tablatura",
@@ -455,6 +457,8 @@
       "tab-toggle": {
         "steps": [
           "Apretá el botón <strong>TAB</strong> de la paleta: aparece una tablatura de seis cuerdas bajo cada renglón.",
+          "La primera tablatura muestra los nombres de las cuerdas, de aguda a grave (E B G D A E en afinación estándar). Hacé clic en esos nombres para abrir el selector: Estándar, Drop D, Double Drop D, DADGAD, Open D u Open G. El menú muestra las cuerdas de grave a aguda.",
+          "Al cambiar la afinación, se recalculan todos los trastes y se reemplazan las digitaciones manuales, sin cambiar las notas del pentagrama. La afinación se guarda con esta partitura y podés deshacer el cambio con Ctrl/Cmd+Z.",
           "El editor elige solo la digitación más cómoda: mantiene la mano en una posición, evita saltos y no repite cuerda entre notas distintas.",
           "El pentagrama no cambia cuando tocás la tablatura. Volvé a apretar el botón para ocultarla."
         ],
@@ -463,7 +467,8 @@
       "refinger": {
         "steps": [
           "En la tablatura, hacé clic en el número de la nota que querés mover.",
-          "Apretá <kbd>Mayús</kbd> + <kbd>↑</kbd> para pasarla a la cuerda de arriba o <kbd>Mayús</kbd> + <kbd>↓</kbd> para la de abajo. El traste se ajusta solo para que suene igual."
+          "Apretá <kbd>Mayús</kbd> + <kbd>↑</kbd> para pasarla a la cuerda de arriba o <kbd>Mayús</kbd> + <kbd>↓</kbd> para la de abajo. El traste se ajusta solo para que suene igual.",
+          "Al cambiar la afinación, se recalculan todos los trastes y se reemplazan las digitaciones manuales, sin cambiar las notas del pentagrama. La afinación se guarda con esta partitura y podés deshacer el cambio con Ctrl/Cmd+Z."
         ],
         "tip": "Solo cambia la digitación: la nota del pentagrama y el sonido siguen igual."
       },
