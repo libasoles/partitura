@@ -54,6 +54,13 @@
 - `public/vendor/` — `jspdf` (solo al exportar PDF); Verovio se minifica con source map y se versiona (`verovio-<versión>.js`, `scripts/vendor.mjs`); su WebAssembly (7 MB, embebido como string en el paquete npm) se extrae a `verovio-<versión>.wasm` y se compila en streaming, así no hay una tarea larga de parseo. En pantallas angostas (sin editor) solo se baja `main.js` (~1 KB); en desktop el JS y el `.wasm` se precargan con prioridad baja y se ejecutan al estar ocioso, o enseguida, con spinner, si hay partituras guardadas.
 - `src/client/score-export.js` — importar/exportar (MusicXML, MIDI, PDF): chunk que se pide la primera vez que se usa el menú del sitio.
 
+### Editor compartido
+
+- Este repositorio también distribuye el editor que guitar-chords consume como dependencia de build desde GitHub, fijada a un commit. Ver `docs/shared-editor.md`.
+- La lógica se mantiene en `src/client/`; `runtime.js` arranca el editor con opciones por sitio. Los controles de importar/exportar se conectan con `bindActions`; su ubicación, el HTML y los estilos pertenecen a cada sitio.
+- `scripts/build-editor.mjs` compila el adaptador del consumidor y sus chunks y vendors locales. `scripts/build-package.mjs` genera los adaptadores CommonJS en `prepare`.
+- Conservar los defaults propios: clave de sol y guardado con debounce aquí; clave de guitarra y guardado inmediato en guitar-chords. No sobrescribir claves explícitas de partituras guardadas.
+
 ### Compresión y caché
 
 `npm run build` deja junto a cada archivo de texto de `dist/` su `.br` y `.gz` (`scripts/compress.mjs`). El servidor debe enviarlos tal cual

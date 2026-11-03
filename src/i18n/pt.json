@@ -197,6 +197,7 @@
     "revoice": "Recalcular vozes do compasso",
     "voicesUnavailable": "Não foi possível recalcular as vozes sem alterar o ritmo.",
     "pdfError": "Não foi possível gerar o PDF.",
+    "keepVoiceTiming": "Esse movimento deslocaria outra voz.",
     "loadError": "Não foi possível carregar o motor de notação.",
     "importFailed": "Não foi possível ler o arquivo. Tente um MusicXML (.musicxml, .xml) ou um MIDI (.mid).",
     "importDone": "Partitura carregada.",

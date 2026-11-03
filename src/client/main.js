@@ -4,14 +4,9 @@
 const desktop = window.matchMedia('(min-width: 900px)');
 
 async function start() {
-  // The three files download side by side; globals.js installs window.ScoreModel and friends, which the editor reads when it starts.
-  const editor = import('./score-editor.js');
-  const [, { initStorage }] = await Promise.all([import('./globals.js'), import('./storage.js')]);
-  await initStorage();
-  // With saved scores, the default staff is not what the visitor will end up seeing: a spinner covers it until the
-  // saved ones are drawn (score-editor.js removes it). With nothing saved, the default staff is already the right one.
-  if (window.ScoreStore.stored) document.getElementById('scoreStage')?.classList.add('is-loading');
-  (await editor).default();
+  const { startEditor } = await import('./runtime.js');
+  const { bindSiteActions } = await import('./site-actions.js');
+  await startEditor({ bindActions: bindSiteActions });
 }
 
 if (desktop.matches) start();

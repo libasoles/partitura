@@ -10,7 +10,7 @@ const verovio = createRequire(import.meta.url)('verovio');
 const SCALE = 60;
 const WIDTH = 940;
 
-let cached = null;
+const cache = new Map();
 
 // Verovio 6 no longer sets `calledRun`, and onRuntimeInitialized never fires if the wasm finished starting before it
 // is assigned (the dev server imports this file well ahead of the first render), so probe by building a toolkit.
@@ -28,8 +28,9 @@ function createToolkit(ready) {
   });
 }
 
-export async function renderEmptyStaff(ready = verovio.module) {
-  if (cached) return cached;
+export async function renderEmptyStaff(ready = verovio.module, score = ScoreModel.emptyScore()) {
+  const key = JSON.stringify(score);
+  if (cache.has(key)) return cache.get(key);
   const toolkit = await createToolkit(ready);
   toolkit.setOptions({
     scale: SCALE,
@@ -48,7 +49,9 @@ export async function renderEmptyStaff(ready = verovio.module) {
     spacingSystem: 12,
     mnumInterval: 0,
   });
-  toolkit.loadData(ScoreModel.toMusicXml(ScoreModel.emptyScore()));
-  cached = toolkit.renderToSVG(1);
-  return cached;
+  toolkit.loadData(ScoreModel.toMusicXml(score));
+  const svg = toolkit.renderToSVG(1);
+  toolkit.destroy();
+  cache.set(key, svg);
+  return svg;
 }

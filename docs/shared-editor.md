@@ -1,0 +1,40 @@
+# Editor compartido con guitar-chords
+
+Este repositorio mantiene el sitio Astro y la implementación reutilizable del editor. No hace falta otro repositorio ni publicar en npm.
+
+`guitar-chords` instala `partitura` como dependencia de desarrollo desde GitHub, fijada a un commit completo. `npm ci` instala esa revisión y `npm run build:site` la compila dentro de sus assets. El navegador carga JS, chunks, Verovio/WASM y jsPDF desde el propio sitio; no consulta GitHub ni un CDN para ejecutar el editor.
+
+## Responsabilidades
+
+- **Compartidas:** modelo, voces, digitación, interacción del editor, importación/exportación, persistencia, diálogos, notificaciones y componente de tablaturas. El render inicial y el navegador usan el mismo modelo y versión de Verovio.
+- **De cada sitio:** HTML, CSS, textos, navegación y posición de las herramientas. `bindActions` conecta botones propios a las acciones compartidas; no consulta una disposición particular.
+- **Configurables al arrancar:** `defaultClef` (`treble` aquí, `guitar` en guitar-chords), `saveDelay` (300 ms aquí, 0 allá), `vendorBase` y `bindActions`.
+
+Se conserva el formato y las claves de los datos guardados. Los sitios mantienen almacenamientos separados por origen.
+
+## Integración
+
+El adaptador del consumidor importa `startEditor` de `partitura/editor` y lo llama después de que exista el HTML del editor. La estructura del pentagrama, paletas y pestañas conserva los identificadores `score*` de `EditorPage.astro`; la API no es todavía un componente que pueda montarse varias veces en una página.
+
+`bindActions` recibe `loadFile(file)`, `exportMusicXml()`, `exportMidi()`, `exportPdf(button)` y `warm()`. La lógica compartida carga el exportador cuando se necesita y muestra los errores traducidos. El sitio controla sus menús y eventos.
+
+Durante el build:
+
+```js
+const { buildEditor } = await import('partitura/build');
+await buildEditor({ entryPoint: 'src/site/score-editor.js', outdir: 'dist/site/assets' });
+```
+
+Publicar el entry generado con `type="module"`, sus `score-chunks/` y `vendor/`. `vendorBase` debe apuntar al directorio público de estos últimos y terminar en `/`. El build del consumidor puede aplicar su fingerprinting habitual después.
+
+Para Node/CommonJS se exponen `partitura/model` (con `createScoreModel`), `partitura/fingering` y `partitura/io` (ambos con `default`). `npm` genera estos adaptadores en `prepare`. `partitura/staff` expone el render inicial del pentagrama para el build.
+
+## Actualizar la dependencia
+
+1. Corregir y verificar el editor en este repositorio; hacer commit y push.
+2. En guitar-chords ejecutar `npm install --save-dev 'git+https://github.com/libasoles/partitura.git#<commit-completo>'`.
+3. Revisar y versionar `package.json` y `package-lock.json`, ejecutar las verificaciones del consumidor y desplegarlo.
+
+Una corrección se mantiene una sola vez, pero no modifica silenciosamente un sitio ya publicado. No se consume `main` como versión flotante. El consumidor sigue funcionando con su revisión hasta que se actualice y vuelva a generar su sitio.
+
+Los estilos de presentación siguen siendo locales: un cambio visual que deba llegar a ambos sitios requiere revisar ambos CSS.

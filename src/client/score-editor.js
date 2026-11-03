@@ -2,8 +2,7 @@
    Verovio dibuja el MusicXML que sale de ScoreModel; aca solo viven la paleta, el arrastre y las descargas. */
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
-export default function start() {
-  'use strict';
+export default function start({ vendorBase = '/vendor/', bindActions = () => {} } = {}) {
 
   const M = window.ScoreModel;
   const STORAGE_KEY = 'scoreEditor.v2';
@@ -94,7 +93,7 @@ export default function start() {
   }
 
   function vendorUrl(file) {
-    return '/vendor/' + file;
+    return new URL(file, new URL(vendorBase, document.baseURI)).href;
   }
 
   function loadScript(src) {
@@ -598,6 +597,16 @@ export default function start() {
         group = [];
       });
       return;
+    }
+    if (from.mi === target.mi && Number.isInteger(moved.v)) {
+      const starts = M.onsets(destination);
+      const kept = destination.flatMap((o, i) => o === ev ? [] : [{ ev: M.clone(o), at: starts[i] }]);
+      const trial = kept.map(item => item.ev);
+      M.insertAt(trial, M.clone(moved), spot.at);
+      const planned = M.onsets(trial);
+      // Quitar una coincidencia vertical no debe adelantar otra parte para rellenar
+      // el hueco. Hasta representar esas esperas explicitamente, conservar la escritura.
+      if (kept.some(item => item.ev.v !== moved.v && planned[trial.indexOf(item.ev)] !== item.at)) return say(t.keepVoiceTiming);
     }
     change(() => {
       all[from.mi].splice(from.i, 1);
@@ -3225,7 +3234,9 @@ export default function start() {
 
   addRow.innerHTML = lucide('plus');
   removeRow.innerHTML = lucide('minus');
-  document.querySelectorAll('[data-icon]').forEach((node) => { node.insertAdjacentHTML('afterbegin', lucide(node.dataset.icon)); });
+  document.querySelectorAll('[data-icon]').forEach((node) => {
+    if (ICONS[node.dataset.icon]) node.insertAdjacentHTML('afterbegin', lucide(node.dataset.icon));
+  });
   document.getElementById('scoreNewTab').addEventListener('click', newTab);
   renderTabs();
 
@@ -3282,8 +3293,7 @@ export default function start() {
     })));
   }
   function withExporter(action, onError) {
-    return async (event) => {
-      const target = event.currentTarget;
+    return async (target) => {
       try {
         await action(await exporter(), target);
       } catch (e) {
@@ -3293,27 +3303,14 @@ export default function start() {
     };
   }
 
-  // The menu is where every importer/exporter lives, so opening it (or reaching for it) is the cue to fetch that module now.
-  const menuToggle = document.getElementById('siteMenuToggle');
-  if (menuToggle) {
-    const warmExporter = () => exporter().catch(() => { exporterReady = null; });
-    ['pointerenter', 'focus', 'click'].forEach((type) => menuToggle.addEventListener(type, warmExporter, { once: true }));
-  }
-
-  const menuFile = document.getElementById('menuFile');
-  const menuLoad = document.getElementById('menuLoad');
-  if (menuFile && menuLoad) {
-    menuLoad.addEventListener('click', () => menuFile.click());
-    menuFile.addEventListener('change', withExporter((tools) => {
-      const [file] = menuFile.files;
-      menuFile.value = '';
-      return file && tools.loadFile(file);
-    }, t.loadError));
-    document.getElementById('menuExportXml').addEventListener('click', withExporter((tools) => tools.exportMusicXml(), t.loadError));
-    document.getElementById('menuExportMidi').addEventListener('click', withExporter((tools) => tools.exportMidi(), t.loadError));
-  }
-  document.getElementById('menuExportPdf').addEventListener('click', withExporter((tools, button) => tools.exportPdf(button), t.loadError));
-
+  // The host connects its own controls; their position and layout belong to the site.
+  bindActions({
+    loadFile: withExporter((tools, file) => file && tools.loadFile(file), t.importFailed || t.loadError),
+    exportMusicXml: withExporter((tools) => tools.exportMusicXml(), t.loadError),
+    exportMidi: withExporter((tools) => tools.exportMidi(), t.loadError),
+    exportPdf: withExporter((tools, button) => tools.exportPdf(button), t.pdfError || t.loadError),
+    warm: () => exporter().catch(() => { exporterReady = null; }),
+  });
 
   // ---- arranque -----------------------------------------------------------
 

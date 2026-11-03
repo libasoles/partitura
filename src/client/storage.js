@@ -1,15 +1,14 @@
 // Local persistence. Scores live in IndexedDB (large, structured, no 5 MB cap); settings live in localStorage
-// (see settings.js). The editor reads synchronously, so the stored scores are loaded once before it starts and
-// kept in memory; saves write through to IndexedDB, debounced and flushed when the page is hidden.
+// The host selects immediate saves or a debounce; pagehide flushes pending edits.
+// Legacy data and failed IndexedDB writes fall back to localStorage.
 const DB_NAME = 'partitura';
 const STORE = 'workspace';
 const TABS_RECORD = 'tabs';
 const LEGACY_TABS_KEY = 'scoreEditor.tabs.v1'; // where the scores lived before IndexedDB
-const SAVE_DELAY = 300;
 
 let db = null;
 let pending = null; // latest value waiting to be written
-let timer = 0;
+let writing = Promise.resolve();
 
 function request(req) {
   return new Promise((resolve, reject) => {
@@ -40,33 +39,48 @@ function put(value) {
 
 function readLegacy() {
   try {
-    return JSON.parse(localStorage.getItem(LEGACY_TABS_KEY));
+    const tabs = JSON.parse(localStorage.getItem(LEGACY_TABS_KEY));
+    if (tabs && Array.isArray(tabs.scores) && tabs.scores.length) return tabs;
+    for (const [key, divisions] of [['scoreEditor.v2', undefined], ['scoreEditor.v1', 8]]) {
+      const one = JSON.parse(localStorage.getItem(key));
+      if (one) return { active: 0, scores: [window.ScoreModel.sanitize(one, divisions)] };
+    }
+    return null;
   } catch (e) {
     return null;
   }
 }
 
+function fallback(value) {
+  try { localStorage.setItem(LEGACY_TABS_KEY, JSON.stringify(value)); } catch (e) { /* Storage unavailable. */ }
+}
+
 function flush() {
-  clearTimeout(timer);
-  timer = 0;
-  if (pending === null) return;
+  if (pending === null) return writing;
   const value = pending;
   pending = null;
   if (db) {
-    put(value).catch(() => {
-      // Without storage the score keeps working, it is just not remembered.
-    });
-  } else {
+    const connection = db;
     try {
-      localStorage.setItem(LEGACY_TABS_KEY, JSON.stringify(value));
+      writing = put(value).catch(() => {
+        connection.close();
+        if (db === connection) db = null;
+        fallback(value);
+      });
+      return writing;
     } catch (e) {
-      // Same: nothing to fall back on.
+      connection.close();
+      db = null;
     }
   }
+  fallback(value);
+  return writing;
 }
 
 // Resolves with the stored { active, scores } (unsanitized), or null when there is nothing saved yet.
-export async function initStorage() {
+export async function initStorage({ saveDelay = 300 } = {}) {
+  let timer = 0;
+  const flushPending = () => { clearTimeout(timer); return flush(); };
   let stored = null;
   try {
     db = await open();
@@ -76,23 +90,28 @@ export async function initStorage() {
       if (legacy) {
         await put(legacy);
         stored = legacy;
-        try { localStorage.removeItem(LEGACY_TABS_KEY); } catch (e) { /* nothing to clean */ }
+        try {
+          [LEGACY_TABS_KEY, 'scoreEditor.v2', 'scoreEditor.v1'].forEach(key => localStorage.removeItem(key));
+        } catch (e) { /* nothing to clean */ }
       }
     }
   } catch (e) {
+    if (db) db.close();
     db = null; // IndexedDB unavailable (private mode, blocked): keep using localStorage
     stored = readLegacy();
   }
-  window.addEventListener('pagehide', flush);
+  window.addEventListener('pagehide', flushPending);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flush();
+    if (document.visibilityState === 'hidden') flushPending();
   });
   window.ScoreStore = {
     stored,
+    flush: flushPending,
     save(value) {
       pending = value;
       clearTimeout(timer);
-      timer = setTimeout(flush, SAVE_DELAY);
+      if (saveDelay) timer = setTimeout(flush, saveDelay);
+      else flush();
     },
   };
 }

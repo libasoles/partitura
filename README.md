@@ -43,9 +43,13 @@ npm test        # después del build: verifica el HTML generado
 npm run check   # astro check (tipos)
 ```
 
-Las pruebas de navegador usan Chromium de Playwright con un perfil aislado:
+Las pruebas de navegador generan el sitio estático y lo verifican con Chromium de Playwright y un perfil aislado:
 
 ```sh
 npx playwright install chromium   # una vez por equipo
 npm run test:browser              # inicia su propio servidor de prueba
 ```
+
+## Reutilizar el editor
+
+El editor también se consume durante el build de guitar-chords, desde una revisión fija de este repositorio. Ver [la integración y actualización de la dependencia](docs/shared-editor.md).

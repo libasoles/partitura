@@ -4,7 +4,7 @@
 
    Duraciones en divisiones de negra = 24 (el tresillo de corchea, 8, y la corchea
    con puntillo, 18, entran exactos). El MusicXML aplica la transposicion de octava
-   de la clave elegida para conservar la altura sonora (sol por defecto).
+   de la clave elegida para conservar la altura sonora (sol por defecto, configurable por sitio).
 
    Campos de una figura:
    - `d`: valor base: w redonda (96), h blanca (48), q negra (24), e corchea (12), s semicorchea (6), f fusa (3).
@@ -34,8 +34,7 @@
      los silencios ocultos (print-object="no") solo rellenan esas esperas de alineacion y el final del compas.
    - Partituras guardadas antes de contar en orden: si un compas con figuras sin `v` superpuestas por su `at` ya no
      entra contado en orden, `sanitize` le fija las voces de entonces (`legacyVoices`) en vez de perder figuras. */
-const api = (function () {
-  'use strict';
+export function createScoreModel({ defaultClef = 'treble' } = {}) {
 
   const DIVISIONS = 24;
   const MEASURE = 96; // valor por defecto: 4/4
@@ -136,6 +135,16 @@ const api = (function () {
     // Registro solo para iniciar o desempatar, nunca como frontera fija entre voces.
     const seed = batches.reduce((best, b) => b.units.length > best.units.length ? b : best, batches[0]);
     const ranked = seed.units.slice().sort((a, b) => Math.max(-Infinity, ...pitches(b)) - Math.max(-Infinity, ...pitches(a)));
+    const register = [...new Set(measure.filter(ev => !ev.rest).map(ev => ev.n))].sort((a, b) => b - a);
+    const seedPitches = Array.from({ length: count }, (_, k) => {
+      const unit = seed.units.find(u => savedVoice(measure[u[0]]) === k + 1) || ranked[k] || [];
+      const own = pitches(unit);
+      if (own.length) return own;
+      // Un silencio no aporta altura: iniciar esa parte con una referencia de registro,
+      // sin darle coste cero frente a cualquier nota ni imponer un corte permanente.
+      const pitch = register[Math.round(k * (register.length - 1) / Math.max(1, count - 1))];
+      return pitch === undefined ? [] : [pitch];
+    });
     batches.forEach(({ at, units }) => {
       const taken = new Set();
       const unknown = [];
@@ -149,10 +158,10 @@ const api = (function () {
         const own = pitches(unit);
         const before = previous[k];
         // La siguiente decision explicita tambien informa la continuidad (entrada tardia, cruces).
-        const after = batches.find((b) => b.at > at && b.units.some((u) => savedVoice(measure[u[0]]) === k + 1));
-        const next = after?.units.find((u) => savedVoice(measure[u[0]]) === k + 1);
+        const after = batches.find((b) => b.at > at && b.units.some((u) => savedVoice(measure[u[0]]) === k + 1 && pitches(u).length));
+        const next = after?.units.find((u) => savedVoice(measure[u[0]]) === k + 1 && pitches(u).length);
         if (before || next) return (before ? distance(own, before) : 0) + (next ? distance(own, pitches(next)) : 0);
-        return distance(own, pitches(ranked[k] || []));
+        return distance(own, seedPitches[k]);
       };
       // Asignacion conjunta: dos notas simultaneas no compiten codiciosamente por la misma linea.
       const assigned = minimumAssignment(unknown.map((unit) => free.map((k) => cost(unit, k))));
@@ -368,6 +377,9 @@ const api = (function () {
   function duplicateSelection(score, refs) {
     const trial = clone(score);
     const all = measures(trial);
+    // Duplicar continua las partes originales; no debe reinterpretar las copias
+    // como voces nuevas cuando coinciden con notas que ya estaban en el destino.
+    all.forEach(settleVoices);
     const chosen = refs.filter((r, k) => all[r.mi]?.[r.i] && refs.findIndex((o) => o.mi === r.mi && o.i === r.i) === k);
     if (!chosen.length) return null;
     const savedTabs = captureTabReferences(trial);
@@ -628,7 +640,7 @@ const api = (function () {
   }
 
   function emptyScore() {
-    return { meter: '4/4', clef: 'treble', fifths: 0, rows: Array.from({ length: MIN_ROWS }, emptyRow) };
+    return { meter: '4/4', clef: defaultClef, fifths: 0, rows: Array.from({ length: MIN_ROWS }, emptyRow) };
   }
 
   // Identidad interna de las figuras: no se serializa ni depende de compas, tiempo o indice.
@@ -1197,7 +1209,7 @@ const api = (function () {
   }
 
   function clefOf(score) {
-    return score && Object.hasOwn(CLEFS, score.clef) ? score.clef : 'treble';
+    return score && Object.hasOwn(CLEFS, score.clef) ? score.clef : defaultClef;
   }
 
   function fifthsOf(score) {
@@ -1655,6 +1667,8 @@ const api = (function () {
   function mergeVoices(measure, limit) {
     const saved = measure.map((ev) => Object.assign({}, ev));
     const starts = onsets(measure);
+    const previous = [];
+    voices(measure).forEach((voice, k) => voice.groups.forEach(g => g.indices.forEach(i => { previous[i] = k + 1; })));
     measure.forEach((ev) => { delete ev.v; });
     if (voices(measure).length > MAX_VOICE || measureLength(measure) > limit || onsets(measure).some((at, i) => at !== starts[i])) {
       measure.forEach((ev, i) => { Object.keys(ev).forEach((key) => delete ev[key]); Object.assign(ev, saved[i]); });
@@ -1662,7 +1676,7 @@ const api = (function () {
     }
     settle(measure);
     settleVoices(measure);
-    return measure.some((ev, i) => ev.v !== saved[i].v || ev.at !== saved[i].at);
+    return measure.some((ev, i) => ev.v !== previous[i]);
   }
 
   // Fija `v` en todas las figuras segun la voz en la que hoy suenan, para que agregar otra no las reparta distinto.
@@ -2208,6 +2222,6 @@ const api = (function () {
     TUNINGS, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
-})();
+}
 
-export default api;
+export default createScoreModel();

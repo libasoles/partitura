@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import M from '../src/client/score-model.js';
+import { buildSync } from 'esbuild';
+import { fileURLToPath } from 'node:url';
 
 async function seed(page, measure) {
   const score = { ...M.emptyScore(), clef: 'guitar', meter: '6/8', fifths: -1 };
@@ -81,9 +83,16 @@ test('explicit chord grouping can be undone and survives reload', async ({ page 
 
 test('MusicXML preserves a declared single-voice chord and independent homorhythmic parts', async ({ page }) => {
   await page.goto('/es/');
-  const result = await page.evaluate(async () => {
-    const { default: M } = await import('/src/client/score-model.js');
-    const { default: IO } = await import('/src/client/score-io.js');
+  await page.waitForFunction(() => window.scoreEditor);
+  // Exercise the browser's actual model against the parser, including on static hosting.
+  const parser = buildSync({
+    entryPoints: [fileURLToPath(new URL('../src/client/score-io.js', import.meta.url))],
+    bundle: true, write: false, format: 'iife', globalName: 'TestScoreIO',
+  });
+  await page.addScriptTag({ content: parser.outputFiles[0].text });
+  const result = await page.evaluate(() => {
+    const M = window.ScoreModel;
+    const IO = window.TestScoreIO.default;
     const score = M.emptyScore();
     const roundTrip = (measure) => {
       score.rows[0][0] = measure;

@@ -197,6 +197,7 @@
     "revoice": "Recalculate measure voices",
     "voicesUnavailable": "The voices could not be recalculated without changing the rhythm.",
     "pdfError": "Could not generate the PDF.",
+    "keepVoiceTiming": "That move would shift another voice.",
     "loadError": "Could not load the notation engine.",
     "importFailed": "The file could not be read. Try a MusicXML (.musicxml, .xml) or a MIDI (.mid) file.",
     "importDone": "Score loaded.",
