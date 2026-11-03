@@ -63,6 +63,7 @@ const jsonLd = pageJsonLd({
     <meta name="twitter:description" content={description} />
     <meta name="theme-color" content="#ffffff" />
     <link rel="preload" href={latinFont} as="font" type="font/woff2" crossorigin />
+    {editor && <script is:inline set:html={`try{if(/(?:^|; )banner-closed=1/.test(document.cookie))document.documentElement.classList.add('banner-closed')}catch(e){}`} />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />

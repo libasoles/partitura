@@ -54,3 +54,13 @@ test('first paint does not wait on CSS, fonts or heavy scripts', () => {
   assert.match(html, /<link rel="preload" href="\/_astro\/montserrat-latin-wght-normal[^"]+\.woff2" as="font" type="font\/woff2" crossorigin/);
   assert.doesNotMatch(html, /(src|href)="[^"]*(ascii-tabs|jspdf|verovio)/, 'tabs, PDF export and Verovio load on demand');
 });
+
+for (const [locale, file] of Object.entries(pages)) {
+  test(`${locale}: the welcome banner keeps the single h1, the description and the dismissal cookie`, () => {
+    const html = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+    assert.match(html, /<section class="welcome-banner"[^>]*>\s*<h1 [^>]*class="welcome-banner__title"/);
+    assert.match(html, /<p class="welcome-banner__lead">/);
+    assert.match(html, /id="welcomeBannerClose"/);
+    assert.match(html, /<head>[\s\S]*banner-closed=1[\s\S]*<\/head>/, 'the cookie is read in <head>, before the first paint');
+  });
+}

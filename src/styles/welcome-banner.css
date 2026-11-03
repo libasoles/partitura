@@ -1,0 +1,68 @@
+/* welcome-banner.css — The h1 and description on top of the editor (wide screens). The resting state is the closed one
+   (phones, and visitors who dismissed it): only the h1 remains, visually hidden. */
+.welcome-banner__title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.welcome-banner__body { display: none; }
+
+@media (min-width: 900px) {
+  html:not(.banner-closed) .welcome-banner {
+    position: relative;
+    /* Clears the header row (logo and menu), which overlays the top of the editor page. */
+    margin: 4rem 0 0.5rem;
+    padding: 1.4rem 3.2rem 1.2rem 1.6rem;
+    border: 1px solid var(--rule);
+    border-radius: 0.8rem;
+    background: var(--surface);
+  }
+  html:not(.banner-closed) .welcome-banner__title {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.25;
+  }
+  html:not(.banner-closed) .welcome-banner__body { display: block; }
+
+  .welcome-banner__lead { margin: 0.4rem 0 1.1rem; color: var(--ink-soft); }
+  .welcome-banner__cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1rem 1.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .welcome-banner__cards li { display: grid; grid-template-columns: auto 1fr; gap: 0 0.75rem; align-items: start; }
+  .welcome-banner__cards svg { margin-top: 0.1rem; color: var(--ink-soft); }
+  .welcome-banner__cards h2 { margin: 0 0 0.15rem; font-size: 0.95rem; }
+  .welcome-banner__cards p { margin: 0; font-size: 0.85rem; color: var(--ink-soft); }
+  .welcome-banner__more { margin: 1rem 0 0; font-size: 0.9rem; }
+  .welcome-banner__more a { color: var(--accent); }
+
+  .welcome-banner__close {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.4rem;
+    background: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .welcome-banner__close:hover { background: var(--rule); color: var(--ink); }
+}
