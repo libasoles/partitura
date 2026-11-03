@@ -50,6 +50,9 @@ body {
 
 a { color: var(--blue-france); }
 
+/* Netlify injects this badge iframe after serving the page. */
+#nl-badge-frame { display: none !important; }
+
 .skip-link {
   position: absolute;
   left: 1rem;
