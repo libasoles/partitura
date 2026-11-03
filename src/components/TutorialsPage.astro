@@ -1,11 +1,8 @@
 ---
-import Base from '../layouts/Base.astro';
-import { locales, pathFor, strings, tutorialsPath, type Locale } from '../i18n';
+import TutorialsLayout from '../layouts/TutorialsLayout.astro';
+import { pathFor, strings, tutorialsPath, type Locale } from '../i18n';
 import { welcomeIcons as icons } from '../lib/welcome-icons';
-import { categories, related, slugs, tutorialBody, type Slug } from '../lib/tutorials';
-import '../styles/editor.css';
-import '../styles/tab-demo.css';
-import '../styles/tutorials.css';
+import { related, slugs, tutorialBody, type Slug } from '../lib/tutorials';
 
 interface Props {
   locale: Locale;
@@ -15,97 +12,51 @@ interface Props {
 const { locale, slug } = Astro.props;
 const s = strings(locale);
 const t = s.tutorials;
-const paths = Object.fromEntries(locales.map((l) => [l, tutorialsPath(l, slug)])) as Record<Locale, string>;
 const item = slug ? t.items[slug] : undefined;
 const seoTitles = t.seo as Record<string, string[]>;
-const seo = slug ? seoTitles[slug] : undefined;
-const title = seo ? `${seo[0]} · ${s.ui.siteName}` : t.metaTitle;
-const description = seo ? seo[1] : t.metaDescription;
-const faq = slug === 'faq' ? s.scoreFaq.map(([q, a]) => ({ q, a })) : undefined;
 const index = slugs.indexOf(slug as Slug);
 const prev = slug && index > 0 ? slugs[index - 1] : undefined;
 const next = slug && index < slugs.length - 1 ? slugs[index + 1] : undefined;
-const categoryNames = t.categories as Record<string, string>;
 ---
 
-<Base locale={locale} title={title} description={description} paths={paths} faq={faq}>
-  <div class="docs">
-    <nav class="docs-nav" aria-label={t.navLabel}>
-      <details class="docs-nav__box" open>
-        <summary>
-          <span>{item ? item[0] : t.navLabel}</span>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-        </summary>
-        <a class:list={['docs-nav__home', { 'is-current': !slug }]} href={tutorialsPath(locale)} aria-current={slug ? undefined : 'page'}>{t.h1}</a>
-        {categories.map((c) => (
-          <section class="docs-nav__group">
-            <p class="docs-nav__title">{categoryNames[c.id]}</p>
-            <ul>
-              {c.slugs.map((sl) => (
-                <li>
-                  <a class:list={{ 'is-current': sl === slug }} href={tutorialsPath(locale, sl)} aria-current={sl === slug ? 'page' : undefined}>{t.items[sl][0]}</a>
-                </li>
-              ))}
-            </ul>
-          </section>
+<TutorialsLayout locale={locale} slug={slug}>
+  {slug && item ? (
+    <article class="tutorial-body">
+      <h1>{item[0]}</h1>
+      <p class="tutorial-lead">{item[1]}</p>
+      <div set:html={tutorialBody(slug, s)} />
+      <section class="tutorial-related">
+        <h2 class="tutorial-h">{t.related}</h2>
+        <ul>
+          {related[slug].map((r) => (
+            <li><a href={tutorialsPath(locale, r)}>{seoTitles[r][0]}</a></li>
+          ))}
+          <li><a href={pathFor(locale)}>{t.tryItLink}</a></li>
+          <li><a href={tutorialsPath(locale)}>{t.back}</a></li>
+        </ul>
+      </section>
+      <nav class="tutorial-next"aria-label={t.h1}>
+        {prev ? <a class="tutorial-next__prev" href={tutorialsPath(locale, prev)}><small>← {t.prev}</small>{t.items[prev][0]}</a> : <span />}
+        {next ? <a class="tutorial-next__next" href={tutorialsPath(locale, next)}><small>{t.next} →</small>{t.items[next][0]}</a> : <a class="tutorial-next__next" href={pathFor(locale)}><small>→</small>{s.ui.editorLink}</a>}
+      </nav>
+    </article>
+  ) : (
+    <>
+      <h1>{t.h1}</h1>
+      <p class="tutorial-lead">{t.intro}</p>
+      <ul class="welcome">
+        {t.welcome.cards.map((card) => (
+          <li>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={icons[card.icon]} />
+            <div>
+              <h2>{card.title}</h2>
+              <p>{card.text}</p>
+            </div>
+          </li>
         ))}
-      </details>
-    </nav>
-
-    <main class="docs-main tutorials">
-      {slug && item ? (
-        <article class="tutorial-body">
-          <h1>{item[0]}</h1>
-          <p class="tutorial-lead">{item[1]}</p>
-          <div set:html={tutorialBody(slug, s)} />
-          <section class="tutorial-related">
-            <h2 class="tutorial-h">{t.related}</h2>
-            <ul>
-              {related[slug].map((r) => (
-                <li><a href={tutorialsPath(locale, r)}>{seoTitles[r][0]}</a></li>
-              ))}
-              <li><a href={pathFor(locale)}>{t.tryItLink}</a></li>
-              <li><a href={tutorialsPath(locale)}>{t.back}</a></li>
-            </ul>
-          </section>
-          <nav class="tutorial-next"aria-label={t.h1}>
-            {prev ? <a class="tutorial-next__prev" href={tutorialsPath(locale, prev)}><small>← {t.prev}</small>{t.items[prev][0]}</a> : <span />}
-            {next ? <a class="tutorial-next__next" href={tutorialsPath(locale, next)}><small>{t.next} →</small>{t.items[next][0]}</a> : <a class="tutorial-next__next" href={pathFor(locale)}><small>→</small>{s.ui.editorLink}</a>}
-          </nav>
-        </article>
-      ) : (
-        <>
-          <h1>{t.h1}</h1>
-          <p class="tutorial-lead">{t.intro}</p>
-          <ul class="welcome">
-            {t.welcome.cards.map((card) => (
-              <li>
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={icons[card.icon]} />
-                <div>
-                  <h2>{card.title}</h2>
-                  <p>{card.text}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <p class="tutorial-tip">{t.welcome.start}</p>
-          <p><a class="editor-link" href={pathFor(locale)}><img src="/favicon.svg" alt="" width="20" height="26" />{s.ui.editorLink} →</a></p>
-        </>
-      )}
-    </main>
-  </div>
-
-  <script is:inline>
-    (function () {
-      var box = document.querySelector('.docs-nav__box');
-      // On narrow screens the list is a drop-down that starts closed; on wide ones it is the sidebar, always open.
-      if (box && window.matchMedia('(max-width: 899px)').matches) box.removeAttribute('open');
-      var current = document.querySelector('.docs-nav a.is-current');
-      var column = document.querySelector('.docs-nav');
-      // Measured after the browser's own layout pass: reading scrollHeight here, right after the write above, would force one.
-      if (current && column) requestAnimationFrame(function () {
-        if (column.scrollHeight > column.clientHeight) current.scrollIntoView({ block: 'center' });
-      });
-    })();
-  </script>
-</Base>
+      </ul>
+      <p class="tutorial-tip">{t.welcome.start}</p>
+      <p><a class="editor-link" href={pathFor(locale)}><img src="/favicon.svg" alt="" width="20" height="26" />{s.ui.editorLink} →</a></p>
+    </>
+  )}
+</TutorialsLayout>

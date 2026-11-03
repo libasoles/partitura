@@ -141,7 +141,7 @@ a { color: var(--blue-france); }
 .menu-group-label[aria-expanded="true"] .menu-chevron { transform: rotate(180deg); }
 .menu-sublist { margin: 0; padding: 0; list-style: none; }
 .menu-sublist[hidden] { display: none; }
-.menu-sublist button { padding-left: calc(0.7rem + 18px + 0.6rem); }
+.menu-sublist button { padding-left: 1.2rem; }
 .menu-list a:hover,
 .menu-list button:hover,
 .menu-list a:focus-visible,

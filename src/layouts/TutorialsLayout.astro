@@ -1,0 +1,68 @@
+---
+import Base from './Base.astro';
+import { locales, strings, tutorialsPath, type Locale } from '../i18n';
+import { categories, type Slug } from '../lib/tutorials';
+import '../styles/editor.css';
+import '../styles/tab-demo.css';
+import '../styles/tutorials.css';
+
+interface Props {
+  locale: Locale;
+  slug?: Slug;
+}
+
+const { locale, slug } = Astro.props;
+const s = strings(locale);
+const t = s.tutorials;
+const paths = Object.fromEntries(locales.map((l) => [l, tutorialsPath(l, slug)])) as Record<Locale, string>;
+const item = slug ? t.items[slug] : undefined;
+const seo = slug ? (t.seo as Record<string, string[]>)[slug] : undefined;
+const title = seo ? `${seo[0]} · ${s.ui.siteName}` : t.metaTitle;
+const description = seo ? seo[1] : t.metaDescription;
+const faq = slug === 'faq' ? s.scoreFaq.map(([q, a]) => ({ q, a })) : undefined;
+const categoryNames = t.categories as Record<string, string>;
+---
+
+<Base locale={locale} title={title} description={description} paths={paths} faq={faq} hideMenu>
+  <div class="docs">
+    <nav class="docs-nav" aria-label={t.navLabel}>
+      <details class="docs-nav__box" open>
+        <summary>
+          <span>{item ? item[0] : t.navLabel}</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <a class:list={['docs-nav__home', { 'is-current': !slug }]} href={tutorialsPath(locale)} aria-current={slug ? undefined : 'page'}>{t.h1}</a>
+        {categories.map((c) => (
+          <section class="docs-nav__group">
+            <p class="docs-nav__title">{categoryNames[c.id]}</p>
+            <ul>
+              {c.slugs.map((sl) => (
+                <li>
+                  <a class:list={{ 'is-current': sl === slug }} href={tutorialsPath(locale, sl)} aria-current={sl === slug ? 'page' : undefined}>{t.items[sl][0]}</a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </details>
+    </nav>
+
+    <main class="docs-main tutorials">
+      <slot />
+    </main>
+  </div>
+
+  <script is:inline>
+    (function () {
+      var box = document.querySelector('.docs-nav__box');
+      // On narrow screens the list is a drop-down that starts closed; on wide ones it is the sidebar, always open.
+      if (box && window.matchMedia('(max-width: 899px)').matches) box.removeAttribute('open');
+      var current = document.querySelector('.docs-nav a.is-current');
+      var column = document.querySelector('.docs-nav');
+      // Measured after the browser's own layout pass: reading scrollHeight here, right after the write above, would force one.
+      if (current && column) requestAnimationFrame(function () {
+        if (column.scrollHeight > column.clientHeight) current.scrollIntoView({ block: 'center' });
+      });
+    })();
+  </script>
+</Base>
