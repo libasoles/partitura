@@ -500,12 +500,17 @@
       [
         "voices",
         "Multiple voices",
-        "Write two or more voices on the same staff, each with its own stems and rests."
+        "Write two or more voices on the same staff, each with its own rests."
       ],
       [
-        "menu",
-        "Context menus",
-        "Select notes and pick slur, triplet and more from the menu."
+        "slur",
+        "Slurs across barlines",
+        "Select two notes, even in different measures, and slur them from the menu."
+      ],
+      [
+        "triplet",
+        "Triplets",
+        "Select three eighth notes and turn them into a triplet from the context menu."
       ],
       [
         "barre",
@@ -515,7 +520,7 @@
       [
         "hairpin",
         "Hairpins and dynamics",
-        "Crescendo and diminuendo between two dynamics, like p and f."
+        "Crescendo and diminuendo between two dynamics, like p and f, over any notes."
       ],
       [
         "export",
@@ -523,6 +528,7 @@
         "Export to PDF, MusicXML or MIDI to print it or open it in other apps."
       ]
     ],
-    "tutorials": "See the tutorials"
+    "tutorials": "See the tutorials",
+    "body": "Editing a score on a phone is very hard because of the small screen."
   }
 }

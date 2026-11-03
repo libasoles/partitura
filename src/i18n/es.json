@@ -500,12 +500,17 @@
       [
         "voices",
         "Varias voces",
-        "Escribí dos o más voces en el mismo pentagrama: cada una con sus plicas y sus silencios."
+        "Escribí dos o más voces en el mismo pentagrama, con sus silencios en cada una."
       ],
       [
-        "menu",
-        "Menús contextuales",
-        "Seleccioná figuras y elegí ligadura, tresillo y más desde el menú."
+        "slur",
+        "Ligaduras entre compases",
+        "Seleccioná dos notas, incluso de compases distintos, y ligalas desde el menú."
+      ],
+      [
+        "triplet",
+        "Tresillos",
+        "Seleccioná tres corcheas y convertilas en tresillo desde el menú contextual."
       ],
       [
         "barre",
@@ -515,7 +520,7 @@
       [
         "hairpin",
         "Reguladores y dinámicas",
-        "Crescendo y diminuendo entre dos dinámicas, como p y f."
+        "Crescendo y diminuendo entre dos dinámicas, como p y f, sobre cualquier figura."
       ],
       [
         "export",
@@ -523,6 +528,7 @@
         "Exportá a PDF, MusicXML o MIDI para imprimir o abrir en otros programas."
       ]
     ],
-    "tutorials": "Ver los tutoriales"
+    "tutorials": "Ver los tutoriales",
+    "body": "Editar una partitura en el celular es muy difícil por el tamaño de la pantalla."
   }
 }

@@ -14,7 +14,8 @@ const barreLabel = `${ui.barre.charAt(0)}5`;
 // Lucide icons (stroke 2, 24 grid), one per feature. Keys are quoted: the Astro compiler reads a bare `export:` as a statement.
 const icons: Record<string, string> = {
   'voices': '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
-  'menu': '<path d="M12.586 12.586 19 19"/><path d="M3.688 3.037a.497.497 0 0 0-.651.651l6.5 15.998a.501.501 0 0 0 .947-.062l1.569-6.083a2 2 0 0 1 1.448-1.479l6.124-1.579a.5.5 0 0 0 .063-.947z"/>',
+  'slur': '<path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><path d="M8 12h8"/>',
+  'triplet': '<path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>',
   'barre': '<path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>',
   'hairpin': '<path d="M3 12 21 5M3 12l18 7"/>',
   'export': '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
@@ -23,9 +24,10 @@ const icons: Record<string, string> = {
 
 <section class="mobile-gate" aria-labelledby="mobileGateTitle">
   <div class="mobile-gate__hero">
-    <svg class="mobile-gate__logo" viewBox="20 -245 800 1035" fill="currentColor" aria-hidden="true"><g transform="translate(-43 -87)"><g transform="translate(229 687) rotate(12) scale(0.88 1.14) translate(-229 -687)"><path d="M207 597 C172 556 152 525 143 473 L167 492 C119 447 109 387 120 326 L145 354 C128 262 146 178 196 119 C232 75 285 43 340 25 C356 21 362 28 359 46 C354 93 342 144 336 173 L312 214 L345 185 C370 265 381 336 368 397 C361 430 347 452 323 478 L359 450 C353 494 330 528 306 556 L339 535 C319 574 287 601 259 624 C240 644 231 664 229 687 C218 652 213 620 207 597Z"/><path d="M229 687 C195 536 201 375 255 208 C221 395 223 553 238 619 C233 648 230 671 229 687Z" style="fill: var(--paper)"/></g></g><path transform="translate(-8 0)" d="M229 687 L389 573 C485 493 583 458 679 498 C600 474 518 492 398 585 L229 698Z"/><ellipse cx="180" cy="657" rx="60.5" ry="26.9" transform="rotate(35 180 657)"/></svg>
+    <svg class="mobile-gate__logo" viewBox="20 -245 800 1035" fill="currentColor" aria-hidden="true"><g transform="translate(-43 -87)"><g transform="translate(229 687) rotate(12) scale(0.88 1.14) translate(-229 -687)"><path d="M207 597 C172 556 152 525 143 473 L167 492 C119 447 109 387 120 326 L145 354 C128 262 146 178 196 119 C232 75 285 43 340 25 C356 21 362 28 359 46 C354 93 342 144 336 173 L312 214 L345 185 C370 265 381 336 368 397 C361 430 347 452 323 478 L359 450 C353 494 330 528 306 556 L339 535 C319 574 287 601 259 624 C240 644 231 664 229 687 C218 652 213 620 207 597Z"/><path d="M229 687 C195 536 201 375 255 208 C221 395 223 553 238 619 C233 648 230 671 229 687Z" style="fill: var(--paper)"/></g></g><path transform="translate(-8 0)" d="M229 687 L389 573 C485 493 583 458 679 498 C600 474 518 492 398 585 L229 698Z"/><ellipse cx="168" cy="657" rx="69.6" ry="30.9" transform="rotate(35 168 657)"/></svg>
     <p class="mobile-gate__name">{s.ui.siteName}</p>
     <h2 id="mobileGateTitle">{g.title}</h2>
+    <p class="mobile-gate__lead">{g.body}</p>
     <a class="mobile-gate__cta" href={tutorialsPath(locale)}>{g.tutorials}</a>
     <p class="mobile-gate__hint" aria-hidden="true">{g.scroll}</p>
   </div>
@@ -43,22 +45,38 @@ const icons: Record<string, string> = {
                 <g class="n v1 a2"><ellipse cx="60" cy="16" rx="5.5" ry="4" /><path d="M65.5 16V-4" /></g>
                 <g class="n v1 a3"><ellipse cx="90" cy="24" rx="5.5" ry="4" /><path d="M95.5 24V4" /></g>
                 <g class="n v2 b1"><ellipse cx="30" cy="40" rx="5.5" ry="4" /><path d="M24.5 40V58" /></g>
-                <g class="n v2 b2"><ellipse cx="60" cy="48" rx="5.5" ry="4" /><path d="M54.5 48V66" /></g>
+                <g class="n v2 b2"><rect x="55" y="36" width="10" height="4" /></g>
                 <g class="n v2 b3"><ellipse cx="90" cy="40" rx="5.5" ry="4" /><path d="M84.5 40V58" /></g>
               </svg>
             )}
-            {key === 'menu' && (
+            {key === 'slur' && (
               <svg viewBox="0 0 120 60">
                 <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112" /></g>
-                <rect class="sel" x="8" y="10" width="54" height="38" rx="5" />
-                <g class="m"><ellipse cx="18" cy="36" rx="4.5" ry="3.3" /><path d="M22.5 36V14" /></g>
-                <g class="m"><ellipse cx="36" cy="36" rx="4.5" ry="3.3" /><path d="M40.5 36V14" /></g>
-                <g class="m"><ellipse cx="54" cy="36" rx="4.5" ry="3.3" /><path d="M58.5 36V14" /></g>
-                <path class="slur" pathLength="1" d="M18 42Q36 54 54 42" />
-                <g class="three"><path d="M18 10h12M42 10h12" /><text x="36" y="12">3</text></g>
+                <path class="bar" d="M36 16V48" />
+                <rect class="sel" x="19" y="12" width="36" height="38" rx="5" />
+                <g class="m"><ellipse cx="12" cy="36" rx="4.5" ry="3.3" /><path d="M16.5 36V14" /></g>
+                <g class="m"><ellipse cx="26" cy="36" rx="4.5" ry="3.3" /><path d="M30.5 36V14" /></g>
+                <g class="m"><ellipse cx="46" cy="36" rx="4.5" ry="3.3" /><path d="M50.5 36V14" /></g>
+                <path class="slur" pathLength="1" d="M26 42Q36 54 46 42" />
                 <g class="menubox">
                   <rect class="menubox__bg" x="66" y="8" width="50" height="34" rx="4" />
                   <rect class="item i1" x="68" y="10" width="46" height="14" rx="3" />
+                  <text class="label" x="72" y="20">{ui.link}</text>
+                  <text class="label" x="72" y="36">{ui.triplet}</text>
+                </g>
+              </svg>
+            )}
+            {key === 'triplet' && (
+              <svg viewBox="0 0 120 60">
+                <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112" /></g>
+                <rect class="sel" x="6" y="12" width="48" height="38" rx="5" />
+                <g class="m"><ellipse cx="14" cy="38" rx="4.5" ry="3.3" /><path d="M18.5 38V16" /></g>
+                <g class="m"><ellipse cx="29" cy="34" rx="4.5" ry="3.3" /><path d="M33.5 34V16" /></g>
+                <g class="m"><ellipse cx="44" cy="38" rx="4.5" ry="3.3" /><path d="M48.5 38V16" /></g>
+                <path class="beam" d="M18.5 16H48.5" />
+                <g class="three"><path d="M18.5 8h10M38.5 8h10" /><text x="33.5" y="10">3</text></g>
+                <g class="menubox">
+                  <rect class="menubox__bg" x="66" y="8" width="50" height="34" rx="4" />
                   <rect class="item i2" x="68" y="26" width="46" height="14" rx="3" />
                   <text class="label" x="72" y="20">{ui.link}</text>
                   <text class="label" x="72" y="36">{ui.triplet}</text>
@@ -80,14 +98,14 @@ const icons: Record<string, string> = {
             )}
             {key === 'hairpin' && (
               <svg viewBox="0 0 120 60">
-                <g class="staff"><path d="M4 8h112M4 14h112M4 20h112M4 26h112M4 32h112" /></g>
-                <g class="m"><ellipse cx="26" cy="26" rx="4.5" ry="3.2" /><path d="M30.5 26V6" /></g>
-                <g class="m"><ellipse cx="48" cy="20" rx="4.5" ry="3.2" /><path d="M52.5 20V0" /></g>
-                <g class="m"><ellipse cx="70" cy="14" rx="4.5" ry="3.2" /><path d="M74.5 14V-6" /></g>
-                <g class="m"><ellipse cx="92" cy="8" rx="4.5" ry="3.2" /><path d="M96.5 8V-12" /></g>
-                <text class="dyn dyn1" x="12" y="52">p</text>
-                <text class="dyn dyn2" x="104" y="52">f</text>
-                <path class="hp" d="M24 47L92 41M24 47L92 53" />
+                <g class="staff"><path d="M4 14h112M4 20h112M4 26h112M4 32h112M4 38h112" /></g>
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                  <g class="m"><ellipse cx={16 + i * 12} cy={i % 2 ? 23 : 29} rx="4" ry="3" /><path d={`M${20 + i * 12} ${i % 2 ? 23 : 29}V3`} /></g>
+                ))}
+                <path class="beam" d="M20 3H56M20 7H56M68 3H104M68 7H104" />
+                <text class="dyn dyn1" x="9" y="56">p</text>
+                <text class="dyn dyn2" x="111" y="56">f</text>
+                <path class="hp" d="M20 52L100 46M20 52L100 58" />
               </svg>
             )}
             {key === 'export' && (

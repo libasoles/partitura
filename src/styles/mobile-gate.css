@@ -33,7 +33,7 @@
   font-size: clamp(1.6rem, 7vw, 2.1rem);
   line-height: 1.15;
 }
-.mobile-gate__hero h2 { margin-bottom: 1.6rem; }
+.mobile-gate__lead { max-width: 26rem; margin: 0.9rem 0 1.6rem; color: var(--ink-soft); font-size: 1.02rem; }
 .mobile-gate__cta {
   display: inline-block;
   padding: 0.7rem 1.4rem;
@@ -74,7 +74,11 @@
 .feature .n path, .feature .m path, .feature .arrow path, .feature .doc path {
   stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round;
 }
+.feature .n rect { fill: currentColor; }
 .feature .v1 { color: var(--accent-brand); }
+.feature .bar { stroke: currentColor; stroke-width: 1.2; fill: none; }
+.feature .beam { stroke: currentColor; stroke-width: 2.4; fill: none; }
+.feature--hairpin .beam { stroke-width: 1.8; }
 .feature .t { font: 600 10px var(--mono); text-anchor: middle; fill: currentColor; }
 .feature .doc rect { fill: none; stroke: currentColor; stroke-width: 2; }
 .feature .badges text { font: 700 9px var(--sans); fill: var(--ink-soft); text-anchor: middle; }
@@ -126,7 +130,7 @@
   .feature .i1 { animation: gate-i1 8s infinite; }
   @keyframes gate-i1 { 0%, 32% { opacity: 0; } 36%, 46% { opacity: 0.2; } 50%, 100% { opacity: 0; } }
   .feature .i2 { animation: gate-i2 8s infinite; }
-  @keyframes gate-i2 { 0%, 62% { opacity: 0; } 66%, 74% { opacity: 0.2; } 78%, 100% { opacity: 0; } }
+  @keyframes gate-i2 { 0%, 32% { opacity: 0; } 36%, 46% { opacity: 0.2; } 50%, 100% { opacity: 0; } }
   .feature .slur { animation: gate-slur 8s ease-in-out infinite; }
   @keyframes gate-slur {
     0%, 46% { stroke-dashoffset: 1; opacity: 1; }
@@ -134,7 +138,8 @@
     97%, 100% { stroke-dashoffset: 0; opacity: 0; }
   }
   .feature .three { animation: gate-three 8s infinite; }
-  @keyframes gate-three { 0%, 74% { opacity: 0; } 80%, 90% { opacity: 1; } 97%, 100% { opacity: 0; } }
+  @keyframes gate-three { 0%, 48% { opacity: 0; } 56%, 90% { opacity: 1; } 97%, 100% { opacity: 0; } }
+  .feature--hairpin .beam { opacity: 0; animation: gate-m 5s infinite; }
 
   /* Barre: the label lands and the dashed line draws across the strings it covers. */
   .feature .barre { animation: gate-barre 5s ease-in-out infinite; transform-origin: left center; }
@@ -148,7 +153,8 @@
   .feature .hp { animation: gate-hp 5s ease-in-out infinite; }
   .feature .dyn1 { animation: gate-dyn1 5s infinite; }
   .feature .dyn2 { animation: gate-dyn2 5s infinite; }
-  .feature .m { opacity: 0; animation: gate-m 5s infinite; }
+  .feature--hairpin .m { opacity: 0; animation: gate-m 5s infinite; }
+  .feature--hairpin .m:nth-of-type(n + 2) { animation-delay: 0.1s; }
   @keyframes gate-hp { 0%, 10% { transform: scaleX(0); } 70%, 90% { transform: scaleX(1); } 98%, 100% { transform: scaleX(1); opacity: 0; } }
   @keyframes gate-dyn1 { 0% { opacity: 0; } 8%, 90% { opacity: 1; } 98%, 100% { opacity: 0; } }
   @keyframes gate-dyn2 { 0%, 65% { opacity: 0; } 75%, 90% { opacity: 1; } 98%, 100% { opacity: 0; } }
