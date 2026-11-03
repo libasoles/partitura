@@ -50,7 +50,12 @@ test('first paint does not wait on CSS, fonts or heavy scripts', () => {
   const html = readFileSync(new URL('../dist/es/index.html', import.meta.url), 'utf8');
   assert.doesNotMatch(html, /rel="stylesheet"/, 'CSS is inlined');
   assert.match(html, /<link rel="preload" href="\/_astro\/montserrat-latin-wght-normal[^"]+\.woff2" as="font" type="font\/woff2" crossorigin/);
-  assert.doesNotMatch(html, /(src|href)="[^"]*(ascii-tabs|jspdf|verovio)/, 'tabs, PDF export and Verovio load on demand');
+  assert.doesNotMatch(html, /(src|href)="[^"]*(ascii-tabs|jspdf|score-export)/, 'tabs and PDF export load on demand');
+  assert.doesNotMatch(html, /<script[^>]*verovio/, 'Verovio is never a blocking script');
+  // Verovio is only hinted: low priority, and only where the editor runs (phones get the "desktop only" screen).
+  const hints = html.match(/<link[^>]*verovio[^>]*>/g) ?? [];
+  assert.equal(hints.length, 2, 'the script and the WebAssembly are preloaded');
+  for (const hint of hints) assert.match(hint, /fetchpriority="low"[^>]*media="\(min-width: 900px\)"|media="\(min-width: 900px\)"[^>]*fetchpriority="low"/, hint);
 });
 
 for (const [locale, file] of Object.entries(pages)) {

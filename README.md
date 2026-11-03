@@ -83,7 +83,8 @@ Requiere Node >= 22.12. Astro está fijado en la 6.x porque la 7 pide Node >= 22
 - `src/client/` — el editor (`score-editor.js`, `score-model.js`, `score-fingering.js`).
 - `src/styles/` — `global.css` (layout de la página) y `editor.css` (el editor).
 - `src/vendor/ascii-tabs.js` — Vite lo empaqueta y minifica en un chunk que solo se pide al mostrar tablaturas.
-- `public/vendor/` — `jspdf` (solo al exportar PDF); Verovio se minifica con source map y se versiona (`verovio-<versión>.js`, `scripts/vendor.mjs`). En pantallas angostas (sin editor) no se pide nada; en desktop se pide al estar ocioso, o enseguida, con spinner, si hay partituras guardadas.
+- `public/vendor/` — `jspdf` (solo al exportar PDF); Verovio se minifica con source map y se versiona (`verovio-<versión>.js`, `scripts/vendor.mjs`); su WebAssembly (7 MB, embebido como string en el paquete npm) se extrae a `verovio-<versión>.wasm` y se compila en streaming, así no hay una tarea larga de parseo. En pantallas angostas (sin editor) solo se baja `main.js` (~1 KB); en desktop el JS y el `.wasm` se precargan con prioridad baja y se ejecutan al estar ocioso, o enseguida, con spinner, si hay partituras guardadas.
+- `src/client/score-export.js` — importar/exportar (MusicXML, MIDI, PDF): chunk que se pide la primera vez que se usa el menú del sitio.
 
 ## Compresión y caché
 

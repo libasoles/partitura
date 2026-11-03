@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
 
 const dist = new URL('../dist/', import.meta.url).pathname;
-const compressible = /\.(html|js|mjs|css|svg|json|xml|txt)$/;
+const compressible = /\.(html|js|mjs|css|svg|json|xml|txt|wasm)$/;
 const MIN_SIZE = 1024; // below this the headers cost more than the bytes saved
 
 let files = 0;
