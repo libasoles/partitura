@@ -1,6 +1,55 @@
 import { test, expect } from '@playwright/test';
 import M from '../src/client/score-model.js';
 
+test('signature previews stay framed when switching between clef and key popups', async ({ page }, testInfo) => {
+  await page.addInitScript((score) => {
+    localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [score] }));
+  }, { ...M.emptyScore(), clef: 'guitar', fifths: -1, meter: '6/8' });
+  await page.goto('/es/');
+  const clef = page.locator('.score-clef-trigger').first();
+  const key = page.locator('.score-key-trigger').first();
+
+  async function expectFramed(selector) {
+    const previews = page.locator(selector + ' svg');
+    await expect(previews).not.toHaveCount(0);
+    const boxes = await previews.evaluateAll(nodes => nodes.map(svg => {
+      const glyph = svg.querySelector(':scope > g');
+      const box = glyph.getBBox();
+      const view = svg.viewBox.baseVal;
+      return {
+        view: [view.x, view.y, view.width, view.height],
+        glyph: [box.x, box.y, box.width, box.height],
+        width: box.width,
+        height: box.height,
+        inside: box.x >= view.x && box.y >= view.y &&
+          box.x + box.width <= view.x + view.width && box.y + box.height <= view.y + view.height,
+      };
+    }));
+    for (const box of boxes) {
+      expect(box.width).toBeGreaterThan(0);
+      expect(box.height).toBeGreaterThan(0);
+      expect(box.inside, JSON.stringify(box)).toBe(true);
+    }
+  }
+
+  // Opening clefs first must not cache incorrectly measured, hidden key previews.
+  await clef.click();
+  await expectFramed('.score-clef-options');
+  await page.keyboard.press('Escape');
+  await key.click();
+  await expectFramed('.score-key-options');
+  await page.screenshot({ path: testInfo.outputPath('key-popup.png') });
+  await page.keyboard.press('Escape');
+
+  // Also exercise the opposite order on a fresh page.
+  await page.reload();
+  await key.click();
+  await expectFramed('.score-key-options');
+  await page.keyboard.press('Escape');
+  await clef.click();
+  await expectFramed('.score-clef-options');
+});
+
 async function expectSaved(page, expected) {
   // Wait for the debounced IndexedDB write before exercising restoration.
   await expect.poll(() => page.evaluate(() => new Promise((resolve, reject) => {
