@@ -1429,14 +1429,29 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
 
   // Reconstruye las claves compas:inicio despues de asentar las figuras. Si cambia
   // la altura, se deja que la digitacion automatica calcule una posicion nueva.
-  function restoreTabReferences(score, saved) {
+  // `complete(opens, pinned, midis)` coloca las notas nuevas de un acorde alrededor de las cuerdas ya elegidas.
+  function restoreTabReferences(score, saved, complete) {
     const byRef = new Map();
     saved.forEach((entry) => entry.refs.forEach((ref, i) => byRef.set(ref, { entry, midi: entry.midis[i] })));
     const tabs = {};
     attacks(score, true).forEach((attack) => {
       const refs = attack.events.map(tabReference);
       const entries = refs.map((ref) => byRef.get(ref));
-      if (entries.some((entry, i) => !entry || entry.midi !== attack.midis[i])) return;
+      const known = entries.map((entry, i) => entry && entry.midi === attack.midis[i]);
+      if (!known.every(Boolean)) {
+        // Una nota nueva (o cambiada) se suma a un acorde: las demas conservan su cuerda y solo la nueva se calcula.
+        if (!complete || !known.some(Boolean)) return;
+        const opens = tuningOf(score).opens;
+        const pinned = [];
+        entries.forEach((entry, i) => {
+          if (!known[i]) return;
+          const string = entry.entry.column.findIndex((fret, s) => fret !== null && opens[s] + fret === entry.midi && !pinned.some((cell) => cell[0] === s));
+          if (string >= 0) pinned.push([string, entry.entry.column[string]]);
+        });
+        const column = pinned.length === known.filter(Boolean).length ? complete(opens, pinned, attack.midis) : null;
+        if (column) tabs[attack.key] = column;
+        return;
+      }
       const first = entries[0].entry;
       if (first.refs.length === refs.length && refs.every((ref) => first.refs.includes(ref))) {
         tabs[attack.key] = first.column.slice();

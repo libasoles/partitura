@@ -299,7 +299,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {} 
     if (mutate() === false) return false;
     // `at` queda siempre igual al tiempo que se ve (sin huecos): asi los clics y arrastres siguientes se ubican en el orden.
     M.measures(score).forEach(M.settle);
-    M.restoreTabReferences(score, tabRefs);
+    M.restoreTabReferences(score, tabRefs, window.ScoreFingering.complete);
     history.push(before);
     if (history.length > HISTORY_LIMIT) history.shift();
     save();

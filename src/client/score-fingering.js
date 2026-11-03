@@ -28,7 +28,7 @@ const api = (function () {
   };
 
   // Todas las formas de tocar estas notas a la vez: cada una en su cuerda, las graves abajo, en una posicion.
-  function shapes(midis, opens) {
+  function shapes(midis, opens, pinned = []) {
     const notes = midis.slice().sort((a, b) => b - a);
     const found = [];
     (function place(i, from, cells) {
@@ -42,7 +42,8 @@ const api = (function () {
         if (fret >= 0 && fret <= MAX_FRET) place(i + 1, s + 1, cells.concat([[s, fret]]));
       }
     })(0, 0, []);
-    return found.sort((a, b) => own(a) - own(b)).slice(0, MAX_OPTIONS);
+    const kept = pinned.length ? found.filter((cells) => pinned.every(([s, f]) => cells.some((cell) => cell[0] === s && cell[1] === f))) : found;
+    return kept.sort((a, b) => own(a) - own(b)).slice(0, MAX_OPTIONS);
   }
 
   const single = (option) => (option.length === 1 ? option[0] : null);
@@ -86,6 +87,12 @@ const api = (function () {
     return chosen;
   }
 
+  // Mejor forma de tocar `midis` sin mover las celdas `pinned` ([cuerda, traste]); null si no cabe.
+  function complete(opens, pinned, midis) {
+    const [best] = shapes(midis, opens, pinned);
+    return best ? toColumn(best) : null;
+  }
+
   // Celdas -> columna de 6 trastes (cuerda 1 primero), null donde no suena nada.
   function toColumn(cells) {
     const column = new Array(OPENS.length).fill(null);
@@ -93,7 +100,7 @@ const api = (function () {
     return column;
   }
 
-  return { OPENS, assign, toColumn };
+  return { OPENS, assign, complete, toColumn };
 })();
 
 export default api;
