@@ -77,7 +77,7 @@
     "titleLabel": "Título de la partitura",
     "untitledScore": "Sin título {n}",
     "clearTitle": "¿Borrar la partitura?",
-    "clearDescription": "Se quitarán todas las notas y barras, el título y el autor.",
+    "clearDescription": "Se borrara todo el contenido. Los cambios no son reversibles.",
     "clearDescriptionTab": "Se borrará esta partitura por completo.",
     "clearConfirm": "Borrar",
     "clearCancel": "Cancelar",

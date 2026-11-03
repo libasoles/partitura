@@ -1446,7 +1446,7 @@ html {
 }
 
 .confirm-cancel {
-  border-width: 1px;
+  border-color: var(--rule);
 }
 
 .confirm-close {
