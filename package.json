@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "check": "astro check",
     "test": "node --test test/*.test.mjs",
+    "test:browser": "playwright test",
     "postinstall": "node scripts/vendor.mjs",
     "predev": "node scripts/vendor.mjs",
     "prebuild": "node scripts/vendor.mjs",
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@astrojs/check": "latest",
     "@astrojs/sitemap": "latest",
+    "@playwright/test": "^1.64.1",
     "esbuild": "^0.27.7",
     "lighthouse": "^13.6.0",
     "typescript": "^5.9.0"

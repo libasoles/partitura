@@ -40,3 +40,10 @@ npm run build   # sitio estático en dist/; SITE_URL=https://ejemplo.com para el
 npm test        # después del build: verifica el HTML generado
 npm run check   # astro check (tipos)
 ```
+
+Las pruebas de navegador usan Chromium de Playwright con un perfil aislado:
+
+```sh
+npx playwright install chromium   # una vez por equipo
+npm run test:browser              # inicia su propio servidor de prueba
+```

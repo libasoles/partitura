@@ -10,4 +10,6 @@ public/vendor/verovio-*
 .env.*
 *.log
 coverage/
+test-results/
+playwright-report/
 .lighthouse-reports/
