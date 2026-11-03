@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import M from '../src/client/score-model.js';
 
-test('moving a bass eighth under the A preserves the measure', async ({ page }, testInfo) => {
+function exampleScore(bassDuration = 'q') {
   const score = { ...M.emptyScore(), clef: 'guitar', meter: '6/8', fifths: -1 };
   score.rows[0][0] = [
     { d: 'e', rest: true, v: 1, at: 0 },
@@ -11,9 +11,14 @@ test('moving a bass eighth under the A preserves the measure', async ({ page }, 
     { d: 'e', n: 28, v: 1, at: 24 },
     { d: 'e', n: 40, v: 1, at: 36 },
     { d: 'e', n: 39, v: 1, at: 48 },
-    { d: 'q', n: 24, v: 2, at: 48 },
+    { d: bassDuration, n: 24, v: 2, at: 48 },
     { d: 'e', n: 41, tie: true, v: 1, at: 60 },
   ];
+  return score;
+}
+
+test('moving a bass eighth under the A preserves the measure', async ({ page }, testInfo) => {
+  const score = exampleScore();
   await page.addInitScript(score => {
     localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [score] }));
   }, score);
@@ -47,3 +52,36 @@ test('moving a bass eighth under the A preserves the measure', async ({ page }, 
   await expect(notes).toHaveCount(8);
   expect(await page.evaluate(() => window.lastSavedScore.scores[0].rows[0][0])).toEqual(score.rows[0][0]);
 });
+
+for (const beforeFirst of [true, false]) {
+  test(`inserting a rest before the bass preserves the full melody (beforeFirst=${beforeFirst})`, async ({ page }) => {
+    const score = exampleScore('e');
+    await page.addInitScript(score => {
+      localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [score] }));
+    }, score);
+    await page.goto('/es/');
+    await expect(page.locator('#scoreStage g.note')).toHaveCount(8);
+    await page.evaluate(() => {
+      const save = window.ScoreStore.save;
+      window.ScoreStore.save = value => {
+        window.lastSavedScore = structuredClone(value);
+        save(value);
+      };
+    });
+    const rest = await page.locator('[id="e0-0"]').boundingBox();
+    const bass = await page.locator('[id="e0-1"] .notehead').boundingBox();
+    const tool = await page.locator('[data-shortcut="e"]').boundingBox();
+    await page.mouse.move(tool.x + tool.width / 2, tool.y + tool.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(rest.x + rest.width / 2 + 2 - (beforeFirst ? 20 : 0), bass.y + bass.height / 2 + 2, { steps: 10 });
+    await page.mouse.up();
+    await expect(page.locator('#scoreStage g.rest')).toHaveCount(2);
+    await expect(page.locator('#scoreStage g.note')).toHaveCount(8);
+    const result = await page.evaluate(() => window.lastSavedScore.scores[0].rows[0][0]);
+    expect(result.filter(ev => ev.v === 1)).toEqual(score.rows[0][0].filter(ev => ev.v === 1));
+    expect(result.filter(ev => ev.v === 2).map(ev => [!!ev.rest, ev.at])).toEqual([[true, 0], [false, 12], [false, 48]]);
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(page.locator('#scoreStage g.rest')).toHaveCount(1);
+  });
+}
