@@ -1,7 +1,8 @@
 ---
 import '@fontsource-variable/montserrat';
 import '../styles/global.css';
-import { locales, ogLocales, pathFor, rootPath, strings, tutorialsPath, type Locale } from '../i18n';
+import latinFont from '@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2?url';
+import { locales, ogLocales, pathFor, rootPath, strings, termsPath, tutorialsPath, type Locale } from '../i18n';
 import { pageJsonLd } from '../lib/jsonld';
 
 interface Props {
@@ -20,6 +21,7 @@ const s = strings(locale);
 const site = Astro.site!;
 const abs = (l: Locale) => new URL(paths[l], site).toString();
 const canonical = abs(locale);
+const ogImage = new URL(`/og-${locale}.png`, site).toString();
 const homeUrl = new URL(rootPath, site).toString();
 const jsonLd = pageJsonLd({
   locale,
@@ -49,17 +51,27 @@ const jsonLd = pageJsonLd({
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={s.ui.ogImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={s.ui.ogImageAlt} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="theme-color" content="#ffffff" />
+    <link rel="preload" href={latinFont} as="font" type="font/woff2" crossorigin />
+    {editor && <script is:inline set:html={`try{if(/(?:^|; )banner-closed=1/.test(document.cookie))document.documentElement.classList.add('banner-closed')}catch(e){}`} />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
   </head>
   <body class="score-body">
         <header class={editor ? 'site-header site-header--editor' : 'site-header'}>
       <a class="brand" href={pathFor(locale)} aria-label={`${s.ui.siteName} — ${s.ui.home}`}>
-        <svg class="brand-mark" viewBox="20 -245 800 1035" fill="currentColor" aria-hidden="true"><g transform="translate(-43 -87)"><g transform="translate(229 687) rotate(12) scale(0.88 1.14) translate(-229 -687)"><path d="M207 597 C172 556 152 525 143 473 L167 492 C119 447 109 387 120 326 L145 354 C128 262 146 178 196 119 C232 75 285 43 340 25 C356 21 362 28 359 46 C354 93 342 144 336 173 L312 214 L345 185 C370 265 381 336 368 397 C361 430 347 452 323 478 L359 450 C353 494 330 528 306 556 L339 535 C319 574 287 601 259 624 C240 644 231 664 229 687 C218 652 213 620 207 597Z"/><path d="M229 687 C195 536 201 375 255 208 C221 395 223 553 238 619 C233 648 230 671 229 687Z" style="fill: var(--paper)"/></g></g><path transform="translate(-8 0)" d="M229 687 L389 573 C485 493 583 458 679 498 C600 474 518 492 398 585 L229 698Z"/><ellipse cx="180" cy="657" rx="60.5" ry="26.9" transform="rotate(35 180 657)"/></svg>
+        <svg class="brand-mark" viewBox="20 -245 800 1035" fill="currentColor" aria-hidden="true"><g transform="translate(-43 -87)"><g transform="translate(229 687) rotate(12) scale(0.88 1.14) translate(-229 -687)"><path d="M207 597 C172 556 152 525 143 473 L167 492 C119 447 109 387 120 326 L145 354 C128 262 146 178 196 119 C232 75 285 43 340 25 C356 21 362 28 359 46 C354 93 342 144 336 173 L312 214 L345 185 C370 265 381 336 368 397 C361 430 347 452 323 478 L359 450 C353 494 330 528 306 556 L339 535 C319 574 287 601 259 624 C240 644 231 664 229 687 C218 652 213 620 207 597Z"/><path d="M229 687 C195 536 201 375 255 208 C221 395 223 553 238 619 C233 648 230 671 229 687Z" style="fill: var(--paper)"/></g></g><path transform="translate(-8 0)" d="M229 687 L389 573 C485 493 583 458 679 498 C600 474 518 492 398 585 L229 698Z"/><ellipse cx="168" cy="657" rx="69.6" ry="30.9" transform="rotate(35 168 657)"/></svg>
       </a>
       <div class="site-menu" id="siteMenu">
         <button id="siteMenuToggle" class="menu-toggle" type="button" aria-label={s.ui.menu} aria-haspopup="true" aria-expanded="false" aria-controls="siteMenuList">
@@ -85,7 +97,32 @@ const jsonLd = pageJsonLd({
       </div>
     </header>
     <slot />
+    <button type="button" class="beta-badge" id="betaOpen" aria-expanded="false" aria-controls="betaPopover">{s.ui.betaLabel}</button>
+    <div class="beta-popover" id="betaPopover" role="region" aria-label={s.ui.betaLabel} hidden>
+      <p>{s.ui.betaP1}</p>
+      <p>{s.ui.betaP2}</p>
+      <p>{s.ui.betaP3}</p>
+      <p>{s.ui.betaP4}</p>
+    </div>
+    <footer class="site-footer">
+      <a href={termsPath(locale)}>{s.ui.footerTerms}</a>
+    </footer>
     <script is:inline>
+      (function () {
+        var betaOpen = document.getElementById('betaOpen');
+        var betaPop = document.getElementById('betaPopover');
+        function setBeta(open) {
+          betaPop.hidden = !open;
+          betaOpen.setAttribute('aria-expanded', String(open));
+        }
+        betaOpen.addEventListener('click', function () { setBeta(betaPop.hidden); });
+        document.addEventListener('click', function (event) {
+          if (!betaPop.hidden && !betaPop.contains(event.target) && !betaOpen.contains(event.target)) setBeta(false);
+        });
+        document.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape' && !betaPop.hidden) { setBeta(false); betaOpen.focus(); }
+        });
+      })();
       (function () {
         var toggle = document.getElementById('siteMenuToggle');
         var list = document.getElementById('siteMenuList');
