@@ -223,9 +223,9 @@
   },
   "tutorials": {
     "metaTitle": "Tutoriais · Partitura",
-    "metaDescription": "Aprenda a usar o editor de partituras passo a passo: primeiros passos, atalhos de teclado, ponto de aumento, barras de compasso e tablatura.",
+    "metaDescription": "Aprenda a usar o editor de partituras passo a passo, com animações: notas e pausas, edição, compassos, repetições, dinâmicas, tablatura de violão e arquivos.",
     "h1": "Tutoriais",
-    "intro": "Guias curtos, um por tema, para aproveitar ao máximo o editor.",
+    "intro": "Guias curtos, um por tema, cada um com um exemplo animado. Escolha um no menu à esquerda.",
     "back": "Todos os tutoriais",
     "next": "Próximo",
     "items": {
@@ -260,7 +260,192 @@
       "faq": [
         "Perguntas frequentes",
         "Gratuito, formatos de download e violão."
+      ],
+      "notes-rests": [
+        "Notas e pausas",
+        "Escolha uma figura, clique na pauta e siga escrevendo."
+      ],
+      "accidentals": [
+        "Sustenidos, bemóis e bequadros",
+        "Altere uma nota com uma tecla e um clique."
+      ],
+      "select-move": [
+        "Selecionar, mover e apagar",
+        "Escolha uma ou várias figuras e mova sem reescrever."
+      ],
+      "copy": [
+        "Duplicar, copiar e colar",
+        "Repita um motivo com algumas teclas."
+      ],
+      "tuplets": [
+        "Quiálteras",
+        "Transforme figuras seguidas em tercina, quintina e mais."
+      ],
+      "ties": [
+        "Ligaduras e barras",
+        "Una duas notas com uma ligadura ou agrupe colcheias com uma barra."
+      ],
+      "signatures": [
+        "Compasso, clave e armadura",
+        "Mude o compasso, a clave ou a armadura em qualquer ponto."
+      ],
+      "measures": [
+        "Adicionar, inserir e mover compassos",
+        "Monte a estrutura da partitura compasso por compasso."
+      ],
+      "repeats": [
+        "Repetições e saltos",
+        "Barras de repetição, da capo, segno e casas."
+      ],
+      "dynamics": [
+        "Reguladores e dinâmicas",
+        "Crescendo, diminuendo e sinais de intensidade."
+      ],
+      "tab-toggle": [
+        "Mostrar a tablatura",
+        "Uma tablatura sob cada pauta, com a digitação já resolvida."
+      ],
+      "refinger": [
+        "Mudar a corda de uma nota",
+        "Toque o mesmo som em outra corda."
+      ],
+      "barre": [
+        "Pestanas",
+        "Marque uma pestana com sua casa sobre as notas que ela cobre."
+      ],
+      "files": [
+        "Carregar e exportar",
+        "Abra um MusicXML ou MIDI e baixe sua partitura em PDF, MusicXML ou MIDI."
+      ],
+      "scores": [
+        "Várias partituras e salvamento",
+        "Trabalhe em várias partituras ao mesmo tempo; tudo é salvo sozinho no navegador."
       ]
+    },
+    "stepsHeading": "Passo a passo",
+    "tipLabel": "Dica",
+    "navLabel": "Tutoriais",
+    "prev": "Anterior",
+    "categories": {
+      "basics": "Primeiros passos",
+      "editing": "Editar figuras",
+      "structure": "Compassos e sinais",
+      "guitar": "Violão e tablatura",
+      "files": "Arquivos e salvamento"
+    },
+    "bodies": {
+      "notes-rests": {
+        "steps": [
+          "Escolha uma figura na paleta ou aperte sua tecla: de <kbd>1</kbd> (fusa) a <kbd>6</kbd> (semibreve) para notas, e de <kbd>Q</kbd> a <kbd>Y</kbd> para pausas.",
+          "Clique na pauta: a altura do clique é a nota e a posição horizontal, o tempo. Você também pode arrastar a figura da paleta até o lugar.",
+          "A ferramenta continua ativa depois de cada figura, então dá para escrever uma frase inteira sem escolher de novo. Colcheias e figuras mais curtas se unem com barra sozinhas.",
+          "Aperte <kbd>A</kbd> ou <kbd>Esc</kbd> para soltar a ferramenta e voltar a selecionar figuras."
+        ],
+        "tip": "Se uma figura não cabe no que sobra do compasso, o editor avisa e não a coloca."
+      },
+      "accidentals": {
+        "steps": [
+          "Aperte <kbd>S</kbd> para sustenido, <kbd>B</kbd> para bemol ou <kbd>C</kbd> para bequadro. Eles também estão na paleta.",
+          "Clique na nota que quer alterar: o sinal aparece à esquerda dela.",
+          "O ponto de aumento funciona igual: aperte <kbd>P</kbd> e clique na nota, ou dê um duplo clique nela."
+        ]
+      },
+      "select-move": {
+        "steps": [
+          "Clique numa figura para selecioná-la. Com <kbd>Shift</kbd>, <kbd>Ctrl</kbd> ou <kbd>Cmd</kbd> você soma mais. Arrastando a partir de um ponto vazio da pauta, você as cerca com um retângulo.",
+          "<kbd>↑</kbd> e <kbd>↓</kbd> sobem ou descem a seleção um passo da pauta; <kbd>←</kbd> e <kbd>→</kbd> passam para a figura ao lado. Também dá para arrastar as figuras para outro lugar.",
+          "<kbd>Delete</kbd> ou <kbd>Backspace</kbd> apaga. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> desfaz a última alteração e <kbd>Esc</kbd> solta a seleção."
+        ]
+      },
+      "copy": {
+        "steps": [
+          "Selecione uma ou mais figuras e aperte <kbd>Shift</kbd> + <kbd>D</kbd>: elas são copiadas logo depois da última selecionada, seguindo pelos compassos seguintes.",
+          "Para levá-las a outro lugar, copie com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, clique no compasso de destino e cole com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Funciona também entre partituras abertas."
+        ],
+        "tip": "Se você segurar <kbd>Shift</kbd> ao colar, só as figuras são coladas, sem as mudanças de clave, armadura ou compasso."
+      },
+      "tuplets": {
+        "steps": [
+          "Selecione de 2 a 9 figuras seguidas do mesmo valor, por exemplo três colcheias.",
+          "Sobre a seleção aparece um menu com o grupo que corresponde à quantidade: tercina, duina, quartina, quintina, sextina, septina, octina ou nonina.",
+          "Escolha o grupo: as figuras encurtam para caber no mesmo tempo e o número aparece sobre elas.",
+          "Para desfazer, selecione o grupo e escolha <em>Remover tercina</em> (ou a que for) no mesmo menu."
+        ]
+      },
+      "ties": {
+        "steps": [
+          "Selecione duas notas seguidas com <kbd>Shift</kbd>+clique. No menu que aparece sobre elas, escolha <em>Ligadura</em>: se soam iguais, desenha-se uma ligadura de prolongamento; se não, uma de expressão.",
+          "Para tirar, selecione as mesmas notas e escolha <em>Remover ligadura</em>.",
+          "As barras funcionam igual: selecione figuras seguidas e escolha <em>Barrar</em> para uni-las ou <em>Separar</em> para cortar a barra. Se você não mexer, o editor as agrupa sozinho conforme o compasso."
+        ]
+      },
+      "signatures": {
+        "steps": [
+          "Clique no número do compasso, na clave ou no lugar da armadura, no começo de uma pauta.",
+          "Escolha o valor no menu: compasso (4/4, 3/4, 6/8…), clave (Sol, Sol de violão, Fá, Dó na terceira ou na quarta) ou armadura (de Dó♭ a Dó♯). Em clave e armadura, confirme com <em>Aplicar</em>.",
+          "A mudança vale desse compasso até a próxima mudança, então você pode trocar de compasso ou de armadura no meio da obra."
+        ],
+        "tip": "Se as figuras que você já escreveu não cabem no novo compasso, o editor pede que você tire ou mova algumas antes de mudar."
+      },
+      "measures": {
+        "steps": [
+          "Clique num espaço vazio do compasso para selecioná-lo: nas bordas aparecem dois botões <strong>+</strong> para inserir um compasso antes ou depois.",
+          "No fim de cada pauta, os botões <strong>+</strong> e <strong>−</strong> adicionam ou tiram um compasso. Para adicionar outra pauta, use o botão abaixo da partitura.",
+          "Segure <kbd>Shift</kbd> e arraste um compasso para levá-lo a outro lugar.",
+          "Arraste uma barra de compasso para os lados para alargar ou estreitar um compasso."
+        ]
+      },
+      "repeats": {
+        "steps": [
+          "Na paleta, escolha <em>Início de repetição</em>, <em>Fim de repetição</em> ou <em>Barra dupla</em> e clique no compasso onde ela vai.",
+          "Para os saltos, escolha <em>Da capo</em>, <em>Dal segno</em>, <em>Segno</em>, <em>Primeira vez</em> ou <em>Segunda vez</em> e clique no compasso: o sinal fica sobre a pauta.",
+          "Para apagar uma barra ou um sinal, selecione com um clique e aperte <kbd>Delete</kbd>."
+        ]
+      },
+      "dynamics": {
+        "steps": [
+          "Na paleta, escolha <em>Crescendo</em> ou <em>Diminuendo</em> e clique na nota onde começa: o regulador vai até o fim do compasso.",
+          "Selecione-o com um clique: aparecem duas alças sob as pontas para alargá-lo ou encurtá-lo.",
+          "Cada lado tem um lugar para a dinâmica, mostrando a sugerida (<em>p</em> → <em>f</em> num crescendo). Clique ali para escolher outra, de <em>ppp</em> a <em>fff</em>, ou nenhuma."
+        ]
+      },
+      "tab-toggle": {
+        "steps": [
+          "Aperte o botão <strong>TAB</strong> da paleta: aparece uma tablatura de seis cordas sob cada pauta.",
+          "O editor escolhe sozinho a digitação mais cômoda: mantém a mão numa posição, evita saltos e não repete corda entre notas diferentes.",
+          "A pauta não muda quando você mexe na tablatura. Aperte o botão de novo para escondê-la."
+        ],
+        "tip": "Os dois guias seguintes explicam como mudar um número ou levá-lo a outra corda."
+      },
+      "refinger": {
+        "steps": [
+          "Na tablatura, clique no número da nota que quer mover.",
+          "Aperte <kbd>Shift</kbd> + <kbd>↑</kbd> para passá-la à corda de cima ou <kbd>Shift</kbd> + <kbd>↓</kbd> para a de baixo. A casa se ajusta sozinha para soar igual."
+        ],
+        "tip": "Só a digitação muda: a nota da pauta e o som continuam iguais."
+      },
+      "barre": {
+        "steps": [
+          "Na paleta, escolha <em>Pestana</em> e clique na nota onde começa (ou em qualquer ponto do compasso para cobri-lo desde o início).",
+          "Aparece o <em>C</em> com um campo para a casa: digite um número de 1 a 24 e aperte <kbd>Enter</kbd>.",
+          "Arraste as alças das pontas, ou use <kbd>←</kbd> e <kbd>→</kbd> sobre elas, para mudar até onde ela vai. Se você apagar o número, a pestana some."
+        ]
+      },
+      "files": {
+        "steps": [
+          "Abra o menu <strong>☰</strong> no canto superior direito.",
+          "<em>Carregar arquivo…</em> abre um MusicXML (<code>.musicxml</code>, <code>.xml</code>) ou um MIDI (<code>.mid</code>) e o transforma numa partitura nova.",
+          "<em>Exportar</em> baixa a partitura: <strong>PDF</strong> para imprimir, <strong>MusicXML</strong> para MuseScore, Finale, Sibelius ou Dorico e <strong>MIDI</strong> para ouvir em qualquer programa."
+        ]
+      },
+      "scores": {
+        "steps": [
+          "As partituras abertas são as abas no alto. O botão <strong>+</strong> cria uma nova, vazia, e um clique numa aba volta à que você deixou.",
+          "Tudo é salvo sozinho, no seu navegador, assim que você escreve: ao voltar outro dia, tudo continua lá. Nada é enviado a nenhum servidor.",
+          "O botão da lixeira apaga a partitura que você está vendo e antes pede confirmação."
+        ],
+        "tip": "Se você limpar os dados do navegador, as partituras se perdem: exporte em MusicXML as que quiser guardar."
+      }
     }
   },
   "tutorialsPath": "tutoriais"

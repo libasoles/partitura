@@ -223,9 +223,9 @@
   },
   "tutorials": {
     "metaTitle": "Tutorials · Partitura",
-    "metaDescription": "Learn the music notation editor step by step: getting started, keyboard shortcuts, dots, barlines and tablature.",
+    "metaDescription": "Learn to use the score editor step by step, with animations: notes and rests, editing, measures, repeats, dynamics, guitar tablature and files.",
     "h1": "Tutorials",
-    "intro": "Short guides, one per topic, to get the most out of the editor.",
+    "intro": "Short guides, one per topic, each with an animated example. Pick one from the menu on the left.",
     "back": "All tutorials",
     "next": "Next",
     "items": {
@@ -260,7 +260,192 @@
       "faq": [
         "Frequently asked questions",
         "Free use, download formats and guitar."
+      ],
+      "notes-rests": [
+        "Notes and rests",
+        "Pick a figure, click the staff and keep writing."
+      ],
+      "accidentals": [
+        "Sharps, flats and naturals",
+        "Alter a note with one key and one click."
+      ],
+      "select-move": [
+        "Select, move and delete",
+        "Pick one or several figures and move them without rewriting."
+      ],
+      "copy": [
+        "Duplicate, copy and paste",
+        "Repeat a motif in a couple of keystrokes."
+      ],
+      "tuplets": [
+        "Triplets and tuplets",
+        "Turn consecutive figures into a triplet, a quintuplet and more."
+      ],
+      "ties": [
+        "Ties and beams",
+        "Join two notes with a tie or group eighth notes with a beam."
+      ],
+      "signatures": [
+        "Time signature, clef and key",
+        "Change the meter, clef or key anywhere in the score."
+      ],
+      "measures": [
+        "Add, insert and move measures",
+        "Build the structure of the score measure by measure."
+      ],
+      "repeats": [
+        "Repeats and jumps",
+        "Repeat barlines, da capo, segno and endings."
+      ],
+      "dynamics": [
+        "Hairpins and dynamics",
+        "Crescendo, diminuendo and loudness marks."
+      ],
+      "tab-toggle": [
+        "Show the tablature",
+        "A tab under every system, with the fingering already worked out."
+      ],
+      "refinger": [
+        "Move a note to another string",
+        "Play the same sound on a different string."
+      ],
+      "barre": [
+        "Barre chords",
+        "Mark a barre and its fret over the notes it covers."
+      ],
+      "files": [
+        "Load and export",
+        "Open a MusicXML or MIDI file and download your score as PDF, MusicXML or MIDI."
+      ],
+      "scores": [
+        "Several scores and saving",
+        "Work on several scores at once; everything saves itself in your browser."
       ]
+    },
+    "stepsHeading": "Step by step",
+    "tipLabel": "Tip",
+    "navLabel": "Tutorials",
+    "prev": "Previous",
+    "categories": {
+      "basics": "Getting started",
+      "editing": "Editing notes",
+      "structure": "Measures and signs",
+      "guitar": "Guitar and tablature",
+      "files": "Files and saving"
+    },
+    "bodies": {
+      "notes-rests": {
+        "steps": [
+          "Pick a figure in the palette or press its key: <kbd>1</kbd> (32nd) to <kbd>6</kbd> (whole) for notes, and <kbd>Q</kbd> to <kbd>Y</kbd> for rests.",
+          "Click the staff: the height of the click is the pitch and the horizontal position is the time. You can also drag the figure from the palette to its place.",
+          "The tool stays active after each figure, so you can write a whole phrase without picking it again. Eighth notes and shorter ones beam themselves.",
+          "Press <kbd>A</kbd> or <kbd>Esc</kbd> to drop the tool and go back to selecting figures."
+        ],
+        "tip": "If a figure does not fit in what is left of the measure, the editor tells you and does not place it."
+      },
+      "accidentals": {
+        "steps": [
+          "Press <kbd>S</kbd> for a sharp, <kbd>B</kbd> for a flat or <kbd>C</kbd> for a natural. They are in the palette too.",
+          "Click the note you want to alter: the sign appears to its left.",
+          "Dots work the same way: press <kbd>P</kbd> and click the note, or double-click it."
+        ]
+      },
+      "select-move": {
+        "steps": [
+          "Click a figure to select it. <kbd>Shift</kbd>, <kbd>Ctrl</kbd> or <kbd>Cmd</kbd> adds more. Dragging from an empty spot on the staff encloses them in a rectangle.",
+          "<kbd>↑</kbd> and <kbd>↓</kbd> raise or lower the selection by one staff step; <kbd>←</kbd> and <kbd>→</kbd> move to the next figure. You can also drag the figures elsewhere.",
+          "<kbd>Delete</kbd> or <kbd>Backspace</kbd> removes them. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes the last change and <kbd>Esc</kbd> clears the selection."
+        ]
+      },
+      "copy": {
+        "steps": [
+          "Select one or more figures and press <kbd>Shift</kbd> + <kbd>D</kbd>: they are copied right after the last selected one, carrying on into the measures that follow.",
+          "To bring them somewhere else, copy with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, click the destination measure and paste with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. It works between open scores too."
+        ],
+        "tip": "Hold <kbd>Shift</kbd> while pasting to paste only the figures, without clef, key or meter changes."
+      },
+      "tuplets": {
+        "steps": [
+          "Select 2 to 9 consecutive figures of the same value, for example three eighth notes.",
+          "A menu appears over the selection with the group that matches how many there are: triplet, duplet, quadruplet, quintuplet, sextuplet, septuplet, octuplet or nonuplet.",
+          "Pick the group: the figures shrink to fit the same time and the number shows above them.",
+          "To undo it, select the group and choose <em>Remove triplet</em> (or whichever applies) from the same menu."
+        ]
+      },
+      "ties": {
+        "steps": [
+          "Select two consecutive notes with <kbd>Shift</kbd>+click. In the menu over them choose <em>Tie</em>: if they sound the same a tie is drawn, otherwise a slur.",
+          "To remove it, select the same notes and choose <em>Remove tie</em>.",
+          "Beams work the same way: select consecutive figures and choose <em>Beam</em> to join them or <em>Unbeam</em> to split the beam. If you do nothing, the editor groups them by the meter."
+        ]
+      },
+      "signatures": {
+        "steps": [
+          "Click the meter number, the clef or the key signature spot at the start of a system.",
+          "Pick the value in the menu: meter (4/4, 3/4, 6/8…), clef (treble, guitar treble, bass, alto or tenor) or key (from C♭ to C♯). For clef and key, confirm with <em>Apply</em>.",
+          "The change holds from that measure until the next change, so you can switch meter or key mid-piece."
+        ],
+        "tip": "If the figures you already wrote do not fit the new meter, the editor asks you to remove or move some before changing it."
+      },
+      "measures": {
+        "steps": [
+          "Click an empty part of a measure to select it: two <strong>+</strong> buttons appear at its edges to insert a measure before or after.",
+          "At the end of each system, the <strong>+</strong> and <strong>−</strong> buttons add or remove a measure. To add another system use the button under the score.",
+          "Hold <kbd>Shift</kbd> and drag a measure to move it elsewhere.",
+          "Drag a barline sideways to make a measure wider or narrower."
+        ]
+      },
+      "repeats": {
+        "steps": [
+          "In the palette, pick <em>Repeat start</em>, <em>Repeat end</em> or <em>Double bar</em> and click the measure where it goes.",
+          "For jumps, pick <em>Da capo</em>, <em>Dal segno</em>, <em>Segno</em>, <em>First ending</em> or <em>Second ending</em> and click the measure: the sign sits above the staff.",
+          "To delete a barline or a sign, click it to select it and press <kbd>Delete</kbd>."
+        ]
+      },
+      "dynamics": {
+        "steps": [
+          "In the palette pick <em>Crescendo</em> or <em>Diminuendo</em> and click the note where it starts: the hairpin runs to the end of the measure.",
+          "Click it to select it: two handles appear under its ends to widen or shorten it.",
+          "Each end has a spot for a dynamic, showing the suggested one (<em>p</em> → <em>f</em> on a crescendo). Click it to choose another, from <em>ppp</em> to <em>fff</em>, or none."
+        ]
+      },
+      "tab-toggle": {
+        "steps": [
+          "Press the <strong>TAB</strong> button in the palette: a six-string tablature appears under every system.",
+          "The editor picks the most comfortable fingering by itself: it keeps the hand in one position, avoids jumps and does not reuse a string for different notes.",
+          "The staff does not change when you touch the tablature. Press the button again to hide it."
+        ],
+        "tip": "The next two guides explain how to change a number or move it to another string."
+      },
+      "refinger": {
+        "steps": [
+          "In the tablature, click the number of the note you want to move.",
+          "Press <kbd>Shift</kbd> + <kbd>↑</kbd> to move it to the string above or <kbd>Shift</kbd> + <kbd>↓</kbd> for the string below. The fret adjusts itself so it sounds the same."
+        ],
+        "tip": "Only the fingering changes: the note on the staff and the sound stay the same."
+      },
+      "barre": {
+        "steps": [
+          "In the palette pick <em>Barre</em> and click the note where it starts (or anywhere in the measure to cover it from the beginning).",
+          "A <em>C</em> appears with a field for the fret: type a number from 1 to 24 and press <kbd>Enter</kbd>.",
+          "Drag the handles at its ends, or use <kbd>←</kbd> and <kbd>→</kbd> on them, to change how far it reaches. Clear the number to remove the barre."
+        ]
+      },
+      "files": {
+        "steps": [
+          "Open the <strong>☰</strong> menu at the top right.",
+          "<em>Load file…</em> opens a MusicXML (<code>.musicxml</code>, <code>.xml</code>) or a MIDI (<code>.mid</code>) file and turns it into a new score.",
+          "<em>Export</em> downloads the score: <strong>PDF</strong> to print, <strong>MusicXML</strong> for MuseScore, Finale, Sibelius or Dorico, and <strong>MIDI</strong> to play it in any program."
+        ]
+      },
+      "scores": {
+        "steps": [
+          "Open scores are the tabs at the top. The <strong>+</strong> button creates a new empty one, and clicking a tab takes you back to the one you left.",
+          "Everything saves itself in your browser as you write: come back another day and it is all there. Nothing is uploaded to any server.",
+          "The trash button clears the score you are looking at, and asks for confirmation first."
+        ],
+        "tip": "Clearing your browser data loses the scores: export as MusicXML the ones you want to keep."
+      }
     }
   },
   "tutorialsPath": "tutorials"

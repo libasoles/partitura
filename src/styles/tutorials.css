@@ -1,0 +1,215 @@
+/* tutorials.css — The tutorials section: a sidebar with every tutorial grouped by category, the article beside it,
+   and the looping animations (markup: src/lib/demo.js, scripts of each in src/lib/demos.js). The older figures
+   (shortcut keys, tab demos) keep their styles in editor.css and tab-demo.css. */
+
+/* ----- Layout: sidebar + article ----- */
+
+.docs {
+  display: grid;
+  grid-template-columns: 16.5rem minmax(0, 1fr);
+  gap: 3rem;
+  align-items: start;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 1.5rem var(--gutter) 4rem;
+}
+
+.docs-main { min-width: 0; max-width: 46rem; }
+
+/* ----- Sidebar ----- */
+
+.docs-nav {
+  position: sticky;
+  top: 5rem;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.5rem;
+  font-size: 0.92rem;
+}
+.docs-nav summary { display: none; list-style: none; }
+.docs-nav summary::-webkit-details-marker { display: none; }
+
+.docs-nav__home,
+.docs-nav li a {
+  display: block;
+  padding: 0.32rem 0.75rem;
+  border-left: 2px solid var(--rule);
+  color: var(--ink-soft);
+  text-decoration: none;
+  line-height: 1.35;
+}
+.docs-nav__home { margin-bottom: 1.1rem; font-weight: 600; color: var(--ink); }
+.docs-nav a:hover { color: var(--ink); border-left-color: var(--ink-soft); }
+.docs-nav a.is-current {
+  border-left-color: var(--accent);
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 600;
+}
+.docs-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.docs-nav__group { margin-top: 1.25rem; }
+.docs-nav__group h2 {
+  margin: 0 0 0.35rem;
+  padding-left: 0.75rem;
+  color: var(--ink);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.docs-nav ul { margin: 0; padding: 0; list-style: none; }
+
+/* On narrow screens the list becomes a drop-down above the article. */
+@media (max-width: 899px) {
+  .docs { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+  .docs-nav { position: static; max-height: none; overflow: visible; padding: 0; }
+  .docs-nav__box { border: 1px solid var(--rule); border-radius: 0.6rem; background: var(--paper); }
+  .docs-nav summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .docs-nav summary svg { flex: none; color: var(--ink-soft); transition: transform 0.15s; }
+  .docs-nav__box[open] summary svg { transform: rotate(180deg); }
+  .docs-nav__box[open] summary { border-bottom: 1px solid var(--rule); }
+  .docs-nav__box > :not(summary) { margin-inline: 0.5rem; }
+  .docs-nav__box > .docs-nav__home { margin-top: 0.6rem; margin-bottom: 0; }
+  .docs-nav__box > :last-child { margin-bottom: 0.8rem; }
+}
+
+/* ----- Article ----- */
+
+.tutorials h1 {
+  margin: 0.2rem 0 0;
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 4.4vw, 2.6rem);
+  line-height: 1.15;
+}
+.tutorial-lead { margin: 0.6rem 0 1.6rem; color: var(--ink-soft); font-size: 1.08rem; }
+
+.tutorial-body p { color: var(--ink-soft); }
+.tutorial-h { margin: 2rem 0 0.8rem; font-size: 1.15rem; }
+.tutorial-list { display: grid; gap: 0.7rem; margin: 0; padding-left: 1.3rem; color: var(--ink-soft); }
+.tutorial-list strong { color: var(--ink); }
+.tutorial-list kbd,
+.tutorial-tip kbd {
+  padding: 0.05em 0.4em;
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.85em;
+}
+.tutorial-list code { font-family: var(--mono); font-size: 0.9em; }
+.tutorial-tip {
+  margin: 1.4rem 0 0;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--brand-yellow);
+  border-radius: 0 0.4rem 0.4rem 0;
+  background: var(--surface);
+}
+.tutorial-tip strong { color: var(--ink); }
+.tutorial-body figcaption h3 { display: none; }
+
+.tutorial-next {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rule);
+}
+.tutorial-next a {
+  display: grid;
+  gap: 0.1rem;
+  max-width: 48%;
+  color: var(--blue-france);
+  text-decoration: none;
+  font-weight: 600;
+}
+.tutorial-next a small { color: var(--ink-soft); font-weight: 400; }
+.tutorial-next a:hover { text-decoration: underline; }
+.tutorial-next__next { margin-left: auto; text-align: right; }
+
+/* The index: every tutorial, by topic. */
+.docs-topic { margin-top: 2rem; }
+.docs-topic h2 { margin: 0 0 0.5rem; font-size: 1.15rem; }
+.docs-topic ul { display: grid; gap: 0.15rem; margin: 0; padding: 0; list-style: none; }
+.docs-topic li { display: grid; grid-template-columns: minmax(10rem, 14rem) 1fr; gap: 0.2rem 1.2rem; padding: 0.45rem 0; border-top: 1px solid var(--rule); }
+.docs-topic li a { font-weight: 600; text-decoration: none; }
+.docs-topic li a:hover { text-decoration: underline; }
+.docs-topic li span { color: var(--ink-soft); }
+@media (max-width: 560px) { .docs-topic li { grid-template-columns: 1fr; } }
+
+.faq { display: grid; gap: 1.6rem; margin: 0; }
+.faq h2 { margin: 0; font-size: 1.1rem; }
+.faq dt { margin: 0; }
+.faq dd { margin: 0.35rem 0 0; color: var(--ink-soft); }
+
+/* ----- Animated demos ----- */
+
+.tutorial-demo {
+  margin: 0 0 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.7rem;
+  background: var(--paper);
+}
+.demo { margin: 0; }
+.demo__stage {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  color: var(--ink);
+  user-select: none;
+}
+
+.d-a {
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
+
+.d-line { stroke: currentColor; stroke-width: 0.8; fill: none; }
+.d-bar { stroke: currentColor; fill: none; }
+.d-text { fill: currentColor; font-family: var(--sans); }
+.d-fret { paint-order: stroke; stroke: var(--paper); stroke-width: 4px; stroke-linejoin: round; font-family: var(--sans); }
+.d-dot { fill: currentColor; }
+.d-ring { fill: none; stroke: var(--accent); stroke-width: 1.4; }
+.d-marquee { fill: color-mix(in srgb, var(--note-selected) 12%, transparent); stroke: var(--note-selected); stroke-width: 0.8; stroke-dasharray: 3 2; }
+.d-tint { fill: color-mix(in srgb, var(--brand-yellow) 28%, transparent); }
+.d-tie,
+.d-bracket,
+.d-hairpin { stroke: currentColor; stroke-width: 1; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+.d-pill { fill: var(--paper); stroke: var(--rule); stroke-width: 0.9; filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.12)); }
+.d-pilltext { fill: currentColor; font-family: var(--sans); font-weight: 600; }
+.d-plus { fill: var(--paper); stroke: var(--ink-soft); stroke-width: 0.9; }
+.d-plusmark { stroke: var(--ink-soft); stroke-width: 1.3; fill: none; stroke-linecap: round; }
+.d-cap { fill: var(--surface); stroke: currentColor; stroke-width: 0.8; }
+.d-captext { fill: currentColor; font-family: var(--sans); font-weight: 600; }
+.d-field { fill: var(--paper); stroke: var(--ink-soft); stroke-width: 0.8; }
+.d-field--on { stroke: var(--accent); stroke-width: 1.2; }
+.d-panel { fill: var(--paper); stroke: var(--rule); stroke-width: 1; filter: drop-shadow(0 2px 5px rgb(0 0 0 / 0.14)); }
+.d-menutext { fill: var(--ink); font-family: var(--sans); }
+.d-menutext--hot { fill: var(--accent); font-weight: 700; }
+.d-menuicon { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.d-file { fill: var(--surface); stroke: var(--rule); }
+.d-doctab { fill: var(--surface); stroke: var(--rule); stroke-width: 0.9; }
+.d-active { fill: var(--accent); }
+
+/* Reduced motion shows the finished score: the pointer, key caps and "before" states are hidden. */
+@media (prefers-reduced-motion: reduce) {
+  .d-a { animation: none !important; }
+  .d-gone { display: none; }
+}
