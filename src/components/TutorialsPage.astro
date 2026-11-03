@@ -77,7 +77,7 @@ const categoryNames = t.categories as Record<string, string>;
             ))}
           </ul>
           <p class="tutorial-tip">{t.welcome.start}</p>
-          <p><a href={pathFor(locale)}>{s.ui.editorLink} →</a></p>
+          <p><a class="editor-link" href={pathFor(locale)}><img src="/favicon.svg" alt="" width="20" height="26" />{s.ui.editorLink} →</a></p>
         </>
       )}
     </main>
