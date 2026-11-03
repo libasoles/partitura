@@ -1350,10 +1350,11 @@ body.score-dragging {
   color: var(--accent-brand);
 }
 
-.score-dynamics-options .score-dynamics-none {
+.score-dynamics-options button.score-dynamics-none {
   grid-column: 1 / -1;
   min-height: 36px;
   padding: 0.25rem 0.75rem;
+  color: var(--blue-france);
   outline: 0;
   font: 0.85rem/1 var(--sans);
   text-align: left;
