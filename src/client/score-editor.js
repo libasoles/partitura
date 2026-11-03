@@ -751,8 +751,13 @@
     const line = stage.querySelector('g.staff > path');
     const glyph = barlines.firstElementChild;
     if (!side || !line || !glyph) return;
+    // Measured in its natural position: while sticky, the scroll shifts the glyph and the offset drifts whenever the stage height changes (TAB).
+    side.style.position = 'relative';
+    side.style.top = 'auto';
     side.style.marginTop = '0';
     const offset = line.getBoundingClientRect().top - glyph.getBoundingClientRect().top;
+    side.style.position = '';
+    side.style.top = '';
     side.style.marginTop = Math.max(0, offset) + 'px';
     side.style.setProperty('--side-offset', Math.max(0, offset) + 'px');
   }
