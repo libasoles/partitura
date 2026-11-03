@@ -150,7 +150,7 @@ a { color: var(--blue-france); }
 /* On wide screens the editor's document tabs share the header row, between the logo and the menu. */
 @media (min-width: 900px) {
   .site-header--editor {
-    position: relative;
+    position: sticky;
     height: 5.4rem;
     margin-bottom: -5.4rem;
     pointer-events: none;
