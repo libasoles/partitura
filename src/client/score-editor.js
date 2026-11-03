@@ -136,6 +136,7 @@
     return one.title || t.untitledScore.replace('{n}', index + 1);
   }
 
+  let enteringTab = -1; // index of the tab just added, animated in by renderTabs
   function renderTabs() {
     tabsBar.querySelectorAll('.score-doc-tab').forEach((node) => node.remove());
     const add = document.getElementById('scoreNewTab');
@@ -165,6 +166,7 @@
         });
         wrap.appendChild(tabTitle);
         wrap.dataset.index = index;
+        if (index === enteringTab) wrap.classList.add('is-entering');
         tabsBar.insertBefore(wrap, add);
       } else {
         const button = document.createElement('button');
@@ -175,9 +177,11 @@
         button.textContent = tabLabel(one, index);
         button.addEventListener('click', () => switchTo(index));
         button.dataset.index = index;
+        if (index === enteringTab) button.classList.add('is-entering');
         tabsBar.insertBefore(button, add);
       }
     });
+    enteringTab = -1;
   }
 
   // Keep document order and undo histories together, without changing the open score.
@@ -276,6 +280,7 @@
     histories[active] = history;
     docs.push(Object.assign(M.emptyScore(), { title: defaultTitle }));
     histories.push([]);
+    enteringTab = docs.length - 1;
     switchTo(docs.length - 1);
     tabTitle.focus();
     tabTitle.select();
@@ -758,7 +763,8 @@
     dynamicsPopup.hidePopover();
     stage.innerHTML = toolkit.renderToSVG(1);
     applyMeasureWidths();
-    stage.style.minHeight = '';
+    // With TAB the height is set again once the tabs are measured; clearing it here would collapse and re-grow the stage on every pass.
+    if (!score.showTabs) stage.style.minHeight = '';
     alignBarlinesToFirstStaff();
     marker = null;
     const svg = stage.querySelector('svg');
@@ -3196,6 +3202,7 @@
       histories[active] = history;
       docs.push(loaded);
       histories.push([]);
+      enteringTab = docs.length - 1;
       switchTo(docs.length - 1);
       say(t.importDone);
     } catch (e) {

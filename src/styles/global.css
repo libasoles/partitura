@@ -74,7 +74,7 @@ a { color: var(--blue-france); }
   gap: 1.5rem;
   max-width: var(--page-header);
   margin: 0 auto;
-  padding: 0.7rem var(--gutter);
+  padding: 0.5rem var(--gutter);
   background: color-mix(in srgb, var(--paper) 92%, transparent);
   backdrop-filter: saturate(1.4) blur(10px);
 }
@@ -86,7 +86,7 @@ a { color: var(--blue-france); }
   color: var(--ink);
   text-decoration: none;
 }
-.brand-mark { display: block; width: 2.44rem; height: 2.4rem; }
+.brand-mark { display: block; width: 3.4rem; height: 4.4rem; }
 
 .site-menu {
   position: relative;
@@ -150,8 +150,8 @@ a { color: var(--blue-france); }
 @media (min-width: 900px) {
   .site-header--editor {
     position: relative;
-    height: 3.8rem;
-    margin-bottom: -3.8rem;
+    height: 5.4rem;
+    margin-bottom: -5.4rem;
     pointer-events: none;
     background: none;
     backdrop-filter: none;
@@ -163,7 +163,7 @@ a { color: var(--blue-france); }
     margin-inline: 0;
     padding-top: 0;
   }
-  .site-header--editor ~ .score-page { padding-top: 0.7rem; }
+  .site-header--editor ~ .score-page { padding-top: 1.5rem; }
 }
 
 /* ----- Page ----- */
