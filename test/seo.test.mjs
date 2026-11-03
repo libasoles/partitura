@@ -35,3 +35,22 @@ for (const file of ['dist/es/index.html', 'dist/en/index.html', 'dist/pt/index.h
     assert.match(html, /hreflang="x-default" href="https:\/\/[^"]+\/"/);
   });
 }
+
+test('social preview, icons and manifest are declared', () => {
+  const html = readFileSync(new URL('../dist/es/index.html', import.meta.url), 'utf8');
+  assert.match(html, /<meta property="og:image" content="https:\/\/[^"]+\/og\.png"/);
+  assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+  assert.match(html, /<meta name="twitter:image" content="https:\/\/[^"]+\/og\.png"/);
+  assert.match(html, /rel="apple-touch-icon" href="\/apple-touch-icon\.png"/);
+  assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
+  const manifest = JSON.parse(readFileSync(new URL('../dist/manifest.webmanifest', import.meta.url), 'utf8'));
+  assert.ok(manifest.icons.some((icon) => icon.sizes === '512x512'));
+  assert.match(readFileSync(new URL('../dist/llms.txt', import.meta.url), 'utf8'), /^# Partitura/);
+});
+
+test('first paint does not wait on CSS, fonts or heavy scripts', () => {
+  const html = readFileSync(new URL('../dist/es/index.html', import.meta.url), 'utf8');
+  assert.doesNotMatch(html, /rel="stylesheet"/, 'CSS is inlined');
+  assert.match(html, /<link rel="preload" href="\/_astro\/montserrat-latin-wght-normal[^"]+\.woff2" as="font" type="font\/woff2" crossorigin/);
+  assert.doesNotMatch(html, /(src|href)="[^"]*(ascii-tabs|jspdf|verovio)/, 'tabs, PDF export and Verovio load on demand');
+});

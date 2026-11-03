@@ -109,6 +109,12 @@
     return new window.verovio.toolkit();
   }
 
+  // <ascii-tabs> is a separate chunk: it is fetched once the first staff is ready to get its tab, not with the page.
+  let tabsReady = null;
+  function loadAsciiTabs() {
+    return (tabsReady = tabsReady || import('../vendor/ascii-tabs.js'));
+  }
+
   async function loadVerovio() {
     await loadScript(vendorUrl('verovio-toolkit-wasm.js'));
     await new Promise((resolve) => {
@@ -1224,7 +1230,7 @@
       stage.appendChild(tabs);
       mounted.push({ tabs, keys, positions, width, start, size, head, offset });
     });
-    customElements.whenDefined('ascii-tabs').then(() => {
+    loadAsciiTabs().then(() => customElements.whenDefined('ascii-tabs')).then(() => {
       if (!mounted.length || !mounted[0].tabs.isConnected) return;
       mounted.forEach(({ tabs, keys, positions, width, start, size, head }, row) => {
         const value = keys.map((key) => (score.tabs && score.tabs[key]) || auto[key]);
@@ -3400,7 +3406,10 @@
   }).observe(stage);
 
   stage.setAttribute('aria-busy', 'true');
-  loadVerovio().then(() => {
+  // The 8 MB Verovio build is fetched once the page is idle, so it never competes with first paint; the server-drawn
+  // staff holds the place (and the height) meanwhile.
+  const whenIdle = window.requestIdleCallback || ((fn) => setTimeout(fn, 200));
+  new Promise((resolve) => whenIdle(resolve, { timeout: 1500 })).then(loadVerovio).then(() => {
     stage.removeAttribute('aria-busy');
     render();
   }, () => {

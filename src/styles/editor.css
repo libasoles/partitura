@@ -291,8 +291,16 @@
 
 /* The script fills the palette; until then keep the row it will occupy on one line. */
 .score-palette:empty {
-  min-height: 3rem;
+  min-height: 4.33rem;
 }
+
+/* Narrower screens wrap it onto more rows; these are the measured heights of the filled palette, step by step. */
+@media (max-width: 999px) { .score-palette:empty { min-height: 7.6rem; } }
+@media (max-width: 800px) { .score-palette:empty { min-height: 8.9rem; } }
+@media (max-width: 560px) { .score-palette:empty { min-height: 12.2rem; } }
+@media (max-width: 440px) { .score-palette:empty { min-height: 16.7rem; } }
+@media (max-width: 375px) { .score-palette:empty { min-height: 21.2rem; } }
+@media (max-width: 330px) { .score-palette:empty { min-height: 25.7rem; } }
 
 .score-palette-sep {
   width: 0.8rem;
@@ -582,11 +590,6 @@
   gap: 0.2rem;
 }
 
-/* The script fills the palette; until then keep the row it will occupy on one line. */
-.score-palette:empty {
-  min-height: 3rem;
-}
-
 .score-palette-sep {
   width: 0.8rem;
 }
@@ -713,9 +716,10 @@
   -webkit-user-select: none;
 }
 
-/* While Verovio loads, hold the height of the default score (staff plus tab) so nothing below shifts. */
+/* While Verovio loads, hold the height of the live editor's first render, clipping the server-drawn staff to it, so nothing below shifts. */
 .score-stage[aria-busy="true"] {
-  min-height: 33rem;
+  height: 33rem;
+  overflow: hidden;
 }
 
 .score-tab {

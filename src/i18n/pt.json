@@ -199,6 +199,7 @@
     "importDone": "Partitura carregada."
   },
   "ui": {
+    "ogImageAlt": "Partitura, editor de partituras online: uma pauta com um exercício escrito em clave de sol e sua tablatura",
     "siteName": "Partitura",
     "siteTagline": "Editor de partituras",
     "home": "Início",

@@ -199,6 +199,7 @@
     "importDone": "Partitura cargada."
   },
   "ui": {
+    "ogImageAlt": "Partitura, editor de partituras online: un pentagrama con un ejercicio escrito en clave de sol y su tablatura",
     "siteName": "Partitura",
     "siteTagline": "Editor de partituras",
     "home": "Inicio",
