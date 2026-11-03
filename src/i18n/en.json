@@ -7,10 +7,10 @@
   "toastRefingerTip": "If a note's fingering looks wrong, you can move it to another string without changing how it sounds: select the note in the tab and press",
   "toastRefingerUp": "up arrow",
   "toastRefingerDown": "down arrow",
-  "scorePageTitle": "Write Sheet Music Online Free · Sheet Music Editor",
-  "scoreMetaDescription": "Free online sheet music editor: write notes, rests, measures, clef and key signature on the staff, with no sign-up and nothing to install, and download your score as PDF or MusicXML.",
+  "scorePageTitle": "Free Online Sheet Music Editor, No Sign-up · Write Sheet Music",
+  "scoreMetaDescription": "Free online sheet music editor, no sign-up: write notes, rests, measures, clef and key signature on the staff right in your browser, with nothing to install, and download your score as PDF or MusicXML.",
   "scoreH1": "Sheet music",
-  "scoreSeoH1": "Free online sheet music editor",
+  "scoreSeoH1": "Free online sheet music editor, no sign-up",
   "scoreAboutLead": "Write your score straight onto the staff: pick a note value, click where the note goes, done. It is free, runs in your browser and needs no account or install.",
   "scoreShortcutsH2": "Keyboard shortcuts and gestures",
   "scoreShortcutsIntro": "Press a figure’s key to pick it, then click on the staff to place it. Press A to deselect the current tool. With figures selected, Shift+D duplicates them right after the last selected one, carrying on into the following measures. These are the keys:",
@@ -202,7 +202,7 @@
     "ogImageAlt": "Partitura, online music score editor: a staff with an exercise written in treble clef and its tab",
     "siteName": "Partitura",
     "bannerClose": "Close",
-    "siteTagline": "Sheet music editor",
+    "siteTagline": "Free online sheet music editor",
     "home": "Home",
     "navEditor": "Editor",
     "navShortcuts": "Shortcuts",
@@ -230,8 +230,8 @@
     "betaP4": "You can create your drafts here, and export them to more powerful software to continue."
   },
   "tutorials": {
-    "metaTitle": "Tutorials · Partitura",
-    "metaDescription": "Learn to use the score editor step by step, with animations: notes and rests, editing, measures, repeats, dynamics, guitar tablature and files.",
+    "metaTitle": "Tutorials · Partitura, free online sheet music editor",
+    "metaDescription": "Learn to use the free online sheet music editor, no sign-up, step by step with animations: notes and rests, editing, measures, repeats, dynamics, guitar tablature and files.",
     "h1": "Tutorials",
     "intro": "Partitura is a score editor that runs right in your browser. Here is what is worth knowing before you start.",
     "welcome": {
@@ -490,7 +490,7 @@
   "termsPath": "terms",
   "terms": {
     "metaTitle": "Terms and conditions · Partitura",
-    "metaDescription": "Terms of use for Partitura, the free score editor: using the service, your scores, intellectual property and liability.",
+    "metaDescription": "Terms of use for Partitura, the free online score editor with no sign-up: using the service, your scores, intellectual property and liability.",
     "h1": "Terms and conditions",
     "updated": "Last updated: November 3, 2026",
     "back": "Back to the editor",

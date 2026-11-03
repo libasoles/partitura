@@ -7,10 +7,10 @@
   "toastRefingerTip": "Se a digitação de alguma nota não estiver correta, você pode mudá-la de corda sem alterar o som: selecione a nota na tablatura e pressione",
   "toastRefingerUp": "seta para cima",
   "toastRefingerDown": "seta para baixo",
-  "scorePageTitle": "Escrever partituras online grátis · Editor de partituras",
-  "scoreMetaDescription": "Editor de partituras online e grátis: escreva notas, pausas, compassos, clave e armadura de clave na pauta, sem se cadastrar nem instalar nada, e baixe sua partitura em PDF ou MusicXML.",
+  "scorePageTitle": "Editor de partituras online, grátis e sem cadastro · Escrever partituras",
+  "scoreMetaDescription": "Editor de partituras online, grátis e sem cadastro: escreva notas, pausas, compassos, clave e armadura de clave na pauta direto no navegador, sem instalar nada, e baixe sua partitura em PDF ou MusicXML.",
   "scoreH1": "Partitura",
-  "scoreSeoH1": "Editor de partituras online grátis",
+  "scoreSeoH1": "Editor de partituras online, grátis e sem cadastro",
   "scoreAboutLead": "Arraste uma figura direto para a pauta, ou escolha a figura, clique onde a nota vai e pronto. É grátis, funciona no navegador e não pede para criar usuário nem instalar nada.",
   "scoreShortcutsH2": "Atalhos de teclado e gestos",
   "scoreShortcutsIntro": "Aperte a tecla de uma figura para escolhê-la e clique na pauta para colocá-la. Aperte A para desmarcar a ferramenta atual. Com figuras selecionadas, Shift+D as duplica logo depois da última selecionada, seguindo pelos compassos seguintes. Estas são as teclas de cada uma:",
@@ -202,7 +202,7 @@
     "ogImageAlt": "Partitura, editor de partituras online: uma pauta com um exercício escrito em clave de sol e sua tablatura",
     "siteName": "Partitura",
     "bannerClose": "Fechar",
-    "siteTagline": "Editor de partituras",
+    "siteTagline": "Editor de partituras online grátis",
     "home": "Início",
     "navEditor": "Editor",
     "navShortcuts": "Atalhos",
@@ -230,8 +230,8 @@
     "betaP4": "Você pode criar seus rascunhos aqui e exportá-los para um software mais poderoso para continuar."
   },
   "tutorials": {
-    "metaTitle": "Tutoriais · Partitura",
-    "metaDescription": "Aprenda a usar o editor de partituras passo a passo, com animações: notas e pausas, edição, compassos, repetições, dinâmicas, tablatura de violão e arquivos.",
+    "metaTitle": "Tutoriais · Partitura, editor de partituras online grátis",
+    "metaDescription": "Aprenda a usar o editor de partituras online, grátis e sem cadastro, passo a passo e com animações: notas e pausas, edição, compassos, repetições, dinâmicas, tablatura de violão e arquivos.",
     "h1": "Tutoriais",
     "intro": "O Partitura é um editor de partituras que funciona direto no seu navegador. Veja o que vale saber antes de começar.",
     "welcome": {
@@ -490,7 +490,7 @@
   "termsPath": "termos",
   "terms": {
     "metaTitle": "Termos e condições · Partitura",
-    "metaDescription": "Termos de uso do Partitura, o editor de partituras gratuito: uso do serviço, suas partituras, propriedade intelectual e responsabilidade.",
+    "metaDescription": "Termos de uso do Partitura, o editor de partituras online, gratuito e sem cadastro: uso do serviço, suas partituras, propriedade intelectual e responsabilidade.",
     "h1": "Termos e condições",
     "updated": "Última atualização: 3 de novembro de 2026",
     "back": "Voltar ao editor",

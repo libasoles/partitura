@@ -17,7 +17,7 @@ const s = strings(locale);
 const t = s.tutorials;
 const paths = Object.fromEntries(locales.map((l) => [l, tutorialsPath(l, slug)])) as Record<Locale, string>;
 const item = slug ? t.items[slug] : undefined;
-const title = item ? `${item[0]} · ${s.ui.siteName}` : t.metaTitle;
+const title = item ? `${item[0]} · ${s.ui.siteName}, ${s.ui.siteTagline.toLowerCase()}` : t.metaTitle;
 const description = item ? item[1] : t.metaDescription;
 const faq = slug === 'faq' ? s.scoreFaq.map(([q, a]) => ({ q, a })) : undefined;
 const index = slugs.indexOf(slug as Slug);

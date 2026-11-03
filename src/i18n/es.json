@@ -7,10 +7,10 @@
   "toastRefingerTip": "Si ves que la digitación no es correcta en alguna nota, podés cambiarla de cuerda sin que cambie el sonido: elegí la nota en la tablatura y presioná",
   "toastRefingerUp": "flecha arriba",
   "toastRefingerDown": "flecha abajo",
-  "scorePageTitle": "Escribir partituras online gratis · Editor de partituras",
-  "scoreMetaDescription": "Editor de partituras online y gratis: escribí notas, silencios, compases, clave y armadura en el pentagrama, sin registrarte ni instalar nada, y descargá tu partitura en PDF o MusicXML.",
+  "scorePageTitle": "Editor de partituras online, gratis y sin registro · Escribir partituras",
+  "scoreMetaDescription": "Editor de partituras online, gratis y sin registro: escribí notas, silencios, compases, clave y armadura en el pentagrama directo en el navegador, sin instalar nada, y descargá tu partitura en PDF o MusicXML.",
   "scoreH1": "Partitura",
-  "scoreSeoH1": "Editor de partituras online gratis",
+  "scoreSeoH1": "Editor de partituras online, gratis y sin registro",
   "scoreAboutLead": "Arrastrá una figura directamente en el pentagrama, o elegí la figura, hacé clic donde va la nota y listo. Es gratis, funciona en el navegador y no pide crear usuario ni instalar nada.",
   "scoreShortcutsH2": "Atajos de teclado y gestos",
   "scoreShortcutsIntro": "Apretá la tecla de una figura para elegirla y hacé clic en el pentagrama para colocarla. Apretá A para deseleccionar la herramienta actual. Con figuras seleccionadas, Mayús+D las duplica justo después de la última seleccionada, siguiendo en los compases que vengan. Estas son las teclas de cada una:",
@@ -202,7 +202,7 @@
     "ogImageAlt": "Partitura, editor de partituras online: un pentagrama con un ejercicio escrito en clave de sol y su tablatura",
     "siteName": "Partitura",
     "bannerClose": "Cerrar",
-    "siteTagline": "Editor de partituras",
+    "siteTagline": "Editor de partituras online gratis",
     "home": "Inicio",
     "navEditor": "Editor",
     "navShortcuts": "Atajos",
@@ -230,8 +230,8 @@
     "betaP4": "Podés crear tus borradores acá, y exportarlos a software más potente para continuar."
   },
   "tutorials": {
-    "metaTitle": "Tutoriales · Partitura",
-    "metaDescription": "Aprendé a usar el editor de partituras paso a paso, con animaciones: notas y silencios, edición, compases, repeticiones, dinámicas, tablatura de guitarra y archivos.",
+    "metaTitle": "Tutoriales · Partitura, editor de partituras online gratis",
+    "metaDescription": "Aprendé a usar el editor de partituras online, gratis y sin registro, paso a paso y con animaciones: notas y silencios, edición, compases, repeticiones, dinámicas, tablatura de guitarra y archivos.",
     "h1": "Tutoriales",
     "intro": "Partitura es un editor de partituras que funciona directamente en tu navegador. Esto es lo que conviene saber antes de empezar.",
     "welcome": {
@@ -490,7 +490,7 @@
   "termsPath": "terminos",
   "terms": {
     "metaTitle": "Términos y condiciones · Partitura",
-    "metaDescription": "Condiciones de uso de Partitura, el editor de partituras gratuito: uso del servicio, tus partituras, propiedad intelectual y responsabilidad.",
+    "metaDescription": "Condiciones de uso de Partitura, el editor de partituras online, gratuito y sin registro: uso del servicio, tus partituras, propiedad intelectual y responsabilidad.",
     "h1": "Términos y condiciones",
     "updated": "Última actualización: 3 de noviembre de 2026",
     "back": "Volver al editor",
