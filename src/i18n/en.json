@@ -221,7 +221,12 @@
     "menuExportXml": "MusicXML",
     "menuExportMidi": "MIDI",
     "menuExportPdf": "PDF",
-    "footerTerms": "Terms and conditions"
+    "footerTerms": "Terms and conditions",
+    "betaLabel": "Beta",
+    "betaTitle": "About the beta",
+    "betaClose": "Close",
+    "betaP1": "We designed a minimalist interface. It does not have all the professional tools of other editors, but we work hard to make it easy to use.",
+    "betaP2": "Some things may still not work properly. Beta software is free for users, but it is still in an experimental phase."
   },
   "tutorials": {
     "metaTitle": "Tutorials · Partitura",

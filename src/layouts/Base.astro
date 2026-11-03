@@ -97,10 +97,22 @@ const jsonLd = pageJsonLd({
       </div>
     </header>
     <slot />
+    <button type="button" class="beta-badge" id="betaOpen" aria-haspopup="dialog">{s.ui.betaLabel}</button>
+    <dialog class="beta-dialog" id="betaDialog" aria-labelledby="betaTitle">
+      <h2 id="betaTitle">{s.ui.betaTitle}</h2>
+      <p>{s.ui.betaP1}</p>
+      <p>{s.ui.betaP2}</p>
+      <form method="dialog"><button class="beta-close">{s.ui.betaClose}</button></form>
+    </dialog>
     <footer class="site-footer">
       <a href={termsPath(locale)}>{s.ui.footerTerms}</a>
     </footer>
     <script is:inline>
+      (function () {
+        var betaDialog = document.getElementById('betaDialog');
+        document.getElementById('betaOpen').addEventListener('click', function () { betaDialog.showModal(); });
+        betaDialog.addEventListener('click', function (event) { if (event.target === betaDialog) betaDialog.close(); });
+      })();
       (function () {
         var toggle = document.getElementById('siteMenuToggle');
         var list = document.getElementById('siteMenuList');
