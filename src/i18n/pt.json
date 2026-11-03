@@ -237,6 +237,11 @@
     "welcome": {
       "cards": [
         {
+          "icon": "online",
+          "title": "Online, sem instalar nada",
+          "text": "Ao contrário do MuseScore e de outros programas, não há nada para baixar nem instalar: funciona no navegador, em qualquer computador."
+        },
+        {
           "icon": "account",
           "title": "Sem cadastro",
           "text": "Não é preciso criar conta nem fazer login: abra a página e comece a escrever."
