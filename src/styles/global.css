@@ -86,7 +86,8 @@ a { color: var(--blue-france); }
   color: var(--ink);
   text-decoration: none;
 }
-.brand-mark { display: block; width: 3.4rem; height: 4.4rem; }
+/* Rendered larger than its layout box (negative margins) so the header height is unchanged. */
+.brand-mark { display: block; width: 4.4rem; height: 5.7rem; margin: -0.65rem -0.5rem; }
 
 .site-menu {
   position: relative;
@@ -186,6 +187,54 @@ a { color: var(--blue-france); }
 .score-editor { margin-top: 0.6rem; }
 .noscript { padding: 1rem; border: 1px dashed var(--rule); color: var(--ink-soft); }
 
+/* ----- Tutorials ----- */
+
+.tutorials {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 1.5rem var(--gutter) 4rem;
+}
+.tutorials h1 {
+  margin: 0.4rem 0 0;
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 4.4vw, 2.6rem);
+  line-height: 1.15;
+}
+.tutorial-lead { margin: 0.6rem 0 1.6rem; color: var(--ink-soft); font-size: 1.08rem; }
+.tutorial-back { color: var(--ink-soft); font-size: 0.9rem; text-decoration: none; }
+.tutorial-back:hover { color: var(--ink); }
+
+.tutorial-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tutorial-cards a {
+  display: block;
+  height: 100%;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.6rem;
+  color: var(--ink);
+  text-decoration: none;
+}
+.tutorial-cards a:hover { border-color: var(--ink-soft); background: var(--surface); }
+.tutorial-cards h2 { margin: 0 0 0.3rem; font-size: 1.1rem; }
+.tutorial-cards p { margin: 0; color: var(--ink-soft); font-size: 0.95rem; }
+
+.tutorial-body p { color: var(--ink-soft); }
+.tutorial-list { display: grid; gap: 0.7rem; margin: 0; padding-left: 1.3rem; color: var(--ink-soft); }
+.tutorial-list strong { color: var(--ink); }
+.tutorial-body figcaption h3 { display: none; }
+.tutorial-next { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); }
+
+.faq { display: grid; gap: 1.6rem; margin: 0; }
+.faq h2 { margin: 0; font-size: 1.1rem; }
+.faq dt { margin: 0; }
+.faq dd { margin: 0.35rem 0 0; color: var(--ink-soft); }
 
 /* ----- Tooltip (black, Radix-like, above the element; text from data-tooltip) ----- */
 /* Black tooltip in the style of Radix UI's: small, rounded, with an arrow, above the element. Text comes from data-tooltip. */
@@ -306,59 +355,3 @@ a { color: var(--blue-france); }
     to { opacity: 1; transform: translateY(0); }
   }
 }
-
-/* ----- Footer and legal pages ----- */
-
-.site-footer {
-  max-width: var(--page);
-  margin: 4rem auto 0;
-  padding: 1rem var(--gutter) 2rem;
-  font-size: 0.85rem;
-  text-align: right;
-}
-.site-footer a { color: var(--ink-soft); text-decoration: none; }
-.site-footer a:hover { color: var(--ink); }
-
-.legal {
-  max-width: 46rem;
-  margin: 0 auto;
-  padding: 2rem var(--gutter) 3rem;
-}
-.legal h1 { margin: 0 0 0.4rem; font-size: 2rem; line-height: 1.2; }
-.legal h2 { margin: 2rem 0 0.4rem; font-size: 1.15rem; }
-.legal p { margin: 0 0 1rem; }
-.legal-updated { color: var(--ink-soft); font-size: 0.9rem; }
-
-.beta-badge {
-  position: fixed;
-  left: 1rem;
-  bottom: 1rem;
-  z-index: 20;
-  padding: 0.2rem 0.6rem;
-  border: 1px solid var(--ink-soft);
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink-soft);
-  font: 600 0.75rem/1.4 var(--sans);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-.beta-badge:hover { color: var(--ink); border-color: var(--ink); }
-
-.beta-popover {
-  position: fixed;
-  left: 1rem;
-  bottom: 3.25rem;
-  z-index: 20;
-  width: min(22rem, calc(100vw - 2rem));
-  padding: 1rem 1.1rem 0.4rem;
-  border: 1px solid var(--ink-soft);
-  border-radius: 0.75rem;
-  background: var(--paper);
-  color: var(--ink);
-  font: 0.85rem/1.5 var(--sans);
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.15);
-}
-.beta-popover[hidden] { display: none; }
-.beta-popover p { margin: 0 0 0.75rem; }
