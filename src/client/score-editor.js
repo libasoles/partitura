@@ -1542,7 +1542,8 @@ export default function start() {
 
   // ---- reguladores (crescendo y diminuendo) -------------------------------------
   // Un regulador elegido muestra dos asas (debajo de sus extremos) para ensancharlo y, a cada lado, la dinamica de ese extremo:
-  // la escrita o, si falta, un placeholder con la sugerida (p -> f en crescendo, f -> p en diminuendo). Al hacer click se elige otra.
+  // la escrita o, si falta, un placeholder con la sugerida (p -> f en crescendo, f -> p en diminuendo).
+  // Las dinamicas escritas se pueden editar tambien sin elegir antes el regulador.
 
   const DYNAMIC_SUGGESTED = { cresc: { start: 'p', end: 'f' }, dim: { start: 'f', end: 'p' } };
 
@@ -1763,16 +1764,16 @@ export default function start() {
           selectHairpin(mi, h.at);
         });
         stage.appendChild(hit);
-        if (!picked) return;
-        node.classList.add('is-selected');
-        mountHairpinHandles(mi, h, box, origin);
+        if (picked) {
+          node.classList.add('is-selected');
+          mountHairpinHandles(mi, h, box, origin);
+        }
+        mountHairpinDynamics(mi, h, box, origin, picked);
       });
     });
   }
 
   function mountHairpinHandles(mi, h, box, origin) {
-    const reach = 3 * (layout[mi].lines[4] - layout[mi].lines[0]) / 4; // hasta donde una dinamica dibujada cuenta como de este extremo
-    const middle = (box.top + box.bottom) / 2;
     [['start', box.left], ['end', box.right]].forEach(([side, edge]) => {
       const x = edge - origin.left;
       const grip = document.createElement('button');
@@ -1796,8 +1797,16 @@ export default function start() {
         stage.querySelector('.score-hairpin-grip[data-side="' + side + '"]')?.focus({ preventScroll: true });
       });
       stage.appendChild(grip);
+    });
+  }
 
+  function mountHairpinDynamics(mi, h, box, origin, picked) {
+    const reach = 3 * (layout[mi].lines[4] - layout[mi].lines[0]) / 4; // hasta donde una dinamica dibujada cuenta como de este extremo
+    const middle = (box.top + box.bottom) / 2;
+    [['start', box.left], ['end', box.right]].forEach(([side, edge]) => {
       const value = side === 'start' ? h.startDyn : h.endDyn;
+      if (!picked && !value) return;
+      const x = edge - origin.left;
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'score-hairpin-ui score-hairpin-dyn';
