@@ -141,15 +141,12 @@
 .tutorial-next__next { margin-left: auto; text-align: right; }
 
 /* The index: every tutorial, by topic. */
-.docs-topic { margin-top: 2rem; }
-.docs-topic h2 { margin: 0 0 0.5rem; font-size: 1.15rem; }
-.docs-topic ul { display: grid; gap: 0.15rem; margin: 0; padding: 0; list-style: none; }
-.docs-topic li { display: grid; grid-template-columns: minmax(10rem, 14rem) 1fr; gap: 0.2rem 1.2rem; padding: 0.45rem 0; border-top: 1px solid var(--rule); }
-.docs-topic li a { font-weight: 600; text-decoration: none; }
-.docs-topic li a:hover { text-decoration: underline; }
-.docs-topic li span { color: var(--ink-soft); }
-@media (max-width: 560px) { .docs-topic li { grid-template-columns: 1fr; } }
-
+.welcome { display: grid; gap: 1.2rem; margin: 0 0 1.6rem; padding: 0; list-style: none; }
+.welcome li { display: grid; grid-template-columns: auto 1fr; gap: 0 1rem; align-items: start; }
+.welcome svg { margin-top: 0.15rem; color: var(--ink-soft); }
+.welcome h2 { margin: 0 0 0.2rem; font-size: 1.05rem; }
+.welcome p { margin: 0; color: var(--ink-soft); }
+@media (max-width: 560px) { 
 .faq { display: grid; gap: 1.6rem; margin: 0; }
 .faq h2 { margin: 0; font-size: 1.1rem; }
 .faq dt { margin: 0; }
