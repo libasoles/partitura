@@ -10,3 +10,4 @@ public/vendor/verovio-toolkit-wasm.js
 .env.*
 *.log
 coverage/
+.lighthouse-reports/
