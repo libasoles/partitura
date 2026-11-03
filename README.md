@@ -78,7 +78,9 @@ Requiere Node >= 22.12. Astro está fijado en la 6.x porque la 7 pide Node >= 22
 - `src/i18n/` — textos es / en / pt.
 - `src/client/` — el editor (`score-editor.js`, `score-model.js`, `score-fingering.js`).
 - `src/styles/` — `global.css` (layout de la página) y `editor.css` (el editor).
-- `public/vendor/` — `ascii-tabs.js` y `jspdf`; Verovio se copia desde `node_modules` (`scripts/vendor.mjs`).
+- `src/vendor/ascii-tabs.js` — Vite lo empaqueta y minifica en un chunk que solo se pide al mostrar tablaturas.
+- `public/vendor/` — `jspdf` (solo al exportar PDF); Verovio se copia desde `node_modules` (`scripts/vendor.mjs`) y se pide cuando el navegador está ocioso.
+- `public/og.png`, `apple-touch-icon.png`, `icon-*.png` — generados con el editor real (ejercicio cargado) y `favicon.svg`.
 
 ## Guardado local
 

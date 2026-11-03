@@ -25,7 +25,8 @@ export default defineConfig({
   output: 'static',
   trailingSlash: 'always',
   compressHTML: true,
-  build: { inlineStylesheets: 'auto' },
+  // The whole CSS is ~30 KB: inlined, nothing blocks the first render waiting for a stylesheet.
+  build: { inlineStylesheets: 'always' },
   integrations: [
     sitemap({
       serialize(item) {

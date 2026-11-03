@@ -1,6 +1,7 @@
 ---
 import '@fontsource-variable/montserrat';
 import '../styles/global.css';
+import latinFont from '@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2?url';
 import { locales, ogLocales, pathFor, rootPath, strings, termsPath, tutorialsPath, type Locale } from '../i18n';
 import { pageJsonLd } from '../lib/jsonld';
 
@@ -20,6 +21,7 @@ const s = strings(locale);
 const site = Astro.site!;
 const abs = (l: Locale) => new URL(paths[l], site).toString();
 const canonical = abs(locale);
+const ogImage = new URL('/og.png', site).toString();
 const homeUrl = new URL(rootPath, site).toString();
 const jsonLd = pageJsonLd({
   locale,
@@ -49,11 +51,21 @@ const jsonLd = pageJsonLd({
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
-    <meta name="twitter:card" content="summary" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={s.ui.ogImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:image:alt" content={s.ui.ogImageAlt} />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="theme-color" content="#ffffff" />
+    <link rel="preload" href={latinFont} as="font" type="font/woff2" crossorigin />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
   </head>
   <body class="score-body">

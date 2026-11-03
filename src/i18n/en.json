@@ -199,6 +199,7 @@
     "importDone": "Score loaded."
   },
   "ui": {
+    "ogImageAlt": "Partitura, online music score editor: a staff with an exercise written in treble clef and its tab",
     "siteName": "Partitura",
     "siteTagline": "Sheet music editor",
     "home": "Home",
