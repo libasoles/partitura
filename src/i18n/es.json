@@ -232,7 +232,37 @@
     "metaTitle": "Tutoriales · Partitura",
     "metaDescription": "Aprendé a usar el editor de partituras paso a paso, con animaciones: notas y silencios, edición, compases, repeticiones, dinámicas, tablatura de guitarra y archivos.",
     "h1": "Tutoriales",
-    "intro": "Guías cortas, una por tema, cada una con un ejemplo animado. Elegí una en el menú de la izquierda.",
+    "intro": "Partitura es un editor de partituras que funciona directamente en tu navegador. Esto es lo que conviene saber antes de empezar.",
+    "welcome": {
+      "cards": [
+        {
+          "icon": "account",
+          "title": "Sin registro",
+          "text": "No hay que crear una cuenta ni iniciar sesión: abrís la página y empezás a escribir."
+        },
+        {
+          "icon": "scores",
+          "title": "Todas las partituras que quieras",
+          "text": "Podés tener varias partituras abiertas a la vez, cada una en su pestaña, y volver a cualquiera cuando quieras."
+        },
+        {
+          "icon": "local",
+          "title": "Se guardan en tu navegador",
+          "text": "Todo se guarda solo en tu equipo, mientras escribís. No se sube nada a ningún servidor. Para conservar o compartir una partitura, exportala desde el menú."
+        },
+        {
+          "icon": "free",
+          "title": "Gratis y sin publicidad",
+          "text": "El sitio es gratuito y está libre de publicidad: sin anuncios ni rastreadores que te distraigan."
+        },
+        {
+          "icon": "help",
+          "title": "Pensado para ser intuitivo",
+          "text": "Nos esforzamos por que la interfaz se entienda sin explicaciones. De todas formas, en el menú de la izquierda hay tutoriales de cada función y una guía con todos los atajos de teclado."
+        }
+      ],
+      "start": "Si es tu primera vez, empezá por «Primeros pasos» en el menú de la izquierda."
+    },
     "back": "Todos los tutoriales",
     "next": "Siguiente",
     "items": {

@@ -232,7 +232,37 @@
     "metaTitle": "Tutorials · Partitura",
     "metaDescription": "Learn to use the score editor step by step, with animations: notes and rests, editing, measures, repeats, dynamics, guitar tablature and files.",
     "h1": "Tutorials",
-    "intro": "Short guides, one per topic, each with an animated example. Pick one from the menu on the left.",
+    "intro": "Partitura is a score editor that runs right in your browser. Here is what is worth knowing before you start.",
+    "welcome": {
+      "cards": [
+        {
+          "icon": "account",
+          "title": "No sign-up",
+          "text": "There is no account to create and no login: open the page and start writing."
+        },
+        {
+          "icon": "scores",
+          "title": "As many scores as you like",
+          "text": "You can keep several scores open at once, each in its own tab, and go back to any of them whenever you want."
+        },
+        {
+          "icon": "local",
+          "title": "Saved in your browser",
+          "text": "Everything is saved on your device as you write. Nothing is uploaded to any server. To keep or share a score, export it from the menu."
+        },
+        {
+          "icon": "free",
+          "title": "Free and ad-free",
+          "text": "The site is free and has no advertising: no ads or trackers to distract you."
+        },
+        {
+          "icon": "help",
+          "title": "Built to be intuitive",
+          "text": "We work hard to make the interface clear without explanations. Even so, the menu on the left has tutorials for every feature and a guide with all the keyboard shortcuts."
+        }
+      ],
+      "start": "If this is your first time, start with “Getting started” in the menu on the left."
+    },
     "back": "All tutorials",
     "next": "Next",
     "items": {
