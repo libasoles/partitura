@@ -123,8 +123,8 @@ export default function createExporter(editor) {
         const clefBox = clef?.getBBox();
         const clefX = clefBox ? clefBox.x + clefBox.width / 2 : left + space;
         if (Number(measures[0].id.slice(1)) === 0) M.tuningLabels(exportScore).forEach((label, string) =>
-          add('text', { x: clefX + font * 1.6, y: y + step * string,
-            'font-family': 'Arial, sans-serif', 'font-size': font * 0.8, 'text-anchor': 'middle',
+          add('text', { x: left - font * 0.3, y: y + step * string,
+            'font-family': 'Arial, sans-serif', 'font-size': font * 0.8, 'text-anchor': 'end',
             'dominant-baseline': 'central', fill: '#000', stroke: '#fff',
             'stroke-width': font * 0.18, 'paint-order': 'stroke' }, label));
         'TAB'.split('').forEach((letter, i) => add('text', { x: clefX, y: y + step * (1.5 + i),

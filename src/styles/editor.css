@@ -1747,22 +1747,20 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-tuning-trigger {
   position: absolute;
   z-index: 2;
-  display: flex;
-  flex-direction: column;
-  min-width: 28px;
   padding: 0;
   border: 0;
-  border-radius: 4px;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--sans);
+  background: transparent;
   cursor: pointer;
-  transform: translateX(-50%);
 }
-.score-tuning-trigger span { display: grid; place-items: center; }
-.score-tuning-trigger:hover, .score-tuning-trigger:focus-visible { color: var(--blue-france); outline: 2px solid currentColor; }
+.score-tab .ascii-tabs-label { color: var(--ink); }
+.score-stage:has(> .score-tuning-trigger:hover) .ascii-tabs-label,
+.score-stage:has(> .score-tuning-trigger:focus-visible) .ascii-tabs-label { color: var(--blue-france); }
+.score-tuning-trigger:focus-visible { outline: 2px solid var(--blue-france); }
 .score-tuning-popup button {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
   width: 100%;
   min-height: 44px;
   padding: 0.5rem;
@@ -1775,4 +1773,5 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   cursor: pointer;
 }
 .score-tuning-popup button:hover, .score-tuning-popup button:focus-visible { background: var(--rule); }
-.score-tuning-popup button[aria-pressed="true"] { color: var(--blue-france); font-weight: 700; }
+.score-tuning-popup button span { text-align: right; white-space: nowrap; }
+.score-tuning-popup button[aria-pressed="true"] { color: var(--blue-france); }

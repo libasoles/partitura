@@ -1184,19 +1184,17 @@ export default function start() {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'score-tuning-trigger';
-      button.style.left = (x + font * 1.6) + 'px';
-      button.style.top = (ys[0] - step / 2) + 'px';
-      button.style.fontSize = font * 0.8 + 'px';
+      const labels = [...tabs.querySelectorAll('.ascii-tabs-label')];
+      const firstLabel = labels[0].getBoundingClientRect();
+      const lastLabel = labels[labels.length - 1].getBoundingClientRect();
+      button.style.left = (firstLabel.left - origin.left) + 'px';
+      button.style.top = (firstLabel.top - origin.top) + 'px';
+      button.style.width = firstLabel.width + 'px';
+      button.style.height = (lastLabel.bottom - firstLabel.top) + 'px';
       button.setAttribute('aria-label', t.tuning + ': ' + tuningName(M.tuningOf(score)));
       button.setAttribute('aria-haspopup', 'dialog');
       button.setAttribute('aria-controls', tuningPopup.id);
       button.setAttribute('aria-expanded', 'false');
-      M.tuningLabels(score).forEach(name => {
-        const label = document.createElement('span');
-        label.textContent = name;
-        label.style.height = step + 'px';
-        button.appendChild(label);
-      });
       button.addEventListener('pointerdown', event => event.stopPropagation());
       button.addEventListener('click', () => openTuning(button));
       stage.appendChild(button);
@@ -1235,7 +1233,7 @@ export default function start() {
       const width = Math.max(last.right - head.left, (positions.length ? positions[positions.length - 1] : 0) + 12);
       const tabs = document.createElement('ascii-tabs');
       tabs.className = 'score-tab';
-      tabs.setAttribute('labels', 'none');
+      tabs.setAttribute('labels', row === 0 ? 'notes' : 'none');
       tabs.setAttribute('tuning', M.tuningLabels(score).join(' '));
       tabs.setAttribute('variant', 'flat');
       tabs.setAttribute('theme', 'light');
@@ -1268,6 +1266,11 @@ export default function start() {
         } catch (error) {
           tabs.setDocument({ value: [value] });
         }
+        // Native labels take a gutter before the string coordinates. Move only
+        // that gutter outside the system so frets still align with the staff.
+        const gutter = tabs.querySelector('.ascii-tabs-label')?.getBoundingClientRect().width || 0;
+        tabs.style.left = (head.left - gutter) + 'px';
+        tabs.style.width = (layout[start + size - 1].right - head.left + gutter) + 'px';
         decorateTab(tabs, row, start, size, head, font);
         tabs.addEventListener('change', (event) => {
           const columns = event.detail.value[0];
@@ -2677,7 +2680,11 @@ export default function start() {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.tuning = tuning.id;
-    button.textContent = tuningName(tuning) + ' · ' + M.tuningLabels({ tuning: tuning.id }).slice().reverse().join(' ');
+    const name = document.createElement('strong');
+    name.textContent = tuningName(tuning);
+    const strings = document.createElement('span');
+    strings.textContent = M.tuningLabels({ tuning: tuning.id }).slice().reverse().join(' ');
+    button.append(name, strings);
     button.addEventListener('click', () => {
       tuningPopup.hidePopover();
       if (M.tuningOf(score).id !== tuning.id) {
