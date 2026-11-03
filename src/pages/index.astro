@@ -1,0 +1,60 @@
+---
+import '../styles/global.css';
+import { locales, pathFor, rootPath, strings, urlFor } from '../i18n';
+
+// The x-default entry. It holds no editor: it sends each visitor to the language of their browser, and for anything
+// that does not run JavaScript (crawlers, no-JS visitors) it is a plain page linking every language.
+// Pages that already have a language in the URL (/es/, /en/, /pt/, search results, shared links) are never redirected.
+const site = Astro.site!;
+const home = new URL(rootPath, site).toString();
+const en = strings('en');
+const title = en.ui.siteName;
+const description = en.scoreMetaDescription;
+const supported = locales as readonly string[];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{`${title} · ${en.scoreSeoH1}`}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={home} />
+    {locales.map((l) => <link rel="alternate" hreflang={l} href={urlFor(l, site)} />)}
+    <link rel="alternate" hreflang="x-default" href={home} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={title} />
+    <meta property="og:title" content={`${title} · ${en.scoreSeoH1}`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={home} />
+    <meta name="theme-color" content="#ffffff" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script is:inline define:vars={{ supported, fallback: 'en', paths: Object.fromEntries(locales.map((l) => [l, pathFor(l)])) }}>
+      // First supported language in the browser's preference order; the default language when none matches.
+      if (!/bot|crawl|spider|slurp|facebookexternalhit|preview|lighthouse/i.test(navigator.userAgent)) {
+        var prefs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language];
+        var pick = fallback;
+        for (var i = 0; i < prefs.length; i++) {
+          var primary = String(prefs[i] || '').toLowerCase().split('-')[0];
+          if (supported.indexOf(primary) !== -1) { pick = primary; break; }
+        }
+        // replace(): the entry page stays out of the history, so Back does not bounce the visitor into the redirect.
+        location.replace(paths[pick] + location.search + location.hash);
+      }
+    </script>
+  </head>
+  <body class="score-body">
+    <main class="score-page">
+      <h1>{title}</h1>
+      <p>{description}</p>
+      <ul>
+        {locales.map((l) => (
+          <li>
+            <a href={pathFor(l)} hreflang={l} lang={strings(l).htmlLang}>{strings(l).ui.languageName} — {strings(l).scoreSeoH1}</a>
+          </li>
+        ))}
+      </ul>
+    </main>
+  </body>
+</html>

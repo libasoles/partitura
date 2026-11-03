@@ -1,0 +1,9 @@
+---
+import TutorialsPage from '../../../components/TutorialsPage.astro';
+import { slugs } from '../../../lib/tutorials';
+
+export const getStaticPaths = () => slugs.map((slug) => ({ params: { slug } }));
+const { slug } = Astro.params;
+---
+
+<TutorialsPage locale="pt" slug={slug as (typeof slugs)[number]} />

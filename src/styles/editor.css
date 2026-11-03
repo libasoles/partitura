@@ -1,0 +1,1708 @@
+/* editor.css — The score editor: toolbar, palette, staff stage, tabs, popups and dialogs. */
+.score-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.score-side {
+  position: sticky;
+  top: 6rem;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+  margin-top: 0.5rem;
+  /* Fill the viewport below the sticky offset so the actions can sit at the bottom without overflowing it. */
+  height: calc(100vh - 6rem - 1.5rem - var(--side-offset, 0.5rem));
+  height: calc(100dvh - 6rem - 1.5rem - var(--side-offset, 0.5rem));
+  background: transparent;
+}
+
+/* A tall palette must scroll with the page when it cannot fit in the viewport. */
+@media (max-height: 760px) {
+  .score-side { position: relative; top: auto; height: auto; }
+}
+
+.score-side-actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.3rem;
+}
+
+/* The sidebar hugs the right edge, so its tooltips open to the left instead of centered above. */
+.score-side-actions .tooltip::after {
+  right: calc(100% + 0.6rem);
+  bottom: 50%;
+  left: auto;
+  transform: translateY(50%);
+}
+
+.score-side-actions .tooltip::before {
+  right: calc(100% + 0.35rem);
+  bottom: 50%;
+  left: auto;
+  transform: translateY(50%) rotate(45deg);
+}
+
+#scoreDownloadToggle[aria-expanded="true"]::before,
+#scoreDownloadToggle[aria-expanded="true"]::after {
+  display: none;
+}
+
+.score-side-actions .score-download {
+  width: 100%;
+  min-height: 2.75rem;
+}
+
+.score-barlines {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.3rem;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.score-barlines .score-palette-item {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0;
+}
+
+.score-page [hidden] {
+  display: none;
+}
+
+.score-main {
+  min-width: 0;
+}
+
+.score-sheet {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  margin-top: 0.5rem;
+  background: #fff;
+  overflow: hidden;
+}
+
+.score-sheet > .score-stage { grid-column: 1 / -1; }
+
+.score-author {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 1rem 36px 0 0;
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  text-align: right;
+}
+
+.score-author input {
+  display: inline-block;
+  box-sizing: border-box;
+  field-sizing: content;
+  width: auto;
+  min-width: 8ch;
+  max-width: 100%;
+  padding: 0.2rem 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  text-align: right;
+}
+
+.score-author input::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.6;
+}
+
+.score-author input:focus {
+  border-bottom-color: var(--rule);
+}
+
+.score-doc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0 0;
+  background: linear-gradient(var(--rule), var(--rule))
+    bottom / 100% 1px no-repeat;
+  font-family: var(--sans);
+}
+
+.score-doc-tab {
+  box-sizing: border-box;
+  max-width: 18ch;
+  margin: 0;
+  padding: 0.35rem 0.9rem;
+  overflow: hidden;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: grab;
+  touch-action: none;
+}
+
+.score-doc-tabs.is-reordering,
+.score-doc-tabs.is-reordering * {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.score-doc-tab.is-dragging {
+  opacity: 0.45;
+}
+
+.score-doc-tabs .drop-before {
+  box-shadow: inset 3px 0 var(--ink);
+}
+
+.score-doc-tabs .drop-after {
+  box-shadow: inset -3px 0 var(--ink);
+}
+
+.score-doc-tab:hover {
+  color: var(--ink);
+}
+
+.score-doc-tab.is-active {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-bottom-color: #fff;
+  border-radius: 0 0.9rem 0 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.score-doc-tab-input {
+  display: block;
+  box-sizing: border-box;
+  field-sizing: content;
+  width: auto;
+  min-width: 8ch;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: text;
+  text-overflow: ellipsis;
+}
+
+.score-title {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0.25rem 1rem 0 36px;
+  font-size: 1.6rem;
+  text-align: left;
+}
+
+.score-title input {
+  display: block;
+  box-sizing: border-box;
+  field-sizing: content;
+  width: auto;
+  min-width: 1ch;
+  max-width: 100%;
+  padding: 0.2rem 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+
+.score-title input:focus {
+  border-bottom-color: var(--rule);
+}
+
+.score-new-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0.1rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.score-new-tab:hover {
+  background: var(--rule);
+  color: var(--ink);
+}
+
+.score-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  /* 36px is the score's side margin: the whole note and the natural sit over the staff's first and last edges,
+     the 9px being the blank space left of each glyph inside its button. */
+  padding: 0.5rem calc(36px - 9px);
+  background: #fff;
+  border: 0;
+  font-family: var(--sans);
+}
+
+.score-palette {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+/* The script fills the palette; until then keep the row it will occupy on one line. */
+.score-palette:empty {
+  min-height: 3rem;
+}
+
+.score-palette-sep {
+  width: 0.8rem;
+}
+
+/* The second separator pushes the dot and accidentals group to the right edge of the score. */
+.score-palette-sep:nth-of-type(2) {
+  margin-left: auto;
+}
+
+.score-toolbar-gap {
+  flex: 1;
+}
+
+.score-palette-item,
+.score-tool,
+.score-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.5rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.score-palette-item {
+  height: auto;
+  min-height: 3.5rem;
+  flex-direction: column;
+  gap: 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.score-palette-item:hover,
+.score-tool:hover,
+.score-download:hover {
+  color: var(--blue-france);
+}
+
+.score-palette-item[aria-pressed="true"] {
+  color: var(--accent-brand);
+  background: color-mix(in srgb, var(--accent-brand) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent-brand) 40%, transparent);
+}
+
+.score-palette .score-palette-item svg {
+  width: 24px;
+  height: auto;
+}
+
+.score-palette .score-palette-item svg.score-note-glyph {
+  width: 28.8px;
+}
+
+.score-palette .score-palette-item svg.score-small-rest-glyph {
+  width: 20px;
+}
+
+.score-palette .score-palette-item {
+  padding-top: 0.4rem;
+  min-height: 3rem;
+  min-width: 2.25rem;
+}
+
+.score-palette-key {
+  font-size: 0.7rem;
+  line-height: 1rem;
+  visibility: hidden;
+}
+
+.score-palette-item:hover .score-palette-key,
+.score-palette-item:focus-visible .score-palette-key {
+  visibility: visible;
+}
+
+.score-download {
+  border: 0;
+}
+
+.score-download:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.score-stage { grid-column: 1 / -1; }
+
+.score-author {
+  grid-column: 2;
+  grid-row: 1;
+  margin: 1rem 36px 0 0;
+  font-family: var(--serif);
+  font-size: 0.95rem;
+  text-align: right;
+}
+
+.score-author input {
+  display: inline-block;
+  box-sizing: border-box;
+  field-sizing: content;
+  width: auto;
+  min-width: 8ch;
+  max-width: 100%;
+  padding: 0.2rem 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  text-align: right;
+}
+
+.score-author input::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.6;
+}
+
+.score-author input:focus {
+  border-bottom-color: var(--rule);
+}
+
+.score-doc-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.5rem 0 0;
+  background: linear-gradient(var(--rule), var(--rule))
+    bottom / 100% 1px no-repeat;
+  font-family: var(--sans);
+}
+
+.score-doc-tab {
+  box-sizing: border-box;
+  max-width: 18ch;
+  margin: 0;
+  padding: 0.35rem 0.9rem;
+  overflow: hidden;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: grab;
+  touch-action: none;
+}
+
+.score-doc-tabs.is-reordering,
+.score-doc-tabs.is-reordering * {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.score-doc-tab.is-dragging {
+  opacity: 0.45;
+}
+
+.score-doc-tabs .drop-before {
+  box-shadow: inset 3px 0 var(--ink);
+}
+
+.score-doc-tabs .drop-after {
+  box-shadow: inset -3px 0 var(--ink);
+}
+
+.score-doc-tab:hover {
+  color: var(--ink);
+}
+
+.score-doc-tab.is-active {
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-bottom-color: #fff;
+  border-radius: 0 0.9rem 0 0;
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.score-doc-tab-input {
+  display: block;
+  box-sizing: border-box;
+  field-sizing: content;
+  width: auto;
+  min-width: 8ch;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: text;
+  text-overflow: ellipsis;
+}
+
+.score-title {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0.25rem 1rem 0 36px;
+  font-size: 1.6rem;
+  text-align: left;
+}
+
+.score-title input {
+  display: block;
+  box-sizing: border-box;
+  field-sizing: content;
+  width: auto;
+  min-width: 1ch;
+  max-width: 100%;
+  padding: 0.2rem 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+}
+
+.score-title input:focus {
+  border-bottom-color: var(--rule);
+}
+
+.score-new-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-bottom: 0.1rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.score-new-tab:hover {
+  background: var(--rule);
+  color: var(--ink);
+}
+
+.score-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  /* 36px is the score's side margin: the whole note and the natural sit over the staff's first and last edges,
+     the 9px being the blank space left of each glyph inside its button. */
+  padding: 0.5rem calc(36px - 9px);
+  background: #fff;
+  border: 0;
+  font-family: var(--sans);
+}
+
+.score-palette {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+/* The script fills the palette; until then keep the row it will occupy on one line. */
+.score-palette:empty {
+  min-height: 3rem;
+}
+
+.score-palette-sep {
+  width: 0.8rem;
+}
+
+/* The second separator pushes the dot and accidentals group to the right edge of the score. */
+.score-palette-sep:nth-of-type(2) {
+  margin-left: auto;
+}
+
+.score-toolbar-gap {
+  flex: 1;
+}
+
+.score-palette-item,
+.score-tool,
+.score-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.5rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.score-palette-item {
+  height: auto;
+  min-height: 3.5rem;
+  flex-direction: column;
+  gap: 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.score-palette-item:hover,
+.score-tool:hover,
+.score-download:hover {
+  color: var(--blue-france);
+}
+
+.score-palette-item[aria-pressed="true"] {
+  color: var(--accent-brand);
+  background: color-mix(in srgb, var(--accent-brand) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent-brand) 40%, transparent);
+}
+
+.score-palette .score-palette-item svg {
+  width: 24px;
+  height: auto;
+}
+
+.score-palette .score-palette-item svg.score-note-glyph {
+  width: 28.8px;
+}
+
+.score-palette .score-palette-item svg.score-small-rest-glyph {
+  width: 20px;
+}
+
+.score-palette .score-palette-item {
+  padding-top: 0.4rem;
+  min-height: 3rem;
+  min-width: 2.25rem;
+}
+
+.score-palette-key {
+  font-size: 0.7rem;
+  line-height: 1rem;
+  visibility: hidden;
+}
+
+.score-palette-item:hover .score-palette-key,
+.score-palette-item:focus-visible .score-palette-key {
+  visibility: visible;
+}
+
+.score-download {
+  border: 0;
+}
+
+.score-download:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.score-downloads {
+  position: relative;
+}
+
+.score-download-options {
+  font-family: var(--sans);
+  position: absolute;
+  bottom: 0;
+  right: calc(100% + 0.4rem);
+  display: grid;
+  gap: 0.2rem;
+  min-width: 9rem;
+  padding: 0.3rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px #0002;
+}
+
+.score-download-options .score-download {
+  justify-content: flex-start;
+  border-color: transparent;
+}
+
+.score-stage {
+  position: relative;
+  min-height: 12rem;
+  background: #fff;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* While Verovio loads, hold the height of the default score (staff plus tab) so nothing below shifts. */
+.score-stage[aria-busy="true"] {
+  min-height: 33rem;
+}
+
+.score-tab {
+  position: absolute;
+}
+
+/* Ledger-line insertion can overlap TAB: an active score tool owns that click. */
+.score-stage.has-tool .score-tab,
+.score-stage.has-tool .score-tab * {
+  pointer-events: none;
+}
+
+/* Frets in regular weight and strings a little closer than the component's 1.5em. */
+.score-tab .ascii-tabs-fret {
+  font-weight: 400;
+}
+.score-tab .ascii-tabs-line,
+.score-tab .ascii-tabs-cell {
+  height: 1.35em;
+  line-height: 1.35em;
+}
+
+.score-tab-bar {
+  position: absolute;
+  width: 1.5px;
+  background: var(--ink);
+  pointer-events: none;
+}
+
+.score-tab-clef {
+  position: absolute;
+  font-family: var(--sans);
+  font-weight: 700;
+  line-height: 1;
+  color: #8a8a8a;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.score-tab-toggle {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.score-stage svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.score-stage g.mNum {
+  display: none;
+}
+
+.score-stage g.note,
+.score-stage g.rest {
+  cursor: grab;
+}
+
+.score-stage.has-tool g.note,
+.score-stage.has-tool g.rest {
+  cursor: default;
+}
+
+.score-stage .is-target {
+  fill: var(--note-selected);
+  color: var(--note-selected);
+}
+
+.score-stage .is-target * {
+  fill: var(--note-selected);
+  stroke: var(--note-selected);
+}
+
+/* Logo yellow is too pale on paper alone: a dark halo keeps it readable. */
+.score-stage .is-selected,
+.score-stage .is-bar-selected {
+  fill: var(--brand-yellow);
+  color: var(--brand-yellow);
+  filter: drop-shadow(0 0 0.6px var(--brand-blue-dark))
+    drop-shadow(0 0 0.6px var(--brand-blue-dark))
+    drop-shadow(0 0 3px var(--brand-yellow));
+}
+
+.score-stage .is-selected *,
+.score-stage .is-bar-selected * {
+  fill: var(--brand-yellow);
+  stroke: var(--brand-yellow);
+}
+
+.score-marker {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.score-marker-line {
+  position: absolute;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--note-selected);
+  opacity: 0.35;
+}
+
+.score-marker-ledger {
+  position: absolute;
+  height: 2px;
+  background: var(--note-selected);
+  opacity: 0.6;
+}
+
+.score-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  color: var(--note-selected);
+  pointer-events: none;
+}
+
+.score-ghost svg {
+  display: block;
+}
+
+body.score-dragging {
+  cursor: default;
+  touch-action: none;
+}
+
+.score-rows {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.score-rows .score-tool {
+  border-color: var(--rule);
+  border-radius: 50%;
+  width: 2.5rem;
+}
+
+/* El boton transparente conserva la cifra grabada y amplia su zona de clic. */
+.score-meter-trigger,
+.score-clef-trigger,
+.score-key-trigger {
+  position: absolute;
+  width: 44px;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.score-meter-trigger:hover,
+.score-meter-trigger:focus-visible,
+.score-clef-trigger:hover,
+.score-clef-trigger:focus-visible,
+.score-key-trigger:hover,
+.score-key-trigger:focus-visible {
+  color: var(--blue-france);
+}
+
+.score-body g.meterSig.is-hovered,
+.score-body g.clef.is-hovered,
+.score-body g.keySig.is-hovered {
+  fill: var(--blue-france);
+  color: var(--blue-france);
+}
+
+.score-meter-popup {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: 0.75rem;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgb(0 0 0 / 12%);
+  font-family: var(--sans);
+}
+
+.score-meter-popup p {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+}
+
+.score-meter-options {
+  display: grid;
+  grid-template-columns: repeat(4, 3rem);
+  gap: 0.25rem;
+}
+
+.score-meter-options button {
+  min-height: 44px;
+  padding: 0.25rem;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.score-meter-options button:hover {
+  color: var(--blue-france);
+}
+
+.score-meter-options button[aria-pressed="true"] {
+  color: var(--accent-brand);
+}
+
+.score-meter-options .score-signature-preview {
+  height: 3.5rem;
+}
+
+.score-clef-popup {
+  box-sizing: border-box;
+  width: min(36rem, calc(100vw - 1rem));
+  overflow: visible;
+}
+
+.score-clef-options,
+.score-key-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.score-key-options {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.score-key-none {
+  font-size: 1.15rem;
+}
+
+.score-clef-options {
+  margin-bottom: 0.9rem;
+}
+
+.score-signature-option {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.25rem;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.score-signature-option:hover {
+  color: var(--blue-france);
+}
+
+.score-signature-option[aria-pressed="true"] {
+  color: var(--accent-brand);
+}
+
+.score-signature-preview {
+  display: block;
+  width: 100%;
+  height: 4.5rem;
+  fill: currentColor;
+  pointer-events: none;
+}
+
+.score-key-options .score-signature-preview {
+  height: 3.5rem;
+}
+
+.score-clef-options .score-signature-option:nth-child(5n + 1)::after,
+.score-key-options .first-column::after {
+  left: 0;
+  transform: none;
+}
+
+.score-clef-options .score-signature-option:nth-child(5n)::after,
+.score-key-options .last-column::after {
+  right: 0;
+  left: auto;
+  transform: none;
+}
+
+.score-barline-trigger {
+  position: absolute;
+  transform: translateX(-50%);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.score-barline-trigger:focus-visible {
+  outline: 2px solid var(--note-selected);
+  outline-offset: 2px;
+}
+
+/* + sobre las barras del compas elegido: inserta un compas antes o despues. */
+.score-insert-measure {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--brand-blue-dark);
+  border-radius: 50%;
+  background: var(--brand-yellow);
+  color: var(--brand-blue-dark);
+  cursor: pointer;
+}
+
+.score-insert-measure .lucide {
+  width: 1rem;
+  height: 1rem;
+}
+
+.score-insert-measure:hover,
+.score-insert-measure:focus-visible {
+  background: var(--paper);
+}
+
+.score-row-tools {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  transform: translateY(-50%);
+  border-radius: 1rem;
+  background: var(--paper);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.score-row-tools.is-visible,
+.score-row-tools:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.score-row-tool {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.score-row-tool .lucide {
+  width: 1rem;
+  height: 1rem;
+}
+
+.score-row-tool:hover {
+  color: var(--blue-france);
+}
+
+/* Solo el icono se atenua: con opacity en el boton el tooltip (::after) tambien se veria apagado. */
+.score-row-tool[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.score-row-tool[aria-disabled="true"] .lucide {
+  opacity: 0.35;
+}
+
+.score-row-tool[aria-disabled="true"]:hover {
+  color: var(--ink);
+}
+
+/* El tooltip va a la izquierda de la barra: a la derecha no hay margen en el renglon. */
+.score-row-tool.tooltip::after {
+  top: 50%;
+  right: calc(100% + 0.6rem);
+  bottom: auto;
+  left: auto;
+  transform: translateY(-50%);
+}
+
+.score-row-tool.tooltip::before {
+  top: 50%;
+  right: calc(100% + 0.3rem);
+  bottom: auto;
+  left: auto;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.score-barre-field {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  transform: translateY(-50%);
+  padding: 0 0.125rem;
+  border-radius: 4px;
+  background: #fff;
+  color: var(--ink);
+  font: italic 700 1.1rem/1.75rem serif;
+}
+
+.score-barre-number {
+  width: 2rem;
+  height: 1.5rem;
+  padding: 0 0 0 0.2rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: text;
+}
+
+.score-barre-field {
+  z-index: 1;
+}
+
+.score-barre-span {
+  position: absolute;
+  height: 1.25rem;
+  transform: translateY(-50%);
+}
+
+.score-barre-grip {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: #fff;
+  color: #d92d20;
+  opacity: 0;
+  cursor: ew-resize;
+  touch-action: none;
+  transform: translate(-100%, -50%);
+}
+
+.score-barre-grip svg {
+  width: 100%;
+  height: 100%;
+}
+
+.score-barre-grip[data-side="end"] {
+  left: 100%;
+  transform: translate(0, -50%);
+}
+
+.score-barre-span:hover .score-barre-grip,
+.score-barre-grip:focus-visible,
+.is-resizing-barre .score-barre-grip {
+  opacity: 1;
+}
+
+.score-barre-live {
+  position: absolute;
+  height: 0;
+  border-top: 1.5px dashed var(--ink);
+  pointer-events: none;
+}
+
+.score-barre-preview {
+  position: absolute;
+  width: 2px;
+  height: 1.5rem;
+  transform: translate(-50%, -50%);
+  background: #d92d20;
+  pointer-events: none;
+}
+
+/* Reguladores: una zona transparente para elegirlos y, ya elegidos, asas debajo de sus extremos y la dinamica de cada lado. */
+.score-hairpin-hit {
+  position: absolute;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.score-stage.has-tool .score-hairpin-hit {
+  pointer-events: none;
+}
+
+/* Las lineas finas se pixelan con el halo de los demas elementos elegidos: aqui solo cambian de color. */
+.score-stage g.hairpin.is-selected {
+  filter: none;
+}
+
+.score-stage g.hairpin.is-selected * {
+  fill: none;
+  stroke: var(--note-selected);
+}
+
+.score-hairpin-live {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  stroke: var(--note-selected);
+}
+
+.score-hairpin-grip {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: #fff;
+  color: #d92d20;
+  cursor: ew-resize;
+  touch-action: none;
+  transform: translateX(-50%);
+}
+
+.score-hairpin-grip svg {
+  width: 100%;
+  height: 100%;
+}
+
+.score-hairpin-dyn {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 0.3rem;
+  border: 0;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 85%);
+  color: var(--blue-france);
+  font: italic 700 1.2rem/1 serif;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.score-hairpin-dyn[data-side="start"] {
+  transform: translate(-100%, -50%);
+}
+
+.score-hairpin-dyn.is-empty {
+  opacity: 0.8;
+}
+
+/* Con la dinamica ya dibujada, el boton solo la enmarca. */
+.score-hairpin-dyn.has-value {
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  transform: none;
+}
+
+.score-hairpin-dyn:hover,
+.score-hairpin-dyn:focus-visible {
+  opacity: 1;
+}
+
+.score-hairpin-dyn:focus-visible,
+.score-hairpin-grip:focus-visible {
+  outline: 0;
+}
+
+.score-dynamics-options {
+  display: grid;
+  grid-template-columns: repeat(4, 3.25rem);
+  gap: 0.25rem;
+}
+
+.score-dynamics-options button {
+  min-height: 44px;
+  padding: 0.25rem;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  font: italic 700 1.4rem/1 serif;
+  cursor: pointer;
+}
+
+.score-dynamics-options button:hover {
+  color: var(--blue-france);
+}
+
+.score-dynamics-options button[aria-pressed="true"] {
+  color: var(--accent-brand);
+}
+
+.score-dynamics-options .score-dynamics-none {
+  grid-column: 1 / -1;
+  min-height: 36px;
+  padding: 0.25rem 0.75rem;
+  outline: 0;
+  font: 0.85rem/1 var(--sans);
+  text-align: left;
+}
+
+/* Radix locks the scroll by zeroing the body margin and padding, which shifts the centered page.
+   Keep the scrollbar gutter reserved and restore the body spacing while the dialog is open. */
+html {
+  scrollbar-gutter: stable;
+}
+
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #0006;
+}
+
+.confirm-overlay[data-state='open'],
+.confirm-content[data-state='open'] {
+  animation: confirm-fade-in 150ms ease-out;
+}
+
+.confirm-overlay[data-state='closed'],
+.confirm-content[data-state='closed'] {
+  animation: confirm-fade-out 150ms ease-in;
+}
+
+@keyframes confirm-fade-in {
+  from { opacity: 0; }
+}
+
+@keyframes confirm-fade-out {
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-overlay,
+  .confirm-content {
+    animation: none !important;
+  }
+}
+
+.confirm-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 1001;
+  width: min(26rem, calc(100vw - 2rem));
+  padding: 1.5rem;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid #000;
+  font-family: var(--sans);
+}
+
+.confirm-title {
+  margin: 0 0 0.5rem;
+  padding-right: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.confirm-description {
+  margin: 0 0 1.25rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.confirm-button {
+  height: 2.5rem;
+  padding: 0 1rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.confirm-button:hover {
+  background: #0000000f;
+}
+
+.confirm-cancel {
+  border-width: 1px;
+}
+
+.confirm-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.confirm-close:hover {
+  background: #0000000f;
+}
+
+.confirm-danger {
+  color: #fff;
+  background: var(--accent-brand);
+  border-color: var(--accent-brand);
+}
+
+.confirm-danger:hover {
+  background: var(--accent-brand);
+  filter: brightness(0.92);
+}
+
+.score-selection-menu {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  gap: 0.15rem;
+  padding: 0.25rem;
+  color: var(--ink);
+  background: var(--paper);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 12%);
+  font-family: var(--sans);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.score-selection-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0 0.6rem;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.score-selection-action:hover,
+.score-selection-action:focus-visible {
+  color: var(--blue-france);
+}
+
+.score-marquee {
+  position: absolute;
+  z-index: 3;
+  border: 1px dashed var(--note-selected);
+  background: rgb(0 0 0 / 4%);
+  pointer-events: none;
+}
+
+/* Visible copy below the editor, for readers and search. */
+.score-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Los tooltips de la pagina aparecen tras 500ms; los de la barra de compases del renglon, tras 1s. */
+:root {
+  --tooltip-delay: 500ms;
+}
+
+.score-row-tool {
+  --tooltip-delay: 1s;
+}
+
+/* Shortcuts and gestures dropdown: figure keys and two looping CSS-only demos
+   (markup: scripts/lib/score-tutorial.js). Reduced motion shows the end state. */
+.tutorial-body .score-keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  margin-top: 1rem;
+}
+
+.score-keys__group h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.tutorial-body .score-keys__list {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.score-keys__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 2.25rem;
+  color: var(--ink);
+}
+
+.score-keys__item svg {
+  width: 24px;
+  height: auto;
+}
+
+.score-keys__item kbd {
+  padding: 0.05em 0.4em;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: #fff;
+  font-family: var(--sans);
+  font-size: 0.8rem;
+}
+
+.tutorial-body .tab-tutorial__list {
+  margin-top: 3rem;
+  padding: 0;
+  gap: 1.75rem 1.5rem;
+}
+.score-demo {
+  --demo-lit: #f4ddd6;
+}
+
+.score-demo__stage {
+  display: block;
+  width: 100%;
+  max-width: 260px;
+  height: auto;
+  overflow: visible;
+  color: var(--ink);
+}
+
+.score-demo__line {
+  stroke: var(--rule);
+  stroke-width: 0.8;
+  fill: none;
+}
+
+.score-demo__ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.score-demo__pointer,
+.score-demo__delete {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.score-demo__pointer {
+  transform: translate(110px, 44px);
+}
+
+.score-demo--dot .score-demo__dot { animation: score-demo-dot 6s steps(1, end) infinite; }
+.score-demo--dot .score-demo__pointer { animation: score-demo-pointer 6s ease-in-out infinite; }
+.score-demo--dot .score-demo__ring--a { animation: score-demo-ring 6s ease-out 1.3s infinite; }
+.score-demo--dot .score-demo__ring--b { animation: score-demo-ring 6s ease-out 1.65s infinite; }
+.score-demo--dot .score-demo__ring--c { animation: score-demo-ring 6s ease-out 3.3s infinite; }
+.score-demo--dot .score-demo__ring--d { animation: score-demo-ring 6s ease-out 3.65s infinite; }
+
+.score-demo--bar .score-demo__pointer { animation: score-demo-pointer-bar 6s ease-in-out infinite; }
+.score-demo--bar .score-demo__ring--e { animation: score-demo-ring 6s ease-out 1.2s infinite; }
+.score-demo--bar .score-demo__delete { animation: score-demo-remove 6s steps(1, end) infinite; }
+.score-demo--bar .score-demo__bar--a,
+.score-demo--bar .score-demo__bar--b { animation: score-demo-bar 6s steps(1, end) infinite; }
+
+/* Double click: the dot appears, then the second double click removes it. */
+@keyframes score-demo-dot {
+  0%, 23% { opacity: 0; }
+  24%, 56% { opacity: 1; }
+  57%, 100% { opacity: 0; }
+}
+@keyframes score-demo-pointer {
+  0% { transform: translate(110px, 44px); opacity: 0; }
+  8% { opacity: 1; }
+  18%, 88% { transform: translate(74px, 25px); opacity: 1; }
+  94% { transform: translate(74px, 25px); opacity: 0; }
+  94.01%, 100% { transform: translate(110px, 44px); opacity: 0; }
+}
+@keyframes score-demo-ring {
+  0% { opacity: 0.9; transform: scale(0.4); }
+  8% { opacity: 0; transform: scale(1.2); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+
+/* Select a barline, then press Delete. */
+@keyframes score-demo-pointer-bar {
+  0% { transform: translate(110px, 44px); opacity: 0; }
+  8% { opacity: 1; }
+  16%, 30% { transform: translate(73px, 25px); opacity: 1; }
+  38%, 60% { transform: translate(73px, 25px); opacity: 1; }
+  68% { transform: translate(73px, 25px); opacity: 0; }
+  68.01%, 100% { transform: translate(110px, 44px); opacity: 0; }
+}
+@keyframes score-demo-remove {
+  0%, 21% { opacity: 0; }
+  22%, 43% { opacity: 1; }
+  44%, 100% { opacity: 0; }
+}
+@keyframes score-demo-bar {
+  0%, 19% { stroke: currentColor; opacity: 1; }
+  20%, 43% { stroke: var(--brand-yellow); opacity: 1; filter: drop-shadow(0 0 .6px var(--brand-blue-dark)); }
+  44%, 99% { opacity: 0; }
+  100% { stroke: currentColor; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score-demo__dot,
+  .score-demo__pointer,
+  .score-demo__ring,
+  .score-demo__delete,
+  .score-demo__bar {
+    animation: none !important;
+  }
+}
+
+.score-barline-trigger.is-resizable {
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.score-width-guide {
+  position: absolute;
+  width: 2px;
+  background: var(--note-selected);
+  pointer-events: none;
+}
+
+/* Navigation signs share note selection colors, with a transparent click target. */
+.score-navigation-mark { cursor: pointer; }
+.score-stage .score-navigation-hit,
+.score-stage .is-selected .score-navigation-hit {
+  fill: transparent;
+  stroke: none;
+  pointer-events: all;
+}
+
+.score-stage.can-move-measures,
+.score-stage.can-move-measures g.measure,
+.score-stage.can-move-measures g.measure * { cursor: pointer; }
+body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !important; user-select: none; }
+.score-stage .is-moving-measure { opacity: 0.35; }
+.score-measure-guide {
+  position: absolute;
+  width: 3px;
+  background: var(--note-selected);
+  box-shadow: 0 0 0 1px #222;
+  pointer-events: none;
+  z-index: 10;
+}

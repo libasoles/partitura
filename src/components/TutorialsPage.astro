@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+import { locales, pathFor, strings, tutorialsPath, type Locale } from '../i18n';
+import { slugs, tutorialBody, type Slug } from '../lib/tutorials';
+import '../styles/editor.css';
+import '../styles/tab-demo.css';
+
+interface Props {
+  locale: Locale;
+  slug?: Slug;
+}
+
+const { locale, slug } = Astro.props;
+const s = strings(locale);
+const t = s.tutorials;
+const paths = Object.fromEntries(locales.map((l) => [l, tutorialsPath(l, slug)])) as Record<Locale, string>;
+const item = slug ? t.items[slug] : undefined;
+const title = item ? `${item[0]} · ${s.ui.siteName}` : t.metaTitle;
+const description = item ? item[1] : t.metaDescription;
+const faq = slug === 'faq' ? s.scoreFaq.map(([q, a]) => ({ q, a })) : undefined;
+const index = slugs.indexOf(slug as Slug);
+const next = slug && index < slugs.length - 1 ? slugs[index + 1] : undefined;
+---
+
+<Base locale={locale} title={title} description={description} paths={paths} faq={faq}>
+  <main class="tutorials">
+    {slug && item ? (
+      <article class="tutorial-body">
+        <a class="tutorial-back" href={tutorialsPath(locale)}>← {t.back}</a>
+        <h1>{item[0]}</h1>
+        <p class="tutorial-lead">{item[1]}</p>
+        <div set:html={tutorialBody(slug, s)} />
+        <nav class="tutorial-next" aria-label={t.h1}>
+          {next && <a href={tutorialsPath(locale, next)}>{t.next}: {t.items[next][0]} →</a>}
+          <a href={pathFor(locale)}>{s.ui.editorLink}</a>
+        </nav>
+      </article>
+    ) : (
+      <>
+        <h1>{t.h1}</h1>
+        <p class="tutorial-lead">{t.intro}</p>
+        <ul class="tutorial-cards">
+          {slugs.map((sl) => (
+            <li>
+              <a href={tutorialsPath(locale, sl)}>
+                <h2>{t.items[sl][0]}</h2>
+                <p>{t.items[sl][1]}</p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </>
+    )}
+  </main>
+</Base>
