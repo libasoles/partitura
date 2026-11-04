@@ -806,6 +806,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     mountTabs();
     document.getElementById('scoreTabToggle')?.setAttribute('aria-pressed', String(!!score.showTabs));
     applyTools();
+    applyVoices();
     markSelected();
     updateHoverGhost();
     removeRow.hidden = score.rows.length <= M.MIN_ROWS;
@@ -3246,6 +3247,31 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
   }
 
+  // Con "Voces" activado cada figura se tine segun su voz y una leyenda vertical, a la derecha, da el color de cada numero.
+  const VOICE_COUNT = 4;
+  const voiceLegend = document.createElement('ol');
+  voiceLegend.className = 'score-voice-legend';
+  voiceLegend.setAttribute('aria-label', t.toolsVoices);
+  for (let n = 1; n <= VOICE_COUNT; n++) {
+    const item = document.createElement('li');
+    item.dataset.voice = String(n);
+    item.textContent = String(n);
+    voiceLegend.appendChild(item);
+  }
+  function applyVoices() {
+    const on = !settings || getSetting('tools.voices', false);
+    stage.classList.toggle('has-voices', !!on);
+    voiceLegend.remove();
+    if (!on) return;
+    M.measures(score).forEach((measure, mi) => {
+      M.voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
+        const node = stage.querySelector('[id="e' + mi + '-' + i + '"]');
+        if (node) node.dataset.voice = String(k % VOICE_COUNT + 1);
+      })));
+    });
+    stage.appendChild(voiceLegend);
+  }
+
   // ---- ajustes: instrumento, tempo y grupos de herramientas (el sitio los activa con `settings`) ----
 
   if (settings) {
@@ -3343,12 +3369,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const categories = [
       ['repeats', t.toolsRepeats, (item) => item.kind === 'bar' || item.kind === 'navigation'],
       ['dynamics', t.toolsDynamics, (item) => item.kind === 'hairpin'],
+      ['voices', t.toolsVoices, () => false, false],
     ];
     const toolsHeading = document.createElement('p');
     toolsHeading.className = 'score-settings-heading score-settings-title';
     toolsHeading.textContent = t.settingsTools;
     popup.appendChild(toolsHeading);
-    const checks = categories.map(([name, label, belongs]) => {
+    const checks = categories.map(([name, label, belongs, fallback = true]) => {
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section score-settings-category';
       const field = document.createElement('label');
@@ -3367,10 +3394,19 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         icon.appendChild(glyphFor(item));
         icons.appendChild(icon);
       });
-      check.addEventListener('change', () => { setSetting('tools.' + name, check.checked); applyTools(); });
+      if (name === 'voices') {
+        voiceLegend.querySelectorAll('li').forEach((li) => {
+          const swatch = document.createElement('span');
+          swatch.className = 'score-settings-icon score-voice-swatch';
+          swatch.dataset.voice = li.dataset.voice;
+          swatch.textContent = li.textContent;
+          icons.appendChild(swatch);
+        });
+      }
+      check.addEventListener('change', () => { setSetting('tools.' + name, check.checked); applyTools(); applyVoices(); });
       wrap.append(field, icons);
       popup.appendChild(wrap);
-      return [name, check];
+      return [name, check, fallback];
     });
 
     function sync() {
@@ -3378,7 +3414,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       tempoSlider.value = String(score.tempo || 120);
       showTempo();
       tempoNone.checked = !score.tempo;
-      checks.forEach(([name, check]) => { check.checked = getSetting('tools.' + name, true); });
+      checks.forEach(([name, check, fallback]) => { check.checked = getSetting('tools.' + name, fallback); });
     }
 
     popup.addEventListener('toggle', (event) => cog.setAttribute('aria-expanded', String(event.newState === 'open')));

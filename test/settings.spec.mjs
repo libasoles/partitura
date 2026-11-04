@@ -59,3 +59,32 @@ test('the cog is the first sidebar tool and the dialog switches instrument, temp
   await page.keyboard.press('Escape');
   await expect(page.locator('#scoreSettingsPopup')).toBeHidden();
 });
+
+test('Voces is off by default; turning it on colours each voice and shows a 1-4 legend', async ({ page }) => {
+  await open(page);
+  await expect(page.locator('.score-voice-legend')).toHaveCount(0);
+  await page.locator('#scoreSettingsToggle').click();
+  const popup = page.locator('#scoreSettingsPopup');
+  const voices = popup.getByRole('checkbox', { name: 'Voces' });
+  await expect(voices).not.toBeChecked();
+  await expect(popup.locator('.score-voice-swatch')).toHaveCount(4);
+  await voices.check();
+  const legend = page.locator('.score-voice-legend li');
+  await expect(legend).toHaveText(['1', '2', '3', '4']);
+  const colors = await legend.evaluateAll((items) => items.map((li) => getComputedStyle(li).backgroundColor));
+  expect(new Set(colors).size).toBe(4);
+  await voices.uncheck();
+  await expect(page.locator('.score-voice-legend')).toHaveCount(0);
+});
+
+test('with Voces on, notes of different voices get different colours', async ({ page }) => {
+  const score = { rows: [[[{ d: 'h', n: 35, v: 1, at: 0 }, { d: 'h', n: 28, v: 2, at: 0 }]]], meter: '4/4', clef: 'treble', fifths: 0 };
+  await page.addInitScript((data) => {
+    localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [data] }));
+    localStorage.setItem('partitura.settings.v1', JSON.stringify({ 'tools.voices': true }));
+  }, score);
+  await open(page);
+  await expect(page.locator('#scoreStage g.note[data-voice]')).toHaveCount(2);
+  const fills = await page.locator('#scoreStage g.note[data-voice] .notehead').evaluateAll((nodes) => nodes.map((n) => getComputedStyle(n).fill));
+  expect(new Set(fills).size).toBe(2);
+});

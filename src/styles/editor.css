@@ -1927,3 +1927,35 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-settings-icon svg { max-height: 2rem; }
 
 .score-settings-toggle svg { display: block; margin: auto; }
+
+/* Voces: cada figura lleva el color de su voz; la leyenda va a la derecha de la partitura. */
+.score-page { --voice-1: #b5472f; --voice-2: #c8922e; --voice-3: #3f7d5a; --voice-4: #3a5f9e; }
+.score-stage.has-voices [data-voice="1"], .score-voice-legend [data-voice="1"], .score-voice-swatch[data-voice="1"] { --voice: var(--voice-1); }
+.score-stage.has-voices [data-voice="2"], .score-voice-legend [data-voice="2"], .score-voice-swatch[data-voice="2"] { --voice: var(--voice-2); }
+.score-stage.has-voices [data-voice="3"], .score-voice-legend [data-voice="3"], .score-voice-swatch[data-voice="3"] { --voice: var(--voice-3); }
+.score-stage.has-voices [data-voice="4"], .score-voice-legend [data-voice="4"], .score-voice-swatch[data-voice="4"] { --voice: var(--voice-4); }
+.score-stage.has-voices :is(g.note, g.rest)[data-voice]:not(.is-selected) * { fill: var(--voice); stroke: var(--voice); }
+.score-voice-legend {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+.score-voice-legend li, .score-voice-swatch {
+  display: inline-grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 50%;
+  background: var(--voice);
+  color: #fff;
+  font: 600 0.75rem/1 system-ui, sans-serif;
+}
