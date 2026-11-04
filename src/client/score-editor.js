@@ -765,6 +765,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // ---- dibujo -------------------------------------------------------------
 
+  const VOICE_MARGIN = 60;
   function layoutOptions(width, extra) {
     return Object.assign({
       scale: SCALE,
@@ -774,7 +775,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       header: 'none',
       footer: 'none',
       svgViewBox: true,
-      pageMarginLeft: 60,
+      // The voices toolbar needs room left of the staff (and of the grand-staff brace).
+      pageMarginLeft: settings && score.tools?.voices ? 60 + VOICE_MARGIN : 60,
       pageMarginRight: 60,
       pageMarginTop: 60,
       pageMarginBottom: 60,
@@ -3514,7 +3516,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           icons.appendChild(swatch);
         });
       }
-      check.addEventListener('change', () => { M.setTool(score, name, check.checked); save(); applyTools(); applyVoices(); });
+      check.addEventListener('change', () => {
+        M.setTool(score, name, check.checked);
+        save();
+        if (name === 'voices') render(); else { applyTools(); applyVoices(); }
+      });
       wrap.append(field, icons);
       popup.appendChild(wrap);
       return [name, check, fallback];

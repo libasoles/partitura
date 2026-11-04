@@ -1807,6 +1807,8 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   font-size: 1.05rem;
 }
 
+.score-settings-section:has(.score-settings-slider-line) { padding-bottom: 0.6rem; }
+
 .score-settings-section + .score-settings-section,
 .score-settings-heading {
   margin-top: 1.1rem;
@@ -1926,6 +1928,9 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 
 .score-settings-icon svg { max-height: 2rem; }
+
+/* The voice swatches are smaller than the other icons, so the row gets the same breathing room. */
+.score-settings-icons:has(.score-voice-swatch) { padding: 0.6rem 0.5rem 0.4rem; }
 
 .score-settings-toggle svg { display: block; margin: auto; }
 
