@@ -124,6 +124,8 @@
     "tabToggle": "Tablatura sob cada linha",
     "tabLabel": "Tablatura da linha",
     "clefAndKey": "Clave e armadura de clave",
+    "upperStaff": "Pauta superior",
+    "lowerStaff": "Pauta inferior",
     "clef": "Clave",
     "keySignature": "Armadura de clave",
     "keyNone": "Sem",

@@ -124,6 +124,8 @@
     "tabToggle": "Tablature under each row",
     "tabLabel": "Row tablature",
     "clefAndKey": "Clef and key signature",
+    "upperStaff": "Upper staff",
+    "lowerStaff": "Lower staff",
     "clef": "Clef",
     "keySignature": "Key signature",
     "keyNone": "None",

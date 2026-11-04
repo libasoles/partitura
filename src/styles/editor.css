@@ -716,9 +716,10 @@
   -webkit-user-select: none;
 }
 
-/* While Verovio loads, hold the height of the live editor's first render, clipping the server-drawn staff to it, so nothing below shifts. */
+/* While Verovio loads, hold the height of the live editor's first render, clipping the server-drawn staff to it, so nothing below shifts.
+   Three rows of a grand staff (piano, the default): 53.1rem. A saved one-staff score (guitar) settles to about 33rem when it loads. */
 .score-stage[aria-busy="true"] {
-  height: 33rem;
+  height: 53.1rem;
   overflow: hidden;
 }
 

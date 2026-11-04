@@ -124,6 +124,8 @@
     "tabToggle": "Tablatura bajo cada renglón",
     "tabLabel": "Tablatura del renglón",
     "clefAndKey": "Clave y armadura",
+    "upperStaff": "Pentagrama superior",
+    "lowerStaff": "Pentagrama inferior",
     "clef": "Clave",
     "keySignature": "Armadura",
     "keyNone": "Sin",

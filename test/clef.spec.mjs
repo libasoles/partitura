@@ -64,15 +64,26 @@ async function expectSaved(page, expected) {
   }))).toMatchObject(expected);
 }
 
-async function expectTreble(page) {
-  await expect(page.locator('.score-clef-trigger').first()).toHaveAttribute('aria-label', 'Clave y armadura: Sol, Do mayor / La menor');
-  // E050 is the ordinary treble glyph; an octave clef adds another glyph.
-  const clefs = page.locator('#scoreStage g.clef');
-  await expect(clefs).toHaveCount(M.MIN_ROWS);
-  for (const clef of await clefs.all()) {
-    await expect(clef.locator('use')).toHaveCount(1);
-    await expect(clef.locator('use')).toHaveAttribute('xlink:href', /^#E050-/);
+// E050 is the ordinary treble glyph (an octave clef adds another glyph) and E062 the bass clef. A piano system has both,
+// treble above bass.
+async function expectClefs(page, selector) {
+  const systems = page.locator('#scoreStage g.system');
+  await expect(systems).toHaveCount(M.MIN_ROWS);
+  for (const system of await systems.all()) {
+    const staves = system.locator('g.measure').first().locator(':scope > g.staff');
+    await expect(staves).toHaveCount(2);
+    for (const [staff, glyph] of [[0, /^#E050-/], [1, /^#E062-/]]) {
+      const clef = staves.nth(staff).locator('g.clef');
+      await expect(clef.locator('use')).toHaveCount(1);
+      await expect(clef.locator('use')).toHaveAttribute('xlink:href', glyph);
+    }
   }
+}
+
+async function expectTreble(page) {
+  await expect(page.locator('.score-clef-trigger').first()).toHaveAttribute('aria-label', 'Clave y armadura: Pentagrama superior, Sol, Do mayor / La menor');
+  await expect(page.locator('.score-clef-trigger').nth(1)).toHaveAttribute('aria-label', 'Clave y armadura: Pentagrama inferior, Fa en cuarta, Do mayor / La menor');
+  await expectClefs(page);
 }
 
 test('the server renders the ordinary treble clef before JavaScript runs', async ({ browser }) => {
@@ -80,12 +91,7 @@ test('the server renders the ordinary treble clef before JavaScript runs', async
   try {
     const page = await context.newPage();
     await page.goto('http://127.0.0.1:4325/es/');
-    const clefs = page.locator('#scoreStage g.clef');
-    await expect(clefs).toHaveCount(M.MIN_ROWS);
-    for (const clef of await clefs.all()) {
-      await expect(clef.locator('use')).toHaveCount(1);
-      await expect(clef.locator('use')).toHaveAttribute('xlink:href', /^#E050-/);
-    }
+    await expectClefs(page);
   } finally {
     await context.close();
   }
@@ -103,6 +109,17 @@ test('initial and newly created scores use ordinary treble, including after relo
   await expectTreble(page);
 });
 
+// A guitar score stays a one-staff guitar score when its clef changes: the clef does not choose the instrument.
+async function expectSingleTreble(page) {
+  await expect(page.locator('.score-clef-trigger').first()).toHaveAttribute('aria-label', 'Clave y armadura: Sol, Do mayor / La menor');
+  const clefs = page.locator('#scoreStage g.clef');
+  await expect(clefs).toHaveCount(M.MIN_ROWS);
+  for (const clef of await clefs.all()) {
+    await expect(clef.locator('use')).toHaveCount(1);
+    await expect(clef.locator('use')).toHaveAttribute('xlink:href', /^#E050-/);
+  }
+}
+
 test('a saved guitar clef is restored and can be changed to ordinary treble', async ({ page }) => {
   const saved = { ...M.emptyScore(), clef: 'guitar' };
   await page.addInitScript((score) => {
@@ -116,8 +133,8 @@ test('a saved guitar clef is restored and can be changed to ordinary treble', as
   await expect(trigger).toHaveAttribute('aria-label', /Sol \(guitarra, octava baja\)/);
   await trigger.click();
   await page.locator('#scoreClefPopup button[data-clef="treble"]').click();
-  await expectTreble(page);
-  await expectSaved(page, { active: 0, scores: [{ clef: 'treble' }] });
+  await expectSingleTreble(page);
+  await expectSaved(page, { active: 0, scores: [{ clef: 'treble', instrument: 'guitar' }] });
   await page.reload();
-  await expectTreble(page);
+  await expectSingleTreble(page);
 });
