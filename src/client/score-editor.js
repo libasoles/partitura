@@ -790,7 +790,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function alignBarlinesToFirstStaff() {
     const side = barlines.closest('.score-side');
     const line = stage.querySelector('g.staff > path');
-    const glyph = barlines.firstElementChild;
+    const glyph = barlines.firstElementChild?.querySelector('svg') || barlines.firstElementChild;
     if (!side || !line || !glyph) return;
     // Measured in its natural position: while sticky, the scroll shifts the glyph and the offset drifts whenever the stage height changes (TAB).
     side.style.position = 'relative';
@@ -801,6 +801,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     side.style.top = '';
     side.style.marginTop = Math.max(0, offset) + 'px';
     side.style.setProperty('--side-offset', Math.max(0, offset) + 'px');
+    alignVoiceLegend();
+  }
+
+  // The voices toolbar sits left of the staff, level with the top line of the first staff.
+  function alignVoiceLegend() {
+    const line = stage.querySelector('g.staff > path');
+    if (!line || !voiceLegend.isConnected) return;
+    voiceLegend.style.top = Math.max(0, line.getBoundingClientRect().top - stage.getBoundingClientRect().top) + 'px';
   }
 
   function render() {
@@ -3305,7 +3313,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
   }
 
-  // Con "Voces" activado cada figura se tine segun su voz y una leyenda vertical, a la derecha, da el color de cada numero.
+  // Con "Voces" activado cada figura se tine segun su voz y una barra vertical, a la izquierda del pentagrama, da el color de cada numero.
   const VOICE_COUNT = 4;
   const voiceLegend = document.createElement('ol');
   voiceLegend.className = 'score-voice-legend';
@@ -3351,6 +3359,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       beam.classList.toggle('is-voice-hidden', figures.length > 0 && figures.every((node) => node.classList.contains('is-voice-hidden')));
     });
     stage.appendChild(voiceLegend);
+    alignVoiceLegend();
   }
 
   // ---- ajustes: instrumento, tempo y grupos de herramientas (el sitio los activa con `settings`) ----
