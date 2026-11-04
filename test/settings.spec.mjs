@@ -28,19 +28,20 @@ test('the cog is the first sidebar tool and the dialog switches instrument, temp
   await expect(page.locator('[data-tool="barre"]')).toBeVisible();
   expect(await page.evaluate(() => window.scoreEditor.score.clef)).toBe('guitar');
 
-  // Tempo is written as a metronome mark.
-  await popup.getByRole('group', { name: 'Tempo' }).getByRole('button', { name: '140' }).click();
+  // Tempo is a slider and is written as a metronome mark.
+  const slider = popup.getByRole('slider');
+  await slider.fill('140');
   expect(await page.evaluate(() => window.scoreEditor.score.tempo)).toBe(140);
   await expect(page.locator('#scoreStage svg.definition-scale g.tempo')).toContainText('140');
-  await popup.getByLabel('Tempo (negras por minuto)').fill('93');
-  await popup.getByLabel('Tempo (negras por minuto)').press('Enter');
-  expect(await page.evaluate(() => window.scoreEditor.score.tempo)).toBe(93);
+  await popup.getByRole('button', { name: 'Sin indicación' }).click();
+  expect(await page.evaluate(() => window.scoreEditor.score.tempo)).toBeUndefined();
 
-  // Tool groups.
-  const tools = popup.getByRole('group', { name: 'Herramientas' });
-  await tools.getByRole('button', { name: 'Dinámica' }).click();
+  // Tool groups are checkboxes, each listing its icons.
+  await expect(popup.locator('.score-settings-category').nth(0).locator('.score-settings-icon')).toHaveCount(8);
+  await expect(popup.locator('.score-settings-category').nth(1).locator('.score-settings-icon')).toHaveCount(2);
+  await popup.getByRole('checkbox', { name: 'Dinámica' }).uncheck();
   await expect(page.locator('[data-hairpin="cresc"]')).toBeHidden();
-  await tools.getByRole('button', { name: 'Repetición' }).click();
+  await popup.getByRole('checkbox', { name: 'Repetición' }).uncheck();
   await expect(page.locator('[data-barline="start"]')).toBeHidden();
   await expect(page.locator('[data-navigation="segno"]')).toBeHidden();
   await page.reload();

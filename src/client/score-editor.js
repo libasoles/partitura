@@ -3033,6 +3033,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   const ICONS = {
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    piano: '<path d="M18.5 8c-1.4 0-2.6-.8-3.2-2A6.87 6.87 0 0 0 2 9v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8.5C22 9.6 20.4 8 18.5 8"/><path d="M2 14h20"/><path d="M6 14v4"/><path d="M10 14v4"/><path d="M14 14v4"/><path d="M18 14v4"/>',
+    guitar: '<path d="m11.9 12.1 4.514-4.514"/><path d="M20.1 2.3a1 1 0 0 0-1.4 0l-1.114 1.114A2 2 0 0 0 17 4.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 17.828 7h1.344a2 2 0 0 0 1.414-.586L21.7 5.3a1 1 0 0 0 0-1.4z"/><path d="m6 16 2 2"/><path d="M8.2 9.9C8.7 8.8 9.8 8 11 8c2.8 0 5 2.2 5 5 0 1.2-.8 2.3-1.9 2.8l-.9.4A2 2 0 0 0 12 18a4 4 0 0 1-4 4c-3.3 0-6-2.7-6-6a4 4 0 0 1 4-4 2 2 0 0 0 1.8-1.2z"/><circle cx="11.5" cy="12.5" r=".5" fill="currentColor"/>',
     settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
     plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
     minus: '<path d="M5 12h14"/>',
@@ -3247,7 +3249,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- ajustes: instrumento, tempo y grupos de herramientas (el sitio los activa con `settings`) ----
 
   if (settings) {
-    const TEMPOS = [60, 80, 100, 120, 140, 160, 180];
     const popup = document.createElement('div');
     popup.id = 'scoreSettingsPopup';
     popup.className = 'score-settings-popup';
@@ -3270,19 +3271,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const title = document.createElement('h2');
     title.textContent = t.settings;
     popup.appendChild(title);
-    const close = document.createElement('button');
-    close.type = 'button';
-    close.className = 'score-settings-close';
-    close.innerHTML = lucide('x');
-    close.setAttribute('aria-label', t.settingsClose);
-    close.addEventListener('click', () => popup.hidePopover());
-    popup.appendChild(close);
 
-    // Cada ajuste es un renglon: su nombre y, al lado, la lista horizontal de opciones.
-    function section(label) {
+    // Cada ajuste es una seccion: su nombre y, debajo, sus opciones en horizontal.
+    function section(label, tag = 'p') {
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section';
-      const name = document.createElement('p');
+      const name = document.createElement(tag);
       name.textContent = label;
       const row = document.createElement('div');
       row.className = 'score-settings-row';
@@ -3292,57 +3286,84 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       popup.appendChild(wrap);
       return row;
     }
-    function option(row, label, onClick) {
+
+    const instrumentRow = section(t.settingsInstrument);
+    const instruments = M.INSTRUMENTS.map((id) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'score-settings-option';
-      button.textContent = label;
-      button.addEventListener('click', onClick);
-      row.appendChild(button);
-      return button;
-    }
-
-    const instrumentRow = section(t.settingsInstrument);
-    const instruments = M.INSTRUMENTS.map((id) => option(instrumentRow, t['instrument' + id[0].toUpperCase() + id.slice(1)], () => {
-      if (M.instrumentOf(score) === id && score.instrument === id) return;
-      change(() => M.setInstrument(score, id));
-      sync();
-    }));
-
-    const tempoRow = section(t.settingsTempo);
-    const tempoNone = option(tempoRow, t.tempoNone, () => { change(() => M.setTempo(score, null)); sync(); });
-    const tempos = TEMPOS.map((bpm) => option(tempoRow, String(bpm), () => { change(() => M.setTempo(score, bpm)); sync(); }));
-    const tempoInput = document.createElement('input');
-    tempoInput.type = 'number';
-    tempoInput.className = 'score-settings-tempo';
-    tempoInput.min = String(M.MIN_TEMPO);
-    tempoInput.max = String(M.MAX_TEMPO);
-    tempoInput.inputMode = 'numeric';
-    tempoInput.setAttribute('aria-label', t.settingsTempo + ' (' + t.tempoUnit + ')');
-    tempoInput.placeholder = '♩ =';
-    tempoInput.addEventListener('change', () => {
-      const bpm = Math.round(Number(tempoInput.value));
-      if (tempoInput.value !== '' && bpm >= M.MIN_TEMPO && bpm <= M.MAX_TEMPO && bpm !== score.tempo) change(() => M.setTempo(score, bpm));
-      sync();
-    });
-    tempoRow.appendChild(tempoInput);
-
-    const toolsRow = section(t.settingsTools);
-    const groups = [['repeats', t.toolsRepeats], ['dynamics', t.toolsDynamics]].map(([name, label]) => {
-      const button = option(toolsRow, label, () => {
-        setSetting('tools.' + name, !getSetting('tools.' + name, true));
-        applyTools();
+      button.innerHTML = lucide(id) + '<span></span>';
+      button.lastChild.textContent = t['instrument' + id[0].toUpperCase() + id.slice(1)];
+      button.addEventListener('click', () => {
+        if (score.instrument === id) return;
+        change(() => M.setInstrument(score, id));
         sync();
       });
-      return [name, button];
+      instrumentRow.appendChild(button);
+      return button;
+    });
+
+    // El tempo se arrastra en un control deslizante; "sin indicacion" lo quita.
+    const tempoRow = section(t.settingsTempo);
+    const tempoSlider = document.createElement('input');
+    tempoSlider.type = 'range';
+    tempoSlider.className = 'score-settings-slider';
+    tempoSlider.min = String(M.MIN_TEMPO);
+    tempoSlider.max = String(M.MAX_TEMPO);
+    tempoSlider.step = '1';
+    tempoSlider.setAttribute('aria-label', t.settingsTempo + ' (' + t.tempoUnit + ')');
+    const tempoValue = document.createElement('output');
+    tempoValue.className = 'score-settings-tempo-value';
+    const tempoNone = document.createElement('button');
+    tempoNone.type = 'button';
+    tempoNone.className = 'score-settings-option';
+    tempoNone.textContent = t.tempoNone;
+    const showTempo = () => { tempoValue.textContent = '\u2669 = ' + tempoSlider.value; };
+    tempoSlider.addEventListener('input', () => { showTempo(); tempoNone.setAttribute('aria-pressed', 'false'); });
+    tempoSlider.addEventListener('change', () => { change(() => M.setTempo(score, Number(tempoSlider.value))); sync(); });
+    tempoNone.addEventListener('click', () => { change(() => M.setTempo(score, null)); sync(); });
+    tempoRow.append(tempoSlider, tempoValue, tempoNone);
+
+    // Cada categoria de herramientas se activa con una casilla y muestra debajo sus iconos.
+    const categories = [
+      ['repeats', t.toolsRepeats, (item) => item.kind === 'bar' || item.kind === 'navigation'],
+      ['dynamics', t.toolsDynamics, (item) => item.kind === 'hairpin'],
+    ];
+    const toolsHeading = document.createElement('p');
+    toolsHeading.className = 'score-settings-heading';
+    toolsHeading.textContent = t.settingsTools;
+    popup.appendChild(toolsHeading);
+    const checks = categories.map(([name, label, belongs]) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'score-settings-section score-settings-category';
+      const field = document.createElement('label');
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      field.append(check, document.createTextNode(label));
+      const icons = document.createElement('div');
+      icons.className = 'score-settings-icons';
+      BARS.filter(belongs).forEach((item) => {
+        const icon = document.createElement('span');
+        icon.className = 'score-settings-icon';
+        icon.setAttribute('role', 'img');
+        icon.setAttribute('aria-label', item.label);
+        icon.title = item.label;
+        icon.appendChild(glyphFor(item));
+        icons.appendChild(icon);
+      });
+      check.addEventListener('change', () => { setSetting('tools.' + name, check.checked); applyTools(); });
+      wrap.append(field, icons);
+      popup.appendChild(wrap);
+      return [name, check];
     });
 
     function sync() {
       instruments.forEach((button, i) => button.setAttribute('aria-pressed', String(M.instrumentOf(score) === M.INSTRUMENTS[i])));
+      tempoSlider.value = String(score.tempo || 120);
+      tempoSlider.disabled = false;
+      showTempo();
       tempoNone.setAttribute('aria-pressed', String(!score.tempo));
-      tempos.forEach((button, i) => button.setAttribute('aria-pressed', String(score.tempo === TEMPOS[i])));
-      if (document.activeElement !== tempoInput) tempoInput.value = score.tempo && !TEMPOS.includes(score.tempo) ? String(score.tempo) : '';
-      groups.forEach(([name, button]) => button.setAttribute('aria-pressed', String(getSetting('tools.' + name, true))));
+      checks.forEach(([name, check]) => { check.checked = getSetting('tools.' + name, true); });
     }
 
     popup.addEventListener('toggle', (event) => cog.setAttribute('aria-expanded', String(event.newState === 'open')));
@@ -3350,7 +3371,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (popup.matches(':popover-open')) { popup.hidePopover(); return; }
       sync();
       popup.showPopover();
-      (popup.querySelector('[aria-pressed="true"]') || close).focus({ preventScroll: true });
+      // Se abre a la izquierda del engranaje, que esta pegado al borde derecho.
+      const anchor = cog.getBoundingClientRect();
+      const box = popup.getBoundingClientRect();
+      popup.style.left = Math.max(8, anchor.left - box.width - 12) + 'px';
+      popup.style.top = Math.max(8, Math.min(anchor.top, window.innerHeight - box.height - 8)) + 'px';
+      (popup.querySelector('[aria-pressed="true"]') || popup.querySelector('input')).focus({ preventScroll: true });
     });
     document.querySelector('.score-page').appendChild(popup);
   }
