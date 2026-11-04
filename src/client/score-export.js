@@ -192,7 +192,7 @@ export default function createExporter(editor) {
       pdfToolkit.loadData(M.toMusicXml(exportScore));
       const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
       for (let page = 1; page <= pdfToolkit.getPageCount(); page += 1) {
-        const image = await rasterize(pdfPageSvg(pdfToolkit.renderToSVG(page), exportScore, columns), 1654, 2339);
+        const image = await rasterize(pdfPageSvg(M.refineTempo(pdfToolkit.renderToSVG(page)),exportScore, columns), 1654, 2339);
         if (page > 1) pdf.addPage();
         pdf.addImage(image, 'JPEG', 0, 0, 210, 297);
         if (page === 1 && exportScore.author) {

@@ -50,7 +50,7 @@ export async function renderEmptyStaff(ready = verovio.module, score = ScoreMode
     mnumInterval: 0,
   });
   toolkit.loadData(ScoreModel.toMusicXml(score));
-  const svg = toolkit.renderToSVG(1);
+  const svg = ScoreModel.refineTempo(toolkit.renderToSVG(1));
   toolkit.destroy();
   cache.set(key, svg);
   return svg;

@@ -1235,6 +1235,15 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     return true;
   }
 
+  // Verovio dibuja la indicacion metronomica enorme y pegada al pentagrama: se reduce y se sube dentro del propio SVG
+  // (asi tambien vale para el PDF y para el HTML del servidor).
+  function refineTempo(svg) {
+    return svg.replace(/<g id="[^"]*" class="tempo">[\s\S]*?<\/text>/g, (group) => group
+      .replace(/ y="(\d+)"/, (_, y) => ` y="${Number(y) - 110}"`)
+      .replace(/font-size="720px"/g, 'font-size="430px"')
+      .replace(/font-size="405px"/g, 'font-size="240px"'));
+  }
+
   // Negras por minuto; sin valor no se escribe indicacion y suena a 120.
   function setTempo(score, tempo) {
     if (tempo == null) { delete score.tempo; return true; }
@@ -2266,7 +2275,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, duplicateSelection, length, gridOf, hints, onsets, settle, placement, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
-    TUNINGS, INSTRUMENTS, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }

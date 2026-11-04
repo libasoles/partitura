@@ -784,7 +784,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     meterPopup.hidePopover();
     clefPopup.hidePopover();
     dynamicsPopup.hidePopover();
-    stage.innerHTML = toolkit.renderToSVG(1);
+    stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
     applyMeasureWidths();
     // With TAB the height is set again once the tabs are measured; clearing it here would collapse and re-grow the stage on every pass.
     if (!score.showTabs) stage.style.minHeight = '';
