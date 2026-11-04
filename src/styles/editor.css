@@ -1941,6 +1941,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-stage.has-voices [data-voice="3"], .score-voice-legend [data-voice="3"], .score-voice-swatch[data-voice="3"] { --voice: var(--voice-3); }
 .score-stage.has-voices [data-voice="4"], .score-voice-legend [data-voice="4"], .score-voice-swatch[data-voice="4"] { --voice: var(--voice-4); }
 .score-stage.has-voices :is(g.note, g.rest, g.tie, g.slur)[data-voice].is-voice-on:not(.is-selected) * { fill: var(--voice); stroke: var(--voice); }
+.score-stage.has-voices g.beam[data-voice].is-voice-on > :is(polygon, path) { fill: var(--voice); stroke: var(--voice); }
 .score-voice-legend {
   position: absolute;
   top: 0.5rem;
@@ -1965,7 +1966,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   font: 600 0.75rem/1 system-ui, sans-serif;
 }
 .score-voice-legend button {
-  border: 2px solid var(--voice);
+  border: 1px solid var(--voice);
   padding: 0;
   cursor: pointer;
 }

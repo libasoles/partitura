@@ -32,6 +32,7 @@
     "<strong>Compases:</strong> elegí el compás (4/4, 3/4, 6/8…) y el editor no te deja pasarte de la duración.",
     "<strong>Clave y armadura:</strong> clave de Sol, de Fa o de Do, y cualquier armadura de Do♭ a Do♯.",
     "<strong>Barras especiales:</strong> barra doble, barras de repetición y cejillas para guitarra.",
+    "<strong>Ajustes:</strong> piano con gran pentagrama o guitarra con tablatura, tempo en la partitura y en el MIDI, y colores para distinguir las voces.",
     "<strong>Descarga:</strong> exportá la partitura en PDF para imprimirla o en MusicXML para abrirla en MuseScore, Finale, Sibelius o Dorico.",
     "<strong>Guardado automático:</strong> tu partitura queda guardada en tu navegador, así que podés seguir otro día."
   ],
@@ -59,7 +60,7 @@
     ],
     [
       "¿Sirve para guitarra?",
-      "Sí. Incluye la clave de Sol de guitarra (una octava más grave), barras de repetición y cejillas."
+      "Sí. En Ajustes elegís Guitarra y tenés la clave de Sol de guitarra (una octava más grave), tablatura, barras de repetición y cejillas. Para piano, el otro instrumento, cada renglón es un gran pentagrama."
     ]
   ],
   "scoreTitleLabel": "Título de la partitura",
@@ -376,6 +377,10 @@
         "Cejillas",
         "Marcá una cejilla con su traste sobre las notas que abarca."
       ],
+      "settings": [
+        "Ajustes: instrumento, tempo y herramientas",
+        "Piano o guitarra, tempo y qué grupos de herramientas ver."
+      ],
       "files": [
         "Cargar y exportar",
         "Abrí un MusicXML o un MIDI y descargá tu partitura en PDF, MusicXML o MIDI."
@@ -497,6 +502,17 @@
           "Arrastrá las asas de los extremos, o usá <kbd>←</kbd> y <kbd>→</kbd> sobre ellas, para cambiar hasta dónde llega. Si vaciás el número, la cejilla se borra."
         ]
       },
+      "settings": {
+        "steps": [
+          "Abrí los <strong>Ajustes</strong> con el engranaje, la primera herramienta de la barra lateral. Valen para la partitura que estás viendo, se guardan con ella y se pueden deshacer con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
+          "<strong>Instrumento:</strong> con <em>Piano</em> cada renglón es un gran pentagrama, con clave de Sol arriba y de Fa abajo unidos por una llave, y se ocultan TAB y cejilla. Con <em>Guitarra</em> hay un solo pentagrama en clave de Sol de guitarra y aparecen el botón TAB y la cejilla. Cambiar de uno a otro no borra nada: lo que no se ve queda guardado.",
+          "<strong>Tempo:</strong> el deslizador va de 20 a 300 negras por minuto. Se escribe como indicación metronómica sobre el primer compás y define la velocidad del MIDI exportado. <em>Sin indicación</em> la quita.",
+          "<strong>Herramientas:</strong> activá o desactivá <em>Repetición</em>, <em>Dinámica</em> y <em>Voces</em> para mostrar u ocultar sus botones en la barra lateral. Ocultar un grupo no borra lo que ya escribiste.",
+          "<strong>Voces:</strong> con <em>Voces</em> activo cada voz se pinta de un color (1 a 4) y aparece una leyenda a la izquierda de la llave. En la leyenda elegís qué voces colorear; nunca se oculta una figura.",
+          "<strong>Gran pentagrama:</strong> cada pentagrama tiene sus propias figuras, silencios, voces y clave (el menú de clave dice a cuál afecta). Los compases, la armadura, la métrica, las barras, las repeticiones y el tempo son comunes a los dos. Las dinámicas y reguladores se escriben entre ambos."
+        ],
+        "tip": "Al exportar, el piano sale en MusicXML como una sola parte de dos pentagramas y en MIDI cada pentagrama suena en su canal."
+      },
       "files": {
         "steps": [
           "Abrí el menú <strong>☰</strong> arriba a la derecha.",
@@ -597,6 +613,10 @@
       "barre": [
         "Cómo marcar cejillas en una tablatura de guitarra",
         "Marcá una cejilla con su traste sobre las notas que abarca en el editor online de partituras y tablaturas."
+      ],
+      "settings": [
+        "Ajustes de la partitura: instrumento, tempo y herramientas",
+        "Elegí piano (gran pentagrama) o guitarra, poné un tempo y mostrá u ocultá repeticiones, dinámicas y voces en el editor de partituras online."
       ],
       "files": [
         "Abrir MusicXML y MIDI, exportar a PDF, MusicXML o MIDI",

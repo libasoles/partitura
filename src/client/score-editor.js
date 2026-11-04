@@ -813,7 +813,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.style.top = Math.max(0, line.getBoundingClientRect().top - origin.top) + 'px';
     // Left of the brace (grand staff) or of the first staff line, never over it.
     const edge = (stage.querySelector('g.grpSym') || line).getBoundingClientRect().left - origin.left;
-    voiceLegend.style.left = Math.max(0, edge - voiceLegend.offsetWidth - 8) + 'px';
+    voiceLegend.style.left = Math.max(0, edge - voiceLegend.offsetWidth - 48) + 'px';
   }
 
   function render() {
@@ -3374,6 +3374,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const start = startid ? stage.querySelector('[id="' + startid + '"]') : null;
       link.classList.toggle('is-voice-on', !!start && start.classList.contains('is-voice-on'));
       if (start?.dataset.voice) link.dataset.voice = start.dataset.voice;
+    });
+    // Las barras viven fuera de las notas: toman la voz de la primera nota que agrupan.
+    stage.querySelectorAll('g.beam').forEach((beam) => {
+      const first = beam.querySelector('g.note[data-voice]');
+      beam.classList.toggle('is-voice-on', !!first && first.classList.contains('is-voice-on'));
+      if (first) beam.dataset.voice = first.dataset.voice;
     });
     stage.appendChild(voiceLegend);
     alignVoiceLegend();
