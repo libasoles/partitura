@@ -813,7 +813,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.style.top = Math.max(0, line.getBoundingClientRect().top - origin.top) + 'px';
     // Left of the brace (grand staff) or of the first staff line, never over it.
     const edge = (stage.querySelector('g.grpSym') || line).getBoundingClientRect().left - origin.left;
-    voiceLegend.style.left = Math.max(0, edge - voiceLegend.offsetWidth - 8) + 'px';
+    voiceLegend.style.left = Math.max(0, edge - voiceLegend.offsetWidth - 48) + 'px';
   }
 
   function render() {
