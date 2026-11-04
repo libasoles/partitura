@@ -1323,7 +1323,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
   // (asi tambien vale para el PDF y para el HTML del servidor).
   function refineTempo(svg) {
     return svg.replace(/<g id="[^"]*" class="tempo">[\s\S]*?<\/text>/g, (group) => group
-      .replace(/ y="(\d+)"/, (_, y) => ` y="${Number(y) - 110}"`)
+      .replace(/ y="(\d+)"/, (_, y) => ` y="${Number(y) - 260}"`)
       .replace(/font-size="720px"/g, 'font-size="430px"')
       .replace(/font-size="405px"/g, 'font-size="240px"'));
   }
