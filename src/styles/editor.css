@@ -1825,6 +1825,8 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 
 .score-settings-popup h2 { font-size: 1.3rem; }
+.score-settings-heading-main { display: flex; align-items: center; gap: 0.5rem; }
+.score-settings-heading-main svg { width: 1.3rem; height: 1.3rem; flex: none; }
 
 .score-settings-row {
   display: flex;

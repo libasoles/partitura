@@ -3269,7 +3269,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     barlines.prepend(cog);
 
     const title = document.createElement('h2');
-    title.textContent = t.settings;
+    title.className = 'score-settings-heading-main';
+    title.innerHTML = `${lucide('settings')}<span></span>`;
+    title.lastChild.textContent = t.settings;
     popup.appendChild(title);
 
     // Cada ajuste es una seccion: su nombre y, debajo, sus opciones en horizontal.
