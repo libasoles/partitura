@@ -3336,15 +3336,22 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!on) return;
     const filtering = shownVoices.size > 0 && shownVoices.size < VOICE_COUNT;
     voiceButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(shownVoices.has(i + 1))));
-    M.measures(score).forEach((measure, mi) => {
-      M.voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
-        const node = stage.querySelector('[id="e' + mi + '-' + i + '"]');
-        if (!node) return;
-        const n = k % VOICE_COUNT + 1;
-        node.dataset.voice = String(n);
-        node.classList.toggle('is-voice-hidden', filtering && !shownVoices.has(n));
-      })));
-    });
+    // Cada pentagrama infiere sus voces; el numero de voz da el mismo color en ambos, asi la leyenda y el filtro valen para los dos.
+    const upper = M.measures(score);
+    const total = upper.length;
+    for (let staff = 0; staff < M.stavesOf(score); staff++) {
+      for (let mi = 0; mi < total; mi++) {
+        const measure = staff ? score.lower?.[mi] : upper[mi];
+        if (!measure) continue;
+        M.voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
+          const node = stage.querySelector('[id="' + (staff ? 'l' : 'e') + mi + '-' + i + '"]');
+          if (!node) return;
+          const n = k % VOICE_COUNT + 1;
+          node.dataset.voice = String(n);
+          node.classList.toggle('is-voice-hidden', filtering && !shownVoices.has(n));
+        })));
+      }
+    }
     // Un haz cuyas figuras estan todas ocultas tambien se oculta.
     stage.querySelectorAll('g.beam').forEach((beam) => {
       const figures = [...beam.querySelectorAll('g.note, g.rest')];

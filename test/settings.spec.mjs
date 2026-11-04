@@ -118,3 +118,18 @@ test('with Voces on, a tie follows the voice of its first note', async ({ page }
   await legend.nth(0).click();
   await expect(tie).not.toHaveClass(/is-voice-hidden/);
 });
+
+test('with Voces on, both staves of a piano score are coloured and filtered by the same legend', async ({ page }) => {
+  const score = { rows: [[[{ d: 'h', n: 35, v: 1, at: 0 }, { d: 'h', n: 33, v: 2, at: 0 }]]], lower: { 0: [{ d: 'h', n: 21, v: 1, at: 0 }, { d: 'h', n: 19, v: 2, at: 0 }] }, meter: '4/4', clef: 'treble', fifths: 0, instrument: 'piano' };
+  await page.addInitScript((data) => {
+    localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [data] }));
+    localStorage.setItem('partitura.settings.v1', JSON.stringify({ 'tools.voices': true }));
+  }, score);
+  await open(page);
+  await expect(page.locator('#scoreStage g.note[id^="e"][data-voice]')).toHaveCount(2);
+  await expect(page.locator('#scoreStage g.note[id^="l"][data-voice]')).toHaveCount(2);
+  const legend = page.locator('.score-voice-legend button');
+  await legend.nth(1).click();
+  await expect(page.locator('#scoreStage g.note[data-voice]:not(.is-voice-hidden)')).toHaveCount(2);
+  await expect(page.locator('#scoreStage g.note[id^="l"][data-voice="2"]:not(.is-voice-hidden)')).toHaveCount(1);
+});
