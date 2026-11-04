@@ -100,3 +100,21 @@ test('with Voces on, notes of different voices get different colours', async ({ 
   for (let i = 0; i < 4; i++) await legend.nth(i).click();
   expect(await visible()).toBe(2);
 });
+
+test('with Voces on, a tie follows the voice of its first note', async ({ page }) => {
+  const score = { rows: [[[{ d: 'w', n: 35, v: 1, at: 0, tie: true }, { d: 'w', n: 28, v: 2, at: 0 }], [{ d: 'w', n: 35, v: 1, at: 0 }]]], meter: '4/4', clef: 'treble', fifths: 0 };
+  await page.addInitScript((data) => {
+    localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [data] }));
+    localStorage.setItem('partitura.settings.v1', JSON.stringify({ 'tools.voices': true }));
+  }, score);
+  await open(page);
+  const tie = page.locator('#scoreStage g.tie');
+  await expect(tie).toHaveCount(1);
+  await expect(tie).toHaveAttribute('data-voice', '1');
+  const legend = page.locator('.score-voice-legend button');
+  await legend.nth(1).click();
+  await expect(tie).toHaveClass(/is-voice-hidden/);
+  await legend.nth(1).click();
+  await legend.nth(0).click();
+  await expect(tie).not.toHaveClass(/is-voice-hidden/);
+});

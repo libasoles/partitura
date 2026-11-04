@@ -3292,6 +3292,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const figures = [...beam.querySelectorAll('g.note, g.rest')];
       beam.classList.toggle('is-voice-hidden', figures.length > 0 && figures.every((node) => node.classList.contains('is-voice-hidden')));
     });
+    // Una ligadura es de la voz de su primera nota.
+    stage.querySelectorAll('g.tie, g.slur').forEach((link) => {
+      let startid = '';
+      try { startid = String(toolkit.getElementAttr(link.id).startid || '').replace(/^#/, ''); } catch { /* sin ligadura que mapear */ }
+      const start = startid && stage.querySelector('[id="' + startid + '"]');
+      link.classList.toggle('is-voice-hidden', !!start && start.classList.contains('is-voice-hidden'));
+      if (start?.dataset.voice) link.dataset.voice = start.dataset.voice;
+    });
     stage.appendChild(voiceLegend);
   }
 
