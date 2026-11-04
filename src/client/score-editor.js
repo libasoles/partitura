@@ -1,6 +1,5 @@
 /* score-editor.js — Pagina /partitura: una partitura donde se arrastran notas desde la paleta.
    Verovio dibuja el MusicXML que sale de ScoreModel; aca solo viven la paleta, el arrastre y las descargas. */
-import { getSetting, setSetting } from './settings.js';
 
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
@@ -808,7 +807,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function alignVoiceLegend() {
     const line = stage.querySelector('g.staff > path');
     if (!line || !voiceLegend.isConnected) return;
-    voiceLegend.style.top = Math.max(0, line.getBoundingClientRect().top - stage.getBoundingClientRect().top) + 'px';
+    const origin = stage.getBoundingClientRect();
+    voiceLegend.style.top = Math.max(0, line.getBoundingClientRect().top - origin.top) + 'px';
+    // Left of the brace (grand staff) or of the first staff line, never over it.
+    const edge = (stage.querySelector('g.grpSym') || line).getBoundingClientRect().left - origin.left;
+    voiceLegend.style.left = Math.max(0, edge - voiceLegend.offsetWidth - 8) + 'px';
   }
 
   function render() {
@@ -3304,10 +3307,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   });
   barlines.prepend(tabToggle);
 
+  // Los grupos de herramientas son de cada partitura; sin elegir, repeticion y dinamica se ven y las voces no.
+  const toolOn = (name, fallback = true) => !settings || (score.tools && name in score.tools ? score.tools[name] : fallback);
+
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
-    const shown = { repeats: !settings || getSetting('tools.repeats', true), dynamics: !settings || getSetting('tools.dynamics', true), barre: guitar };
+    const shown = { repeats: !settings || toolOn('repeats'), dynamics: !settings || toolOn('dynamics'), barre: guitar };
     barlines.querySelectorAll('[data-group]').forEach((button) => { if (button.dataset.group) button.hidden = !shown[button.dataset.group]; });
     tabToggle.hidden = !guitar;
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
@@ -3338,7 +3344,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.appendChild(item);
   }
   function applyVoices() {
-    const on = !settings || getSetting('tools.voices', false);
+    const on = toolOn('voices', false);
     stage.classList.toggle('has-voices', !!on);
     voiceLegend.remove();
     if (!on) return;
@@ -3508,7 +3514,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           icons.appendChild(swatch);
         });
       }
-      check.addEventListener('change', () => { setSetting('tools.' + name, check.checked); applyTools(); applyVoices(); });
+      check.addEventListener('change', () => { M.setTool(score, name, check.checked); save(); applyTools(); applyVoices(); });
       wrap.append(field, icons);
       popup.appendChild(wrap);
       return [name, check, fallback];
@@ -3519,7 +3525,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       tempoSlider.value = String(score.tempo || 120);
       showTempo();
       tempoNone.checked = !score.tempo;
-      checks.forEach(([name, check, fallback]) => { check.checked = getSetting('tools.' + name, fallback); });
+      checks.forEach(([name, check, fallback]) => { check.checked = toolOn(name, fallback); });
     }
 
     popup.addEventListener('toggle', (event) => cog.setAttribute('aria-expanded', String(event.newState === 'open')));

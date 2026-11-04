@@ -64,7 +64,7 @@
 ### Ajustes (engranaje)
 
 - Primera herramienta de la barra lateral. Instrumento (`score.instrument`: piano | guitarra) y tempo (`score.tempo`, negras por minuto, indicación metronómica en el primer compás y en el MIDI) viajan con la partitura y se deshacen. Guitarra fija la clave en sol con 8 y muestra TAB y cejilla; piano los oculta.
-- Mostrar u ocultar los grupos de repetición y dinámica es una preferencia del usuario (`settings.js`, `tools.repeats` / `tools.dynamics`).
+- Mostrar u ocultar los grupos de repetición, dinámica y voces es por partitura (`score.tools`, `M.setTool`), no global: viaja con el documento y la leyenda de voces se coloca a la izquierda de la llave.
 - Con piano y los ajustes activos, cada renglón es un gran pentagrama (ver la sección siguiente). Cambiar a guitarra lo oculta sin borrarlo.
 
 ### Gran pentagrama (piano)
