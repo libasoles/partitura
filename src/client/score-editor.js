@@ -3375,6 +3375,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       link.classList.toggle('is-voice-on', !!start && start.classList.contains('is-voice-on'));
       if (start?.dataset.voice) link.dataset.voice = start.dataset.voice;
     });
+    // Las barras viven fuera de las notas: toman la voz de la primera nota que agrupan.
+    stage.querySelectorAll('g.beam').forEach((beam) => {
+      const first = beam.querySelector('g.note[data-voice]');
+      beam.classList.toggle('is-voice-on', !!first && first.classList.contains('is-voice-on'));
+      if (first) beam.dataset.voice = first.dataset.voice;
+    });
     stage.appendChild(voiceLegend);
     alignVoiceLegend();
   }
