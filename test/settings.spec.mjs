@@ -19,21 +19,24 @@ test('the cog is the first sidebar tool and the dialog switches instrument, temp
   const popup = page.locator('#scoreSettingsPopup');
   await expect(popup).toBeVisible();
   const instrument = popup.getByRole('group', { name: 'Instrumento' });
-  await expect(instrument.getByRole('button')).toHaveText(['Piano', 'Guitarra']);
-  await expect(instrument.getByRole('button', { name: 'Piano' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(instrument.getByRole('radio')).toHaveCount(2);
+  await expect(instrument.getByRole('radio', { name: 'Piano' })).toBeChecked();
 
   // Guitar: TAB and barre appear and the clef becomes treble 8.
-  await instrument.getByRole('button', { name: 'Guitarra' }).click();
+  await instrument.getByRole('radio', { name: 'Guitarra' }).check();
   await expect(page.locator('#scoreTabToggle')).toBeVisible();
   await expect(page.locator('[data-tool="barre"]')).toBeVisible();
   expect(await page.evaluate(() => window.scoreEditor.score.clef)).toBe('guitar');
 
   // Tempo is a slider and is written as a metronome mark.
   const slider = popup.getByRole('slider');
+  const none = popup.getByRole('checkbox', { name: 'Sin indicación' });
+  await expect(none).toBeChecked();
   await slider.fill('140');
   expect(await page.evaluate(() => window.scoreEditor.score.tempo)).toBe(140);
   await expect(page.locator('#scoreStage svg.definition-scale g.tempo')).toContainText('140');
-  await popup.getByRole('button', { name: 'Sin indicación' }).click();
+  await expect(none).not.toBeChecked();
+  await none.check();
   expect(await page.evaluate(() => window.scoreEditor.score.tempo)).toBeUndefined();
 
   // Tool groups are checkboxes, each listing its icons.
@@ -50,7 +53,7 @@ test('the cog is the first sidebar tool and the dialog switches instrument, temp
 
   // Back to piano: TAB and barre go away and the guitar clef becomes a plain treble clef.
   await page.locator('#scoreSettingsToggle').click();
-  await page.locator('#scoreSettingsPopup').getByRole('button', { name: 'Piano' }).click();
+  await page.locator('#scoreSettingsPopup').getByRole('radio', { name: 'Piano' }).check();
   await expect(page.locator('#scoreTabToggle')).toBeHidden();
   expect(await page.evaluate(() => window.scoreEditor.score.clef)).toBe('treble');
   await page.keyboard.press('Escape');

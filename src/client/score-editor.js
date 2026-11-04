@@ -3278,6 +3278,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       wrap.className = 'score-settings-section';
       const name = document.createElement(tag);
       name.textContent = label;
+      name.className = 'score-settings-title';
       const row = document.createElement('div');
       row.className = 'score-settings-row';
       row.setAttribute('role', 'group');
@@ -3289,21 +3290,25 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
     const instrumentRow = section(t.settingsInstrument);
     const instruments = M.INSTRUMENTS.map((id) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'score-settings-option';
-      button.innerHTML = lucide(id) + '<span></span>';
-      button.lastChild.textContent = t['instrument' + id[0].toUpperCase() + id.slice(1)];
-      button.addEventListener('click', () => {
+      const field = document.createElement('label');
+      field.className = 'score-settings-radio';
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'scoreInstrument';
+      radio.value = id;
+      field.append(radio);
+      field.insertAdjacentHTML('beforeend', lucide(id) + '<span></span>');
+      field.lastChild.textContent = t['instrument' + id[0].toUpperCase() + id.slice(1)];
+      radio.addEventListener('change', () => {
         if (score.instrument === id) return;
         change(() => M.setInstrument(score, id));
         sync();
       });
-      instrumentRow.appendChild(button);
-      return button;
+      instrumentRow.appendChild(field);
+      return radio;
     });
 
-    // El tempo se arrastra en un control deslizante; "sin indicacion" lo quita.
+    // El tempo se arrastra en un control deslizante; la casilla de abajo ("sin indicacion") lo quita.
     const tempoRow = section(t.settingsTempo);
     const tempoSlider = document.createElement('input');
     tempoSlider.type = 'range';
@@ -3314,15 +3319,23 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     tempoSlider.setAttribute('aria-label', t.settingsTempo + ' (' + t.tempoUnit + ')');
     const tempoValue = document.createElement('output');
     tempoValue.className = 'score-settings-tempo-value';
-    const tempoNone = document.createElement('button');
-    tempoNone.type = 'button';
-    tempoNone.className = 'score-settings-option';
-    tempoNone.textContent = t.tempoNone;
+    const tempoField = document.createElement('label');
+    tempoField.className = 'score-settings-check';
+    const tempoNone = document.createElement('input');
+    tempoNone.type = 'checkbox';
+    tempoField.append(tempoNone, document.createTextNode(t.tempoNone));
     const showTempo = () => { tempoValue.textContent = '\u2669 = ' + tempoSlider.value; };
-    tempoSlider.addEventListener('input', () => { showTempo(); tempoNone.setAttribute('aria-pressed', 'false'); });
+    tempoSlider.addEventListener('input', () => { showTempo(); tempoNone.checked = false; });
     tempoSlider.addEventListener('change', () => { change(() => M.setTempo(score, Number(tempoSlider.value))); sync(); });
-    tempoNone.addEventListener('click', () => { change(() => M.setTempo(score, null)); sync(); });
-    tempoRow.append(tempoSlider, tempoValue, tempoNone);
+    tempoNone.addEventListener('change', () => {
+      change(() => M.setTempo(score, tempoNone.checked ? null : Number(tempoSlider.value)));
+      sync();
+    });
+    const sliderLine = document.createElement('div');
+    sliderLine.className = 'score-settings-slider-line';
+    sliderLine.append(tempoSlider, tempoValue);
+    tempoRow.classList.add('is-stacked');
+    tempoRow.append(sliderLine, tempoField);
 
     // Cada categoria de herramientas se activa con una casilla y muestra debajo sus iconos.
     const categories = [
@@ -3330,7 +3343,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       ['dynamics', t.toolsDynamics, (item) => item.kind === 'hairpin'],
     ];
     const toolsHeading = document.createElement('p');
-    toolsHeading.className = 'score-settings-heading';
+    toolsHeading.className = 'score-settings-heading score-settings-title';
     toolsHeading.textContent = t.settingsTools;
     popup.appendChild(toolsHeading);
     const checks = categories.map(([name, label, belongs]) => {
@@ -3339,6 +3352,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const field = document.createElement('label');
       const check = document.createElement('input');
       check.type = 'checkbox';
+      field.className = 'score-settings-check';
       field.append(check, document.createTextNode(label));
       const icons = document.createElement('div');
       icons.className = 'score-settings-icons';
@@ -3358,11 +3372,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     });
 
     function sync() {
-      instruments.forEach((button, i) => button.setAttribute('aria-pressed', String(M.instrumentOf(score) === M.INSTRUMENTS[i])));
+      instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === M.INSTRUMENTS[i]; });
       tempoSlider.value = String(score.tempo || 120);
-      tempoSlider.disabled = false;
       showTempo();
-      tempoNone.setAttribute('aria-pressed', String(!score.tempo));
+      tempoNone.checked = !score.tempo;
       checks.forEach(([name, check]) => { check.checked = getSetting('tools.' + name, true); });
     }
 
@@ -3376,7 +3389,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const box = popup.getBoundingClientRect();
       popup.style.left = Math.max(8, anchor.left - box.width - 12) + 'px';
       popup.style.top = Math.max(8, Math.min(anchor.top, window.innerHeight - box.height - 8)) + 'px';
-      (popup.querySelector('[aria-pressed="true"]') || popup.querySelector('input')).focus({ preventScroll: true });
+      (popup.querySelector('input:checked') || popup.querySelector('input')).focus({ preventScroll: true });
     });
     document.querySelector('.score-page').appendChild(popup);
   }
