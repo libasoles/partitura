@@ -4,7 +4,7 @@ import * as demos from './demos.js';
 
 /** The sidebar: every tutorial, grouped. The order here is the reading order of "previous" and "next". */
 export const categories = [
-  { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'accidentals', 'shortcuts', 'dots'] },
+  { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'accidentals', 'shortcuts', 'dots', 'settings'] },
   { id: 'editing', slugs: ['select-move', 'copy', 'tuplets', 'ties'] },
   { id: 'structure', slugs: ['signatures', 'measures', 'delete-barline', 'repeats', 'dynamics'] },
   { id: 'guitar', slugs: ['tab-toggle', 'edit-tab', 'move-tab', 'refinger', 'barre'] },
@@ -24,7 +24,7 @@ const items = (list: string[], tag: 'ul' | 'ol') => `<${tag} class="tutorial-lis
 type Body = { steps: string[]; tip?: string };
 type Demo = (s: Strings, aria: string) => string;
 
-/** Tutorials whose animation is drawn by demos.js; the older ones keep their own renderers. */
+/** Tutorials whose animation is drawn by demos.js; the older ones keep their own renderers, and some (settings) have none. */
 const animated: Partial<Record<Slug, Demo>> = {
   start: demos.place,
   'notes-rests': demos.notesRests,
@@ -44,7 +44,7 @@ const animated: Partial<Record<Slug, Demo>> = {
   scores: demos.scores,
 };
 
-const figure = (slug: Slug, s: Strings) => `<div class="tutorial-demo">${animated[slug]!(s, s.tutorials.items[slug][0])}</div>`;
+const figure = (slug: Slug, s: Strings) => (animated[slug] ? `<div class="tutorial-demo">${animated[slug]!(s, s.tutorials.items[slug][0])}</div>` : '');
 
 function guide(slug: Slug, s: Strings): string {
   const t = s.tutorials;
@@ -77,11 +77,12 @@ export function tutorialBody(slug: Slug, s: Strings): string {
 /** Topically close tutorials, shown below each guide with descriptive anchor text (in addition to previous/next). */
 export const related: Record<Slug, Slug[]> = {
   start: ['notes-rests', 'shortcuts', 'files'],
-  features: ['start', 'tab-toggle', 'files'],
+  features: ['start', 'settings', 'files'],
   'notes-rests': ['dots', 'accidentals', 'shortcuts'],
   accidentals: ['notes-rests', 'signatures', 'shortcuts'],
   shortcuts: ['notes-rests', 'accidentals', 'select-move'],
   dots: ['notes-rests', 'ties', 'tuplets'],
+  settings: ['tab-toggle', 'dynamics', 'repeats'],
   'select-move': ['copy', 'measures', 'shortcuts'],
   copy: ['select-move', 'measures', 'repeats'],
   tuplets: ['notes-rests', 'ties', 'dots'],
@@ -91,7 +92,7 @@ export const related: Record<Slug, Slug[]> = {
   'delete-barline': ['measures', 'repeats', 'signatures'],
   repeats: ['measures', 'dynamics', 'delete-barline'],
   dynamics: ['repeats', 'notes-rests', 'signatures'],
-  'tab-toggle': ['edit-tab', 'refinger', 'barre'],
+  'tab-toggle': ['settings', 'edit-tab', 'refinger'],
   'edit-tab': ['move-tab', 'tab-toggle', 'refinger'],
   'move-tab': ['edit-tab', 'refinger', 'barre'],
   refinger: ['move-tab', 'edit-tab', 'barre'],

@@ -32,6 +32,7 @@
     "<strong>Compassos:</strong> escolha a fórmula de compasso (4/4, 3/4, 6/8…) e o editor não deixa você passar da duração.",
     "<strong>Clave e armadura de clave:</strong> clave de Sol, de Fá ou de Dó, e qualquer armadura de Dó♭ a Dó♯.",
     "<strong>Barras especiais:</strong> barra dupla, barras de repetição e pestanas para violão.",
+    "<strong>Ajustes:</strong> piano com pauta dupla ou violão com tablatura, andamento na partitura e no MIDI, e cores para distinguir as vozes.",
     "<strong>Download:</strong> exporte a partitura em PDF para imprimir ou em MusicXML para abrir no MuseScore, Finale, Sibelius ou Dorico.",
     "<strong>Salvamento automático:</strong> sua partitura fica salva no seu navegador, então você pode continuar outro dia."
   ],
@@ -59,7 +60,7 @@
     ],
     [
       "Serve para violão?",
-      "Sim. Inclui a clave de Sol de violão (uma oitava abaixo), barras de repetição e pestanas."
+      "Sim. Em Ajustes escolha Violão e você tem a clave de Sol de violão (uma oitava abaixo), tablatura, barras de repetição e pestanas. Para piano, o outro instrumento, cada sistema é uma pauta dupla."
     ]
   ],
   "scoreTitleLabel": "Título da partitura",
@@ -376,6 +377,10 @@
         "Pestanas",
         "Marque uma pestana com sua casa sobre as notas que ela cobre."
       ],
+      "settings": [
+        "Ajustes: instrumento, andamento e ferramentas",
+        "Piano ou violão, andamento e quais grupos de ferramentas mostrar."
+      ],
       "files": [
         "Carregar e exportar",
         "Abra um MusicXML ou MIDI e baixe sua partitura em PDF, MusicXML ou MIDI."
@@ -497,6 +502,17 @@
           "Arraste as alças das pontas, ou use <kbd>←</kbd> e <kbd>→</kbd> sobre elas, para mudar até onde ela vai. Se você apagar o número, a pestana some."
         ]
       },
+      "settings": {
+        "steps": [
+          "Abra os <strong>Ajustes</strong> com a engrenagem, a primeira ferramenta da barra lateral. Valem para a partitura que você está vendo, são salvos com ela e podem ser desfeitos com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
+          "<strong>Instrumento:</strong> com <em>Piano</em> cada sistema é uma pauta dupla, com clave de Sol em cima e de Fá embaixo unidas por uma chave, e TAB e pestana ficam ocultos. Com <em>Violão</em> há uma única pauta em clave de Sol de violão e aparecem o botão TAB e a pestana. Trocar de um para o outro não apaga nada: o que não aparece continua salvo.",
+          "<strong>Andamento:</strong> o controle vai de 20 a 300 semínimas por minuto. É escrito como indicação de metrônomo sobre o primeiro compasso e define a velocidade do MIDI exportado. <em>Sem indicação</em> a remove.",
+          "<strong>Ferramentas:</strong> ative ou desative <em>Repetição</em>, <em>Dinâmica</em> e <em>Vozes</em> para mostrar ou ocultar seus botões na barra lateral. Ocultar um grupo não apaga o que você já escreveu.",
+          "<strong>Vozes:</strong> com <em>Vozes</em> ativo, cada voz recebe uma cor (1 a 4) e aparece uma legenda à esquerda da chave. Na legenda você escolhe quais vozes colorir; nenhuma figura é ocultada.",
+          "<strong>Pauta dupla:</strong> cada pauta tem suas próprias figuras, pausas, vozes e clave (o menu de clave diz qual delas muda). Compassos, armadura, fórmula de compasso, barras, repetições e andamento são comuns às duas. As dinâmicas e os reguladores são escritos entre elas."
+        ],
+        "tip": "Ao exportar, o piano vai em MusicXML como uma única parte com duas pautas e, no MIDI, cada pauta toca em seu canal."
+      },
       "files": {
         "steps": [
           "Abra o menu <strong>☰</strong> no canto superior direito.",
@@ -597,6 +613,10 @@
       "barre": [
         "Como marcar pestanas em uma tablatura de violão",
         "Marque uma pestana com sua casa sobre as notas que ela cobre no editor online de partituras e tablaturas."
+      ],
+      "settings": [
+        "Ajustes da partitura: instrumento, andamento e ferramentas",
+        "Escolha piano (pauta dupla) ou violão, defina o andamento e mostre ou oculte repetições, dinâmicas e vozes no editor de partituras online."
       ],
       "files": [
         "Abrir MusicXML e MIDI, exportar PDF, MusicXML ou MIDI",
