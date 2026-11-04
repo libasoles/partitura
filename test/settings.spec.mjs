@@ -71,38 +71,39 @@ test('Voces is off by default; turning it on colours each voice and shows a 1-4 
   await voices.check();
   const legend = page.locator('.score-voice-legend button');
   await expect(legend).toHaveText(['1', '2', '3', '4']);
-  const colors = await legend.evaluateAll((items) => items.map((li) => getComputedStyle(li).backgroundColor));
+  const colors = await legend.evaluateAll((items) => items.map((li) => getComputedStyle(li).borderTopColor));
   expect(new Set(colors).size).toBe(4);
   await voices.uncheck();
   await expect(page.locator('.score-voice-legend')).toHaveCount(0);
 });
 
-test('with Voces on, notes of different voices get different colours', async ({ page }) => {
-  const score = { rows: [[[{ d: 'h', n: 35, v: 1, at: 0 }, { d: 'h', n: 28, v: 2, at: 0 }]]], meter: '4/4', clef: 'treble', fifths: 0 };
+test('with Voces on, the legend picks which voices are coloured and nothing is hidden', async ({ page }) => {
+  const score = { rows: [[[{ d: 'h', n: 35, v: 1, at: 0 }, { d: 'h', n: 28, v: 2, at: 0 }]]], meter: '4/4', clef: 'treble', fifths: 0, tools: { voices: true } };
   await page.addInitScript((data) => {
     localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [data] }));
     localStorage.setItem('partitura.settings.v1', JSON.stringify({ 'tools.voices': true }));
   }, score);
   await open(page);
   await expect(page.locator('#scoreStage g.note[data-voice]')).toHaveCount(2);
-  const fills = await page.locator('#scoreStage g.note[data-voice] .notehead').evaluateAll((nodes) => nodes.map((n) => getComputedStyle(n).fill));
-  expect(new Set(fills).size).toBe(2);
+  const fills = () => page.locator('#scoreStage g.note[data-voice] .notehead').evaluateAll((nodes) => nodes.map((n) => getComputedStyle(n).fill));
+  // Nothing picked: no colour, so both heads look alike.
+  expect(new Set(await fills()).size).toBe(1);
 
-  // Picking a voice shows only that one; none or all picked shows every voice.
   const legend = page.locator('.score-voice-legend button');
-  const visible = () => page.locator('#scoreStage g.note[data-voice]:not(.is-voice-hidden)').count();
   await legend.nth(1).click();
   await expect(legend.nth(1)).toHaveAttribute('aria-pressed', 'true');
-  expect(await visible()).toBe(1);
+  expect(new Set(await fills()).size).toBe(2);
+  await legend.nth(0).click();
+  expect(new Set(await fills()).size).toBe(2);
+  await expect(page.locator('#scoreStage .is-voice-on')).toHaveCount(2);
+  await legend.nth(0).click();
   await legend.nth(1).click();
   await expect(legend.nth(1)).toHaveAttribute('aria-pressed', 'false');
-  expect(await visible()).toBe(2);
-  for (let i = 0; i < 4; i++) await legend.nth(i).click();
-  expect(await visible()).toBe(2);
+  expect(new Set(await fills()).size).toBe(1);
 });
 
 test('with Voces on, a tie follows the voice of its first note', async ({ page }) => {
-  const score = { rows: [[[{ d: 'w', n: 35, v: 1, at: 0, tie: true }, { d: 'w', n: 28, v: 2, at: 0 }], [{ d: 'w', n: 35, v: 1, at: 0 }]]], meter: '4/4', clef: 'treble', fifths: 0 };
+  const score = { rows: [[[{ d: 'w', n: 35, v: 1, at: 0, tie: true }, { d: 'w', n: 28, v: 2, at: 0 }], [{ d: 'w', n: 35, v: 1, at: 0 }]]], meter: '4/4', clef: 'treble', fifths: 0, tools: { voices: true } };
   await page.addInitScript((data) => {
     localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [data] }));
     localStorage.setItem('partitura.settings.v1', JSON.stringify({ 'tools.voices': true }));
@@ -112,15 +113,16 @@ test('with Voces on, a tie follows the voice of its first note', async ({ page }
   await expect(tie).toHaveCount(1);
   await expect(tie).toHaveAttribute('data-voice', '1');
   const legend = page.locator('.score-voice-legend button');
+  await expect(tie).not.toHaveClass(/is-voice-on/);
   await legend.nth(1).click();
-  await expect(tie).toHaveClass(/is-voice-hidden/);
+  await expect(tie).not.toHaveClass(/is-voice-on/);
   await legend.nth(1).click();
   await legend.nth(0).click();
-  await expect(tie).not.toHaveClass(/is-voice-hidden/);
+  await expect(tie).toHaveClass(/is-voice-on/);
 });
 
-test('with Voces on, both staves of a piano score are coloured and filtered by the same legend', async ({ page }) => {
-  const score = { rows: [[[{ d: 'h', n: 35, v: 1, at: 0 }, { d: 'h', n: 33, v: 2, at: 0 }]]], lower: { 0: [{ d: 'h', n: 21, v: 1, at: 0 }, { d: 'h', n: 19, v: 2, at: 0 }] }, meter: '4/4', clef: 'treble', fifths: 0, instrument: 'piano' };
+test('with Voces on, both staves of a piano score are coloured by the same legend', async ({ page }) => {
+  const score = { rows: [[[{ d: 'h', n: 35, v: 1, at: 0 }, { d: 'h', n: 33, v: 2, at: 0 }]]], lower: { 0: [{ d: 'h', n: 21, v: 1, at: 0 }, { d: 'h', n: 19, v: 2, at: 0 }] }, meter: '4/4', clef: 'treble', fifths: 0, instrument: 'piano', tools: { voices: true } };
   await page.addInitScript((data) => {
     localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [data] }));
     localStorage.setItem('partitura.settings.v1', JSON.stringify({ 'tools.voices': true }));
@@ -130,6 +132,6 @@ test('with Voces on, both staves of a piano score are coloured and filtered by t
   await expect(page.locator('#scoreStage g.note[id^="l"][data-voice]')).toHaveCount(2);
   const legend = page.locator('.score-voice-legend button');
   await legend.nth(1).click();
-  await expect(page.locator('#scoreStage g.note[data-voice]:not(.is-voice-hidden)')).toHaveCount(2);
-  await expect(page.locator('#scoreStage g.note[id^="l"][data-voice="2"]:not(.is-voice-hidden)')).toHaveCount(1);
+  await expect(page.locator('#scoreStage g.note.is-voice-on')).toHaveCount(2);
+  await expect(page.locator('#scoreStage g.note[id^="l"][data-voice="2"].is-voice-on')).toHaveCount(1);
 });

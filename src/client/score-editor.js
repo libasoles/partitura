@@ -3326,7 +3326,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const voiceLegend = document.createElement('ol');
   voiceLegend.className = 'score-voice-legend';
   voiceLegend.setAttribute('aria-label', t.toolsVoices);
-  // Voces elegidas en la leyenda: con ninguna o con todas se ven todas, asi que nunca se oculta toda la partitura.
+  // Voces elegidas en la leyenda: solo esas se colorean; con ninguna, la partitura se ve sin color. Nunca se oculta una figura.
   const shownVoices = new Set();
   const voiceButtons = [];
   for (let n = 1; n <= VOICE_COUNT; n++) {
@@ -3350,7 +3350,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     stage.classList.toggle('has-voices', !!on);
     voiceLegend.remove();
     if (!on) return;
-    const filtering = shownVoices.size > 0 && shownVoices.size < VOICE_COUNT;
     voiceButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(shownVoices.has(i + 1))));
     // Cada pentagrama infiere sus voces; el numero de voz da el mismo color en ambos, asi la leyenda y el filtro valen para los dos.
     const upper = M.measures(score);
@@ -3364,21 +3363,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           if (!node) return;
           const n = k % VOICE_COUNT + 1;
           node.dataset.voice = String(n);
-          node.classList.toggle('is-voice-hidden', filtering && !shownVoices.has(n));
+          node.classList.toggle('is-voice-on', shownVoices.has(n));
         })));
       }
     }
-    // Un haz cuyas figuras estan todas ocultas tambien se oculta.
-    stage.querySelectorAll('g.beam').forEach((beam) => {
-      const figures = [...beam.querySelectorAll('g.note, g.rest')];
-      beam.classList.toggle('is-voice-hidden', figures.length > 0 && figures.every((node) => node.classList.contains('is-voice-hidden')));
-    });
     // Una ligadura es de la voz de su primera nota.
     stage.querySelectorAll('g.tie, g.slur').forEach((link) => {
       let startid = '';
       try { startid = String(toolkit.getElementAttr(link.id).startid || '').replace(/^#/, ''); } catch { /* sin ligadura que mapear */ }
       const start = startid ? stage.querySelector('[id="' + startid + '"]') : null;
-      link.classList.toggle('is-voice-hidden', !!start && start.classList.contains('is-voice-hidden'));
+      link.classList.toggle('is-voice-on', !!start && start.classList.contains('is-voice-on'));
       if (start?.dataset.voice) link.dataset.voice = start.dataset.voice;
     });
     stage.appendChild(voiceLegend);

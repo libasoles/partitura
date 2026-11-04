@@ -1940,7 +1940,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-stage.has-voices [data-voice="2"], .score-voice-legend [data-voice="2"], .score-voice-swatch[data-voice="2"] { --voice: var(--voice-2); }
 .score-stage.has-voices [data-voice="3"], .score-voice-legend [data-voice="3"], .score-voice-swatch[data-voice="3"] { --voice: var(--voice-3); }
 .score-stage.has-voices [data-voice="4"], .score-voice-legend [data-voice="4"], .score-voice-swatch[data-voice="4"] { --voice: var(--voice-4); }
-.score-stage.has-voices :is(g.note, g.rest, g.tie, g.slur)[data-voice]:not(.is-selected) * { fill: var(--voice); stroke: var(--voice); }
+.score-stage.has-voices :is(g.note, g.rest, g.tie, g.slur)[data-voice].is-voice-on:not(.is-selected) * { fill: var(--voice); stroke: var(--voice); }
 .score-voice-legend {
   position: absolute;
   top: 0.5rem;
@@ -1965,14 +1965,12 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   font: 600 0.75rem/1 system-ui, sans-serif;
 }
 .score-voice-legend button {
-  border: 2px solid transparent;
+  border: 2px solid var(--voice);
   padding: 0;
   cursor: pointer;
-  opacity: 0.7;
 }
-.score-voice-legend button[aria-pressed="true"] {
-  opacity: 1;
-  border-color: #000;
-  box-shadow: 0 0 0 2px #fff;
+/* Sin elegir el boton es blanco con el borde de su color; elegido se rellena (y esa voz se colorea en la partitura). */
+.score-voice-legend button[aria-pressed="false"] {
+  background: #fff;
+  color: var(--voice);
 }
-.score-stage .is-voice-hidden { visibility: hidden; }
