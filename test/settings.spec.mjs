@@ -69,7 +69,7 @@ test('Voces is off by default; turning it on colours each voice and shows a 1-4 
   await expect(voices).not.toBeChecked();
   await expect(popup.locator('.score-voice-swatch')).toHaveCount(4);
   await voices.check();
-  const legend = page.locator('.score-voice-legend li');
+  const legend = page.locator('.score-voice-legend button');
   await expect(legend).toHaveText(['1', '2', '3', '4']);
   const colors = await legend.evaluateAll((items) => items.map((li) => getComputedStyle(li).backgroundColor));
   expect(new Set(colors).size).toBe(4);
@@ -87,4 +87,16 @@ test('with Voces on, notes of different voices get different colours', async ({ 
   await expect(page.locator('#scoreStage g.note[data-voice]')).toHaveCount(2);
   const fills = await page.locator('#scoreStage g.note[data-voice] .notehead').evaluateAll((nodes) => nodes.map((n) => getComputedStyle(n).fill));
   expect(new Set(fills).size).toBe(2);
+
+  // Picking a voice shows only that one; none or all picked shows every voice.
+  const legend = page.locator('.score-voice-legend button');
+  const visible = () => page.locator('#scoreStage g.note[data-voice]:not(.is-voice-hidden)').count();
+  await legend.nth(1).click();
+  await expect(legend.nth(1)).toHaveAttribute('aria-pressed', 'true');
+  expect(await visible()).toBe(1);
+  await legend.nth(1).click();
+  await expect(legend.nth(1)).toHaveAttribute('aria-pressed', 'false');
+  expect(await visible()).toBe(2);
+  for (let i = 0; i < 4; i++) await legend.nth(i).click();
+  expect(await visible()).toBe(2);
 });

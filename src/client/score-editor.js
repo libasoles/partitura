@@ -3252,10 +3252,23 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const voiceLegend = document.createElement('ol');
   voiceLegend.className = 'score-voice-legend';
   voiceLegend.setAttribute('aria-label', t.toolsVoices);
+  // Voces elegidas en la leyenda: con ninguna o con todas se ven todas, asi que nunca se oculta toda la partitura.
+  const shownVoices = new Set();
+  const voiceButtons = [];
   for (let n = 1; n <= VOICE_COUNT; n++) {
     const item = document.createElement('li');
-    item.dataset.voice = String(n);
-    item.textContent = String(n);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.voice = String(n);
+    button.textContent = String(n);
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => {
+      if (shownVoices.has(n)) shownVoices.delete(n); else shownVoices.add(n);
+      applyVoices();
+    });
+    ['pointerdown', 'mousedown', 'click'].forEach((type) => button.addEventListener(type, (event) => event.stopPropagation()));
+    voiceButtons.push(button);
+    item.appendChild(button);
     voiceLegend.appendChild(item);
   }
   function applyVoices() {
@@ -3263,11 +3276,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     stage.classList.toggle('has-voices', !!on);
     voiceLegend.remove();
     if (!on) return;
+    const filtering = shownVoices.size > 0 && shownVoices.size < VOICE_COUNT;
+    voiceButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(shownVoices.has(i + 1))));
     M.measures(score).forEach((measure, mi) => {
       M.voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
         const node = stage.querySelector('[id="e' + mi + '-' + i + '"]');
-        if (node) node.dataset.voice = String(k % VOICE_COUNT + 1);
+        if (!node) return;
+        const n = k % VOICE_COUNT + 1;
+        node.dataset.voice = String(n);
+        node.classList.toggle('is-voice-hidden', filtering && !shownVoices.has(n));
       })));
+    });
+    // Un haz cuyas figuras estan todas ocultas tambien se oculta.
+    stage.querySelectorAll('g.beam').forEach((beam) => {
+      const figures = [...beam.querySelectorAll('g.note, g.rest')];
+      beam.classList.toggle('is-voice-hidden', figures.length > 0 && figures.every((node) => node.classList.contains('is-voice-hidden')));
     });
     stage.appendChild(voiceLegend);
   }
@@ -3395,11 +3418,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         icons.appendChild(icon);
       });
       if (name === 'voices') {
-        voiceLegend.querySelectorAll('li').forEach((li) => {
+        voiceButtons.forEach((button) => {
           const swatch = document.createElement('span');
           swatch.className = 'score-settings-icon score-voice-swatch';
-          swatch.dataset.voice = li.dataset.voice;
-          swatch.textContent = li.textContent;
+          swatch.dataset.voice = button.dataset.voice;
+          swatch.textContent = button.textContent;
           icons.appendChild(swatch);
         });
       }
