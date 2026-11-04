@@ -225,3 +225,24 @@ test('a meter that does not fit the lower staff is refused', () => {
   assert.equal(G.setMeter(score, '2/4'), false);
   assert.equal(score.meter, '4/4');
 });
+
+test('changing a clef pins the inferred instrument so the number of staves does not change', () => {
+  const guitarClef = G.sanitize({ ...G.emptyScore(), clef: 'guitar' });
+  assert.equal(G.instrumentOf(guitarClef), 'guitar');
+  G.setClef(guitarClef, 0, 'treble');
+  assert.equal(G.instrumentOf(guitarClef), 'guitar');
+  assert.equal(G.stavesOf(guitarClef), 1);
+  const pianoScore = G.emptyScore();
+  G.setClef(pianoScore, 0, 'guitar');
+  assert.equal(G.stavesOf(pianoScore), 2, 'an explicit instrument is not overridden');
+  assert.equal(pianoScore.instrument, 'piano');
+});
+
+test('a two-staff fragment pastes into both staves whatever staff was asked for', () => {
+  const score = piano();
+  const both = G.copySelection(score, [G.refOf(0, 0, 0), G.refOf(1, 0, 0)]);
+  const target = piano();
+  assert.equal(G.pasteSelection(target, both, 3, { staff: 1 }).length, 2);
+  assert.equal(target.rows[0][3][0].n, 37);
+  assert.equal(target.lower[3][0].n, 25);
+});

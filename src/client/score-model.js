@@ -9,8 +9,9 @@
    Campos de una figura:
    - `d`: valor base: w redonda (96), h blanca (48), q negra (24), e corchea (12), s semicorchea (6), f fusa (3).
      Con `dot` dura 1,5 veces; con `tp` (numero de tresillo dentro del compas) dura 2/3.
-   - `n`: altura escrita como numero diatonico (C4 = 28, E4 = 30, la linea inferior de la clave de sol). En un
-     silencio es opcional y solo indica a que altura se dibuja.
+   - `n`: altura como numero diatonico, la misma que escribe el MusicXML (C4 = 35, E4 = 37, la linea inferior de la
+     clave de sol; con la clave de guitarra la linea inferior es 30, una octava mas grave). En un silencio es
+     opcional y solo indica a que altura se dibuja.
    - `at`: pista de orden, en divisiones de negra (24 por negra). Opcional: sin `at` la figura sigue a la anterior.
      NO es el inicio real ni ocupa tiempo: solo ordena las figuras de una misma voz y alinea las de voces distintas
      (las que comparten `at` empiezan juntas). `settle` lo reescribe con el inicio musical, sin huecos; el editor y
@@ -19,6 +20,11 @@
      Opcional: sin `v` se infiere por continuidad melodica (ver docs/voice-leading.md).
    - `acc` (# b n), `tie`, `slur`, `beam` ('join' | 'break'): alteracion, ligaduras y barrado manual.
    - `dead`: nota muerta (cabeza en X); solo en notas, no en silencios.
+
+   Gran pentagrama (piano, si el sitio lo activa con `grandStaff`): las figuras del pentagrama de abajo estan en
+   `score.lower` (compas plano -> figuras), con su clave en `lowerClef` / `lowerClefs`. Compases, armadura, metrica,
+   barras, repeticiones y reguladores son del renglon y se comparten. Una referencia a una figura es `{ mi, i }` arriba
+   y `{ s: 1, mi, i }` abajo. Cada pentagrama infiere y asienta sus voces por separado. Ver AGENTS.md.
 
    Tiempo y voces (`arrange`): lo que importa es el ORDEN de las figuras, no donde se dibujan.
    - Voces: una figura con `v` conserva su linea, incluidos cruces de registro. Sin `v`, las notas simultaneas
@@ -559,7 +565,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     // El fragmento de un solo pentagrama va al pentagrama pedido (o al de donde salio); el de dos, a cada uno. Sin
     // segundo pentagrama, todo va al primero.
     const staves = stavesOf(score);
-    const mainStaff = Math.min(Number.isInteger(target) ? target : fragment.staff || 0, staves - 1);
+    const mainStaff = Math.min(Number.isInteger(target) && !Array.isArray(fragment.lower) ? target : fragment.staff || 0, staves - 1);
     const lowerList = Array.isArray(fragment.lower) && fragment.lower.length === clean.length && fragment.lower.every(Array.isArray) && staves > 1 && mainStaff === 0
       ? cleanOf(fragment.lower) : null;
     if (lowerList && lowerList.some((m, i) => m.length !== fragment.lower[i].length)) return null;
@@ -1342,6 +1348,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
   // La clave nueva rige desde el compas `mi` hasta el siguiente cambio; los compases anteriores no se tocan.
   function setClef(score, mi, clef, staff = 0) {
     if (!Number.isInteger(mi) || mi < 0 || mi >= measures(score).length || !Object.hasOwn(CLEFS, clef)) return false;
+    // Cambiar la clave no cambia de instrumento: una partitura sin instrumento elegido lo conserva tal como se infiere hoy.
+    if (!INSTRUMENTS.includes(score.instrument)) score.instrument = instrumentOf(score);
     if (mi === 0) score[staff ? 'lowerClef' : 'clef'] = clef;
     else (score[staff ? 'lowerClefs' : 'clefs'] ||= {})[mi] = clef;
     pruneKeys(score);

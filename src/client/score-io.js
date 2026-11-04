@@ -60,21 +60,26 @@ const api = (function () {
 
     let divisions = 1;
     const flat = [];
+    const lower = {}; // segundo pentagrama (<staff>2</staff>), solo si el sitio lo tiene; si no, todo va al primero
     const barlines = {};
     const meters = {};
     const keys = {};
     const clefs = {};
+    const lowerClefs = {};
     let meter = '4/4';
     let currentClef = M.clefOf(score);
+    let currentLowerClef = M.clefOf(score, 1);
     let currentFifths = 0;
+    const grand = M.stavesOf(score) > 1;
 
     children(part, 'measure').forEach((measureNode, mi) => {
       const events = [];
+      const lowerEvents = [];
       let cursor = 0; // en divisiones del archivo
       let last = 0; // inicio de la ultima nota (para los acordes)
       let tuplet = 0;
       let tupletLeft = 0;
-      const voices = new Map();
+      const voices = [new Map(), new Map()]; // una numeracion de voces por pentagrama
 
       Array.from(measureNode.children).forEach((node) => {
         const name = node.localName;
@@ -97,15 +102,17 @@ const api = (function () {
               else if (value !== meter) { meters[mi] = value; meter = value; }
             }
           }
-          const clef = child(node, 'clef');
-          if (clef) {
+          children(node, 'clef').forEach((clef) => {
             const number = clef.getAttribute('number');
-            if (!number || number === '1') {
-              const name2 = clefName(text(clef, 'sign'), parseInt(text(clef, 'line'), 10), parseInt(text(clef, 'clef-octave-change'), 10));
-              if (mi === 0) currentClef = score.clef = name2;
-              else if (name2 !== currentClef) { clefs[mi] = name2; currentClef = name2; }
-            }
-          }
+            const lowerStaff = grand && number === '2';
+            if (number && number !== '1' && !lowerStaff) return;
+            const name2 = clefName(text(clef, 'sign'), parseInt(text(clef, 'line'), 10), parseInt(text(clef, 'clef-octave-change'), 10));
+            if (lowerStaff) {
+              if (mi === 0) currentLowerClef = score.lowerClef = name2;
+              else if (name2 !== currentLowerClef) { lowerClefs[mi] = name2; currentLowerClef = name2; }
+            } else if (mi === 0) currentClef = score.clef = name2;
+            else if (name2 !== currentClef) { clefs[mi] = name2; currentClef = name2; }
+          });
         } else if (name === 'backup') {
           cursor -= parseInt(text(node, 'duration'), 10) || 0;
         } else if (name === 'forward') {
@@ -173,16 +180,18 @@ const api = (function () {
             const head = child(node, 'notehead');
             if (head && head.textContent.trim() === 'x') ev.dead = true;
           }
+          const staff = grand && parseInt(text(node, 'staff'), 10) === 2 ? 1 : 0;
           const voice = text(node, 'voice') || '1';
-          if (!voices.has(voice)) voices.set(voice, voices.size + 1);
-          const v = voices.get(voice);
+          if (!voices[staff].has(voice)) voices[staff].set(voice, voices[staff].size + 1);
+          const v = voices[staff].get(voice);
           if (v <= M.MAX_VOICE) ev.v = v;
           ev.at = Math.round(start * M.DIVISIONS / divisions);
-          events.push(ev);
+          (staff ? lowerEvents : events).push(ev);
         }
       });
       // Conservar tambien la voz unica: los <chord> importados son decisiones explicitas de notacion.
       flat.push(events);
+      if (lowerEvents.length) lower[mi] = lowerEvents;
     });
 
     if (!flat.length) throw new Error('xml');
@@ -196,6 +205,8 @@ const api = (function () {
     if (Object.keys(meters).length) score.meters = meters;
     if (Object.keys(keys).length) score.keys = keys;
     if (Object.keys(clefs).length) score.clefs = clefs;
+    if (Object.keys(lowerClefs).length) score.lowerClefs = lowerClefs;
+    if (Object.keys(lower).length) score.lower = lower;
     return M.sanitize(score);
   }
 
@@ -221,7 +232,9 @@ const api = (function () {
     const notes = [];
     let meter = null;
     let fifths = null;
+    let tempo = null;
     let at = 8 + view.getUint32(4);
+    let track = 0;
     while (at + 8 <= bytes.length) {
       const length = view.getUint32(at + 4);
       const end = Math.min(at + 8 + length, bytes.length);
@@ -240,6 +253,7 @@ const api = (function () {
             const size = readVarLen(bytes, pos);
             if (type === 0x58 && !meter) meter = [bytes[pos.i], 2 ** bytes[pos.i + 1]];
             if (type === 0x59 && fifths === null) fifths = (bytes[pos.i] << 24) >> 24;
+            if (type === 0x51 && tempo === null && size === 3) tempo = Math.round(60000000 / ((bytes[pos.i] << 16) | (bytes[pos.i + 1] << 8) | bytes[pos.i + 2]));
             pos.i += size;
           } else if (status === 0xf0 || status === 0xf7) {
             pos.i += readVarLen(bytes, pos);
@@ -252,15 +266,16 @@ const api = (function () {
               open.set(channel * 128 + a, tick);
             } else if (kind === 0x80 || (kind === 0x90 && b === 0)) {
               const key = channel * 128 + a;
-              if (open.has(key) && channel !== 9) notes.push({ midi: a, start: open.get(key), end: tick });
+              if (open.has(key) && channel !== 9) notes.push({ midi: a, start: open.get(key), end: tick, group: track * 16 + channel });
               open.delete(key);
             }
           }
         }
+        track += 1;
       }
       at = end;
     }
-    return { notes, division, meter, fifths };
+    return { notes, division, meter, fifths, tempo };
   }
 
   // Descompone una duracion (multiplo de la semicorchea) en figuras que existen en el modelo, de mayor a menor.
@@ -282,88 +297,120 @@ const api = (function () {
     return result;
   }
 
+  // Dos pentagramas: si el archivo tiene dos partes (pista y canal) la mas aguda va arriba; si no, se corta en el do central.
+  const MIDDLE_C = 60;
+  function splitStaves(notes) {
+    const groups = new Map();
+    notes.forEach((note) => {
+      const g = groups.get(note.group) || { sum: 0, count: 0 };
+      g.sum += note.midi;
+      g.count += 1;
+      groups.set(note.group, g);
+    });
+    if (groups.size === 2) {
+      const [first, second] = [...groups.entries()].sort((a, b) => b[1].sum / b[1].count - a[1].sum / a[1].count).map(([group]) => group);
+      return { upper: notes.filter((note) => note.group === first), lower: notes.filter((note) => note.group === second) };
+    }
+    return { upper: notes.filter((note) => note.midi >= MIDDLE_C), lower: notes.filter((note) => note.midi < MIDDLE_C) };
+  }
+
   function parseMidi(buffer, M) {
-    const { notes, division, meter, fifths } = parseMidiFile(buffer);
+    const { notes, division, meter, fifths, tempo } = parseMidiFile(buffer);
     if (!notes.length) throw new Error('midi');
     const score = M.emptyScore();
     const name = meter ? meter[0] + '/' + meter[1] : '4/4';
     if (M.METERS.includes(name)) score.meter = name;
     if (fifths !== null && Math.abs(fifths) <= 7) score.fifths = fifths;
+    if (tempo !== null) M.setTempo(score, tempo);
     const capacity = M.capacity(score, 0);
-    const clef = M.CLEFS[score.clef];
     const unit = M.DIVISIONS / division;
     const quant = (ticks) => Math.round(ticks * unit / M.GRID) * M.GRID;
-
-    // Todo lo que empieza junto es un acorde que dura hasta la siguiente entrada (o lo que dure su nota mas larga).
-    const chords = new Map();
-    notes.forEach((note) => {
-      const start = quant(note.start);
-      const end = Math.max(quant(note.end), start + M.GRID);
-      const chord = chords.get(start) || { start, end: start, midis: new Set() };
-      chord.end = Math.max(chord.end, end);
-      chord.midis.add(note.midi);
-      chords.set(start, chord);
-    });
-    const list = [...chords.values()].sort((a, b) => a.start - b.start);
-    list.forEach((chord, i) => { if (list[i + 1]) chord.end = Math.min(chord.end, list[i + 1].start); });
-
-    const measures = [];
-    const place = (start, size, make) => {
-      let at = start;
-      let left = size;
-      const pieces = [];
-      while (left > 0) {
-        const mi = Math.floor(at / capacity);
-        const room = capacity - (at - mi * capacity);
-        const take = Math.min(left, room);
-        splitDuration(M, take).forEach((figure, k, all) => pieces.push({ mi, figure, last: k === all.length - 1 && take === left }));
-        at += take;
-        left -= take;
-        if (!splitDuration(M, take).length) break;
-      }
-      pieces.forEach((piece, k) => {
-        measures[piece.mi] = measures[piece.mi] || [];
-        make(piece.figure, k < pieces.length - 1).forEach((ev) => measures[piece.mi].push(ev));
-      });
-    };
-
-    let cursor = 0;
     const spelled = score.fifths >= 0 ? SHARP_SPELL : FLAT_SPELL;
-    list.forEach((chord) => {
-      if (chord.start > cursor) place(cursor, chord.start - cursor, (figure) => [Object.assign({ d: figure.d, rest: true }, figure.dot ? { dot: true } : {})]);
-      const midis = [...chord.midis].sort((a, b) => a - b);
-      place(chord.start, chord.end - chord.start, (figure, tied) => midis.map((midi) => {
-        const written = midi - 12 * (clef.octave || 0);
-        const [step, alter] = spelled[written % 12];
-        const ev = { d: figure.d, n: 7 * (Math.floor(written / 12) - 1) + step, alter };
-        if (figure.dot) ev.dot = true;
-        if (tied) ev.tie = true;
-        return ev;
-      }));
-      cursor = chord.end;
-    });
-    // Completa el ultimo compas con silencio y arma los accidentales segun la armadura, compas a compas.
-    const total = Math.max(1, Math.ceil(cursor / capacity));
-    if (cursor < total * capacity) place(cursor, total * capacity - cursor, (figure) => [Object.assign({ d: figure.d, rest: true }, figure.dot ? { dot: true } : {})]);
-    const flat = Array.from({ length: total }, (_, mi) => {
-      const state = new Map();
-      return (measures[mi] || []).map((ev) => {
-        if (ev.rest) return ev;
-        const { alter } = ev;
-        delete ev.alter;
-        const current = state.has(ev.n) ? state.get(ev.n) : M.keyAlter(ev.n, score);
-        if (current !== alter) {
-          ev.acc = alter === 0 ? 'n' : alter === 1 ? '#' : 'b';
-          state.set(ev.n, alter);
-        }
-        return ev;
+    const rest = (figure) => [Object.assign({ d: figure.d, rest: true }, figure.dot ? { dot: true } : {})];
+
+    // Compases de una voz de notas: lo que empieza junto es un acorde que dura hasta la siguiente entrada.
+    function staffMeasures(staffNotes) {
+      const chords = new Map();
+      staffNotes.forEach((note) => {
+        const start = quant(note.start);
+        const end = Math.max(quant(note.end), start + M.GRID);
+        const chord = chords.get(start) || { start, end: start, midis: new Set() };
+        chord.end = Math.max(chord.end, end);
+        chord.midis.add(note.midi);
+        chords.set(start, chord);
       });
-    });
+      const list = [...chords.values()].sort((a, b) => a.start - b.start);
+      list.forEach((chord, i) => { if (list[i + 1]) chord.end = Math.min(chord.end, list[i + 1].start); });
+      const measures = [];
+      const place = (start, size, make) => {
+        let at = start;
+        let left = size;
+        const pieces = [];
+        while (left > 0) {
+          const mi = Math.floor(at / capacity);
+          const room = capacity - (at - mi * capacity);
+          const take = Math.min(left, room);
+          splitDuration(M, take).forEach((figure, k, all) => pieces.push({ mi, figure, last: k === all.length - 1 && take === left }));
+          at += take;
+          left -= take;
+          if (!splitDuration(M, take).length) break;
+        }
+        pieces.forEach((piece, k) => {
+          measures[piece.mi] = measures[piece.mi] || [];
+          make(piece.figure, k < pieces.length - 1).forEach((ev) => measures[piece.mi].push(ev));
+        });
+      };
+      let cursor = 0;
+      list.forEach((chord) => {
+        if (chord.start > cursor) place(cursor, chord.start - cursor, rest);
+        const midis = [...chord.midis].sort((a, b) => a - b);
+        place(chord.start, chord.end - chord.start, (figure, tied) => midis.map((midi) => {
+          const [step, alter] = spelled[midi % 12];
+          const ev = { d: figure.d, n: 7 * Math.floor(midi / 12) + step, alter };
+          if (figure.dot) ev.dot = true;
+          if (tied) ev.tie = true;
+          return ev;
+        }));
+        cursor = chord.end;
+      });
+      return { measures, cursor, place };
+    }
+
+    // Completa el ultimo compas de la voz con silencio y arma los accidentales segun la armadura, compas a compas.
+    function finish({ measures, cursor, place }, total) {
+      const own = Math.max(1, Math.ceil(cursor / capacity));
+      if (cursor < own * capacity) place(cursor, own * capacity - cursor, rest);
+      return Array.from({ length: total }, (_, mi) => {
+        const state = new Map();
+        return (measures[mi] || []).map((ev) => {
+          if (ev.rest) return ev;
+          const { alter } = ev;
+          delete ev.alter;
+          const current = state.has(ev.n) ? state.get(ev.n) : M.keyAlter(ev.n, score);
+          if (current !== alter) {
+            ev.acc = alter === 0 ? 'n' : alter === 1 ? '#' : 'b';
+            state.set(ev.n, alter);
+          }
+          return ev;
+        });
+      });
+    }
+
+    const grand = M.stavesOf(score) > 1;
+    const split = grand ? splitStaves(notes) : { upper: notes, lower: [] };
+    const upper = staffMeasures(split.upper);
+    const lowerPart = split.lower.length ? staffMeasures(split.lower) : null;
+    const total = Math.max(1, Math.ceil(Math.max(upper.cursor, lowerPart ? lowerPart.cursor : 0) / capacity));
+    const flat = finish(upper, total);
     score.rows = [];
     for (let i = 0; i < flat.length; i += M.PER_ROW) {
       const row = flat.slice(i, i + M.PER_ROW);
       while (row.length < M.PER_ROW) row.push([]);
       score.rows.push(row);
+    }
+    if (lowerPart) {
+      score.lower = {};
+      finish(lowerPart, total).forEach((measure, mi) => { if (measure.length) score.lower[mi] = measure; });
     }
     return M.sanitize(score);
   }
@@ -377,36 +424,39 @@ const api = (function () {
   }
 
   function toMidi(score, M) {
-    const all = M.measures(score);
     const sounding = [];
-    const tied = new Map(); // altura -> nota que sigue sonando por una ligadura
-    let origin = 0;
-    all.forEach((measure, mi) => {
-      const clef = M.CLEFS[M.clefAt(score, mi)];
-      const starts = M.onsets(measure);
-      const accidentals = new Map();
-      const order = measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]);
-      order.forEach((i) => {
-        const ev = measure[i];
-        if (ev.rest) return;
-        if (ev.acc) accidentals.set(ev.n, M.ACCIDENTALS[ev.acc].alter);
-        const alter = accidentals.has(ev.n) ? accidentals.get(ev.n) : M.keyAlter(ev.n, score, mi);
-        const midi = 12 * (Math.floor(ev.n / 7) + 1) + SEMITONES[ev.n % 7] + alter + 12 * (clef.octave || 0);
-        const start = origin + starts[i];
-        const size = M.length(ev);
-        let note = tied.get(midi);
-        if (note && note.end === start) note.end = start + size;
-        else sounding.push(note = { midi, start, end: start + size });
-        if (ev.tie) tied.set(midi, note);
-        else tied.delete(midi);
+    // Cada pentagrama suena en su canal, para que dos notas iguales de los dos no se corten entre si.
+    const staves = M.stavesOf(score);
+    for (let staff = 0; staff < staves; staff += 1) {
+      const tied = new Map(); // altura -> nota que sigue sonando por una ligadura
+      let origin = 0;
+      M.measures(score, staff).forEach((measure, mi) => {
+        const starts = M.onsets(measure);
+        const accidentals = new Map();
+        const order = measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]);
+        order.forEach((i) => {
+          const ev = measure[i];
+          if (ev.rest) return;
+          if (ev.acc) accidentals.set(ev.n, M.ACCIDENTALS[ev.acc].alter);
+          const alter = accidentals.has(ev.n) ? accidentals.get(ev.n) : M.keyAlter(ev.n, score, mi);
+          // `n` ya es la altura que escribe el MusicXML (la que suena), con cualquier clave: el 8 de la clave de guitarra solo cambia el dibujo.
+          const midi = 12 * Math.floor(ev.n / 7) + SEMITONES[ev.n % 7] + alter;
+          const start = origin + starts[i];
+          const size = M.length(ev);
+          let note = tied.get(midi);
+          if (note && note.end === start) note.end = start + size;
+          else sounding.push(note = { midi, start, end: start + size, channel: staff });
+          if (ev.tie) tied.set(midi, note);
+          else tied.delete(midi);
+        });
+        origin += M.capacity(score, mi);
       });
-      origin += M.capacity(score, mi);
-    });
+    }
 
     const events = [];
     sounding.forEach((note) => {
-      events.push({ tick: Math.round(note.start * TICKS / M.DIVISIONS), order: 1, data: [0x90, note.midi & 0x7f, 80] });
-      events.push({ tick: Math.round(note.end * TICKS / M.DIVISIONS), order: 0, data: [0x80, note.midi & 0x7f, 0] });
+      events.push({ tick: Math.round(note.start * TICKS / M.DIVISIONS), order: 1, data: [0x90 | note.channel, note.midi & 0x7f, 80] });
+      events.push({ tick: Math.round(note.end * TICKS / M.DIVISIONS), order: 0, data: [0x80 | note.channel, note.midi & 0x7f, 0] });
     });
     events.sort((a, b) => a.tick - b.tick || a.order - b.order);
 
@@ -418,7 +468,9 @@ const api = (function () {
     meta(0x51, [microseconds >> 16 & 0xff, microseconds >> 8 & 0xff, microseconds & 0xff]);
     meta(0x58, [beats, Math.log2(unit), 24, 8]);
     meta(0x59, [M.keyAt(score, 0) & 0xff, 0]);
-    track.push(0, 0xc0, 24); // guitarra de cuerdas de nylon
+    // Piano de cola acustico para el piano; guitarra de cuerdas de nylon para la guitarra.
+    const program = M.instrumentOf(score) === 'piano' ? 0 : 24;
+    for (let channel = 0; channel < staves; channel += 1) track.push(0, 0xc0 | channel, program);
     let previous = 0;
     events.forEach((ev) => {
       track.push(...varLen(ev.tick - previous), ...ev.data);
