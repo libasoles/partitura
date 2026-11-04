@@ -3,7 +3,7 @@
    editor only swaps it for the live one. */
 
 import { createRequire } from 'node:module';
-import ScoreModel from '../client/score-model.js';
+import ScoreModel, { createScoreModel } from '../client/score-model.js';
 
 const verovio = createRequire(import.meta.url)('verovio');
 
@@ -28,8 +28,12 @@ function createToolkit(ready) {
   });
 }
 
-export async function renderEmptyStaff(ready = verovio.module, score = ScoreModel.emptyScore()) {
-  const key = JSON.stringify(score);
+// `grandStaff` is the host's choice, the same one it gives the editor: a piano score is drawn with both staves so the
+// editor does not change the page height when it takes over.
+export async function renderEmptyStaff(ready = verovio.module, score, { grandStaff = false } = {}) {
+  const model = grandStaff ? createScoreModel({ grandStaff }) : ScoreModel;
+  score ??= model.emptyScore();
+  const key = grandStaff + JSON.stringify(score);
   if (cache.has(key)) return cache.get(key);
   const toolkit = await createToolkit(ready);
   toolkit.setOptions({
@@ -49,7 +53,7 @@ export async function renderEmptyStaff(ready = verovio.module, score = ScoreMode
     spacingSystem: 12,
     mnumInterval: 0,
   });
-  toolkit.loadData(ScoreModel.toMusicXml(score));
+  toolkit.loadData(model.toMusicXml(score));
   const svg = toolkit.renderToSVG(1);
   toolkit.destroy();
   cache.set(key, svg);
