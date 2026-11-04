@@ -3377,7 +3377,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     stage.querySelectorAll('g.tie, g.slur').forEach((link) => {
       let startid = '';
       try { startid = String(toolkit.getElementAttr(link.id).startid || '').replace(/^#/, ''); } catch { /* sin ligadura que mapear */ }
-      const start = startid && stage.querySelector('[id="' + startid + '"]');
+      const start = startid ? stage.querySelector('[id="' + startid + '"]') : null;
       link.classList.toggle('is-voice-hidden', !!start && start.classList.contains('is-voice-hidden'));
       if (start?.dataset.voice) link.dataset.voice = start.dataset.voice;
     });
