@@ -9,8 +9,9 @@
    Campos de una figura:
    - `d`: valor base: w redonda (96), h blanca (48), q negra (24), e corchea (12), s semicorchea (6), f fusa (3).
      Con `dot` dura 1,5 veces; con `tp` (numero de tresillo dentro del compas) dura 2/3.
-   - `n`: altura escrita como numero diatonico (C4 = 28, E4 = 30, la linea inferior de la clave de sol). En un
-     silencio es opcional y solo indica a que altura se dibuja.
+   - `n`: altura como numero diatonico, la misma que escribe el MusicXML (C4 = 35, E4 = 37, la linea inferior de la
+     clave de sol; con la clave de guitarra la linea inferior es 30, una octava mas grave). En un silencio es
+     opcional y solo indica a que altura se dibuja.
    - `at`: pista de orden, en divisiones de negra (24 por negra). Opcional: sin `at` la figura sigue a la anterior.
      NO es el inicio real ni ocupa tiempo: solo ordena las figuras de una misma voz y alinea las de voces distintas
      (las que comparten `at` empiezan juntas). `settle` lo reescribe con el inicio musical, sin huecos; el editor y
@@ -19,6 +20,11 @@
      Opcional: sin `v` se infiere por continuidad melodica (ver docs/voice-leading.md).
    - `acc` (# b n), `tie`, `slur`, `beam` ('join' | 'break'): alteracion, ligaduras y barrado manual.
    - `dead`: nota muerta (cabeza en X); solo en notas, no en silencios.
+
+   Gran pentagrama (piano, si el sitio lo activa con `grandStaff`): las figuras del pentagrama de abajo estan en
+   `score.lower` (compas plano -> figuras), con su clave en `lowerClef` / `lowerClefs`. Compases, armadura, metrica,
+   barras, repeticiones y reguladores son del renglon y se comparten. Una referencia a una figura es `{ mi, i }` arriba
+   y `{ s: 1, mi, i }` abajo. Cada pentagrama infiere y asienta sus voces por separado. Ver AGENTS.md.
 
    Tiempo y voces (`arrange`): lo que importa es el ORDEN de las figuras, no donde se dibujan.
    - Voces: una figura con `v` conserva su linea, incluidos cruces de registro. Sin `v`, las notas simultaneas
@@ -34,7 +40,7 @@
      los silencios ocultos (print-object="no") solo rellenan esas esperas de alineacion y el final del compas.
    - Partituras guardadas antes de contar en orden: si un compas con figuras sin `v` superpuestas por su `at` ya no
      entra contado en orden, `sanitize` le fija las voces de entonces (`legacyVoices`) en vez de perder figuras. */
-export function createScoreModel({ defaultClef = 'treble' } = {}) {
+export function createScoreModel({ defaultClef = 'treble', grandStaff = false } = {}) {
 
   const DIVISIONS = 24;
   const MEASURE = 96; // valor por defecto: 4/4
@@ -46,6 +52,9 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     alto: { sign: 'C', line: 3, bottom: 31 },
     tenor: { sign: 'C', line: 4, bottom: 29 },
   };
+  const LOWER_CLEF = 'bass'; // clave del segundo pentagrama del piano
+  // Tablas por compas que se desplazan juntas al insertar, quitar o dividir compases (`lower` es el segundo pentagrama).
+  const BY_MEASURE = ['navigation', 'barlines', 'keys', 'clefs', 'lowerClefs', 'meters', 'barres', 'hairpins', 'measureDurations', 'measureWidths', 'lower'];
   const PER_ROW = 4;
   const MIN_ROWS = 3;
   const MAX_FRET = 24;
@@ -343,31 +352,40 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     return insertMany(measure, [[ev, at]])[0];
   }
 
-  // Un fragmento conserva los compases intermedios y solo las figuras elegidas.
+  // Un fragmento conserva los compases intermedios y solo las figuras elegidas. `measures` son las del pentagrama de
+  // arriba, o las del de abajo si solo se eligieron esas (`staff: 1`); si se eligieron de ambos, las de abajo van en `lower`.
   function copySelection(score, refs, columns = score.tabs || {}) {
-    const all = measures(score);
-    const chosen = refs.filter((r) => all[r.mi]?.[r.i]);
+    const chosen = refs.filter((r) => measures(score, staffOf(r))[r.mi]?.[r.i]);
     if (!chosen.length) return null;
     const first = Math.min(...chosen.map((r) => r.mi));
     const last = Math.max(...chosen.map((r) => r.mi));
-    const fragment = Array.from({ length: last - first + 1 }, () => []);
     const positions = new Map();
-    const pitches = fragment.map(() => []);
-    const contexts = all.map((measure, mi) => pitchContexts(score, mi));
-    all.forEach((measure, mi) => measure.forEach((ev, i) => {
-      if (!chosen.some((r) => r.mi === mi && r.i === i)) return;
-      positions.set(ev, { mi: mi - first, i: fragment[mi - first].length });
-      fragment[mi - first].push(clone(ev));
-      pitches[mi - first].push(contexts[mi][i]);
-    }));
+    const lanes = [0, 1].filter((staff) => chosen.some((r) => staffOf(r) === staff)).map((staff) => {
+      const all = measures(score, staff);
+      const fragment = Array.from({ length: last - first + 1 }, () => []);
+      const pitches = fragment.map(() => []);
+      const contexts = all.map((measure, mi) => pitchContexts(score, mi, staff));
+      all.forEach((measure, mi) => measure.forEach((ev, i) => {
+        if (!chosen.some((r) => staffOf(r) === staff && r.mi === mi && r.i === i)) return;
+        if (!staff) positions.set(ev, { mi: mi - first, i: fragment[mi - first].length });
+        fragment[mi - first].push(clone(ev));
+        pitches[mi - first].push(contexts[mi][i]);
+      }));
+      return { staff, fragment, pitches };
+    });
     const tabs = attacks(score, true).filter((attack) => columns[attack.key]).map((attack) => {
       const notes = attack.events.flatMap((ev, i) => positions.has(ev) ? [{ ...positions.get(ev), midi: attack.midis[i] }] : []);
       const column = columns[attack.key].map((fret, string) =>
         notes.length === attack.events.length || notes.some((note) => tuningOf(score).opens[string] + fret === note.midi) ? fret : null);
       return { notes, column };
     }).filter((entry) => entry.notes.length);
-    const signatures = fragment.map((_, offset) => ({ meter: meterAt(score, first + offset), fifths: keyAt(score, first + offset) }));
-    return { pitches, tabs, tuning: tuningOf(score).id, type: 'guitar-score-selection', version: 1, ...signatures[0], signatures, measures: fragment };
+    const signatures = lanes[0].fragment.map((_, offset) => ({ meter: meterAt(score, first + offset), fifths: keyAt(score, first + offset) }));
+    const [main, extra] = lanes;
+    return {
+      pitches: main.pitches, tabs, tuning: tuningOf(score).id, type: 'guitar-score-selection', version: 1, ...signatures[0], signatures, measures: main.fragment,
+      ...(main.staff ? { staff: main.staff } : {}),
+      ...(extra ? { lower: extra.fragment, lowerPitches: extra.pitches } : {}),
+    };
   }
 
   // Duplica las figuras elegidas justo despues de la ultima de ellas, conservando su ritmo relativo. Lo que no entra
@@ -376,11 +394,11 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   // Devuelve las figuras resultantes, o null (sin tocar la partitura) si algo no se puede colocar.
   function duplicateSelection(score, refs) {
     const trial = clone(score);
-    const all = measures(trial);
+    const laneOf = (staff) => measures(trial, staff);
     // Duplicar continua las partes originales; no debe reinterpretar las copias
     // como voces nuevas cuando coinciden con notas que ya estaban en el destino.
-    all.forEach(settleVoices);
-    const chosen = refs.filter((r, k) => all[r.mi]?.[r.i] && refs.findIndex((o) => o.mi === r.mi && o.i === r.i) === k);
+    [0, 1].filter((staff) => staff < stavesOf(trial)).forEach((staff) => laneOf(staff).forEach(settleVoices));
+    const chosen = refs.filter((r, k) => laneOf(staffOf(r))[r.mi]?.[r.i] && refs.findIndex((o) => sameRef(o, r)) === k);
     if (!chosen.length) return null;
     const savedTabs = captureTabReferences(trial);
     const sourceAttacks = attacks(trial, true);
@@ -390,9 +408,10 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       return { list, total };
     };
     const origin = starts().list;
-    const sources = chosen.map(({ mi, i }) => {
-      const ev = all[mi][i];
-      return { ev, abs: origin[mi] + onsets(all[mi])[i], pitch: pitchContexts(trial, mi)[i], clef: CLEFS[clefAt(trial, mi)].octave || 0 };
+    const sources = chosen.map((ref) => {
+      const { mi, i } = ref, staff = staffOf(ref);
+      const ev = laneOf(staff)[mi][i];
+      return { ev, staff, abs: origin[mi] + onsets(laneOf(staff)[mi])[i], pitch: pitchContexts(trial, mi, staff)[i], clef: CLEFS[clefAt(trial, mi, staff)].octave || 0 };
     }).sort((a, b) => a.abs - b.abs);
     const offset = Math.max(...sources.map((s) => s.abs + length(s.ev))) - sources[0].abs;
     const needed = Math.max(...sources.map((s) => s.abs + offset + length(s.ev)));
@@ -411,8 +430,9 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       return pieces;
     };
     // Cada figura elegida pasa a una o mas partes, cada una en el compas que le toca.
-    const byMeasure = new Map();
+    const byMeasure = new Map(); // 'pentagrama:compas' -> { staff, mi, entries }
     const partsOf = new Map();
+    const partStaff = new Map();
     for (const source of sources) {
       const { ev } = source;
       let pos = source.abs + offset, remaining = length(ev);
@@ -437,9 +457,11 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
         }
         made.forEach((part) => {
           part.at = pos - first[mi];
-          if (!byMeasure.has(mi)) byMeasure.set(mi, []);
-          byMeasure.get(mi).push({ part, source });
+          const key = source.staff + ':' + mi;
+          if (!byMeasure.has(key)) byMeasure.set(key, { staff: source.staff, mi, entries: [] });
+          byMeasure.get(key).entries.push({ part, source });
           partsOf.get(ev).push(part);
+          partStaff.set(part, source.staff);
           pos += length(part);
         });
         remaining -= size;
@@ -447,12 +469,12 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     }
     const fresh = new Set();
     const landed = new Map();
-    for (const [mi, entries] of [...byMeasure].sort((a, b) => a[0] - b[0])) {
-      const dest = measures(trial)[mi];
+    for (const { staff, mi, entries } of [...byMeasure.values()].sort((a, b) => a.staff - b.staff || a.mi - b.mi)) {
+      const dest = measures(trial, staff)[mi];
       const times = onsets(dest);
-      const existing = pitchContexts(trial, mi);
+      const existing = pitchContexts(trial, mi, staff);
       const desired = new Map(dest.map((ev, i) => [ev, existing[i]]));
-      const octave = CLEFS[clefAt(trial, mi)].octave || 0;
+      const octave = CLEFS[clefAt(trial, mi, staff)].octave || 0;
       let nextId = Math.max(0, ...dest.map((ev) => ev.tp || 0));
       const ids = new Map();
       const inserts = [];
@@ -516,27 +538,41 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     for (const { ev } of sources) {
       for (const part of partsOf.get(ev)) {
         const target = landed.get(part);
-        const mi = target && measures(trial).findIndex((m) => m.includes(target));
-        if (target && mi >= 0) created.push({ mi, i: measures(trial)[mi].indexOf(target) });
+        const staff = partStaff.get(part);
+        const mi = target && measures(trial, staff).findIndex((m) => m.includes(target));
+        if (target && mi >= 0) created.push(refOf(staff, mi, measures(trial, staff)[mi].indexOf(target)));
       }
     }
     score.rows = trial.rows;
+    if (trial.lower) score.lower = trial.lower;
+    else delete score.lower;
+    pruneLower(score);
     if (trial.tabs) score.tabs = trial.tabs;
     else delete score.tabs;
     return created.length ? created : null;
   }
 
   // Prepara todo antes de escribir: un pegado que no entra no cambia la partitura.
-  function pasteSelection(score, fragment, mi, { preserveSignatures = true } = {}) {
+  function pasteSelection(score, fragment, mi, { preserveSignatures = true, staff: target } = {}) {
     if (fragment?.type !== 'guitar-score-selection' || fragment.version !== 1 ||
       !Number.isInteger(mi) || mi < 0 || mi >= measures(score).length ||
       !Array.isArray(fragment.measures) || !fragment.measures.length ||
       !fragment.measures.every(Array.isArray)) return null;
-    const clean = sanitize({ meter: fragment.meter, meters: Object.fromEntries((Array.isArray(fragment.signatures) ? fragment.signatures : []).map((signature, i) => [i, signature?.meter])), rows: [fragment.measures] }).rows[0];
+    const meterContext = { meter: fragment.meter, meters: Object.fromEntries((Array.isArray(fragment.signatures) ? fragment.signatures : []).map((signature, i) => [i, signature?.meter])) };
+    const cleanOf = (list) => sanitize({ ...meterContext, rows: [list] }).rows[0];
+    const clean = cleanOf(fragment.measures);
     if (clean.some((m, i) => m.length !== fragment.measures[i].length) || !clean.some((m) => m.length)) return null;
+    // El fragmento de un solo pentagrama va al pentagrama pedido (o al de donde salio); el de dos, a cada uno. Sin
+    // segundo pentagrama, todo va al primero.
+    const staves = stavesOf(score);
+    const mainStaff = Math.min(Number.isInteger(target) && !Array.isArray(fragment.lower) ? target : fragment.staff || 0, staves - 1);
+    const lowerList = Array.isArray(fragment.lower) && fragment.lower.length === clean.length && fragment.lower.every(Array.isArray) && staves > 1 && mainStaff === 0
+      ? cleanOf(fragment.lower) : null;
+    if (lowerList && lowerList.some((m, i) => m.length !== fragment.lower[i].length)) return null;
+    const lanes = [{ staff: mainStaff, clean, pitches: fragment.pitches }].concat(lowerList ? [{ staff: 1, clean: lowerList, pitches: fragment.lowerPitches }] : []);
     const savedTabs = captureTabReferences(score);
     // El portapapeles usa indices serializables; al pegar se les da una identidad nueva.
-    if (tuningOf(fragment).id === tuningOf(score).id && Array.isArray(fragment.tabs)) fragment.tabs.forEach((entry) => {
+    if (mainStaff === 0 && tuningOf(fragment).id === tuningOf(score).id && Array.isArray(fragment.tabs)) fragment.tabs.forEach((entry) => {
       if (!entry || !Array.isArray(entry.notes) || !entry.notes.length || !Array.isArray(entry.column)) return;
       const notes = entry.notes.map((note) => note && Number.isInteger(note.mi) && Number.isInteger(note.i) &&
         Number.isInteger(note.midi) && clean[note.mi]?.[note.i] && !clean[note.mi][note.i].rest ? note : null);
@@ -547,7 +583,6 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     const trial = clone(score);
     while (measures(trial).length < mi + clean.length) trial.rows.push(emptyRow());
     const all = measures(trial);
-    const destinationContexts = all.map((_, index) => pitchContexts(trial, index));
     if (preserveSignatures) {
       const end = mi + clean.length;
       const after = { meter: meterAt(trial, end), fifths: keyAt(trial, end) };
@@ -572,14 +607,14 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       pruneKeys(trial);
     }
     const refs = [];
-    for (let offset = 0; offset < clean.length; offset += 1) {
-      const destination = all[mi + offset];
-      const destinationPitches = destinationContexts[mi + offset];
+    for (const { staff, clean, pitches } of lanes) for (let offset = 0; offset < clean.length; offset += 1) {
+      const destination = measures(trial, staff)[mi + offset];
+      const destinationPitches = pitchContexts(trial, mi + offset, staff);
       const desired = new Map(destination.map((ev, i) => [ev, destinationPitches[i]]));
-      const octave = CLEFS[clefAt(trial, mi + offset)].octave || 0;
+      const octave = CLEFS[clefAt(trial, mi + offset, staff)].octave || 0;
       for (let i = 0; i < clean[offset].length; i += 1) {
         const ev = clean[offset][i];
-        const pitch = fragment.pitches?.[offset]?.[i];
+        const pitch = pitches?.[offset]?.[i];
         if (ev.rest || !pitch || ![-1, 0, 1].includes(pitch.alter) || ![-1, 0].includes(pitch.octave)) continue;
         ev.n += 7 * (pitch.octave - octave);
         if (ev.n < LOWEST || ev.n > HIGHEST) return null;
@@ -618,10 +653,14 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
         if (ev.acc) actual.set(ev.n, ACCIDENTALS[ev.acc].alter);
       });
       if (measureLength(destination) > capacity(trial, mi + offset)) return null;
-      indices.forEach((i) => refs.push({ mi: mi + offset, i }));
+      indices.forEach((i) => refs.push(refOf(staff, mi + offset, i)));
     }
     restoreTabReferences(trial, savedTabs);
     score.rows = trial.rows;
+    if (trial.lower) score.lower = trial.lower;
+    else delete score.lower;
+    pruneLower(score);
+    ['lowerClef', 'lowerClefs'].forEach((name) => { if (trial[name] !== undefined) score[name] = trial[name]; else delete score[name]; });
     for (const name of ['meter', 'meters', 'fifths', 'keys', 'measureDurations']) {
       if (trial[name] !== undefined) score[name] = trial[name];
       else delete score[name];
@@ -662,9 +701,33 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   }
 
   // Compases en orden de lectura; el indice plano es el que usan los ids del SVG.
-  function measures(score) {
-    return score.rows.flat();
+  // El segundo pentagrama (`staff` 1) guarda sus compases en `score.lower` (indice plano -> figuras); un compas sin
+  // figuras no tiene entrada. Aca se crean al pedirlos, para poder editarlos; `sanitize` quita los vacios.
+  function measures(score, staff = 0) {
+    const all = score.rows.flat();
+    if (!staff) return all;
+    const lower = (score.lower ||= {});
+    return all.map((_, mi) => (lower[mi] ||= []));
   }
+
+  // Cantidad de pentagramas por renglon: el gran pentagrama es del piano, si el sitio lo activa.
+  function stavesOf(score) {
+    return grandStaff && instrumentOf(score) === 'piano' ? 2 : 1;
+  }
+
+  // Los compases guardados de todos los pentagramas, tambien los del segundo si hoy no se ve.
+  function everyMeasure(score) {
+    return measures(score).concat(Object.values(score.lower || {}));
+  }
+
+  // `measures(score, 1)` crea compases vacios para poder editarlos; estos no se guardan.
+  function pruneLower(score) {
+    if (!score.lower) return;
+    Object.keys(score.lower).forEach((key) => { if (!score.lower[key].length) delete score.lower[key]; });
+    if (!Object.keys(score.lower).length) delete score.lower;
+  }
+
+  const staffOf = (ref) => (ref && ref.s) || 0;
 
   // Indice plano del primer compas de cada renglon; dividir compases puede superar PER_ROW.
   function rowStarts(score) {
@@ -696,7 +759,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   function addMeasure(score, row) {
     if (!Number.isInteger(row) || row < 0 || row >= score.rows.length || score.rows[row].length >= PER_ROW) return false;
     const at = rowStarts(score)[row] + score.rows[row].length;
-    ['navigation', 'barlines', 'keys', 'clefs', 'meters', 'barres', 'hairpins', 'measureDurations', 'measureWidths'].forEach((name) => { if (score[name]) score[name] = shiftKeys(score[name], at, 1); });
+    BY_MEASURE.forEach((name) => { if (score[name]) score[name] = shiftKeys(score[name], at, 1); });
     score.rows[row].push([]);
     return true;
   }
@@ -725,7 +788,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
         if (!h.span) delete h.span;
       }
     });
-    ['navigation', 'barlines', 'keys', 'clefs', 'meters', 'barres', 'hairpins', 'measureDurations', 'measureWidths'].forEach((name) => {
+    BY_MEASURE.forEach((name) => {
       if (score[name]) score[name] = shiftKeys(score[name], at, 1);
     });
     if (score.tabs) score.tabs = Object.fromEntries(Object.entries(score.tabs).map(([key, value]) => {
@@ -768,7 +831,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
         if (!h.span) delete h.span;
       }
     });
-    ['navigation', 'barlines', 'keys', 'clefs', 'meters', 'barres', 'hairpins', 'measureDurations', 'measureWidths'].forEach((name) => {
+    BY_MEASURE.forEach((name) => {
       if (!score[name]) return;
       delete score[name][at];
       score[name] = shiftKeys(score[name], at, -1);
@@ -804,11 +867,15 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       counts[source] -= 1;
       counts[appendRow] += 1;
     }
-    const signatures = all.map((_, mi) => ({ meter: meterAt(score, mi), fifths: keyAt(score, mi), clef: clefAt(score, mi) }));
+    const signatures = all.map((_, mi) => ({ meter: meterAt(score, mi), fifths: keyAt(score, mi), clef: clefAt(score, mi), lowerClef: clefAt(score, mi, 1) }));
     const order = all.map((_, mi) => mi);
     order.splice(target, 0, order.splice(from, 1)[0]);
     const positions = new Map(order.map((old, mi) => [old, mi]));
-    ['navigation', 'barlines', 'barres', 'hairpins', 'measureDurations', 'measureWidths'].forEach((name) => {
+    // Una ligadura entre compases del segundo pentagrama tampoco sobrevive si dejan de ser vecinos.
+    Object.entries(score.lower || {}).forEach(([mi, measure]) => {
+      if (positions.get(+mi + 1) !== positions.get(+mi) + 1) measure.forEach((ev) => { delete ev.tie; delete ev.slur; });
+    });
+    ['navigation', 'barlines', 'barres', 'hairpins', 'measureDurations', 'measureWidths', 'lower'].forEach((name) => {
       if (!score[name]) return;
       const moved = {};
       // Una cejilla o un regulador que cruza compases solo sigue unido si esos compases se mueven juntos.
@@ -831,7 +898,9 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     });
     let offset = 0;
     score.rows = counts.map((count) => { const row = order.slice(offset, offset + count).map((mi) => all[mi]); offset += count; return row; });
-    [['meter', 'meters'], ['fifths', 'keys'], ['clef', 'clefs']].forEach(([base, map]) => {
+    [['meter', 'meters'], ['fifths', 'keys'], ['clef', 'clefs'], ['lowerClef', 'lowerClefs']].forEach(([base, map]) => {
+      // Un segundo pentagrama sin claves propias sigue en su clave por defecto.
+      if (base === 'lowerClef' && !score.lowerClef && !score.lowerClefs) return;
       score[base] = signatures[order[0]][base];
       const changes = {};
       order.forEach((old, mi) => { if (mi && signatures[old][base] !== signatures[order[mi - 1]][base]) changes[mi] = signatures[old][base]; });
@@ -935,42 +1004,51 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   function splitMeasure(score, mi, at) {
     const all = measures(score);
     const end = capacity(score, mi);
-    const left = [], right = [];
-    const starts = onsets(all[mi]);
-    const carried = new Map(), accidentals = [];
-    all[mi].map((ev, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
-      const ev = all[mi][i];
-      if (!ev.rest && ev.acc) carried.set(ev.n, ev.acc);
-      accidentals[i] = !ev.rest ? carried.get(ev.n) : undefined;
-    });
-    const fragment = (ev, from, size, continues, into) => {
-      let cursor = from;
-      // Tambien permite cortar una figura con puntillo; las partes de una nota quedan ligadas.
-      const values = Object.keys(VALUES).flatMap((d) => [
-        { d }, ...(!['w', 's', 'f'].includes(d) ? [{ d, dot: true }] : []),
-      ]).sort((a, b) => length(b) - length(a));
-      while (size > 0) {
-        const value = values.find((v) => length(v) <= size);
-        if (!value) return false;
-        const part = Object.assign(clone(ev), value, { at: cursor });
-        delete part.tp;
-        delete part.tn;
-        delete part.dot;
-        if (value.dot) part.dot = true;
-        size -= length(value);
-        if (!ev.rest && (size > 0 || continues)) { part.tie = true; delete part.slur; }
-        into.push(part);
-        cursor += length(value);
+    // Corta las figuras de un compas en `at`; null si alguna no se puede partir. Sirve a ambos pentagramas.
+    const cut = (events) => {
+      const left = [], right = [];
+      const starts = onsets(events);
+      const carried = new Map(), accidentals = [];
+      events.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
+        const ev = events[i];
+        if (!ev.rest && ev.acc) carried.set(ev.n, ev.acc);
+        accidentals[i] = !ev.rest ? carried.get(ev.n) : undefined;
+      });
+      const fragment = (ev, from, size, continues, into) => {
+        let cursor = from;
+        // Tambien permite cortar una figura con puntillo; las partes de una nota quedan ligadas.
+        const values = Object.keys(VALUES).flatMap((d) => [
+          { d }, ...(!['w', 's', 'f'].includes(d) ? [{ d, dot: true }] : []),
+        ]).sort((a, b) => length(b) - length(a));
+        while (size > 0) {
+          const value = values.find((v) => length(v) <= size);
+          if (!value) return false;
+          const part = Object.assign(clone(ev), value, { at: cursor });
+          delete part.tp;
+          delete part.tn;
+          delete part.dot;
+          if (value.dot) part.dot = true;
+          size -= length(value);
+          if (!ev.rest && (size > 0 || continues)) { part.tie = true; delete part.slur; }
+          into.push(part);
+          cursor += length(value);
+        }
+        return true;
+      };
+      for (let i = 0; i < events.length; i += 1) {
+        const ev = events[i], start = starts[i], stop = start + length(ev);
+        const continuation = Object.assign(clone(ev), accidentals[i] ? { acc: accidentals[i] } : {});
+        if (start >= at) right.push(Object.assign(continuation, { at: start - at }));
+        else if (stop <= at) left.push(Object.assign(clone(ev), { at: start }));
+        else if (!fragment(ev, start, at - start, true, left) || !fragment(continuation, 0, stop - at, false, right)) return null;
       }
-      return true;
+      return { left, right };
     };
-    for (let i = 0; i < all[mi].length; i += 1) {
-      const ev = all[mi][i], start = starts[i], stop = start + length(ev);
-      const continuation = Object.assign(clone(ev), accidentals[i] ? { acc: accidentals[i] } : {});
-      if (start >= at) right.push(Object.assign(continuation, { at: start - at }));
-      else if (stop <= at) left.push(Object.assign(clone(ev), { at: start }));
-      else if (!fragment(ev, start, at - start, true, left) || !fragment(continuation, 0, stop - at, false, right)) return false;
-    }
+    const upper = cut(all[mi]);
+    const lowerEvents = score.lower && score.lower[mi];
+    const lowerCut = lowerEvents ? cut(lowerEvents) : null;
+    if (!upper || (lowerEvents && !lowerCut)) return false;
+    const { left, right } = upper;
     const oldBar = score.barlines && score.barlines[mi];
     const oldWidth = score.measureWidths && score.measureWidths[mi];
     const tabs = {};
@@ -1010,9 +1088,13 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
         if (last === mi && Number.isInteger(h.to)) h.to -= at;
       }
     });
-    ['navigation', 'barlines', 'keys', 'clefs', 'meters', 'barres', 'hairpins', 'measureDurations', 'measureWidths'].forEach((name) => {
+    BY_MEASURE.forEach((name) => {
       if (score[name]) score[name] = shiftKeys(score[name], mi + 1, 1);
     });
+    if (lowerCut) {
+      score.lower[mi] = lowerCut.left;
+      score.lower[mi + 1] = lowerCut.right;
+    }
     if (movedHairpins.length) {
       if (!score.hairpins) score.hairpins = {};
       score.hairpins[mi + 1] = movedHairpins;
@@ -1208,7 +1290,9 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     if (score.meters && !Object.keys(score.meters).length) delete score.meters;
   }
 
-  function clefOf(score) {
+  // Clave inicial del pentagrama `staff` (0 arriba, 1 abajo). La del segundo es independiente: `lowerClef`, o fa.
+  function clefOf(score, staff = 0) {
+    if (staff) return score && Object.hasOwn(CLEFS, score.lowerClef) ? score.lowerClef : LOWER_CLEF;
     return score && Object.hasOwn(CLEFS, score.clef) ? score.clef : defaultClef;
   }
 
@@ -1256,25 +1340,27 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     return score && Number.isInteger(score.fifths) && Math.abs(score.fifths) <= 7 ? score.fifths : 0;
   }
 
-  function bottomLine(score, mi) {
-    return CLEFS[mi === undefined ? clefOf(score) : clefAt(score, mi)].bottom;
+  function bottomLine(score, mi, staff = 0) {
+    return CLEFS[mi === undefined ? clefOf(score, staff) : clefAt(score, mi, staff)].bottom;
   }
 
   // Clave vigente en el compas `mi`: la inicial, cambiada por `score.clefs` (compas -> clave) hasta el siguiente cambio.
-  function clefAt(score, mi) {
-    let clef = clefOf(score);
+  function clefAt(score, mi, staff = 0) {
+    let clef = clefOf(score, staff);
     let last = 0;
-    Object.entries((score && score.clefs) || {}).forEach(([index, value]) => {
+    Object.entries((score && score[staff ? 'lowerClefs' : 'clefs']) || {}).forEach(([index, value]) => {
       if (+index <= mi && +index > last && Object.hasOwn(CLEFS, value)) { clef = value; last = +index; }
     });
     return clef;
   }
 
   // La clave nueva rige desde el compas `mi` hasta el siguiente cambio; los compases anteriores no se tocan.
-  function setClef(score, mi, clef) {
+  function setClef(score, mi, clef, staff = 0) {
     if (!Number.isInteger(mi) || mi < 0 || mi >= measures(score).length || !Object.hasOwn(CLEFS, clef)) return false;
-    if (mi === 0) score.clef = clef;
-    else (score.clefs = score.clefs || {})[mi] = clef;
+    // Cambiar la clave no cambia de instrumento: una partitura sin instrumento elegido lo conserva tal como se infiere hoy.
+    if (!INSTRUMENTS.includes(score.instrument)) score.instrument = instrumentOf(score);
+    if (mi === 0) score[staff ? 'lowerClef' : 'clef'] = clef;
+    else (score[staff ? 'lowerClefs' : 'clefs'] ||= {})[mi] = clef;
     pruneKeys(score);
     return true;
   }
@@ -1312,13 +1398,15 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   }
 
   function pruneClefs(score) {
-    if (!score.clefs) return;
-    let previous = clefOf(score);
-    Object.keys(score.clefs).map(Number).sort((a, b) => a - b).forEach((mi) => {
-      if (mi < 1 || mi >= measures(score).length || score.clefs[mi] === previous) delete score.clefs[mi];
-      else previous = score.clefs[mi];
+    [['clefs', 0], ['lowerClefs', 1]].forEach(([name, staff]) => {
+      if (!score[name]) return;
+      let previous = clefOf(score, staff);
+      Object.keys(score[name]).map(Number).sort((a, b) => a - b).forEach((mi) => {
+        if (mi < 1 || mi >= measures(score).length || score[name][mi] === previous) delete score[name][mi];
+        else previous = score[name][mi];
+      });
+      if (!Object.keys(score[name]).length) delete score[name];
     });
-    if (!Object.keys(score.clefs).length) delete score.clefs;
   }
 
   function keyAlter(n, score, mi) {
@@ -1338,7 +1426,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   function setMeter(score, meter) {
     if (!METERS.includes(meter)) return false;
     const limit = capacity({ meter });
-    if (measures(score).some((m) => measureLength(m) > limit)) return false;
+    if (everyMeasure(score).some((m) => measureLength(m) > limit)) return false;
     score.meter = meter;
     delete score.meters;
     Object.keys(score.measureDurations || {}).forEach((mi) => {
@@ -1404,12 +1492,12 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   const accidentalFor = (alter) => alter === 2 ? '##' : alter === -2 ? 'bb' : alter === 1 ? '#' : alter === -1 ? 'b' : 'n';
 
   // Altura efectiva de cada figura, incluso si su alteracion viene de una nota no seleccionada.
-  function pitchContexts(score, mi) {
-    const measure = measures(score)[mi];
+  function pitchContexts(score, mi, staff = 0) {
+    const measure = measures(score, staff)[mi];
     const starts = onsets(measure);
     const accidentals = new Map();
     const result = measure.map(() => null);
-    const octave = CLEFS[clefAt(score, mi)].octave || 0;
+    const octave = CLEFS[clefAt(score, mi, staff)].octave || 0;
     measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
       const ev = measure[i];
       if (ev.rest) return;
@@ -1516,45 +1604,53 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     if (!data || !Array.isArray(data.rows)) return emptyScore();
     const meter = meterOf(data);
     const factor = DIVISIONS / (scale || DIVISIONS);
+    const cleanMeasure = (measure, meterName) => {
+      const events = [];
+      const limit = capacity({ meter: meterName });
+      (Array.isArray(measure) ? measure : []).forEach((raw) => {
+        if (!raw || !VALUES[raw.d]) return;
+        const ev = { d: raw.d };
+        if (raw.rest) { ev.rest = true; if (Number.isInteger(raw.n)) ev.n = clampPitch(raw.n); }
+        else if (Number.isInteger(raw.n)) ev.n = clampPitch(raw.n);
+        else return;
+        if (Number.isInteger(raw.tp) && raw.tp > 0 && TRIPLETABLE.includes(raw.d)) { ev.tp = raw.tp; if (TUPLETS[raw.tn] && raw.tn !== 3) ev.tn = raw.tn; }
+        else if (raw.dot && raw.d !== 'w' && raw.d !== 's' && raw.d !== 'f') ev.dot = raw.dot === 2 && DOUBLE_DOTTABLE.includes(raw.d) ? 2 : true;
+        if (!ev.rest && ACCIDENTALS[raw.acc]) ev.acc = raw.acc;
+        if (!ev.rest && raw.dead === true) ev.dead = true;
+        if (!ev.rest && raw.tie === true) ev.tie = true;
+        else if (!ev.rest && raw.slur === true) ev.slur = true;
+        if (Number.isInteger(raw.v) && raw.v >= 1 && raw.v <= MAX_VOICE) ev.v = raw.v;
+        if (raw.beam === 'join' || raw.beam === 'break') ev.beam = raw.beam;
+        if (Number.isInteger(raw.at) && raw.at >= 0) ev.at = raw.at * factor;
+        if (length(ev) > limit) return;
+        // `at` sigue siendo la pista guardada (sin `at`, la figura sigue a la anterior); los huecos se quitan al final.
+        ev.at = hints(events.concat(ev))[events.length];
+        if (!ev.rest && events.some((o) => !o.rest && o.at === ev.at && o.n === ev.n && o.acc === ev.acc)) return;
+        events.push(ev);
+      });
+      if (measureLength(events) > limit) legacyVoices(events);
+      while (measureLength(events) > limit) events.pop();
+      // En el orden de la pista, como se guardaban; despues `at` pasa a ser el inicio musical, sin huecos.
+      events.sort((a, b) => a.at - b.at);
+      return settle(events);
+    };
     let measureIndex = 0;
     const rows = data.rows.map((row) => {
       const count = Array.isArray(row) && row.length ? row.length : PER_ROW;
       const result = Array.from({ length: count }, () => []);
-      (Array.isArray(row) ? row : []).forEach((measure, m) => {
-        const events = [];
-        const limit = capacity({ meter: meterAt(data, measureIndex + m) });
-        (Array.isArray(measure) ? measure : []).forEach((raw) => {
-          if (!raw || !VALUES[raw.d]) return;
-          const ev = { d: raw.d };
-          if (raw.rest) { ev.rest = true; if (Number.isInteger(raw.n)) ev.n = clampPitch(raw.n); }
-          else if (Number.isInteger(raw.n)) ev.n = clampPitch(raw.n);
-          else return;
-          if (Number.isInteger(raw.tp) && raw.tp > 0 && TRIPLETABLE.includes(raw.d)) { ev.tp = raw.tp; if (TUPLETS[raw.tn] && raw.tn !== 3) ev.tn = raw.tn; }
-          else if (raw.dot && raw.d !== 'w' && raw.d !== 's' && raw.d !== 'f') ev.dot = raw.dot === 2 && DOUBLE_DOTTABLE.includes(raw.d) ? 2 : true;
-          if (!ev.rest && ACCIDENTALS[raw.acc]) ev.acc = raw.acc;
-          if (!ev.rest && raw.dead === true) ev.dead = true;
-          if (!ev.rest && raw.tie === true) ev.tie = true;
-          else if (!ev.rest && raw.slur === true) ev.slur = true;
-          if (Number.isInteger(raw.v) && raw.v >= 1 && raw.v <= MAX_VOICE) ev.v = raw.v;
-          if (raw.beam === 'join' || raw.beam === 'break') ev.beam = raw.beam;
-          if (Number.isInteger(raw.at) && raw.at >= 0) ev.at = raw.at * factor;
-          if (length(ev) > limit) return;
-          // `at` sigue siendo la pista guardada (sin `at`, la figura sigue a la anterior); los huecos se quitan al final.
-          ev.at = hints(events.concat(ev))[events.length];
-          if (!ev.rest && events.some((o) => !o.rest && o.at === ev.at && o.n === ev.n && o.acc === ev.acc)) return;
-          events.push(ev);
-        });
-        if (measureLength(events) > limit) legacyVoices(events);
-        while (measureLength(events) > limit) events.pop();
-        // En el orden de la pista, como se guardaban; despues `at` pasa a ser el inicio musical, sin huecos.
-        events.sort((a, b) => a.at - b.at);
-        result[m] = settle(events);
-      });
+      (Array.isArray(row) ? row : []).forEach((measure, m) => { result[m] = cleanMeasure(measure, meterAt(data, measureIndex + m)); });
       measureIndex += count;
       return result;
     });
     while (rows.length < MIN_ROWS) rows.push(emptyRow());
     const total = rows.flat().length;
+    // Segundo pentagrama: solo los compases con figuras, con las mismas reglas que el primero.
+    const lower = {};
+    Object.entries(data.lower && typeof data.lower === 'object' && !Array.isArray(data.lower) ? data.lower : {}).forEach(([index, measure]) => {
+      if (!/^(0|[1-9]\d*)$/.test(index) || +index >= total || !Array.isArray(measure)) return;
+      const events = cleanMeasure(measure, meterAt(data, +index));
+      if (events.length) lower[index] = events;
+    });
     const lastOf = (index) => rowOf({ rows }, index).last;
     const navigation = {};
     Object.entries(data.navigation || {}).forEach(([index, marks]) => {
@@ -1586,6 +1682,12 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       if (!Object.hasOwn(CLEFS, value) || value === previousClef) return;
       clefs[index] = previousClef = value;
     });
+    const lowerClefs = {};
+    let previousLowerClef = clefOf(data, 1);
+    Object.entries(data.lowerClefs || {}).filter(([index]) => /^[1-9]\d*$/.test(index) && +index < total).sort((a, b) => a[0] - b[0]).forEach(([index, value]) => {
+      if (!Object.hasOwn(CLEFS, value) || value === previousLowerClef) return;
+      lowerClefs[index] = previousLowerClef = value;
+    });
     const barres = {};
     Object.entries(data.barres || {}).forEach(([index, barre]) => {
       if (!/^(0|[1-9]\d*)$/.test(index) || +index >= total || !barre) return;
@@ -1604,7 +1706,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     const measureDurations = {};
     Object.entries(data.measureDurations || {}).forEach(([index, duration]) => {
       const size = duration * factor;
-      if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isInteger(size) && size > 0 && size < capacity(meterContext, +index) && measureLength(rows.flat()[+index]) <= size) measureDurations[index] = size;
+      if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isInteger(size) && size > 0 && size < capacity(meterContext, +index) && measureLength(rows.flat()[+index]) <= size && measureLength(lower[index] || []) <= size) measureDurations[index] = size;
     });
     const hairpinContext = Object.assign({}, meterContext, { measureDurations, hairpins: {} });
     Object.entries(data.hairpins || {}).forEach(([index, list]) => {
@@ -1624,7 +1726,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isFinite(width) && width > 0 && width <= 1) measureWidths[index] = width;
     });
     const tabs = sanitizeTabs(data.tabs, rows.reduce((sum, row) => sum + row.length, 0));
-    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
+    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, Object.hasOwn(CLEFS, data.lowerClef) ? { lowerClef: data.lowerClef } : {}, Object.keys(lowerClefs).length ? { lowerClefs } : {}, Object.keys(lower).length ? { lower } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
   }
 
   // Rellena huecos con silencios ocultos: el final del compas y el espacio entre figuras sueltas.
@@ -1843,33 +1945,39 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
 
   // Ligaduras validas: una nota de la ultima columna de un compas con la primera del siguiente.
   // Con la misma altura es una ligadura de prolongacion (`tie`); con otra, de expresion (`slur`).
+  const refOf = (staff, mi, i) => (staff ? { s: staff, mi, i } : { mi, i });
+  const sameRef = (a, b) => staffOf(a) === staffOf(b) && a.mi === b.mi && a.i === b.i;
+
   function links(score) {
-    const all = measures(score);
     const result = [];
-    all.forEach((measure, mi) => {
-      if (mi + 1 >= all.length) return;
-      const last = edge(measure, 'last');
-      const next = edge(all[mi + 1], 'first');
-      measure.forEach((ev, i) => {
-        if (ev.rest || !(ev.tie || ev.slur) || !last.includes(i)) return;
-        const j = ev.tie ? next.find((k) => all[mi + 1][k].n === ev.n) : next[0];
-        if (j !== undefined) result.push({ type: ev.tie ? 'tie' : 'slur', from: { mi, i }, to: { mi: mi + 1, i: j } });
+    for (let staff = 0; staff < stavesOf(score); staff += 1) {
+      const all = measures(score, staff);
+      all.forEach((measure, mi) => {
+        if (mi + 1 >= all.length) return;
+        const last = edge(measure, 'last');
+        const next = edge(all[mi + 1], 'first');
+        measure.forEach((ev, i) => {
+          if (ev.rest || !(ev.tie || ev.slur) || !last.includes(i)) return;
+          const j = ev.tie ? next.find((k) => all[mi + 1][k].n === ev.n) : next[0];
+          if (j !== undefined) result.push({ type: ev.tie ? 'tie' : 'slur', from: refOf(staff, mi, i), to: refOf(staff, mi + 1, j) });
+        });
       });
-    });
+    }
     return result;
   }
 
   // Columnas seleccionadas, seguidas y de una sola voz de un solo compas; null si no lo son.
   function run(score, sel) {
-    const all = measures(score);
-    if (!sel.length || sel.some((s) => s.mi !== sel[0].mi || !all[s.mi] || !all[s.mi][s.i])) return null;
+    if (!sel.length) return null;
+    const all = measures(score, staffOf(sel[0]));
+    if (sel.some((s) => staffOf(s) !== staffOf(sel[0]) || s.mi !== sel[0].mi || !all[s.mi] || !all[s.mi][s.i])) return null;
     const measure = all[sel[0].mi];
     const lane = voices(measure).find((v) => v.groups.some((g) => g.indices.includes(sel[0].i)));
     const picked = lane.groups.filter((g) => g.indices.some((i) => sel.some((s) => s.i === i)));
     if (!sel.every((s) => picked.some((g) => g.indices.includes(s.i)))) return null;
     const first = lane.groups.indexOf(picked[0]);
     const joined = picked.every((g, k) => lane.groups[first + k] === g && (k === 0 || tidy(picked[k - 1].at + picked[k - 1].size) === tidy(g.at)));
-    return joined ? { measure, lane, groups: picked, mi: sel[0].mi } : null;
+    return joined ? { measure, lane, groups: picked, mi: sel[0].mi, staff: staffOf(sel[0]) } : null;
   }
 
   // Seleccion de 2 a 9 figuras seguidas del mismo valor: ofrece el grupo que corresponde a su cantidad.
@@ -1893,14 +2001,16 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
 
   // Dos notas, una al final de un compas y otra al comienzo del siguiente.
   function linkPair(score, sel) {
-    const all = measures(score);
-    const notes = sel.filter((s, k) => all[s.mi] && all[s.mi][s.i] && sel.findIndex((o) => o.mi === s.mi && o.i === s.i) === k);
-    if (notes.length !== 2) return null;
+    if (!sel.length) return null;
+    const staff = staffOf(sel[0]);
+    const all = measures(score, staff);
+    const notes = sel.filter((s, k) => staffOf(s) === staff && all[s.mi] && all[s.mi][s.i] && sel.findIndex((o) => sameRef(o, s)) === k);
+    if (notes.length !== 2 || sel.some((s) => staffOf(s) !== staff)) return null;
     const [from, to] = notes.sort((a, b) => a.mi - b.mi);
     if (to.mi !== from.mi + 1 || all[from.mi][from.i].rest || all[to.mi][to.i].rest) return null;
     if (!edge(all[from.mi], 'last').includes(from.i) || !edge(all[to.mi], 'first').includes(to.i)) return null;
-    const existing = links(score).some((l) => l.from.mi === from.mi && l.from.i === from.i);
-    return { from, to, existing };
+    const existing = links(score).some((l) => sameRef(l.from, from));
+    return { from, to, existing, staff };
   }
 
   function beamRun(score, sel) {
@@ -1908,7 +2018,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     if (!r || r.groups.length < 2 || !r.groups.every((g) => g.indices.every((i) => isBeamable(r.measure[i])))) return null;
     const starts = onsets(r.measure);
     const order = r.lane.groups.flatMap((g) => g.indices);
-    const states = beamStates(order.map((i) => Object.assign({}, r.measure[i], { at: starts[i] })), { meter: meterAt(score, measures(score).indexOf(r.measure)) });
+    const states = beamStates(order.map((i) => Object.assign({}, r.measure[i], { at: starts[i] })), { meter: meterAt(score, r.mi) });
     const joins = r.groups.slice(0, -1).map((g) => {
       const state = states[order.indexOf(g.indices[0])];
       return !!state && (state[1] === 'begin' || state[1] === 'continue');
@@ -1920,10 +2030,11 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   const tupletAction = (size) => (size === 3 ? 'triplet' : 'tuplet' + size);
 
   function voiceSelection(score, sel) {
-    const all = measures(score);
-    if (sel.length < 2 || sel.some((s) => s.mi !== sel[0].mi || !all[s.mi]?.[s.i])) return null;
+    if (sel.length < 2) return null;
+    const all = measures(score, staffOf(sel[0]));
+    if (sel.some((s) => staffOf(s) !== staffOf(sel[0]) || s.mi !== sel[0].mi || !all[s.mi]?.[s.i])) return null;
     const indices = [...new Set(sel.map((s) => s.i))];
-    return indices.length > 1 ? { measure: all[sel[0].mi], mi: sel[0].mi, indices } : null;
+    return indices.length > 1 ? { measure: all[sel[0].mi], mi: sel[0].mi, staff: staffOf(sel[0]), indices } : null;
   }
 
   function chordSelection(score, sel) {
@@ -2006,18 +2117,19 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       return true;
     }
     if (action === 'link' || action === 'unlink') {
-      const { from, to } = linkPair(score, sel);
-      const ev = measures(score)[from.mi][from.i];
+      const { from, to, staff } = linkPair(score, sel);
+      const lane = measures(score, staff);
+      const ev = lane[from.mi][from.i];
       delete ev.tie;
       delete ev.slur;
-      if (action === 'link') ev[ev.n === measures(score)[to.mi][to.i].n ? 'tie' : 'slur'] = true;
+      if (action === 'link') ev[ev.n === lane[to.mi][to.i].n ? 'tie' : 'slur'] = true;
       return true;
     }
     const r = beamRun(score, sel);
     const starts = onsets(r.measure);
     r.groups.slice(0, -1).forEach((g, k) => {
       const right = r.groups[k + 1];
-      const auto = autoBeam(r.measure[g.indices[0]], starts[g.indices[0]], r.measure[right.indices[0]], starts[right.indices[0]], { meter: meterAt(score, measures(score).indexOf(r.measure)) });
+      const auto = autoBeam(r.measure[g.indices[0]], starts[g.indices[0]], r.measure[right.indices[0]], starts[right.indices[0]], { meter: meterAt(score, r.mi) });
       const want = action === 'beam';
       eachEvent(r, g, (ev) => {
         if (want === auto) delete ev.beam;
@@ -2028,15 +2140,18 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   }
 
   // Figuras en orden de lectura, para extender la seleccion con el teclado.
+  // Compas a compas; dentro de cada uno, el pentagrama de arriba antes que el de abajo.
   function sequence(score) {
-    return measures(score).flatMap((measure, mi) => {
+    const staves = stavesOf(score);
+    return measures(score).flatMap((_, mi) => Array.from({ length: staves }, (__, staff) => {
+      const measure = measures(score, staff)[mi];
       const starts = onsets(measure);
-      return measure.map((ev, i) => ({ mi, i, at: starts[i] })).sort((a, b) => a.at - b.at || a.i - b.i);
-    }).map(({ mi, i }) => ({ mi, i }));
+      return measure.map((ev, i) => ({ mi, i, staff, at: starts[i] })).sort((a, b) => a.at - b.at || a.i - b.i);
+    }).flat()).map(({ mi, i, staff }) => refOf(staff, mi, i));
   }
 
   // `roles`: { tie: ['start'|'stop'], slur: [...], tuplet: 'start'|'stop'|'both' } de los extremos de esta nota.
-  function noteXml(ev, id, beams, chord, voice, alter, roles, stem, mult) {
+  function noteXml(ev, id, beams, chord, voice, alter, roles, stem, mult, staff = 0) {
     const dur = length(ev);
     const base = VALUES[ev.d];
     const ties = (roles && roles.tie) || [];
@@ -2056,6 +2171,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     if (ev.tp) xml += `<time-modification><actual-notes>${tupletSize(ev)}</actual-notes><normal-notes>${TUPLETS[tupletSize(ev)]}</normal-notes></time-modification>`;
     if (!ev.rest && stem) xml += `<stem>${stem}</stem>`;
     if (!ev.rest && ev.dead) xml += '<notehead>x</notehead>';
+    if (staff) xml += `<staff>${staff + 1}</staff>`;
     // La barra pertenece al acorde entero: repetirla en sus notas adicionales hace
     // que Verovio abra/cierre el mismo grupo varias veces y pierda figuras.
     if (beams && !chord) Object.keys(beams).forEach((level) => { xml += `<beam number="${level}">${beams[level]}</beam>`; });
@@ -2092,7 +2208,11 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
 
   function toMusicXml(score) {
     const all = measures(score);
-    const clef = CLEFS[clefOf(score)];
+    const staves = stavesOf(score);
+    const clefXml = (name, staff) => {
+      const clef = CLEFS[name];
+      return `<clef${staves > 1 ? ` number="${staff + 1}"` : ''}><sign>${clef.sign}</sign><line>${clef.line}</line>${clef.octave ? `<clef-octave-change>${clef.octave}</clef-octave-change>` : ''}</clef>`;
+    };
     const mult = all.some((measure) => measure.some((ev) => ev.tp && tupletSize(ev) !== 3)) ? MULTIPLIER : 1;
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<score-partwise version="3.1">' +
       (score.title ? '<work><work-title>' + score.title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</work-title></work>' : '') +
@@ -2100,7 +2220,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       '<part-list><score-part id="P1"><part-name print-object="no">Guitar</part-name></score-part></part-list><part id="P1">';
     const roles = new Map();
     const roleOf = (ref) => {
-      const key = ref.mi + '-' + ref.i;
+      const key = staffOf(ref) + ':' + ref.mi + '-' + ref.i;
       if (!roles.has(key)) roles.set(key, { tie: [], slur: [] });
       return roles.get(key);
     };
@@ -2117,14 +2237,14 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       if (mi === 0) {
         xml += `<attributes><divisions>${DIVISIONS * mult}</divisions><key><fifths>${fifthsOf(score)}</fifths></key>` +
           `<time><beats>${beats}</beats><beat-type>${unit}</beat-type></time>` +
-          `<clef><sign>${clef.sign}</sign><line>${clef.line}</line>${clef.octave ? `<clef-octave-change>${clef.octave}</clef-octave-change>` : ''}</clef></attributes>`;
+          (staves > 1 ? '<staves>2</staves>' : '') + clefXml(clefOf(score), 0) + (staves > 1 ? clefXml(clefOf(score, 1), 1) : '') + '</attributes>';
       }
       if (mi === 0 && tempoValid(score.tempo)) xml += `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${score.tempo}</per-minute></metronome></direction-type><sound tempo="${score.tempo}"/></direction>`;
-      if (mi > 0 && (meterAt(score, mi) !== meterAt(score, mi - 1) || keyAt(score, mi) !== keyAt(score, mi - 1) || clefAt(score, mi) !== clefAt(score, mi - 1))) {
-        const changed = clefAt(score, mi) !== clefAt(score, mi - 1) ? CLEFS[clefAt(score, mi)] : null;
+      const clefChanges = Array.from({ length: staves }, (_, staff) => staff).filter((staff) => mi > 0 && clefAt(score, mi, staff) !== clefAt(score, mi - 1, staff));
+      if (mi > 0 && (meterAt(score, mi) !== meterAt(score, mi - 1) || keyAt(score, mi) !== keyAt(score, mi - 1) || clefChanges.length)) {
         xml += '<attributes>' + (keyAt(score, mi) !== keyAt(score, mi - 1) ? `<key><fifths>${keyAt(score, mi)}</fifths></key>` : '') +
           (meterAt(score, mi) !== meterAt(score, mi - 1) ? `<time><beats>${beats}</beats><beat-type>${unit}</beat-type></time>` : '') +
-          (changed ? `<clef><sign>${changed.sign}</sign><line>${changed.line}</line>${changed.octave ? `<clef-octave-change>${changed.octave}</clef-octave-change>` : ''}</clef>` : '') + '</attributes>';
+          clefChanges.map((staff) => clefXml(clefAt(score, mi, staff), staff)).join('') + '</attributes>';
       }
       const bar = score.barlines && score.barlines[mi];
       const nav = score.navigation?.[mi] || {};
@@ -2135,77 +2255,91 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
         (bar?.start ? '<repeat direction="forward"/>' : '') + '</barline>';
       if (nav.segno) xml += `<direction id="nav-segno-${mi}" placement="above"><direction-type><segno/></direction-type><sound segno="segno"/></direction>`;
 
-      const starts = onsets(measure);
-      // Las voces se exportan por separado, pero las alteraciones siguen el orden temporal del compas.
-      const accidentals = new Map();
-      const alters = [];
-      measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
-        const ev = measure[i];
-        if (!ev.rest && ev.acc) accidentals.set(ev.n, ACCIDENTALS[ev.acc].alter);
-        alters[i] = accidentals.has(ev.n) ? accidentals.get(ev.n) : keyAlter(ev.n, score, mi);
-      });
-      const wedges = hairpinMarks(score, mi);
-      const barre = score.barres && score.barres[mi];
-      // Una cejilla que viene de compases anteriores solo cierra aqui.
-      const origin = Object.keys(score.barres || {}).map(Number).find((key) => key < mi && barreLast(score.barres[key], key) === mi);
-      const closing = origin === undefined ? null : score.barres[origin];
-      const stop = (time) => ({ t: time, xml: '<direction placement="above"><direction-type><bracket type="stop" number="1" line-end="none"/></direction-type></direction>' });
-      const barreMarks = barre ? [
-        { t: barre.at, start: true, xml: `<direction placement="above"><direction-type><words>C ${barre.fret}</words></direction-type></direction>` +
-          '<direction placement="above"><direction-type><bracket type="start" number="1" line-end="none" line-type="dashed"/></direction-type></direction>' },
-        ...(barre.span ? [] : [stop(Number.isInteger(barre.to) ? barre.to : capacity(score, mi))]),
-      ] : closing ? [stop(Number.isInteger(closing.to) ? closing.to : capacity(score, mi))] : [];
-      const stopXml = !barre && closing ? barreMarks[0].xml : barreMarks.length > 1 ? barreMarks[1].xml : '';
-      const marks = barreMarks.concat(wedges).sort((a, b) => a.t - b.t);
-      let barreOpen = !barre && Boolean(closing);
-      let barreClosed = false;
-      voices(measure).forEach((voice, vi, all) => {
-        if (vi > 0) xml += `<backup><duration>${capacity(score, mi) * mult}</duration></backup>`;
-        const indices = voice.groups.flatMap((g) => g.indices);
-        const events = indices.map((i) => Object.assign({}, measure[i], { at: starts[i] }));
-        const beams = beamStates(events, { meter: meterAt(score, mi) });
-        const pad = (from, to) => {
-          padding(to - from).forEach((size) => {
-            xml += `<note print-object="no"><rest/><duration>${size * mult}</duration><voice>${vi + 1}</voice>${TYPES[size] ? `<type>${TYPES[size]}</type>` : ''}</note>`;
-          });
-        };
-        // Inicio y fin de la cejilla se escriben en la primera voz con un hueco (o un limite) justo en ese tiempo.
-        const hidden = (from, to) => {
-          let at = from;
-          marks.forEach((mark) => {
-            if (mark.done || mark.t < at || mark.t > to || (mark.wedge ? mark.begin && !mark.begin.done : !mark.start && !barreOpen)) return;
-            pad(at, mark.t);
-            xml += mark.xml;
-            at = mark.t;
-            mark.done = true;
-            if (mark.wedge) return;
-            if (mark.start) barreOpen = true;
-            else barreClosed = true;
-          });
-          pad(at, to);
-        };
-        const tuplets = new Map();
-        voice.groups.forEach((group, gi) => {
-          const id = measure[group.indices[0]].tp;
-          if (id) tuplets.set(id, Object.assign(tuplets.get(id) || { first: gi }, { last: gi }));
+      // El segundo pentagrama se escribe despues del primero, rebobinando el compas; sus voces siguen a las del primero.
+      const writeStaff = (staff) => {
+        const lane = staff ? all.map((_, k) => (score.lower && score.lower[k]) || []) : all;
+        const voiceBase = staff * MAX_VOICE;
+        const measure = lane[mi];
+        const starts = onsets(measure);
+        // Las voces se exportan por separado, pero las alteraciones siguen el orden temporal del compas.
+        const accidentals = new Map();
+        const alters = [];
+        measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
+          const ev = measure[i];
+          if (!ev.rest && ev.acc) accidentals.set(ev.n, ACCIDENTALS[ev.acc].alter);
+          alters[i] = accidentals.has(ev.n) ? accidentals.get(ev.n) : keyAlter(ev.n, score, mi);
         });
-        let cursor = 0;
-        let index = 0;
-        voice.groups.forEach((group, gi) => {
-          hidden(cursor, group.at);
-          const span = tuplets.get(measure[group.indices[0]].tp);
-          group.indices.forEach((i, ci) => {
-            const own = roles.get(mi + '-' + i) || {};
-            const tuplet = ci === 0 && span && (span.first === span.last ? 'both' : gi === span.first ? 'start' : gi === span.last ? 'stop' : undefined);
-            xml += noteXml(measure[i], `e${mi}-${i}`, beams[index++], ci > 0, vi + 1, alters[i], Object.assign({}, own, { tuplet }), stemOf(vi, all.length), mult);
+        // Reguladores y cejillas son del renglon: se escriben una vez, en el pentagrama de arriba.
+        const wedges = staff ? [] : hairpinMarks(score, mi);
+        const barre = !staff && score.barres && score.barres[mi];
+        // Una cejilla que viene de compases anteriores solo cierra aqui.
+        const origin = staff ? undefined : Object.keys(score.barres || {}).map(Number).find((key) => key < mi && barreLast(score.barres[key], key) === mi);
+        const closing = origin === undefined ? null : score.barres[origin];
+        const stop = (time) => ({ t: time, xml: '<direction placement="above"><direction-type><bracket type="stop" number="1" line-end="none"/></direction-type></direction>' });
+        const barreMarks = barre ? [
+          { t: barre.at, start: true, xml: `<direction placement="above"><direction-type><words>C ${barre.fret}</words></direction-type></direction>` +
+            '<direction placement="above"><direction-type><bracket type="start" number="1" line-end="none" line-type="dashed"/></direction-type></direction>' },
+          ...(barre.span ? [] : [stop(Number.isInteger(barre.to) ? barre.to : capacity(score, mi))]),
+        ] : closing ? [stop(Number.isInteger(closing.to) ? closing.to : capacity(score, mi))] : [];
+        const stopXml = !barre && closing ? barreMarks[0].xml : barreMarks.length > 1 ? barreMarks[1].xml : '';
+        const marks = barreMarks.concat(wedges).sort((a, b) => a.t - b.t);
+        let barreOpen = !barre && Boolean(closing);
+        let barreClosed = false;
+        const lanes = voices(measure);
+        lanes.forEach((voice, vi, all) => {
+          if (vi > 0) xml += `<backup><duration>${capacity(score, mi) * mult}</duration></backup>`;
+          const indices = voice.groups.flatMap((g) => g.indices);
+          const events = indices.map((i) => Object.assign({}, measure[i], { at: starts[i] }));
+          const beams = beamStates(events, { meter: meterAt(score, mi) });
+          const pad = (from, to) => {
+            padding(to - from).forEach((size) => {
+              xml += `<note print-object="no"><rest/><duration>${size * mult}</duration><voice>${voiceBase + vi + 1}</voice>${TYPES[size] ? `<type>${TYPES[size]}</type>` : ''}${staff ? `<staff>${staff + 1}</staff>` : ''}</note>`;
+            });
+          };
+          // Inicio y fin de la cejilla se escriben en la primera voz con un hueco (o un limite) justo en ese tiempo.
+          const hidden = (from, to) => {
+            let at = from;
+            marks.forEach((mark) => {
+              if (mark.done || mark.t < at || mark.t > to || (mark.wedge ? mark.begin && !mark.begin.done : !mark.start && !barreOpen)) return;
+              pad(at, mark.t);
+              xml += mark.xml;
+              at = mark.t;
+              mark.done = true;
+              if (mark.wedge) return;
+              if (mark.start) barreOpen = true;
+              else barreClosed = true;
+            });
+            pad(at, to);
+          };
+          const tuplets = new Map();
+          voice.groups.forEach((group, gi) => {
+            const id = measure[group.indices[0]].tp;
+            if (id) tuplets.set(id, Object.assign(tuplets.get(id) || { first: gi }, { last: gi }));
           });
-          cursor = group.at + group.size;
+          let cursor = 0;
+          let index = 0;
+          voice.groups.forEach((group, gi) => {
+            hidden(cursor, group.at);
+            const span = tuplets.get(measure[group.indices[0]].tp);
+            group.indices.forEach((i, ci) => {
+              const own = roles.get(staff + ':' + mi + '-' + i) || {};
+              const tuplet = ci === 0 && span && (span.first === span.last ? 'both' : gi === span.first ? 'start' : gi === span.last ? 'stop' : undefined);
+              xml += noteXml(measure[i], `${staff ? 'l' : 'e'}${mi}-${i}`, beams[index++], ci > 0, voiceBase + vi + 1, alters[i], Object.assign({}, own, { tuplet }), stemOf(vi, all.length), mult, staff);
+            });
+            cursor = group.at + group.size;
+          });
+          hidden(cursor, capacity(score, mi));
+          if (barreOpen && !barreClosed && vi === all.length - 1) xml += stopXml;
+          // Un regulador abierto se cierra al final aunque su fin no caiga en un hueco de ninguna voz.
+          if (vi === all.length - 1) wedges.filter((mark) => mark.stop && !mark.done && (!mark.begin || mark.begin.done)).forEach((mark) => { xml += mark.xml; });
         });
-        hidden(cursor, capacity(score, mi));
-        if (barreOpen && !barreClosed && vi === all.length - 1) xml += stopXml;
-        // Un regulador abierto se cierra al final aunque su fin no caiga en un hueco de ninguna voz.
-        if (vi === all.length - 1) wedges.filter((mark) => mark.stop && !mark.done && (!mark.begin || mark.begin.done)).forEach((mark) => { xml += mark.xml; });
-      });
+        return lanes.length;
+      };
+      const wrote = writeStaff(0);
+      if (staves > 1) {
+        if (wrote) xml += `<backup><duration>${capacity(score, mi) * mult}</duration></backup>`;
+        writeStaff(1);
+      }
       if (nav.dc || nav.ds) xml += `<direction id="nav-jump-${mi}" placement="above"><direction-type><words justify="right">${nav.dc ? 'D.C.' : 'D.S.'}</words></direction-type><sound ${nav.dc ? 'dacapo="yes"' : 'dalsegno="segno"'}/></direction>`;
       if (bar?.end || bar?.hidden || bar?.double || endingStop) xml += '<barline location="right">' +
         (bar?.end ? '' : bar?.hidden ? '<bar-style>none</bar-style>' : bar?.double ? '<bar-style>light-light</bar-style>' : '') +
@@ -2275,6 +2409,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, duplicateSelection, length, gridOf, hints, onsets, settle, placement, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
+    stavesOf, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };

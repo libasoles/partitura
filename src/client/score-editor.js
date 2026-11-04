@@ -47,6 +47,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   });
   let toolkit = null;
   let selectedMeasure = null; // destino de pegar, independiente de las figuras
+  let selectedMeasureStaff = 0; // pentagrama donde se eligio ese compas
   let selectedNavigation = []; // { first, last, mark }: selected return signs or ending spans
   let selectedHairpin = null; // { mi, at }: el regulador elegido (empieza en el compas `mi`, en el tiempo `at`)
   let selected = null; // { mi, i }: la figura principal
@@ -85,6 +86,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function save() {
+    M.pruneLower(score);
     docs[active] = score;
     window.ScoreStore.save({ active, scores: docs });
   }
@@ -297,10 +299,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function change(mutate, tabRefs = M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs)) {
     clearBarSelection();
     selectedBeam = null;
+    // `measures(score, 1)` abre compases vacios del segundo pentagrama para poder editarlos; la copia para deshacer no los lleva.
     const before = M.clone(score);
+    M.pruneLower(before);
     if (mutate() === false) return false;
     // `at` queda siempre igual al tiempo que se ve (sin huecos): asi los clics y arrastres siguientes se ubican en el orden.
-    M.measures(score).forEach(M.settle);
+    M.everyMeasure(score).forEach(M.settle);
+    M.pruneLower(score);
     M.restoreTabReferences(score, tabRefs, window.ScoreFingering.complete);
     history.push(before);
     if (history.length > HISTORY_LIMIT) history.shift();
@@ -329,11 +334,19 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     render();
   }
 
-  function eventAt(sel) {
-    return sel && M.measures(score)[sel.mi] && M.measures(score)[sel.mi][sel.i];
+  // Una figura se nombra { mi, i } en el pentagrama de arriba y { s: 1, mi, i } en el de abajo; en el SVG, e<mi>-<i> y l<mi>-<i>.
+  const staffOf = M.staffOf;
+  const same = M.sameRef;
+  const laneOf = (ref) => M.measures(score, staffOf(ref));
+  const nodeOf = (ref) => stage.querySelector('[id="' + (staffOf(ref) ? 'l' : 'e') + ref.mi + '-' + ref.i + '"]');
+  function refOfNode(node) {
+    const match = /^([el])(\d+)-(\d+)$/.exec(node.id);
+    return match ? M.refOf(match[1] === 'l' ? 1 : 0, +match[2], +match[3]) : null;
   }
 
-  const same = (a, b) => a.mi === b.mi && a.i === b.i;
+  function eventAt(sel) {
+    return sel && laneOf(sel)[sel.mi] && laneOf(sel)[sel.mi][sel.i];
+  }
 
   function picks() {
     return group.length > 1 ? group : selected ? [selected] : [];
@@ -418,7 +431,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       say('');
       return;
     }
-    const measure = M.measures(score)[target.mi];
+    const measure = M.measures(score, target.staff)[target.mi];
     if (item.kind === 'note' || item.kind === 'rest') {
       const ev = { d: item.dead ? lastNoteD : item.d };
       if (item.kind === 'rest') ev.rest = true;
@@ -433,7 +446,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         if (!placed.measure) return say(placed.full ? t.full : fullVoice(placed.voice));
         change(() => {
           measure.splice(0, measure.length, ...placed.measure);
-          selected = activeItem ? null : { mi: target.mi, i: placed.index };
+          selected = activeItem ? null : M.refOf(target.staff, target.mi, placed.index);
           group = [];
         });
         return;
@@ -441,7 +454,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       change(() => {
         const index = M.insertNote(measure, ev, spot.at);
         // Con una herramienta activa la figura nueva no queda seleccionada: seleccion y herramienta no conviven.
-        selected = activeItem ? null : { mi: target.mi, i: index };
+        selected = activeItem ? null : M.refOf(target.staff, target.mi, index);
         group = [];
       });
     }
@@ -507,7 +520,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       delete replacement.tp;
       delete replacement.tn;
       if (item.kind === 'rest') { replacement.rest = true; delete replacement.n; delete replacement.acc; delete replacement.dead; }
-      else { delete replacement.rest; replacement.n = ev.rest ? M.bottomLine(score, ref.mi) : ev.n; }
+      else { delete replacement.rest; replacement.n = ev.rest ? M.bottomLine(score, ref.mi, staffOf(ref)) : ev.n; }
       if (item.d === 'w' || item.d === 's' || item.d === 'f') delete replacement.dot;
       else if (replacement.dot === 2 && item.d !== 'h' && item.d !== 'q') replacement.dot = true;
       return { ref, replacement };
@@ -516,18 +529,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const place = (measure, { ref, replacement }) => {
       measure[ref.i] = Object.assign(replacement, { at: measure[ref.i].at }, Number.isInteger(measure[ref.i].v) ? { v: measure[ref.i].v } : {});
     };
-    const touched = [...new Set(edits.map((e) => e.ref.mi))];
+    const measureKey = (ref) => staffOf(ref) + ':' + ref.mi;
+    const touched = [...new Set(edits.map((e) => measureKey(e.ref)))];
     // Se cuenta en orden: lo que sigue en su voz se corre, y la voz tiene que seguir entrando en el compas.
-    for (const mi of touched) {
-      const trial = M.settle(M.clone(M.measures(score)[mi]));
-      edits.filter((e) => e.ref.mi === mi).forEach((e) => place(trial, { ref: e.ref, replacement: M.clone(e.replacement) }));
-      if (M.measureLength(trial) > M.capacity(score, mi)) return say(t.full);
+    for (const key of touched) {
+      const here = edits.filter((e) => measureKey(e.ref) === key);
+      const trial = M.settle(M.clone(laneOf(here[0].ref)[here[0].ref.mi]));
+      here.forEach((e) => place(trial, { ref: e.ref, replacement: M.clone(e.replacement) }));
+      if (M.measureLength(trial) > M.capacity(score, here[0].ref.mi)) return say(t.full);
     }
     change(() => {
-      touched.forEach((mi) => {
-        const measure = M.measures(score)[mi];
+      touched.forEach((key) => {
+        const here = edits.filter((e) => measureKey(e.ref) === key);
+        const measure = laneOf(here[0].ref)[here[0].ref.mi];
         M.settle(measure);
-        edits.filter((e) => e.ref.mi === mi).forEach((e) => place(measure, e));
+        here.forEach((e) => place(measure, e));
       });
     });
     say('');
@@ -535,7 +551,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // El puntillo afecta solo a la nota tocada; si hay que correrla, lo que empezaba junto con ella la acompana para seguir alineado.
   function applyModifier(item, hit) {
-    const measure = M.measures(score)[hit.mi];
+    const measure = laneOf(hit)[hit.mi];
     const ev = measure[hit.i];
     if (item.kind === 'dot') {
       // Puntillo, doble puntillo y nada, en ese orden; si el doble no entra, se vuelve a la figura sin puntillo.
@@ -557,17 +573,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function moveEvent(from, target) {
-    const all = M.measures(score);
-    const ev = all[from.mi][from.i];
-    const destination = all[target.mi];
+    const source = laneOf(from);
+    const ev = source[from.mi][from.i];
+    const destination = M.measures(score, target.staff)[target.mi];
+    const crossStaff = staffOf(from) !== target.staff;
+    const inPlace = from.mi === target.mi && !crossStaff;
     const others = destination.filter((o) => o !== ev);
     const moved = M.clone(ev);
     ['tp', 'tn', 'tie', 'slur', 'beam'].forEach((key) => { delete moved[key]; });
+    // Las voces son de cada pentagrama: al cambiar de pentagrama la figura se acomoda entre las del destino.
+    if (crossStaff) delete moved.v;
     if (!ev.rest) moved.n = target.n;
     // Al separar la unica nota de una voz, seguir la columna anterior: una voz
     // vacia volveria a empezar en cero y anularia el desplazamiento horizontal.
     // Las voces con mas figuras conservan su frase al reordenar una nota.
-    if (!ev.rest && from.mi === target.mi && !others.some((o) => o.v === ev.v)) {
+    if (!ev.rest && inPlace && !others.some((o) => o.v === ev.v)) {
       const starts = M.hints(others);
       const previous = others.map((o, i) => ({ ev: o, at: starts[i] }))
         .filter((o) => o.at < target.t)
@@ -576,7 +596,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     let spot = M.placement(others, moved, target.t, score, target.mi, true);
     // La voz se eligio con el tiempo sin ajustar a la rejilla; si en esa voz no cabe, la figura conserva la suya.
-    if (!spot && moved.v !== ev.v) {
+    if (!spot && !crossStaff && moved.v !== ev.v) {
       const kept = Object.assign({}, moved, { v: ev.v });
       spot = M.placement(others, kept, target.t, score, target.mi, true);
       if (spot) moved.v = ev.v;
@@ -593,14 +613,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const landed = placed.measure[placed.index];
       if (!Number.isInteger(landed.n)) landed.n = M.clampPitch(target.n);
       change(() => {
-        all[from.mi].splice(from.i, 1);
+        source[from.mi].splice(from.i, 1);
         destination.splice(0, destination.length, ...placed.measure);
-        selected = { mi: target.mi, i: placed.index };
+        selected = M.refOf(target.staff, target.mi, placed.index);
         group = [];
       });
       return;
     }
-    if (from.mi === target.mi && Number.isInteger(moved.v)) {
+    if (inPlace && Number.isInteger(moved.v)) {
       const starts = M.onsets(destination);
       const kept = destination.flatMap((o, i) => o === ev ? [] : [{ ev: M.clone(o), at: starts[i] }]);
       const trial = kept.map(item => item.ev);
@@ -611,24 +631,26 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (kept.some(item => item.ev.v !== moved.v && planned[trial.indexOf(item.ev)] !== item.at)) return say(t.keepVoiceTiming);
     }
     change(() => {
-      all[from.mi].splice(from.i, 1);
+      source[from.mi].splice(from.i, 1);
       // Alinear con otra columna no convierte la nota movida en parte de su acorde.
-      selected = { mi: target.mi, i: M.insertAt(destination, moved, spot.at) };
+      selected = M.refOf(target.staff, target.mi, M.insertAt(destination, moved, spot.at));
       group = [];
     });
   }
 
   // Mueve las figuras elegidas juntas: el mismo desplazamiento en tiempo, compas y altura que la figura agarrada.
   function moveGroup(refs, from, target) {
-    const all = M.measures(score);
+    const stave = (staff) => M.measures(score, staff);
     const anchor = eventAt(from);
-    const items = refs.map((r) => ({ ev: all[r.mi][r.i], mi: r.mi, at: M.onsets(all[r.mi])[r.i] }));
+    const items = refs.map((r) => ({ ev: stave(staffOf(r))[r.mi][r.i], staff: staffOf(r), mi: r.mi, at: M.onsets(stave(staffOf(r))[r.mi])[r.i] }));
     const anchorAt = items.find((x) => x.ev === anchor).at;
     const grid = M.gridOf(items.map((x) => x.ev));
     const dmi = target.mi - from.mi;
+    const dstaff = target.staff - staffOf(from);
+    const staves = M.stavesOf(score);
     // La nota agarrada puede estar en medio del grupo. Ajustar el desplazamiento
     // al espacio disponible para todo el grupo, tambien al soltar cerca de una barra.
-    if (items.some((x) => !all[x.mi + dmi])) return say(t.full);
+    if (items.some((x) => !stave(0)[x.mi + dmi] || x.staff + dstaff < 0 || x.staff + dstaff >= staves)) return say(t.full);
     const minDt = Math.ceil(Math.max(...items.map((x) => -x.at)) / grid) * grid;
     const maxDt = Math.floor(Math.min(...items.map((x) => M.capacity(score, x.mi + dmi) - x.at - M.length(x.ev))) / grid) * grid;
     if (minDt > maxDt) return say(t.full);
@@ -638,49 +660,57 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (pitched.length) {
       dn = Math.max(M.LOWEST - Math.min(...pitched.map((x) => x.ev.n)), Math.min(M.HIGHEST - Math.max(...pitched.map((x) => x.ev.n)), dn));
     }
-    if (!dt && !dmi && !dn) return;
+    if (!dt && !dmi && !dn && !dstaff) return;
     const moving = new Set(items.map((x) => x.ev));
-    const plan = items.map((x) => Object.assign({}, x, { to: x.mi + dmi, at: x.at + dt }));
+    const plan = items.map((x) => Object.assign({}, x, { to: x.mi + dmi, toStaff: x.staff + dstaff, at: x.at + dt }));
+    const destinationKey = (p) => p.toStaff + ':' + p.to;
     const clash = (p) => {
-      const rest = all[p.to] && all[p.to].filter((o) => !moving.has(o));
-      const starts = rest && M.hints(rest); // el lugar de cada una antes de sacar las que se mueven
-      return !rest || p.at < 0 || p.at + M.length(p.ev) > M.capacity(score, p.to) ||
+      const rest = stave(p.toStaff)[p.to].filter((o) => !moving.has(o));
+      const starts = M.hints(rest); // el lugar de cada una antes de sacar las que se mueven
+      return p.at < 0 || p.at + M.length(p.ev) > M.capacity(score, p.to) ||
         (!p.ev.rest && rest.some((o, i) => !o.rest && starts[i] === p.at && o.n === p.ev.n + dn && o.acc === p.ev.acc));
     };
     if (plan.some(clash)) return say(t.full);
     // Contado en orden, cada compas de destino tiene que seguir entrando.
-    const trial = all.map((measure) => measure.filter((o) => !moving.has(o)).map((o) => Object.assign({}, o)));
+    const trial = new Map();
+    const trialOf = (p) => {
+      if (!trial.has(destinationKey(p))) trial.set(destinationKey(p), stave(p.toStaff)[p.to].filter((o) => !moving.has(o)).map((o) => Object.assign({}, o)));
+      return trial.get(destinationKey(p));
+    };
     const trialInserts = new Map();
     plan.slice().sort((a, b) => a.at - b.at).forEach((p) => {
       const ev = Object.assign({}, p.ev);
       if (!ev.rest) ev.n += dn;
-      if (!trialInserts.has(p.to)) trialInserts.set(p.to, []);
-      trialInserts.get(p.to).push([ev, p.at]);
+      if (p.toStaff !== p.staff) delete ev.v;
+      trialOf(p);
+      if (!trialInserts.has(destinationKey(p))) trialInserts.set(destinationKey(p), []);
+      trialInserts.get(destinationKey(p)).push([ev, p.at]);
     });
-    trialInserts.forEach((list, mi) => { M.insertMany(trial[mi], list); });
-    if (plan.some((p) => M.measureLength(trial[p.to]) > M.capacity(score, p.to))) return say(t.full);
+    trialInserts.forEach((list, key) => { M.insertMany(trial.get(key), list); });
+    if (plan.some((p) => M.measureLength(trial.get(destinationKey(p))) > M.capacity(score, p.to))) return say(t.full);
     change(() => {
-      all.forEach((measure) => {
+      [0, 1].filter((staff) => staff < staves).forEach((staff) => stave(staff).forEach((measure) => {
         for (let i = measure.length - 1; i >= 0; i -= 1) if (moving.has(measure[i])) measure.splice(i, 1);
-      });
+      }));
       const ids = new Map();
       const inserts = new Map();
       plan.sort((a, b) => a.at - b.at).forEach((p) => {
-        const destination = all[p.to];
+        const destination = stave(p.toStaff)[p.to];
         if (!p.ev.rest) p.ev.n += dn;
         delete p.ev.tie;
         delete p.ev.slur;
+        if (p.toStaff !== p.staff) delete p.ev.v;
         if (p.ev.tp) {
-          const key = p.mi + '-' + p.ev.tp;
+          const key = p.staff + ':' + p.mi + '-' + p.ev.tp;
           if (!ids.has(key)) ids.set(key, Math.max(0, ...destination.map((o) => o.tp || 0)) + 1);
           p.ev.tp = ids.get(key);
         }
-        if (!inserts.has(p.to)) inserts.set(p.to, []);
-        inserts.get(p.to).push([p.ev, p.at]);
+        if (!inserts.has(destinationKey(p))) inserts.set(destinationKey(p), { destination, list: [] });
+        inserts.get(destinationKey(p)).list.push([p.ev, p.at]);
       });
       // Todas juntas por compas: las que quedan conservan su lugar en el orden hasta que entran las movidas.
-      inserts.forEach((list, mi) => { M.insertMany(all[mi], list); });
-      const refsAfter = plan.map((p) => ({ mi: p.to, i: all[p.to].indexOf(p.ev) }));
+      inserts.forEach(({ destination, list }) => { M.insertMany(destination, list); });
+      const refsAfter = plan.map((p) => M.refOf(p.toStaff, p.to, stave(p.toStaff)[p.to].indexOf(p.ev)));
       selected = refsAfter[refsAfter.length - 1];
       group = refsAfter.length > 1 ? refsAfter : [];
     });
@@ -713,7 +743,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const list = picks().filter(eventAt);
     if (!list.length) return;
     change(() => {
-      list.sort((a, b) => b.mi - a.mi || b.i - a.i).forEach((p) => M.measures(score)[p.mi].splice(p.i, 1));
+      list.sort((a, b) => staffOf(b) - staffOf(a) || b.mi - a.mi || b.i - a.i).forEach((p) => laneOf(p)[p.mi].splice(p.i, 1));
       selected = null;
       group = [];
     });
@@ -723,7 +753,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const list = picks().filter((p) => eventAt(p));
     if (!list.length) return;
     // Un silencio sin altura propia esta en el centro del pentagrama.
-    change(() => { list.forEach((p) => { const ev = eventAt(p); ev.n = M.clampPitch((Number.isInteger(ev.n) ? ev.n : M.bottomLine(score, p.mi) + 4) + delta); }); });
+    change(() => { list.forEach((p) => { const ev = eventAt(p); ev.n = M.clampPitch((Number.isInteger(ev.n) ? ev.n : M.bottomLine(score, p.mi, staffOf(p)) + 4) + delta); }); });
   }
 
   function applyAction(action) {
@@ -926,8 +956,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       let delta = 0, moved = false, cancelled = false;
       const preview = document.createElement('div');
       preview.className = 'score-width-guide';
-      preview.style.top = left.lines[0] - 16 + 'px';
-      preview.style.height = left.lines[4] - left.lines[0] + 32 + 'px';
+      preview.style.top = left.top - 16 + 'px';
+      preview.style.height = left.bottom - left.top + 32 + 'px';
       const move = (e) => {
         if (e.pointerId !== event.pointerId) return;
         if (Math.abs(e.clientX - start) < 4 && !moved) return;
@@ -995,16 +1025,25 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function measureLayout() {
     const origin = stage.getBoundingClientRect();
     layout = [...stage.querySelectorAll('g.measure')].map((node) => {
-      const lines = [...node.querySelectorAll(':scope > g.staff > path')].slice(0, 5).map((p) => {
+      // Las cinco lineas de cada pentagrama del compas, de arriba abajo. `lines` es las del primero.
+      const staves = [...node.querySelectorAll(':scope > g.staff')].map((staff) => [...staff.querySelectorAll(':scope > path')].slice(0, 5).map((p) => {
         const r = p.getBoundingClientRect();
         return (r.top + r.bottom) / 2 - origin.top;
-      });
+      }));
+      const lines = staves[0];
       const box = node.querySelector(':scope > g.staff > path').getBoundingClientRect();
       // Donde empieza la musica: pasada la clave, la armadura y el compas que preceden a la primera figura.
       const start = Math.max(box.left, ...[...node.querySelectorAll('g.clef, g.keySig, g.meterSig')].map((g) => g.getBoundingClientRect().right));
       // La primera figura se dibuja un espacio mas alla de la barra o de la armadura.
-      return { left: box.left - origin.left, start: start - origin.left + (lines[4] - lines[0]) / 4, right: box.right - origin.left, lines };
+      // `top` y `bottom` abarcan todo el renglon: lo que es de los dos pentagramas (barras, repeticiones) se mide con ellos.
+      return { left: box.left - origin.left, start: start - origin.left + (lines[4] - lines[0]) / 4, right: box.right - origin.left, lines, staves, top: lines[0], bottom: staves[staves.length - 1][4] };
     });
+  }
+
+  // Pentagrama del renglon que esta a la altura `y` (relativa al escenario): el mas cercano a su centro.
+  function staffAtY(m, y) {
+    const centers = m.staves.map((lines) => lines[2]);
+    return centers.reduce((best, center, staff) => (Math.abs(y - center) < Math.abs(y - centers[best]) ? staff : best), 0);
   }
 
   function clearBarSelection() {
@@ -1036,10 +1075,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function selectMeasureBars(event) {
     const origin = stage.getBoundingClientRect();
     const mi = layout.findIndex((m) => event.clientX >= origin.left + m.left && event.clientX <= origin.left + m.right &&
-      event.clientY >= origin.top + m.lines[0] && event.clientY <= origin.top + m.lines[4]);
+      event.clientY >= origin.top + m.top && event.clientY <= origin.top + m.bottom);
     if (mi < 0) return;
     clearBarSelection();
     selectedMeasure = mi;
+    selectedMeasureStaff = staffAtY(layout[mi], event.clientY - origin.top);
     markMeasureBars();
   }
 
@@ -1074,7 +1114,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       button.setAttribute('aria-label', label);
       button.innerHTML = lucide('plus');
       button.style.left = x + 'px';
-      button.style.top = (m.lines[0] - 18) + 'px';
+      button.style.top = (m.top - 18) + 'px';
       button.addEventListener('click', () => {
         // El compas nuevo queda elegido para poder seguir insertando.
         if (!change(() => { selected = null; return M.insertMeasure(score, at); })) return;
@@ -1114,7 +1154,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         button.style.width = Math.max(20, box.width + 12) + 'px';
         button.style.height = Math.max(44, box.height) + 'px';
         mountBarResize(button, mi, side);
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (click) => {
           clearBarSelection();
           deactivateTool();
           setPicks([]);
@@ -1126,7 +1166,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           const endsRow = side === 'end' && mi === M.rowOf(score, mi).last;
           if (!simple && !endsRow && target < M.measures(score).length) {
             if (clefPopup.matches(':popover-open')) clefPopup.hidePopover();
-            else openClefPopup({ kind: 'bar', mi, side }, target);
+            else {
+              // Una barra es de los dos pentagramas: su mitad de arriba cambia la clave del primero y la de abajo, la del segundo.
+              const box = button.getBoundingClientRect();
+              openClefPopup({ kind: 'bar', mi, side, staff: M.stavesOf(score) > 1 && click.clientY > box.top + box.height / 2 ? 1 : 0 }, target);
+            }
           }
         });
         stage.appendChild(button);
@@ -1320,7 +1364,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       tools.className = 'score-row-tools';
       tools.dataset.row = row;
       tools.style.left = (last.right + 4) + 'px';
-      tools.style.top = ((last.lines[0] + last.lines[4]) / 2) + 'px';
+      tools.style.top = ((last.top + last.bottom) / 2) + 'px';
       [['add', 'plus', t.addMeasure, size >= M.PER_ROW, t.noRoomForMeasure],
         ['remove', 'minus', t.deleteMeasure, size <= 1, t.deleteMeasure]].forEach(([action, icon, label, disabled, blocked]) => {
         const button = document.createElement('button');
@@ -1355,7 +1399,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const row = +tools.dataset.row;
       const last = layout[starts[row] + score.rows[row].length - 1];
       tools.classList.toggle('is-visible', !!last && x >= last.left && x <= last.right + 4 + ROW_TOOLS_WIDTH
-        && y >= last.lines[0] - 40 && y <= last.lines[4] + 40);
+        && y >= last.top - 40 && y <= last.bottom + 40);
     });
   });
   stage.addEventListener('pointerleave', () => stage.querySelectorAll('.score-row-tools').forEach((tools) => tools.classList.remove('is-visible')));
@@ -1935,7 +1979,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function markSelected() {
     stage.querySelectorAll('.is-selected').forEach((n) => n.classList.remove('is-selected'));
     if (!selected) group = [];
-    const nodes = picks().map((p) => stage.querySelector('[id="e' + p.mi + '-' + p.i + '"]'));
+    const nodes = picks().map((p) => nodeOf(p));
     if (nodes.some((node) => !node)) {
       selected = null;
       group = [];
@@ -1974,7 +2018,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const actions = M.selectionActions(score, list);
     if (!actions.length) return;
     const origin = stage.getBoundingClientRect();
-    const boxes = list.map((p) => stage.querySelector('[id="e' + p.mi + '-' + p.i + '"]').getBoundingClientRect());
+    const boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
     const top = Math.min(...boxes.map((b) => b.top)) - origin.top;
     const bottom = Math.max(...boxes.map((b) => b.bottom)) - origin.top;
     const left = Math.min(...boxes.map((b) => b.left)) - origin.left;
@@ -2001,10 +2045,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // ---- hit-testing --------------------------------------------------------
 
-  function eventNodes(mi) {
+  function eventNodes(mi, staff = 0) {
     const nodes = [];
     for (let i = 0; ; i += 1) {
-      const node = stage.querySelector('[id="e' + mi + '-' + i + '"]');
+      const node = stage.querySelector('[id="' + (staff ? 'l' : 'e') + mi + '-' + i + '"]');
       if (!node) break;
       nodes.push(node);
     }
@@ -2038,26 +2082,27 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const x = clientX - origin.left;
     const y = clientY - origin.top;
     let best = null;
-    layout.forEach((m, mi) => {
-      const space = (m.lines[4] - m.lines[0]) / 4;
+    // Cada pentagrama de cada compas es un destino posible: gana el mas cercano, y lo que se suelta actua sobre el.
+    layout.forEach((m, mi) => m.staves.forEach((lines, staff) => {
+      const space = (lines[4] - lines[0]) / 4;
       const dx = Math.max(m.left - x, 0, x - m.right);
-      const dy = Math.abs(y - m.lines[2]);
+      const dy = Math.abs(y - lines[2]);
       if (dy > space * 7 || dx > space * 3) return;
       const cost = dy + dx * 2;
       if (best && cost >= best.cost) return;
-      best = { mi, m, space, cost };
-    });
+      best = { mi, m, staff, lines, space, cost };
+    }));
     if (!best) return null;
-    const { mi, m, space } = best;
+    const { mi, m, staff, lines, space } = best;
     const half = space / 2;
-    const n = M.clampPitch(M.bottomLine(score, mi) + Math.round((m.lines[4] - y) / half));
-    const measure = M.measures(score)[mi];
+    const n = M.clampPitch(M.bottomLine(score, mi, staff) + Math.round((lines[4] - y) / half));
+    const measure = M.measures(score, staff)[mi];
     const starts = M.onsets(measure);
-    const centers = eventNodes(mi).map((node) => centerX(node, origin));
+    const centers = eventNodes(mi, staff).map((node) => centerX(node, origin));
     let at = timeAt(Math.max(m.left, Math.min(m.right, x)), m, starts, centers);
     let markX = Math.max(m.left, Math.min(m.right, x));
     const rawT = at, rawX = markX;
-    const isOwn = (i) => skip && [].concat(skip).some((s) => s.mi === mi && s.i === i);
+    const isOwn = (i) => skip && [].concat(skip).some((s) => staffOf(s) === staff && s.mi === mi && s.i === i);
     // A la derecha de la ultima columna el tiempo interpolado cae dentro de esa figura: la nueva empieza donde termina.
     const others = measure.map((o, i) => i).filter((i) => !isOwn(i));
     if (others.length && x > Math.max(...others.map((i) => centers[i]))) {
@@ -2075,14 +2120,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       markX = near.c;
     }
     return {
-      mi, n, space, rawT, rawX,
+      mi, staff, n, space, rawT, rawX,
       beforeFirst: others.length > 0 && x < Math.min(...others.map((i) => centers[i])) - space * 0.8,
       onNote: !!near,
       t: at,
       x: markX,
-      y: m.lines[4] - (n - M.bottomLine(score, mi)) * half,
-      top: m.lines[0],
-      bottom: m.lines[4],
+      y: lines[4] - (n - M.bottomLine(score, mi, staff)) * half,
+      top: lines[0],
+      bottom: lines[4],
+      systemTop: m.top,
+      systemBottom: m.bottom,
     };
   }
 
@@ -2096,8 +2143,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const distance = Math.hypot(dx, dy);
       if (distance <= 8 && (!best || distance < best.distance)) best = { node, distance };
     });
-    const match = best && /^e(\d+)-(\d+)$/.exec(best.node.id);
-    return match ? { mi: +match[1], i: +match[2] } : null;
+    return best ? refOfNode(best.node) : null;
   }
 
   // ---- arrastre -----------------------------------------------------------
@@ -2120,8 +2166,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       : item && item.kind === 'bar' && item.bar === 'double' ? hit.rawX
       : item && (item.kind === 'barre' || item.kind === 'hairpin') && !hit.onNote ? layout[hit.mi].left : hit.x;
     line.style.left = x + 'px';
-    line.style.top = hit.top - hit.space * 2 + 'px';
-    line.style.height = (hit.bottom - hit.top) + hit.space * 4 + 'px';
+    // Notas y silencios marcan el pentagrama donde caen; barras, repeticiones y reguladores son de todo el renglon.
+    const whole = item && item.kind !== 'note' && item.kind !== 'rest';
+    const top = whole ? hit.systemTop : hit.top, bottom = whole ? hit.systemBottom : hit.bottom;
+    line.style.top = top - hit.space * 2 + 'px';
+    line.style.height = (bottom - top) + hit.space * 4 + 'px';
     // Una nota fuera del pentagrama muestra las lineas adicionales que le tocarian, una por cada espacio hasta su cabeza.
     if ((drag && drag.kind || activeItem && activeItem.kind) !== 'note') return;
     const beyond = (edge, sign) => {
@@ -2156,7 +2205,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Las demas figuras del grupo acompanan a la agarrada con la misma separacion que tienen en pantalla.
   function addGroupToGhost(ghost, refs, from) {
     const centre = (ref) => {
-      const node = stage.querySelector('[id="e' + ref.mi + '-' + ref.i + '"]');
+      const node = nodeOf(ref);
       const rect = (node.querySelector('.notehead') || node).getBoundingClientRect();
       return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     };
@@ -2214,7 +2263,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (isModifier(activeItem)) {
       showMarker(null);
       const target = eventUnder(point.clientX, point.clientY);
-      if (target) stage.querySelector('[id="e' + target.mi + '-' + target.i + '"]').classList.add('is-target');
+      if (target) nodeOf(target).classList.add('is-target');
     } else showMarker(hit);
   }
 
@@ -2257,7 +2306,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       stage.querySelectorAll('.is-target').forEach((n) => n.classList.remove('is-target'));
       const at = aimed(event);
       const hit = eventUnder(at.clientX, at.clientY);
-      if (hit) stage.querySelector('[id="e' + hit.mi + '-' + hit.i + '"]').classList.add('is-target');
+      if (hit) nodeOf(hit).classList.add('is-target');
     } else {
       const at = aimed(event);
       showMarker(locate(at.clientX, at.clientY, drag.group || drag.from));
@@ -2318,7 +2367,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!event.shiftKey || event.button !== 0 || event.target.closest('input, button, textarea, ascii-tabs')) return;
     const origin = stage.getBoundingClientRect();
     const x = event.clientX - origin.left, y = event.clientY - origin.top;
-    const from = layout.findIndex((m) => x >= m.left && x <= m.right && y >= m.lines[0] - 24 && y <= m.lines[4] + 24);
+    const from = layout.findIndex((m) => x >= m.left && x <= m.right && y >= m.top - 24 && y <= m.bottom + 24);
     if (from < 0) return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -2352,8 +2401,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // select the connection; a notehead inside the group still selects its note.
     const beam = event.target.closest('g.beam');
     if (beam && event.target.matches('polygon') && event.target.parentElement === beam && !activeItem) {
-      const refs = [...beam.querySelectorAll('g.note, g.rest')].map((node) => /^e(\d+)-(\d+)$/.exec(node.id))
-        .filter(Boolean).map((match) => ({ mi: +match[1], i: +match[2] }));
+      const refs = [...beam.querySelectorAll('g.note, g.rest')].map(refOfNode).filter(Boolean);
       if (M.selectionActions(score, refs).includes('unbeam')) {
         event.preventDefault();
         setPicks([]);
@@ -2414,7 +2462,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const starts = M.rowStarts(score);
     let row = 0;
     starts.forEach((first, r) => {
-      if (Math.abs(y - layout[first].lines[2]) < Math.abs(y - layout[starts[row]].lines[2])) row = r;
+      if (Math.abs(y - (layout[first].top + layout[first].bottom) / 2) < Math.abs(y - (layout[starts[row]].top + layout[starts[row]].bottom) / 2)) row = r;
     });
     const first = starts[row], last = first + score.rows[row].length - 1;
     const end = x >= (layout[last].left + layout[last].right) / 2;
@@ -2490,8 +2538,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     d.target = measureDrop(event, d);
     if (!d.target) { measureGuide.remove(); return; }
     measureGuide.style.left = d.target.left + 'px';
-    measureGuide.style.top = d.target.lines[0] - 20 + 'px';
-    measureGuide.style.height = d.target.lines[4] - d.target.lines[0] + 40 + 'px';
+    measureGuide.style.top = d.target.top - 20 + 'px';
+    measureGuide.style.height = d.target.bottom - d.target.top + 40 + 'px';
     if (!measureGuide.isConnected) stage.appendChild(measureGuide);
   });
   document.addEventListener('pointerup', (event) => finishMeasureDrag(event, false));
@@ -2562,7 +2610,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const found = [...stage.querySelectorAll('g.note, g.rest')].filter((node) => {
       const b = (node.querySelector('.notehead') || node).getBoundingClientRect();
       return b.left <= r.right && b.right >= r.left && b.top <= r.bottom && b.bottom >= r.top;
-    }).map((node) => /^e(\d+)-(\d+)$/.exec(node.id)).filter(Boolean).map((match) => ({ mi: +match[1], i: +match[2] }));
+    }).map(refOfNode).filter(Boolean);
     setPicks(m.base.concat(found.filter((f) => !m.base.some((b) => same(b, f)))));
   }
 
@@ -2670,7 +2718,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     event.preventDefault();
     const trial = M.clone(score);
     M.restoreTabReferences(trial, M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs));
-    const refs = M.pasteSelection(trial, fragment, selectedMeasure, { preserveSignatures: !pasteWithoutSignatures });
+    const refs = M.pasteSelection(trial, fragment, selectedMeasure, { preserveSignatures: !pasteWithoutSignatures, staff: selectedMeasureStaff });
     if (!refs) return say(t.full);
     change(() => {
       Object.assign(score, trial);
@@ -2808,6 +2856,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Donde se abrio el popup (clave de un renglon o barra) y compas desde el que rige la armadura que se elija.
   let clefAnchor = { kind: 'clef', index: 0 };
   let keyMeasure = 0;
+  let clefStaff = 0; // pentagrama cuya clave cambia el popup; la armadura es de ambos
   let previewToolkit = null;
   let galleryClef = null;
 
@@ -2831,7 +2880,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     button.setAttribute('aria-label', label);
     button.addEventListener('click', () => {
       if (field === 'clef') {
-        if (M.clefAt(score, keyMeasure) !== value) change(() => M.setClef(score, keyMeasure, value));
+        if (M.clefAt(score, keyMeasure, clefStaff) !== value) change(() => M.setClef(score, keyMeasure, value, clefStaff));
       } else if (M.keyAt(score, keyMeasure) !== value) change(() => M.setKey(score, keyMeasure, value));
       openClefPopup(clefAnchor, keyMeasure, button);
     });
@@ -2862,7 +2911,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // El mismo grabador de la partitura dibuja las muestras: posiciones de clave y armadura reales.
   function signaturePreview(button, clef, fifths, kind, meter) {
     if (!previewToolkit) previewToolkit = newToolkit();
-    const sample = { clef, fifths, meter, rows: [[[]]] };
+    // `instrument` fija un solo pentagrama: la muestra es de una clave.
+    const sample = { clef, fifths, meter, instrument: 'guitar', rows: [[[]]] };
     previewToolkit.setOptions(layoutOptions(300));
     previewToolkit.loadData(M.toMusicXml(sample));
     const doc = new DOMParser().parseFromString(previewToolkit.renderToSVG(1), 'image/svg+xml');
@@ -2923,12 +2973,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function openClefPopup(origin, measure, focusButton) {
     clefAnchor = origin;
     keyMeasure = measure;
+    clefStaff = M.stavesOf(score) > 1 ? origin.staff || 0 : 0;
+    clefOptions.previousElementSibling.textContent = M.stavesOf(score) > 1 ? t.clef + ' · ' + (clefStaff ? t.lowerStaff : t.upperStaff) : t.clef;
     if (!clefPopup.matches(':popover-open')) {
       showSections(origin.kind === 'key' ? 'key' : origin.kind === 'clef' && M.keyAt(score, measure) !== 0 ? 'clef' : 'both');
     }
     const anchorButton = anchorButtonOf(origin);
     clefOptions.querySelectorAll('button').forEach((button) => {
-      button.setAttribute('aria-pressed', String(button.dataset.clef === M.clefAt(score, keyMeasure)));
+      button.setAttribute('aria-pressed', String(button.dataset.clef === M.clefAt(score, keyMeasure, clefStaff)));
     });
     keyOptions.querySelectorAll('button').forEach((button) => {
       button.setAttribute('aria-pressed', String(Number(button.dataset.fifths) === M.keyAt(score, keyMeasure)));
@@ -2941,13 +2993,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         if (!button.querySelector('svg')) signaturePreview(button, button.dataset.clef, 0, 'clef');
       });
     }
-    if (popupSections !== 'clef' && galleryClef !== M.clefAt(score, keyMeasure)) {
+    if (popupSections !== 'clef' && galleryClef !== M.clefAt(score, keyMeasure, clefStaff)) {
       keyOptions.querySelectorAll('button').forEach((button) => {
         if (!Number(button.dataset.fifths)) return;
         button.querySelector('svg')?.remove();
-        signaturePreview(button, M.clefAt(score, keyMeasure), Number(button.dataset.fifths), 'key');
+        signaturePreview(button, M.clefAt(score, keyMeasure, clefStaff), Number(button.dataset.fifths), 'key');
       });
-      galleryClef = M.clefAt(score, keyMeasure);
+      galleryClef = M.clefAt(score, keyMeasure, clefStaff);
     }
     const anchor = anchorButton.getBoundingClientRect();
     const popup = clefPopup.getBoundingClientRect();
@@ -2982,7 +3034,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function mountKeyButtons() {
     const origin = stage.getBoundingClientRect();
-    stage.querySelectorAll('g.keySig').forEach((key) => {
+    // La armadura es de ambos pentagramas: un solo control por compas, sobre el de arriba.
+    stage.querySelectorAll('g.measure > g.staff:first-of-type g.keySig').forEach((key) => {
       const box = key.getBoundingClientRect();
       if (!box.width) return;
       const mi = Number(key.closest('g.measure').id.slice(1));
@@ -3007,14 +3060,19 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     });
   }
 
+  // Un control de clave por pentagrama de cada renglon (y por cada cambio de clave dibujado).
   function mountClefButtons() {
     stage.querySelectorAll('g.clef').forEach((clef, i) => {
       const box = clef.getBoundingClientRect();
       const origin = stage.getBoundingClientRect();
+      const measureNode = clef.closest('g.measure');
+      const mi = measureNode ? Number(measureNode.id.slice(1)) : M.rowStarts(score)[i];
+      const staff = measureNode ? [...measureNode.querySelectorAll(':scope > g.staff')].indexOf(clef.closest('g.staff')) : 0;
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'score-clef-trigger';
-      button.setAttribute('aria-label', t.clefAndKey + ': ' + t.clefs[M.clefAt(score, M.rowStarts(score)[i])] + ', ' + t.keys[M.keyAt(score, M.rowStarts(score)[i]) + 7]);
+      button.dataset.staff = staff;
+      button.setAttribute('aria-label', t.clefAndKey + ': ' + (M.stavesOf(score) > 1 ? (staff ? t.lowerStaff : t.upperStaff) + ', ' : '') + t.clefs[M.clefAt(score, mi, staff)] + ', ' + t.keys[M.keyAt(score, mi) + 7]);
       button.setAttribute('aria-controls', clefPopup.id);
       button.setAttribute('aria-haspopup', 'dialog');
       button.setAttribute('aria-expanded', 'false');
@@ -3023,7 +3081,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       button.style.height = Math.max(44, box.height + 8) + 'px';
       button.addEventListener('click', () => {
         if (clefPopup.matches(':popover-open')) { clefPopup.hidePopover(); return; }
-        openClefPopup({ kind: 'clef', index: i }, M.rowStarts(score)[i]);
+        openClefPopup({ kind: 'clef', index: i, staff }, mi);
       });
       hoverGlyph(button, clef);
       stage.appendChild(button);
@@ -3569,7 +3627,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Para la consola: recalcula las voces sin fusionarlas ni cambiar sus tiempos. Se puede deshacer.
   function fix() {
     const before = JSON.stringify(score.rows);
-    change(() => { M.measures(score).forEach((measure, mi) => { M.mergeVoices(measure, M.capacity(score, mi)); }); });
+    change(() => { for (let staff = 0; staff < M.stavesOf(score); staff += 1) M.measures(score, staff).forEach((measure, mi) => { M.mergeVoices(measure, M.capacity(score, mi)); }); });
     return before !== JSON.stringify(score.rows);
   }
 

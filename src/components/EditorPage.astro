@@ -14,7 +14,7 @@ interface Props {
 const { locale } = Astro.props;
 const s = strings(locale);
 // The staff the editor starts from, drawn now so the first paint (and anything that does not run JS) already has it.
-const staff = await renderEmptyStaff();
+const staff = await renderEmptyStaff(undefined, undefined, { grandStaff: true });
 const paths = Object.fromEntries(locales.map((l) => [l, pathFor(l)])) as Record<Locale, string>;
 // The editor reads these at start-up; the toast bundle reads the same block.
 const clientStrings = Object.fromEntries([
