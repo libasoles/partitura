@@ -1212,6 +1212,37 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
     return score && Object.hasOwn(CLEFS, score.clef) ? score.clef : defaultClef;
   }
 
+  const INSTRUMENTS = ['piano', 'guitar'];
+  const MIN_TEMPO = 20;
+  const MAX_TEMPO = 300;
+  const tempoValid = (tempo) => Number.isInteger(tempo) && tempo >= MIN_TEMPO && tempo <= MAX_TEMPO;
+
+  // Sin instrumento elegido, lo dice la partitura: clave de guitarra, TAB o cejillas son de guitarra.
+  function instrumentOf(score) {
+    if (score && INSTRUMENTS.includes(score.instrument)) return score.instrument;
+    return defaultClef === 'guitar' || clefOf(score) === 'guitar' || (score && (score.showTabs || (score.barres && Object.keys(score.barres).length))) ? 'guitar' : 'piano';
+  }
+
+  // La guitarra se escribe en clave de sol con 8 y admite TAB; el piano no tiene TAB y deja la clave de guitarra.
+  function setInstrument(score, instrument) {
+    if (!INSTRUMENTS.includes(instrument)) return false;
+    score.instrument = instrument;
+    if (instrument === 'guitar') setClef(score, 0, 'guitar');
+    else {
+      delete score.showTabs;
+      if (clefOf(score) === 'guitar') setClef(score, 0, 'treble');
+    }
+    return true;
+  }
+
+  // Negras por minuto; sin valor no se escribe indicacion y suena a 120.
+  function setTempo(score, tempo) {
+    if (tempo == null) { delete score.tempo; return true; }
+    if (!tempoValid(tempo)) return false;
+    score.tempo = tempo;
+    return true;
+  }
+
   function fifthsOf(score) {
     return score && Number.isInteger(score.fifths) && Math.abs(score.fifths) <= 7 ? score.fifths : 0;
   }
@@ -1584,7 +1615,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
       if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isFinite(width) && width > 0 && width <= 1) measureWidths[index] = width;
     });
     const tabs = sanitizeTabs(data.tabs, rows.reduce((sum, row) => sum + row.length, 0));
-    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
+    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
   }
 
   // Rellena huecos con silencios ocultos: el final del compas y el espacio entre figuras sueltas.
@@ -2079,6 +2110,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
           `<time><beats>${beats}</beats><beat-type>${unit}</beat-type></time>` +
           `<clef><sign>${clef.sign}</sign><line>${clef.line}</line>${clef.octave ? `<clef-octave-change>${clef.octave}</clef-octave-change>` : ''}</clef></attributes>`;
       }
+      if (mi === 0 && tempoValid(score.tempo)) xml += `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${score.tempo}</per-minute></metronome></direction-type><sound tempo="${score.tempo}"/></direction>`;
       if (mi > 0 && (meterAt(score, mi) !== meterAt(score, mi - 1) || keyAt(score, mi) !== keyAt(score, mi - 1) || clefAt(score, mi) !== clefAt(score, mi - 1))) {
         const changed = clefAt(score, mi) !== clefAt(score, mi - 1) ? CLEFS[clefAt(score, mi)] : null;
         xml += '<attributes>' + (keyAt(score, mi) !== keyAt(score, mi - 1) ? `<key><fifths>${keyAt(score, mi)}</fifths></key>` : '') +
@@ -2234,7 +2266,7 @@ export function createScoreModel({ defaultClef = 'treble' } = {}) {
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, duplicateSelection, length, gridOf, hints, onsets, settle, placement, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
-    TUNINGS, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }

@@ -1782,3 +1782,95 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-tuning-popup button:hover, .score-tuning-popup button:focus-visible { background: var(--rule); }
 .score-tuning-popup button span { text-align: right; white-space: nowrap; }
 .score-tuning-popup button[aria-pressed="true"] { color: var(--blue-france); }
+
+/* ----- Settings: instrument, tempo and which tool groups the sidebar shows ----- */
+.score-settings-popup {
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  width: min(44rem, calc(100vw - 2rem));
+  height: fit-content;
+  max-height: calc(100vh - 2rem);
+  margin: auto;
+  padding: 1.5rem 1.75rem 1.75rem;
+  overflow: auto;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgb(0 0 0 / 22%);
+  font-family: var(--sans);
+}
+
+.score-settings-popup::backdrop {
+  background: rgb(0 0 0 / 28%);
+}
+
+.score-settings-popup h2 {
+  margin: 0 0 1.25rem;
+  font-size: 1.15rem;
+}
+
+.score-settings-close {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.score-settings-close:hover { color: var(--blue-france); }
+
+.score-settings-section + .score-settings-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rule);
+}
+
+.score-settings-section > p {
+  margin: 0 0 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.score-settings-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.score-settings-option,
+.score-settings-tempo {
+  min-height: 2.75rem;
+  padding: 0.25rem 1rem;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+}
+
+.score-settings-option { cursor: pointer; }
+.score-settings-option:hover { color: var(--blue-france); border-color: var(--blue-france); }
+
+.score-settings-option[aria-pressed="true"] {
+  color: var(--accent-brand);
+  border-color: currentColor;
+  font-weight: 600;
+}
+
+.score-settings-tempo {
+  box-sizing: border-box;
+  width: 6rem;
+  padding-inline: 0.6rem;
+}
+
+.score-settings-toggle svg { display: block; margin: auto; }

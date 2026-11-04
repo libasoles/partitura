@@ -61,6 +61,12 @@
 - `scripts/build-editor.mjs` compila el adaptador del consumidor y sus chunks y vendors locales. `scripts/build-package.mjs` genera los adaptadores CommonJS en `prepare`.
 - Conservar los defaults propios: clave de sol y guardado con debounce aquí; clave de guitarra y guardado inmediato en guitar-chords. No sobrescribir claves explícitas de partituras guardadas.
 
+### Ajustes (engranaje)
+
+- Primera herramienta de la barra lateral. Instrumento (`score.instrument`: piano | guitarra) y tempo (`score.tempo`, negras por minuto, indicación metronómica en el primer compás y en el MIDI) viajan con la partitura y se deshacen. Guitarra fija la clave en sol con 8 y muestra TAB y cejilla; piano los oculta.
+- Mostrar u ocultar los grupos de repetición y dinámica es una preferencia del usuario (`settings.js`, `tools.repeats` / `tools.dynamics`).
+- Pendiente: el piano aún usa un solo pentagrama; falta el gran pentagrama (sol + fa unidos, con claves independientes).
+
 ### Compresión y caché
 
 `npm run build` deja junto a cada archivo de texto de `dist/` su `.br` y `.gz` (`scripts/compress.mjs`). El servidor debe enviarlos tal cual

@@ -1,8 +1,10 @@
 /* score-editor.js — Pagina /partitura: una partitura donde se arrastran notas desde la paleta.
    Verovio dibuja el MusicXML que sale de ScoreModel; aca solo viven la paleta, el arrastre y las descargas. */
+import { getSetting, setSetting } from './settings.js';
+
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
-export default function start({ vendorBase = '/vendor/', bindActions = () => {} } = {}) {
+export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false } = {}) {
 
   const M = window.ScoreModel;
   const STORAGE_KEY = 'scoreEditor.v2';
@@ -803,6 +805,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {} 
     mountBarreInputs();
     mountTabs();
     document.getElementById('scoreTabToggle')?.setAttribute('aria-pressed', String(!!score.showTabs));
+    applyTools();
     markSelected();
     updateHoverGhost();
     removeRow.hidden = score.rows.length <= M.MIN_ROWS;
@@ -2596,7 +2599,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {} 
   });
 
   document.addEventListener('keydown', (event) => {
-    if (event.target.closest('input, textarea, select, [contenteditable], ascii-tabs')) return;
+    if (event.target.closest('input, textarea, select, [contenteditable], ascii-tabs, .score-settings-popup')) return;
     if (!event.metaKey && !event.ctrlKey && !event.altKey && (event.key === 'Delete' || event.key === 'Backspace')) {
       if (removeSelectedBars()) { event.preventDefault(); return; }
     }
@@ -3030,6 +3033,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {} 
 
   const ICONS = {
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
     plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
     minus: '<path d="M5 12h14"/>',
     'file-text': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
@@ -3175,6 +3179,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {} 
     const shown = button.textContent.trim();
     if (shown && !item.label.toLowerCase().includes(shown.toLowerCase())) button.setAttribute('aria-label', shown + ': ' + item.label);
     button.setAttribute('aria-pressed', 'false');
+    button.dataset.group = item.kind === 'bar' || item.kind === 'navigation' ? 'repeats' : item.kind === 'hairpin' ? 'dynamics' : item.kind === 'barre' ? 'barre' : '';
     if (item.kind === 'bar') {
       button.dataset.barline = item.bar;
       button.addEventListener('click', (event) => {
@@ -3229,6 +3234,126 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {} 
     render();
   });
   barlines.prepend(tabToggle);
+
+  // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
+  function applyTools() {
+    const guitar = !settings || M.instrumentOf(score) === 'guitar';
+    const shown = { repeats: !settings || getSetting('tools.repeats', true), dynamics: !settings || getSetting('tools.dynamics', true), barre: guitar };
+    barlines.querySelectorAll('[data-group]').forEach((button) => { if (button.dataset.group) button.hidden = !shown[button.dataset.group]; });
+    tabToggle.hidden = !guitar;
+    if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
+  }
+
+  // ---- ajustes: instrumento, tempo y grupos de herramientas (el sitio los activa con `settings`) ----
+
+  if (settings) {
+    const TEMPOS = [60, 80, 100, 120, 140, 160, 180];
+    const popup = document.createElement('div');
+    popup.id = 'scoreSettingsPopup';
+    popup.className = 'score-settings-popup';
+    popup.setAttribute('popover', 'auto');
+    popup.setAttribute('role', 'dialog');
+    popup.setAttribute('aria-label', t.settings);
+
+    const cog = document.createElement('button');
+    cog.type = 'button';
+    cog.id = 'scoreSettingsToggle';
+    cog.className = 'score-palette-item score-settings-toggle tooltip';
+    cog.innerHTML = lucide('settings');
+    cog.setAttribute('aria-label', t.settings);
+    cog.setAttribute('aria-haspopup', 'dialog');
+    cog.setAttribute('aria-controls', popup.id);
+    cog.setAttribute('aria-expanded', 'false');
+    cog.dataset.tooltip = t.settings;
+    barlines.prepend(cog);
+
+    const title = document.createElement('h2');
+    title.textContent = t.settings;
+    popup.appendChild(title);
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'score-settings-close';
+    close.innerHTML = lucide('x');
+    close.setAttribute('aria-label', t.settingsClose);
+    close.addEventListener('click', () => popup.hidePopover());
+    popup.appendChild(close);
+
+    // Cada ajuste es un renglon: su nombre y, al lado, la lista horizontal de opciones.
+    function section(label) {
+      const wrap = document.createElement('div');
+      wrap.className = 'score-settings-section';
+      const name = document.createElement('p');
+      name.textContent = label;
+      const row = document.createElement('div');
+      row.className = 'score-settings-row';
+      row.setAttribute('role', 'group');
+      row.setAttribute('aria-label', label);
+      wrap.append(name, row);
+      popup.appendChild(wrap);
+      return row;
+    }
+    function option(row, label, onClick) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'score-settings-option';
+      button.textContent = label;
+      button.addEventListener('click', onClick);
+      row.appendChild(button);
+      return button;
+    }
+
+    const instrumentRow = section(t.settingsInstrument);
+    const instruments = M.INSTRUMENTS.map((id) => option(instrumentRow, t['instrument' + id[0].toUpperCase() + id.slice(1)], () => {
+      if (M.instrumentOf(score) === id && score.instrument === id) return;
+      change(() => M.setInstrument(score, id));
+      sync();
+    }));
+
+    const tempoRow = section(t.settingsTempo);
+    const tempoNone = option(tempoRow, t.tempoNone, () => { change(() => M.setTempo(score, null)); sync(); });
+    const tempos = TEMPOS.map((bpm) => option(tempoRow, String(bpm), () => { change(() => M.setTempo(score, bpm)); sync(); }));
+    const tempoInput = document.createElement('input');
+    tempoInput.type = 'number';
+    tempoInput.className = 'score-settings-tempo';
+    tempoInput.min = String(M.MIN_TEMPO);
+    tempoInput.max = String(M.MAX_TEMPO);
+    tempoInput.inputMode = 'numeric';
+    tempoInput.setAttribute('aria-label', t.settingsTempo + ' (' + t.tempoUnit + ')');
+    tempoInput.placeholder = '♩ =';
+    tempoInput.addEventListener('change', () => {
+      const bpm = Math.round(Number(tempoInput.value));
+      if (tempoInput.value !== '' && bpm >= M.MIN_TEMPO && bpm <= M.MAX_TEMPO && bpm !== score.tempo) change(() => M.setTempo(score, bpm));
+      sync();
+    });
+    tempoRow.appendChild(tempoInput);
+
+    const toolsRow = section(t.settingsTools);
+    const groups = [['repeats', t.toolsRepeats], ['dynamics', t.toolsDynamics]].map(([name, label]) => {
+      const button = option(toolsRow, label, () => {
+        setSetting('tools.' + name, !getSetting('tools.' + name, true));
+        applyTools();
+        sync();
+      });
+      return [name, button];
+    });
+
+    function sync() {
+      instruments.forEach((button, i) => button.setAttribute('aria-pressed', String(M.instrumentOf(score) === M.INSTRUMENTS[i])));
+      tempoNone.setAttribute('aria-pressed', String(!score.tempo));
+      tempos.forEach((button, i) => button.setAttribute('aria-pressed', String(score.tempo === TEMPOS[i])));
+      if (document.activeElement !== tempoInput) tempoInput.value = score.tempo && !TEMPOS.includes(score.tempo) ? String(score.tempo) : '';
+      groups.forEach(([name, button]) => button.setAttribute('aria-pressed', String(getSetting('tools.' + name, true))));
+    }
+
+    popup.addEventListener('toggle', (event) => cog.setAttribute('aria-expanded', String(event.newState === 'open')));
+    cog.addEventListener('click', () => {
+      if (popup.matches(':popover-open')) { popup.hidePopover(); return; }
+      sync();
+      popup.showPopover();
+      (popup.querySelector('[aria-pressed="true"]') || close).focus({ preventScroll: true });
+    });
+    document.querySelector('.score-page').appendChild(popup);
+  }
 
   // ---- renglones, descargas ----------------------------------------------
 

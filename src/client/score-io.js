@@ -414,7 +414,8 @@ const api = (function () {
     const track = [];
     const meta = (type, data) => track.push(0, 0xff, type, ...varLen(data.length), ...data);
     if (score.title) meta(0x03, Array.from(new TextEncoder().encode(score.title)));
-    meta(0x51, [0x07, 0xa1, 0x20]); // 120 negras por minuto
+    const microseconds = Math.round(60000000 / (score.tempo || 120)); // negras por minuto, 120 si no hay indicacion
+    meta(0x51, [microseconds >> 16 & 0xff, microseconds >> 8 & 0xff, microseconds & 0xff]);
     meta(0x58, [beats, Math.log2(unit), 24, 8]);
     meta(0x59, [M.keyAt(score, 0) & 0xff, 0]);
     track.push(0, 0xc0, 24); // guitarra de cuerdas de nylon

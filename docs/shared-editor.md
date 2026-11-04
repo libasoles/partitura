@@ -8,7 +8,7 @@ Este repositorio mantiene el sitio Astro y la implementación reutilizable del e
 
 - **Compartidas:** modelo, voces, digitación, interacción del editor, importación/exportación, persistencia, diálogos, notificaciones y componente de tablaturas. El render inicial y el navegador usan el mismo modelo y versión de Verovio.
 - **De cada sitio:** HTML, CSS, textos, navegación y posición de las herramientas. `bindActions` conecta botones propios a las acciones compartidas; no consulta una disposición particular.
-- **Configurables al arrancar:** `defaultClef` (`treble` aquí, `guitar` en guitar-chords), `saveDelay` (300 ms aquí, 0 allá), `vendorBase` y `bindActions`.
+- **Configurables al arrancar:** `defaultClef` (`treble` aquí, `guitar` en guitar-chords), `saveDelay` (300 ms aquí, 0 allá), `vendorBase`, `bindActions` y `settings` (engranaje con instrumento, tempo y grupos de herramientas; apagado por defecto porque su popup se estiliza en `editor.css`).
 
 Se conserva el formato y las claves de los datos guardados. Los sitios mantienen almacenamientos separados por origen.
 
