@@ -38,3 +38,13 @@ Para Node/CommonJS se exponen `partitura/model` (con `createScoreModel`), `parti
 Una corrección se mantiene una sola vez, pero no modifica silenciosamente un sitio ya publicado. No se consume `main` como versión flotante. El consumidor sigue funcionando con su revisión hasta que se actualice y vuelva a generar su sitio.
 
 Los estilos de presentación siguen siendo locales: un cambio visual que deba llegar a ambos sitios requiere revisar ambos CSS.
+
+## Sincronización automática
+
+En guitar-chords, **Update Partitura** consulta este repositorio aproximadamente cada 15 minutos y abre o actualiza un único PR con la revisión nueva. Usa el `GITHUB_TOKEN` del consumidor; no requiere secretos entre repositorios.
+
+Ese PR ejecuta explícitamente la CI completa de guitar-chords. Solo se mergea si el build, las pruebas unitarias y todas las suites de navegador pasan para su commit exacto. El integrador comprueba el autor del bot, el origen de la rama, los dos archivos permitidos y que no cambie otra dependencia declarada. Un fallo deja el PR abierto; si `main` avanzó, el actualizador debe refrescarlo y probarlo de nuevo.
+
+El merge inicia explícitamente otra ejecución de CI en `main`, que despliega el sitio si todo pasa. Estas ejecuciones explícitas evitan depender de eventos de push generados por `GITHUB_TOKEN`, que GitHub normalmente no propaga a otros workflows. Ver [la documentación de eventos de GitHub Actions](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+
+Para reintentar un fallo o revisar novedades de inmediato, ejecutar **Update Partitura** desde Actions en guitar-chords. Los cambios nuevos no llegan al sitio publicado hasta superar esas verificaciones y el despliegue.
