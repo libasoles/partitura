@@ -141,7 +141,7 @@
     "patternNothing": "Elegí notas o un compás para guardar un patrón (Mayús+S).",
     "patternOneStaff": "Un patrón se guarda de un solo pentagrama.",
     "patternRelative": "Aplicar con la relación entre notas",
-    "patternRhythm": "Aplicar solo el ritmo, a una misma altura",
+    "patternRhythm": "Copia las notas sin intervalos",
     "patternRemove": "Quitar patrón",
     "patternPickMeasure": "Elegí un compás para aplicar el patrón, o arrastralo a la partitura.",
     "tabToggle": "Tablatura bajo cada renglón",

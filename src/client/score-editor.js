@@ -3878,7 +3878,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         button.type = 'button';
         button.className = flat ? 'score-pattern-rhythm' : 'score-pattern-notes';
         button.setAttribute('aria-label', label);
-        button.title = label;
+        if (flat) { button.classList.add('tooltip'); button.dataset.tooltip = label; } else button.title = label;
         // Sin foco por el pointerdown: se arrastra o se hace click, como los botones de la paleta.
         button.addEventListener('pointerdown', (event) => {
           if (event.button !== 0) return;
@@ -3898,8 +3898,17 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       remove.innerHTML = lucide('x');
       remove.setAttribute('aria-label', t.patternRemove);
       remove.dataset.tooltip = t.patternRemove;
-      remove.addEventListener('click', () => { library.splice(index, 1); saveLibrary(); renderLibrary(); });
-      item.append(notes, rhythm, remove);
+      remove.addEventListener('click', () => {
+        // Se desvanece antes de salir de la lista; el patron se borra al empezar para que un segundo click no quite otro.
+        library.splice(index, 1);
+        saveLibrary();
+        remove.disabled = true;
+        item.classList.add('is-removing');
+        const done = () => { item.remove(); libraryEmpty.hidden = library.length > 0; renderLibrary(); };
+        item.addEventListener('transitionend', done, { once: true });
+        setTimeout(done, 400);
+      });
+      item.append(remove, notes, rhythm);
       libraryList.appendChild(item);
       if (notes.firstChild?.fit) notes.firstChild.fit();
     });

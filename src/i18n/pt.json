@@ -141,7 +141,7 @@
     "patternNothing": "Selecione notas ou um compasso para salvar um padrão (Shift+S).",
     "patternOneStaff": "Um padrão é salvo de uma única pauta.",
     "patternRelative": "Aplicar mantendo a relação entre as notas",
-    "patternRhythm": "Aplicar só o ritmo, tudo na mesma altura",
+    "patternRhythm": "Copia as notas sem intervalos",
     "patternRemove": "Remover padrão",
     "patternPickMeasure": "Selecione um compasso para aplicar o padrão, ou arraste-o para a partitura.",
     "tabToggle": "Tablatura sob cada linha",
