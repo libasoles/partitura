@@ -2041,13 +2041,13 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   outline: 0;
   background: transparent;
   color: var(--ink);
-  font: 700 1.1rem/1.6rem var(--serif);
+  font: 700 1.1rem/1.3 Times, serif; /* la fuente de Verovio; el tamano lo fija el script */
 }
 
 .score-chord-draft {
   position: absolute;
   z-index: 2;
-  transform: translate(-50%, -100%);
+  transform: translate(-50%, calc(-100% + 1px)); /* el texto cae sobre el mismo renglon que el nombre dibujado */
   background: var(--paper);
   text-align: center;
 }

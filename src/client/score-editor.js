@@ -1764,6 +1764,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const fit = () => { input.style.width = Math.max(3, input.value.length + 1.5) + 'ch'; };
     fit();
     const band = chordBand(draft.mi);
+    input.style.fontSize = band.space * 2.25 + 'px'; // el nombre dibujado mide 2,25 espacios del pentagrama
     input.style.left = column.x + 'px';
     input.style.top = chordLineY(band) + 'px';
     const finish = (save) => {
