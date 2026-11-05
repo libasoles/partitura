@@ -2221,7 +2221,8 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   text-align: left;
   font: 600 0.78rem/1.2 system-ui, sans-serif;
 }
-.score-pattern-degrees { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.score-pattern-staff { display: flex; align-items: center; overflow: hidden; color: var(--ink); }
+.score-pattern-staff svg { flex: none; }
 .score-pattern-rhythm {
   display: flex;
   align-items: center;

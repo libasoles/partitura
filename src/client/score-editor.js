@@ -3746,6 +3746,48 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     document.querySelector('.score-workspace').prepend(libraryPanel);
   }
 
+  // Las figuras del patron sobre un pentagrama chico: cada nota a su altura relativa (la primera con altura es el origen),
+  // los silencios en el centro. Una columna por tiempo; las notas de un acorde comparten columna.
+  function patternStaff(pattern) {
+    const columns = [];
+    pattern.events.forEach((ev) => {
+      const last = columns[columns.length - 1];
+      if (last && last.mi === ev.mi && last.at === ev.at) last.events.push(ev);
+      else columns.push({ mi: ev.mi, at: ev.at, events: [ev] });
+    });
+    const steps = pattern.events.filter((ev) => !ev.rest).map((ev) => ev.dn);
+    const lo = Math.min(...steps, 0);
+    const hi = Math.max(...steps, 0);
+    const mid = (lo + hi) / 2;
+    const half = Math.max(6, Math.ceil((hi - lo) / 2) + 3);
+    const height = half * 2;
+    const WIDTH = 6;
+    const wrap = document.createElement('span');
+    wrap.className = 'score-pattern-staff';
+    columns.forEach((column) => {
+      const svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('viewBox', `0 0 ${WIDTH} ${height}`);
+      svg.style.width = `${WIDTH * 0.2}rem`;
+      svg.style.height = `${height * 0.2}rem`;
+      svg.setAttribute('aria-hidden', 'true');
+      let markup = '';
+      for (let line = -2; line <= 2; line += 1) markup += `<line x1="0" x2="${WIDTH}" y1="${half + line * 2}" y2="${half + line * 2}" stroke="currentColor" stroke-opacity=".35" stroke-width=".25"/>`;
+      column.events.forEach((ev) => {
+        if (ev.rest) {
+          markup += `<svg x="0.5" y="${half - 5}" width="5" height="10" viewBox="0 -12 30 56" fill="currentColor">${glyphFor({ kind: 'rest', d: ev.d }).innerHTML}</svg>`;
+          return;
+        }
+        const y = half - (ev.dn - mid);
+        const open = ev.d === 'w' || ev.d === 'h';
+        markup += `<ellipse cx="3" cy="${y}" rx="1.5" ry="1" transform="rotate(-20 3 ${y})" fill="${open ? 'none' : 'currentColor'}" stroke="currentColor" stroke-width=".35"/>`;
+        if (ev.d !== 'w') markup += y > half ? `<line x1="4.4" x2="4.4" y1="${y}" y2="${y - 6}" stroke="currentColor" stroke-width=".35"/>` : `<line x1="1.6" x2="1.6" y1="${y}" y2="${y + 6}" stroke="currentColor" stroke-width=".35"/>`;
+      });
+      svg.innerHTML = markup;
+      wrap.appendChild(svg);
+    });
+    return wrap;
+  }
+
   function renderLibrary() {
     libraryList.replaceChildren();
     libraryEmpty.hidden = library.length > 0;
@@ -3767,12 +3809,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         button.addEventListener('click', (event) => { if (event.detail === 0) applyToChosenMeasure(pattern, flat); });
         return button;
       };
-      const degrees = M.patternDegrees(pattern);
-      const notes = section(false, t.patternRelative + (degrees ? ': ' + degrees : ''));
-      const label = document.createElement('span');
-      label.className = 'score-pattern-degrees';
-      label.textContent = degrees || '·';
-      notes.appendChild(label);
+      const notes = section(false, t.patternRelative);
+      notes.appendChild(patternStaff(pattern));
       const rhythm = section(true, t.patternRhythm);
       // Una figura por tiempo: las notas de un acorde se dibujan una sola vez.
       pattern.events.filter((ev, i, all) => !all.slice(0, i).some((o) => o.mi === ev.mi && o.at === ev.at)).forEach((ev) => {
