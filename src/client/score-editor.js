@@ -813,6 +813,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     side.style.marginTop = Math.max(0, offset) + 'px';
     side.style.setProperty('--side-offset', Math.max(0, offset) + 'px');
     alignVoiceLegend();
+    // La biblioteca de patrones arranca a la misma altura que la primera linea del pentagrama.
+    const panel = document.querySelector('.score-library');
+    const workspace = panel?.offsetParent;
+    if (panel && workspace) panel.style.top = Math.max(0, line.getBoundingClientRect().top - workspace.getBoundingClientRect().top) + 'px';
   }
 
   // The voices toolbar sits left of the staff, level with the top line of the first staff.
@@ -3867,7 +3871,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const on = patternsOn();
     libraryPanel.hidden = !on;
     toolbars.classList.toggle('has-library', on);
-    if (on) renderLibrary();
+    if (on) { renderLibrary(); alignBarlinesToFirstStaff(); }
   }
 
   // Shift+S: las figuras elegidas o, sin ninguna, el compas elegido.
