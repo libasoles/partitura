@@ -813,10 +813,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     side.style.marginTop = Math.max(0, offset) + 'px';
     side.style.setProperty('--side-offset', Math.max(0, offset) + 'px');
     alignVoiceLegend();
-    // La biblioteca de patrones arranca a la misma altura que la primera linea del pentagrama.
-    const panel = document.querySelector('.score-library');
-    const workspace = panel?.offsetParent;
-    if (panel && workspace) panel.style.top = Math.max(0, line.getBoundingClientRect().top - workspace.getBoundingClientRect().top) + 'px';
   }
 
   // The voices toolbar sits left of the staff, level with the top line of the first staff.
@@ -3824,12 +3820,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // El patron tal como queda al escribirlo (en la linea del medio de un compas vacio), dibujado por el mismo grabador de la
   // partitura: plicas, barras y silencios coinciden. Sin pentagrama, clave ni compas; `fit` recorta al contenido una vez en el DOM.
-  function patternStaff(pattern) {
+  // `space` es el alto de un espacio del pentagrama en pixeles; con `flat` todas las notas van a la misma altura.
+  function patternStaff(pattern, { flat = false, space: size = 0.5 * 16 } = {}) {
     const wrap = document.createElement('span');
     wrap.className = 'score-pattern-staff';
     const sample = { meter: score.meter, clef: 'treble', fifths: 0, instrument: 'guitar', rows: [[[]]] };
     if (!toolkit) return wrap; // Verovio aun no cargo: se vuelve a dibujar al terminar
-    if (!M.applyPattern(sample, pattern, { mi: 0, at: pattern.first, n: M.bottomLine(sample, 0, 0) + 4 })) return wrap;
+    if (!M.applyPattern(sample, pattern, { mi: 0, at: pattern.first, n: M.bottomLine(sample, 0, 0) + 4, flat })) return wrap;
     if (!previewToolkit) previewToolkit = newToolkit();
     previewToolkit.setOptions(layoutOptions(900, { minLastJustification: 1, pageMarginLeft: 10, pageMarginRight: 10, pageMarginTop: 10, pageMarginBottom: 10 }));
     previewToolkit.loadData(M.toMusicXml(sample));
@@ -3845,21 +3842,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (lines.length < 2) return;
       const space = (lines[1].top - lines[0].top) * box.width / svg.getBoundingClientRect().width;
       svg.querySelectorAll('g.staff > path, g.clef, g.keySig, g.meterSig, g.barLine').forEach((el) => el.setAttribute('display', 'none'));
-      // El viewBox no se toca (los svg anidados de Verovio escalan con el): se agranda el svg a 0.9rem por espacio del
-      // pentagrama y el recorte al contenido lo hace el contenedor, con margenes negativos.
-      const em = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-      svg.style.width = `${box.width * 0.9 / space}rem`;
-      svg.style.height = `${box.height * 0.9 / space}rem`;
+      // El viewBox no se toca (los svg anidados de Verovio escalan con el): se ajusta el tamano del svg a `size` pixeles
+      // por espacio del pentagrama y el recorte al contenido lo hace el contenedor, con margenes negativos.
+      svg.style.width = `${box.width * size / space}px`;
+      svg.style.height = `${box.height * size / space}px`;
       const frame = svg.getBoundingClientRect();
       const rects = [...svg.querySelectorAll('g.layer')].map((layer) => layer.getBoundingClientRect());
       if (!rects.length) return;
-      const pad = 0.45 * em;
+      const pad = size * 0.5;
       const left = Math.min(...rects.map((r) => r.left)) - pad, right = Math.max(...rects.map((r) => r.right)) + pad;
       const top = Math.min(...rects.map((r) => r.top)) - pad, bottom = Math.max(...rects.map((r) => r.bottom)) + pad;
       wrap.style.alignItems = 'flex-start';
-      wrap.style.width = `${(right - left) / em}rem`;
-      wrap.style.height = `${(bottom - top) / em}rem`;
-      svg.style.margin = `${(frame.top - top) / em}rem 0 0 ${(frame.left - left) / em}rem`;
+      wrap.style.width = `${right - left}px`;
+      wrap.style.height = `${bottom - top}px`;
+      svg.style.margin = `${frame.top - top}px 0 0 ${frame.left - left}px`;
     };
     return wrap;
   }
@@ -3886,7 +3882,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         return button;
       };
       const notes = section(false, t.patternRelative);
-      notes.appendChild(patternStaff(pattern));
+      notes.appendChild(patternStaff(pattern, { space: 0.5 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) }));
       const rhythm = section(true, t.patternRhythm);
       rhythm.innerHTML = lucide('square-chevrons-down');
       const remove = document.createElement('button');
@@ -3946,27 +3942,24 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     applyPattern(pattern, flat, { mi, staff, at: pattern.first, n: M.bottomLine(score, mi, staff) + 4 });
   }
 
-  // El fantasma del patron: una figura por evento, con la separacion de tiempo y de altura que tendran al soltarlas.
+  // El fantasma del patron es el mismo dibujo de la biblioteca (barras y plicas incluidas), al tamano de la partitura y con la
+  // cabeza de la primera nota bajo el puntero.
   function patternGhost(pattern, flat, event) {
-    const lines = layout[0] && layout[0].lines;
-    const space = lines ? (lines[4] - lines[0]) / 4 : 10;
-    const capacity = M.capacity(score, 0);
-    const anchor = pattern.events.find((ev) => !ev.rest && !ev.dn) || pattern.events[0];
-    // Ademas del tiempo, un paso fijo por columna: las figuras cortas no quedan pegadas.
-    const starts = [...new Set(pattern.events.map((ev) => ev.mi * capacity + ev.at))].sort((a, b) => a - b);
-    const timeOf = (ev) => (ev.mi * capacity + ev.at) / M.DIVISIONS * space * 3 + starts.indexOf(ev.mi * capacity + ev.at) * space * 1.6;
-    const kindOf = (ev) => (ev.rest ? 'rest' : 'note');
-    const ghost = startGhost(glyphFor({ kind: kindOf(anchor), d: anchor.d }), event, kindOf(anchor));
-    pattern.events.filter((ev) => ev !== anchor).forEach((ev) => {
-      const dx = timeOf(ev) - timeOf(anchor);
-      const dy = ev.rest || flat ? 0 : -(ev.dn - (anchor.dn || 0)) * space / 2;
-      const member = document.createElement('div');
-      member.style.cssText = 'position:absolute;left:' + dx + 'px;top:' + dy + 'px';
-      ghost.appendChild(member);
-      const probe = startGhost(glyphFor({ kind: kindOf(ev), d: ev.d }), { clientX: 0, clientY: 0 }, kindOf(ev));
-      probe.remove();
-      member.appendChild(probe.firstChild);
-    });
+    const lines = stage.querySelectorAll('g.staff > path');
+    const space = lines.length > 1 ? lines[1].getBoundingClientRect().top - lines[0].getBoundingClientRect().top : 10;
+    const ghost = document.createElement('div');
+    ghost.className = 'score-ghost';
+    const drawing = patternStaff(pattern, { flat, space });
+    ghost.appendChild(drawing);
+    document.body.appendChild(ghost);
+    if (drawing.fit) {
+      drawing.fit();
+      const head = drawing.querySelector('.notehead');
+      const frame = drawing.getBoundingClientRect();
+      const box = (head || drawing).getBoundingClientRect();
+      drawing.style.transform = `translate(${-(box.left + box.width / 2 - frame.left)}px,${-(box.top + box.height / 2 - frame.top)}px)`;
+    }
+    moveGhost(ghost, event);
     return ghost;
   }
 
