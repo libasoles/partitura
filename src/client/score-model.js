@@ -672,6 +672,119 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     return refs;
   }
 
+  // Un patron guarda el ritmo y la relacion entre las alturas (grados diatonicos desde la primera nota), no la tonalidad
+  // ni las alteraciones: `dn` es la distancia en pasos de escala a la primera nota con altura. Cada figura lleva su
+  // compas (`mi`, desde el primero del patron) y su inicio (`at`) dentro de el.
+  const PATTERN_KEYS = ['dot', 'rest', 'dead', 'tp', 'tn', 'beam'];
+  const MAX_PATTERN_EVENTS = 128;
+
+  function patternOf(items) {
+    if (!items.length) return null;
+    items.sort((a, b) => a.mi - b.mi || a.at - b.at || (a.ev.n ?? 0) - (b.ev.n ?? 0));
+    const base = items.find((item) => !item.ev.rest)?.ev.n ?? 0;
+    const events = items.map(({ ev, mi, at }) => {
+      const out = { d: ev.d };
+      PATTERN_KEYS.forEach((key) => { if (ev[key] !== undefined) out[key] = ev[key]; });
+      if (!ev.rest) out.dn = ev.n - base;
+      out.mi = mi - items[0].mi;
+      out.at = at;
+      return out;
+    });
+    return { events, first: items[0].at };
+  }
+
+  // De las figuras elegidas, que tienen que ser de un solo pentagrama.
+  function patternFrom(score, refs) {
+    if (!refs.length || refs.some((ref) => staffOf(ref) !== staffOf(refs[0]))) return null;
+    const lane = measures(score, staffOf(refs[0]));
+    const chosen = refs.filter((ref, k) => lane[ref.mi]?.[ref.i] && refs.findIndex((o) => sameRef(o, ref)) === k);
+    return patternOf(chosen.map((ref) => ({ ev: lane[ref.mi][ref.i], mi: ref.mi, at: onsets(lane[ref.mi])[ref.i] })));
+  }
+
+  function patternFromMeasure(score, mi, staff = 0) {
+    const measure = measures(score, staff)[mi];
+    if (!measure) return null;
+    const starts = onsets(measure);
+    return patternOf(measure.map((ev, i) => ({ ev, mi, at: starts[i] })));
+  }
+
+  // Lo que viene de guardado: solo figuras validas y con los campos que el modelo conoce.
+  function cleanPattern(data) {
+    if (!data || !Array.isArray(data.events) || !data.events.length || data.events.length > MAX_PATTERN_EVENTS) return null;
+    const events = [];
+    for (const raw of data.events) {
+      if (!raw || !VALUES[raw.d] || !Number.isInteger(raw.mi) || raw.mi < 0 || !Number.isInteger(raw.at) || raw.at < 0) return null;
+      const ev = { d: raw.d };
+      if (raw.rest === true) ev.rest = true;
+      else if (Number.isInteger(raw.dn) && Math.abs(raw.dn) <= HIGHEST - LOWEST) ev.dn = raw.dn;
+      else return null;
+      if (raw.dot === true || raw.dot === 2) ev.dot = raw.dot;
+      if (!ev.rest && raw.dead === true) ev.dead = true;
+      if (Number.isInteger(raw.tp) && raw.tp > 0) { ev.tp = raw.tp; if (TUPLETS[raw.tn] && raw.tn !== 3) ev.tn = raw.tn; }
+      if (raw.beam === 'join' || raw.beam === 'break') ev.beam = raw.beam;
+      ev.mi = raw.mi;
+      ev.at = raw.at;
+      events.push(ev);
+    }
+    return { events, first: Number.isInteger(data.first) && data.first >= 0 ? data.first : events[0].at };
+  }
+
+  const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  // "I V III II": el grado de cada nota respecto de la primera; una octava mas arriba o abajo se marca con + o -.
+  function patternDegrees(pattern) {
+    const out = [];
+    pattern.events.forEach((ev, i) => {
+      if (ev.rest) return;
+      const prior = pattern.events[i - 1];
+      if (prior && !prior.rest && prior.mi === ev.mi && prior.at === ev.at && prior.dn !== undefined) { out[out.length - 1] += '/' + degree(ev.dn); return; }
+      out.push(degree(ev.dn));
+    });
+    return out.join(' ');
+  }
+  function degree(dn) {
+    const octave = Math.floor(dn / 7);
+    return ROMAN[((dn % 7) + 7) % 7] + (octave > 0 ? '+'.repeat(octave) : '-'.repeat(-octave));
+  }
+
+  // Escribe el patron desde (`mi`, `at`) en el pentagrama `staff`; la primera nota con altura queda en `n`. Con `flat`
+  // todas las notas van a `n` (solo se usa el ritmo). Modifica `score`: quien llama le pasa una copia de prueba.
+  // Devuelve las figuras nuevas, o null si no entra (compas de menos, fuera de rango, nota repetida o sin lugar).
+  function applyPattern(score, pattern, { mi, staff = 0, at = pattern.first, n, flat = false }) {
+    const clean = cleanPattern(pattern);
+    if (!clean || !Number.isInteger(mi) || mi < 0 || !Number.isInteger(n)) return null;
+    const shift = at - clean.first;
+    const span = Math.max(...clean.events.map((ev) => ev.mi)) + 1;
+    while (measures(score).length < mi + span) score.rows.push(emptyRow());
+    const refs = [];
+    for (let offset = 0; offset < span; offset += 1) {
+      const destination = measures(score, staff)[mi + offset];
+      const starts = onsets(destination);
+      const ids = new Map();
+      let nextId = Math.max(0, ...destination.map((ev) => ev.tp || 0));
+      const list = [];
+      for (const raw of clean.events.filter((ev) => ev.mi === offset)) {
+        const { dn, mi: _mi, at: start, ...ev } = raw;
+        const when = start + (offset === 0 ? shift : 0);
+        if (when < 0) return null;
+        if (!ev.rest) {
+          ev.n = flat ? n : n + dn;
+          if (ev.n < LOWEST || ev.n > HIGHEST) return null;
+          if (destination.some((o, i) => !o.rest && starts[i] === when && o.n === ev.n && !o.acc)) return null;
+        }
+        if (ev.tp) {
+          if (!ids.has(ev.tp)) ids.set(ev.tp, ++nextId);
+          ev.tp = ids.get(ev.tp);
+        }
+        list.push([ev, when]);
+      }
+      const indices = insertMany(destination, list);
+      if (measureLength(destination) > capacity(score, mi + offset) || voices(destination).length > MAX_VOICE) return null;
+      indices.forEach((i) => refs.push(refOf(staff, mi + offset, i)));
+    }
+    pruneLower(score);
+    return refs;
+  }
+
   function clampPitch(n) {
     return Math.max(LOWEST, Math.min(HIGHEST, n));
   }
@@ -2484,7 +2597,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, duplicateSelection, length, gridOf, hints, onsets, settle, placement, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateSelection, length, gridOf, hints, onsets, settle, placement, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     stavesOf, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, MAX_CHORD_NAME, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,

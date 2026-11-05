@@ -67,6 +67,13 @@
 - Mostrar u ocultar los grupos de repetición, dinámica y voces es por partitura (`score.tools`, `M.setTool`), no global: viaja con el documento y la leyenda de voces se coloca a la izquierda de la llave.
 - Con piano y los ajustes activos, cada renglón es un gran pentagrama (ver la sección siguiente). Cambiar a guitarra lo oculta sin borrarlo.
 
+### Biblioteca de patrones
+
+- **Activación**: casilla "Patrones" en los ajustes (sección Biblioteca); es del usuario, no de la partitura (`getSetting('patterns')`). La biblioteca vive en `localStorage` (`patternItems`, tope 60), no viaja en el documento. `startEditor({ patterns: true })` la ofrece; `.score-page.has-library` abre una columna a la izquierda del editor con `.score-library` ("PATRONES", vacía: "No hay patrones guardados").
+- **Modelo** (`score-model.js`): un patrón es `{ events: [{ d, dot?, rest?, tp?, dn, mi, at }], first }`. `dn` es la distancia en pasos de escala a la primera nota con altura, así que no guarda tonalidad, alteraciones, ligaduras ni voces (se vuelven a inferir). `patternFrom` (figuras de un solo pentagrama), `patternFromMeasure`, `applyPattern` (sobre una copia de prueba; null si no entra), `cleanPattern` (valida lo guardado) y `patternDegrees` ("I V III II").
+- **Guardar**: Shift+S guarda las figuras elegidas o, sin ninguna, el compás elegido con un click. No agrega duplicados.
+- **Aplicar**: cada patrón tiene dos zonas arrastrables y clickeables. La izquierda (grados) conserva la relación entre notas y la primera queda en la altura donde se suelta; la derecha (figuras) usa solo el ritmo y todas las notas van a una misma altura. Arrastrar muestra un fantasma por figura (`patternGhost`). Un click, sin arrastrar, escribe el patrón en el compás elegido, desde su inicio y en la línea del medio.
+
 ### Acordes (guitarra)
 
 - **Modelo**: `score.chords[mi]` es la lista, ordenada por `at`, de `{ at, name, variant? }` (un acorde por tiempo y compás; `variant` es la digitación elegida y 0 no se guarda). Mismo patrón que `barres`: está en `BY_MEASURE`, se parte con `setBarline`, `setMeter` quita los que ya no caben y `sanitize` descarta lo inválido. Una partitura con acordes se infiere de guitarra (`instrumentOf`).
