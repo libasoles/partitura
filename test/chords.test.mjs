@@ -22,6 +22,18 @@ test('a chord is stored by measure and time, one per time, sorted', () => {
   assert.equal(score.chords, undefined);
 });
 
+test('moving a chord keeps its name and variant and refuses an occupied or invalid target', () => {
+  const score = guitar();
+  M.setChord(score, 0, 0, 'C', 2);
+  M.setChord(score, 0, 48, 'G');
+  assert.equal(M.moveChord(score, 0, 0, 0, 48), false, 'target taken');
+  assert.equal(M.moveChord(score, 0, 0, 0, 96), false, 'past the end');
+  assert.equal(M.moveChord(score, 0, 24, 0, 12), false, 'no chord there');
+  assert.deepEqual(score.chords[0], [{ at: 0, name: 'C', variant: 2 }, { at: 48, name: 'G' }]);
+  assert.ok(M.moveChord(score, 0, 0, 0, 24));
+  assert.deepEqual(score.chords[0], [{ at: 24, name: 'C', variant: 2 }, { at: 48, name: 'G' }]);
+});
+
 test('renaming keeps the variant only when the name is the same', () => {
   const score = guitar();
   M.setChord(score, 0, 0, 'C', 2);
