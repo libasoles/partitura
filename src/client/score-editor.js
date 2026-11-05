@@ -1709,7 +1709,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (band.bottom - band.top < band.space * 1.5 || y < band.top || y > band.bottom) continue;
       const columns = chordColumns(mi);
       const column = columns.reduce((best, c) => (Math.abs(c.x - x) < Math.abs(best.x - x) ? c : best));
-      const gap = Math.min(...columns.filter((c) => c !== column).map((c) => Math.abs(c.x - column.x)), band.space * 6);
+      // Sin figuras solo existe la columna del inicio: la zona aparece unicamente cerca de ella, no desde cualquier punto del compas.
+      const lone = columns.length === 1;
+      if (lone && Math.abs(column.x - x) > band.space * 2) continue;
+      const gap = Math.min(...columns.filter((c) => c !== column).map((c) => Math.abs(c.x - column.x)), band.space * (lone ? 3 : 6));
       return { mi, at: column.at, x: column.x, y: chordLineY(band) - 3, width: Math.max(band.space * 2.5, Math.min(gap, band.space * 6)), band };
     }
     return null;
