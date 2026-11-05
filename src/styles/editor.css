@@ -2023,12 +2023,12 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   cursor: text;
 }
 
-.score-chord-draft,
-.score-chord-name {
+.score-chord-draft {
   box-sizing: content-box;
   padding: 0 0.2rem;
   border: 0;
-  border-bottom: 2px solid var(--accent-brand);
+  border-bottom: 3px solid var(--accent-brand);
+  border-radius: 2px;
   outline: 0;
   background: transparent;
   color: var(--ink);
@@ -2038,7 +2038,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-chord-draft {
   position: absolute;
   z-index: 2;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -100%);
   background: var(--paper);
   text-align: center;
 }
@@ -2065,23 +2065,11 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   gap: 0.4rem;
 }
 
-.score-chord-head {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.score-chord-name {
-  width: 7rem;
-  text-align: center;
-}
-
-.score-chord-remove,
 .score-chord-variants button {
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -2090,7 +2078,6 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   cursor: pointer;
 }
 
-.score-chord-remove:hover,
 .score-chord-variants button:hover:not(:disabled) {
   background: var(--surface);
   color: var(--blue-france);
@@ -2123,6 +2110,8 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 
 .chord-diagram {
   display: block;
+  width: 12rem;
+  height: auto;
 }
 
 .chord-diagram__string,
@@ -2136,10 +2125,16 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   stroke-width: 3;
 }
 
-.chord-diagram__position,
+.chord-diagram__position {
+  font-family: var(--sans);
+  font-size: 11px;
+  fill: var(--ink-soft);
+}
+
 .chord-diagram__string-name {
   font-family: var(--sans);
-  font-size: 9px;
+  font-size: 12px;
+  font-weight: 600;
   fill: var(--ink-soft);
 }
 
@@ -2150,7 +2145,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 
 .chord-diagram__finger-label {
   font-family: var(--sans);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   fill: var(--paper);
 }
@@ -2163,9 +2158,9 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 
 .chord-diagram__mute {
   font-family: var(--sans);
-  font-size: 11px;
+  font-size: 17px;
   font-weight: 700;
-  fill: var(--ink-soft);
+  fill: var(--ink);
 }
 
 /* ----- Pattern library: a column left of the sheet, shown from the settings ----- */

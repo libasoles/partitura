@@ -1692,6 +1692,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return { space, top: Math.max(m.top - 7 * space, above + space), bottom: m.top - 3 * space, center: m.top - 4.5 * space };
   }
 
+  // La linea donde se escribe: la zona la subraya, el campo se apoya en ella y el nombre ya escrito queda justo encima.
+  const chordLineY = (band) => band.center + band.space * 0.9;
+
   function chordZoneAt(clientX, clientY) {
     const origin = stage.getBoundingClientRect();
     const x = clientX - origin.left, y = clientY - origin.top;
@@ -1703,7 +1706,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const columns = chordColumns(mi);
       const column = columns.reduce((best, c) => (Math.abs(c.x - x) < Math.abs(best.x - x) ? c : best));
       const gap = Math.min(...columns.filter((c) => c !== column).map((c) => Math.abs(c.x - column.x)), band.space * 6);
-      return { mi, at: column.at, x: column.x, y: band.center + band.space * 0.9, width: Math.max(band.space * 2.5, Math.min(gap, band.space * 6)), band };
+      return { mi, at: column.at, x: column.x, y: chordLineY(band) - 3, width: Math.max(band.space * 2.5, Math.min(gap, band.space * 6)), band };
     }
     return null;
   }
@@ -1735,9 +1738,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     showChordZone(free ? chordZoneAt(event.clientX, event.clientY) : null);
   }
 
-  function startChordDraft(mi, at) {
-    if (M.chordAt(score, mi, at)) { openChord(mi, at); return; }
-    chordDraft = { mi, at, text: '' };
+  function startChordDraft(mi, at, edit) {
+    if (M.chordAt(score, mi, at) && edit === undefined) { openChord(mi, at); return; }
+    chordDraft = { mi, at, text: edit || '' };
     mountChordDraft();
   }
 
@@ -1758,7 +1761,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     fit();
     const band = chordBand(draft.mi);
     input.style.left = column.x + 'px';
-    input.style.top = band.center + 'px';
+    input.style.top = chordLineY(band) + 'px';
     const finish = (save) => {
       // Un redibujado quita el campo sin terminar de escribir: el borrador sigue y se vuelve a montar.
       if (chordDraft !== draft || !input.isConnected) return;
@@ -1793,6 +1796,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         const dir = dirs.find((node) => !used.has(node) && squash(node.textContent) === squash(chord.name));
         if (!dir) return;
         used.add(dir);
+        // Verovio lo pega al pentagrama: se sube a la linea donde se escribio, sobre el mismo lugar que mostro la zona.
+        const scale = dir.getScreenCTM() && dir.getScreenCTM().a;
+        const lift = chordLineY(chordBand(mi)) - 5 + origin.top - dir.getBoundingClientRect().bottom;
+        if (scale) dir.setAttribute('transform', 'translate(0 ' + lift / scale + ') ' + (dir.getAttribute('transform') || ''));
         const box = dir.getBoundingClientRect();
         const button = document.createElement('button');
         button.type = 'button';
@@ -1809,6 +1816,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         // Un click sobre el nombre con su popup abierto lo cierra: el pointerdown ya lo descarto antes de que llegue el click.
         button.addEventListener('pointerdown', () => { wasOpen = !!chordPopup && chordPopup.matches(':popover-open') && !!chordOpen && chordOpen.mi === mi && chordOpen.at === chord.at; });
         button.addEventListener('click', () => { if (!wasOpen) openChord(mi, chord.at); });
+        // Doble clic renombra; Suprimir o Retroceso quitan el acorde.
+        button.addEventListener('dblclick', () => { if (chordPopup) chordPopup.hidePopover(); startChordDraft(mi, chord.at, chord.name); });
+        button.addEventListener('keydown', (event) => {
+          if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+          event.preventDefault();
+          if (chordPopup) chordPopup.hidePopover();
+          change(() => M.removeChord(score, mi, chord.at));
+        });
         stage.appendChild(button);
       });
     });
@@ -1823,22 +1838,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     chordPopup.setAttribute('popover', 'auto');
     chordPopup.setAttribute('role', 'dialog');
     chordPopup.setAttribute('aria-label', t.chord);
-    const head = document.createElement('div');
-    head.className = 'score-chord-head';
-    const name = document.createElement('input');
-    name.type = 'text';
-    name.className = 'score-chord-name';
-    name.maxLength = M.MAX_CHORD_NAME;
-    name.autocomplete = 'off';
-    name.spellcheck = false;
-    name.setAttribute('aria-label', t.chordName);
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'score-chord-remove';
-    remove.setAttribute('aria-label', t.chordRemove);
-    remove.title = t.chordRemove;
-    remove.innerHTML = lucide('trash');
-    head.append(name, remove);
     const picture = document.createElement('div');
     picture.className = 'score-chord-picture';
     const unknown = document.createElement('p');
@@ -1859,31 +1858,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const count = document.createElement('span');
     count.setAttribute('aria-live', 'polite');
     nav.append(previous, count, next);
-    chordPopup.append(head, picture, unknown, nav);
+    chordPopup.append(picture, unknown, nav);
     document.querySelector('.score-page').appendChild(chordPopup);
-    chordPopup.parts = { name, remove, picture, unknown, nav, previous, next, count };
+    chordPopup.parts = { picture, unknown, nav, previous, next, count };
 
-    const commitName = () => {
-      const open = chordOpen;
-      const chord = open && M.chordAt(score, open.mi, open.at);
-      if (!chord) return;
-      const value = name.value.trim();
-      if (value === chord.name) return;
-      if (!value) { chordPopup.hidePopover(); change(() => M.removeChord(score, open.mi, open.at)); return; }
-      if (!change(() => M.setChord(score, open.mi, open.at, value))) name.value = chord.name;
-    };
-    name.addEventListener('keydown', (event) => {
-      event.stopPropagation();
-      if (event.key === 'Enter') { event.preventDefault(); commitName(); name.blur(); }
-      else if (event.key === 'Escape') name.value = (chordOpen && M.chordAt(score, chordOpen.mi, chordOpen.at) || { name: '' }).name;
-    });
-    name.addEventListener('change', commitName);
-    remove.addEventListener('click', () => {
-      const open = chordOpen;
-      chordPopup.hidePopover();
-      if (open) change(() => M.removeChord(score, open.mi, open.at));
-      stage.focus({ preventScroll: true });
-    });
     const step = (delta) => {
       const open = chordOpen;
       const chord = open && M.chordAt(score, open.mi, open.at);
@@ -1919,8 +1897,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const trigger = chord && stage.querySelector('.score-chord-trigger[data-measure="' + mi + '"][data-at="' + at + '"]');
     if (!trigger) { if (chordPopup.matches(':popover-open')) chordPopup.hidePopover(); chordOpen = null; return; }
     if (!show && !chordPopup.matches(':popover-open')) return;
-    const { name, picture, unknown, nav, previous, next, count } = chordPopup.parts;
-    if (document.activeElement !== name) name.value = chord.name;
+    const { picture, unknown, nav, previous, next, count } = chordPopup.parts;
     const found = chordLib && chordLib.findChord(chordLib.index, chord.name);
     const positions = found ? chordLib.positionsOf(found).slice(0, M.MAX_CHORD_VARIANTS) : [];
     const variant = Math.min(chord.variant || 0, Math.max(positions.length - 1, 0));

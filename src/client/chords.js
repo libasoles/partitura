@@ -9,7 +9,7 @@ const MARGIN_X = 14;
 const TOP = 26;
 const FRET_HEIGHT = 20;
 const DOT_RADIUS = 8;
-const LABEL_HEIGHT = 16;
+const LABEL_HEIGHT = 20;
 
 // Afinacion estandar: cuerda 6 (mi grave) a 1 (mi agudo).
 const STRING_NAMES = { 6: 'E', 5: 'A', 4: 'D', 3: 'G', 2: 'B', 1: 'E' };
