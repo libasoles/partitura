@@ -14,15 +14,16 @@ let sequence = 0;
 
 // A fresh Root gives repeated messages their own full duration and announcement.
 // Callers may override the default duration for an individual notification.
-// Alerts last longer and carry a lucide circle-alert icon.
+// Alerts last longer and carry the site logo (same geometry as the header mark in Base.astro).
 const ALERT_DURATION = 9000;
-const alertIcon = h('svg', {
-  className: 'toast-icon', viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor',
-  strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true,
-},
-  h('circle', { cx: 12, cy: 12, r: 10 }),
-  h('line', { x1: 12, x2: 12, y1: 8, y2: 12 }),
-  h('line', { x1: 12, x2: 12.01, y1: 16, y2: 16 }),
+const logo = h('svg', { className: 'toast-logo', viewBox: '20 -245 800 1035', fill: 'currentColor', 'aria-hidden': true },
+  h('g', { transform: 'rotate(-8 420 272.5)' },
+    h('g', { transform: 'translate(-43 -87)' },
+      h('g', { transform: 'translate(229 687) rotate(12) scale(0.88 1.14) translate(-229 -687)' },
+        h('path', { d: 'M207 597 C172 556 152 525 143 473 L167 492 C119 447 109 387 120 326 L145 354 C128 262 146 178 196 119 C232 75 285 43 340 25 C356 21 362 28 359 46 C354 93 342 144 336 173 L312 214 L345 185 C370 265 381 336 368 397 C361 430 347 452 323 478 L359 450 C353 494 330 528 306 556 L339 535 C319 574 287 601 259 624 C240 644 231 664 229 687 C218 652 213 620 207 597Z' }),
+        h('path', { d: 'M229 687 C195 536 201 375 255 208 C221 395 223 553 238 619 C233 648 230 671 229 687Z', style: { fill: '#fff' } }))),
+    h('path', { transform: 'translate(-8 0)', d: 'M229 687 L389 573 C485 493 583 458 679 498 C600 474 518 492 398 585 L229 698Z' }),
+    h('ellipse', { cx: 168, cy: 657, rx: 69.6, ry: 30.9, transform: 'rotate(35 168 657)' })),
 );
 
 // Lucide lightbulb for tips.
@@ -59,7 +60,7 @@ function render(message, duration, variant, onClose) {
   flushSync(() => root.render(
     h(Toast.Provider, { duration: 6000, label: strings.toastLabel, swipeDirection: 'right' },
       message || tip ? h(Toast.Root, { key: ++sequence, className: alert ? 'toast toast-alert' : tip ? 'toast toast-tip' : 'toast', duration: duration || (alert ? ALERT_DURATION : undefined) },
-        alert ? alertIcon : tip ? tipIcon : null,
+        alert ? logo : tip ? tipIcon : null,
         h(Toast.Description, { className: 'toast-description', asChild: tip }, tip ? refingerTip() : message),
         h(Toast.Close, { className: 'toast-close', 'aria-label': strings.toastClose, onClick: onClose },
           h('span', { 'aria-hidden': true }, '×')),
