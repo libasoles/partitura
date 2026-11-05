@@ -1316,6 +1316,17 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     return true;
   }
 
+  // Lleva un acorde a otro tiempo (o compas) con su variante; falla si el destino ya tiene uno.
+  function moveChord(score, mi, at, toMi, toAt) {
+    const chord = chordAt(score, mi, at);
+    if (!chord || (mi === toMi && at === toAt) || chordAt(score, toMi, toAt)) return false;
+    const copy = JSON.parse(JSON.stringify(score));
+    removeChord(copy, mi, at);
+    if (!setChord(copy, toMi, toAt, chord.name, chord.variant || 0)) return false;
+    if (copy.chords) score.chords = copy.chords; else delete score.chords;
+    return true;
+  }
+
   // Reguladores: crescendo ('cresc') y diminuendo ('dim'). Como la cejilla, van de `at` a `to` (por defecto el final del compas)
   // y con `span` > 0 siguen por compases de la misma fila. Un compas admite varios mientras no se pisen: `score.hairpins[mi]` es la
   // lista, ordenada por `at`, de los que empiezan en `mi`. `startDyn` y `endDyn` son las dinamicas escritas en cada extremo.
@@ -2599,7 +2610,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateSelection, length, gridOf, hints, onsets, settle, placement, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     stavesOf, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
-    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, MAX_CHORD_NAME, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }

@@ -1664,6 +1664,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   let chordDraft = null; // { mi, at, text } del acorde que se esta escribiendo, aun sin guardar
   let chordOpen = null; // { mi, at } del acorde cuyo popup esta abierto
   let chordZone = null;
+  let chordMove = null; // { mi, at } del acorde que se arrastra a otro tiempo
   let chordPopup = null;
 
   function loadChords() {
@@ -1737,7 +1738,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function updateChordZone(event) {
     const over = event && event.target;
-    const free = event && chordsOn && guitarOn() && !activeItem && !drag && !measureDrag && !shiftMeasures
+    const free = event && chordsOn && guitarOn() && !activeItem && !drag && !chordMove && !measureDrag && !shiftMeasures
       && !(over && over.closest && over.closest('button, input, .score-selection-menu, .score-hairpin-ui, .score-barre-span'));
     showChordZone(free ? chordZoneAt(event.clientX, event.clientY) : null);
   }
@@ -1821,7 +1822,44 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         let wasOpen = false;
         // Un click sobre el nombre con su popup abierto lo cierra: el pointerdown ya lo descarto antes de que llegue el click.
         button.addEventListener('pointerdown', () => { wasOpen = !!chordPopup && chordPopup.matches(':popover-open') && !!chordOpen && chordOpen.mi === mi && chordOpen.at === chord.at; });
-        button.addEventListener('click', () => { if (!wasOpen) openChord(mi, chord.at); });
+        button.addEventListener('click', () => { if (!wasOpen && !button.dataset.dragged) openChord(mi, chord.at); });
+        // Arrastrar el nombre lo lleva a otro tiempo: la zona subrayada marca el destino y al soltar se mueve.
+        button.addEventListener('pointerdown', (event) => {
+          if (event.button !== 0) return;
+          delete button.dataset.dragged;
+          const startX = event.clientX, startY = event.clientY;
+          let moving = false;
+          const move = (e) => {
+            const dx = e.clientX - startX, dy = e.clientY - startY;
+            if (!moving && Math.hypot(dx, dy) < 5) return;
+            if (!moving) {
+              moving = true;
+              chordMove = { mi, at: chord.at };
+              button.dataset.dragged = '1';
+              button.classList.add('is-dragging');
+              if (chordPopup) chordPopup.hidePopover();
+            }
+            button.style.translate = dx + 'px ' + dy + 'px';
+            const zone = chordZoneAt(e.clientX, e.clientY);
+            showChordZone(zone && (zone.mi !== mi || zone.at !== chord.at) ? zone : null);
+          };
+          const end = (e) => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', end);
+            window.removeEventListener('pointercancel', end);
+            if (!moving) return;
+            const zone = e.type === 'pointerup' ? chordZoneAt(e.clientX, e.clientY) : null;
+            chordMove = null;
+            button.classList.remove('is-dragging');
+            button.style.translate = '';
+            showChordZone(null);
+            setTimeout(() => delete button.dataset.dragged);
+            if (zone) change(() => M.moveChord(score, mi, chord.at, zone.mi, zone.at));
+          };
+          window.addEventListener('pointermove', move);
+          window.addEventListener('pointerup', end);
+          window.addEventListener('pointercancel', end);
+        });
         // Doble clic renombra; Suprimir o Retroceso quitan el acorde.
         button.addEventListener('dblclick', () => { if (chordPopup) chordPopup.hidePopover(); startChordDraft(mi, chord.at, chord.name); });
         button.addEventListener('keydown', (event) => {

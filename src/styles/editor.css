@@ -2067,6 +2067,13 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   background: rgb(10 91 214 / 12%);
 }
 
+.score-chord-trigger.is-dragging {
+  z-index: 3;
+  background: rgb(10 91 214 / 18%);
+  cursor: grabbing;
+  pointer-events: none;
+}
+
 .score-chord-popup {
   display: flex;
   flex-direction: column;
