@@ -3729,101 +3729,45 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     document.querySelector('.score-workspace').prepend(libraryPanel);
   }
 
-  // Las figuras del patron sobre un pentagrama chico: cada nota a su altura relativa (la primera con altura es el origen),
-  // los silencios en el centro. Una columna por tiempo; las notas de un acorde comparten columna.
+  // El patron tal como queda al escribirlo (en la linea del medio de un compas vacio), dibujado por el mismo grabador de la
+  // partitura: plicas, barras y silencios coinciden. Sin pentagrama, clave ni compas; `fit` recorta al contenido una vez en el DOM.
   function patternStaff(pattern) {
-    const columns = [];
-    pattern.events.forEach((ev) => {
-      const last = columns[columns.length - 1];
-      if (last && last.mi === ev.mi && last.at === ev.at) last.events.push(ev);
-      else columns.push({ mi: ev.mi, at: ev.at, events: [ev] });
-    });
-    const steps = pattern.events.filter((ev) => !ev.rest).map((ev) => ev.dn);
-    const lo = Math.min(...steps, 0);
-    const hi = Math.max(...steps, 0);
-    const mid = (lo + hi) / 2;
-    const half = Math.max(6, Math.ceil((hi - lo) / 2) + 3);
-    const height = half * 2;
     const wrap = document.createElement('span');
     wrap.className = 'score-pattern-staff';
-    const WIDTH = 7;
-    const BEAMS = { e: 1, s: 2, f: 3 };
-    const yOf = (ev) => half - (ev.dn - mid);
-    // Las corcheas y menores seguidas, dentro de un mismo tiempo, se barran; una suelta lleva bandera.
-    const groups = [];
-    columns.forEach((column, i) => {
-      const lead = column.events.find((ev) => !ev.rest);
-      column.lead = lead;
-      column.index = i;
-      const before = columns[i - 1];
-      const joins = lead && BEAMS[lead.d] && before?.lead && BEAMS[before.lead.d] && before.mi === column.mi
-        && Math.floor(before.at / 24) === Math.floor(column.at / 24) && lead.beam !== 'break';
-      if (joins) before.group.push(column), column.group = before.group;
-      else column.group = [column];
-    });
-    columns.forEach((column) => {
-      if (!column.lead) return;
-      const ys = column.events.filter((ev) => !ev.rest).map(yOf);
-      column.top = Math.min(...ys);
-      column.bottom = Math.max(...ys);
-    });
-    columns.forEach((column) => {
-      if (!column.lead || column.group[0] !== column) return;
-      const down = column.group.reduce((sum, c) => sum + (c.top + c.bottom) / 2, 0) / column.group.length < half;
-      column.group.forEach((c) => { c.down = down; });
-      const stemEnd = down ? Math.max(...column.group.map((c) => c.bottom)) + 6 : Math.min(...column.group.map((c) => c.top)) - 6;
-      column.group.forEach((c) => { c.stemEnd = stemEnd; });
-    });
-    columns.forEach((column, i) => {
-      const svg = document.createElementNS(SVG_NS, 'svg');
-      const next = columns[i + 1];
-      svg.setAttribute('viewBox', `0 0 ${WIDTH} ${height}`);
-      svg.style.width = `${WIDTH * 0.2}rem`;
-      svg.style.height = `${height * 0.2}rem`;
-      svg.style.overflow = 'visible';
-      svg.setAttribute('aria-hidden', 'true');
-      let markup = '';
-      column.events.forEach((ev) => {
-        if (ev.rest) {
-          markup += `<svg x="0.5" y="${half - 5}" width="5" height="10" viewBox="0 -12 30 56" fill="currentColor">${glyphFor({ kind: 'rest', d: ev.d }).innerHTML}</svg>`;
-          return;
-        }
-        const y = yOf(ev);
-        const open = ev.d === 'w' || ev.d === 'h';
-        markup += `<ellipse cx="3" cy="${y}" rx="1.5" ry="1" transform="rotate(-20 3 ${y})" fill="${open ? 'none' : 'currentColor'}" stroke="currentColor" stroke-width="${open ? '.4' : '.2'}"/>`;
-        if (ev.dot) markup += `<circle cx="5.3" cy="${y - 0.6}" r=".4" fill="currentColor"/>`;
-      });
-      if (column.lead && column.lead.d !== 'w') {
-        const x = column.down ? 1.6 : 4.4;
-        const from = column.down ? column.top : column.bottom;
-        markup += `<line x1="${x}" x2="${x}" y1="${from}" y2="${column.stemEnd}" stroke="currentColor" stroke-width=".35"/>`;
-        const levels = BEAMS[column.lead.d] || 0;
-        const sign = column.down ? -1 : 1;
-        const group = column.group;
-        const here = group.indexOf(column);
-        if (levels && group.length === 1) {
-          for (let level = 0; level < levels; level += 1) {
-            const y0 = column.stemEnd + sign * level * 1.3;
-            markup += `<path d="M${x} ${y0} q2 1 2.2 4" fill="none" stroke="currentColor" stroke-width=".6" transform="${column.down ? `translate(0 ${2 * y0}) scale(1 -1)` : ''}"/>`;
-          }
-        } else if (levels && next && group[here + 1] === next) {
-          const nx = (next.down ? 1.6 : 4.4) + WIDTH;
-          const depth = Math.min(levels, BEAMS[next.lead.d]);
-          for (let level = 0; level < depth; level += 1) {
-            const y0 = column.stemEnd + sign * level * 1.2;
-            markup += `<polygon points="${x},${y0} ${nx},${y0} ${nx},${y0 + sign * 0.8} ${x},${y0 + sign * 0.8}" fill="currentColor"/>`;
-          }
-        }
-        if (levels && group.length > 1 && here > 0 && !(group[here - 1] && BEAMS[group[here - 1].lead.d] >= levels)) {
-          for (let level = BEAMS[group[here - 1].lead.d]; level < levels; level += 1) {
-            const y0 = column.stemEnd + sign * level * 1.2;
-            markup += `<polygon points="${x - 2},${y0} ${x},${y0} ${x},${y0 + sign * 0.8} ${x - 2},${y0 + sign * 0.8}" fill="currentColor"/>`;
-          }
-        }
-      }
-      svg.innerHTML = markup;
-      wrap.appendChild(svg);
-    });
+    const sample = { meter: score.meter, clef: 'treble', fifths: 0, instrument: 'guitar', rows: [[[]]] };
+    if (!toolkit) return wrap; // Verovio aun no cargo: se vuelve a dibujar al terminar
+    if (!M.applyPattern(sample, pattern, { mi: 0, at: pattern.first, n: M.bottomLine(sample, 0, 0) + 4 })) return wrap;
+    if (!previewToolkit) previewToolkit = newToolkit();
+    previewToolkit.setOptions(layoutOptions(900, { minLastJustification: 1, pageMarginLeft: 10, pageMarginRight: 10, pageMarginTop: 10, pageMarginBottom: 10 }));
+    previewToolkit.loadData(M.toMusicXml(sample));
+    const svg = document.importNode(new DOMParser().parseFromString(previewToolkit.renderToSVG(1), 'image/svg+xml').documentElement, true);
+    svg.setAttribute('aria-hidden', 'true');
+    wrap.appendChild(svg);
+    wrap.fit = () => {
+      const box = svg.viewBox.baseVal;
+      svg.style.maxWidth = 'none';
+      svg.style.width = `${box.width}px`;
+      svg.style.height = `${box.height}px`;
+      const lines = [...svg.querySelectorAll('g.staff > path')].slice(0, 2).map((line) => line.getBoundingClientRect());
+      if (lines.length < 2) return;
+      const space = (lines[1].top - lines[0].top) * box.width / svg.getBoundingClientRect().width;
+      svg.querySelectorAll('g.staff > path, g.clef, g.keySig, g.meterSig, g.barLine').forEach((el) => el.setAttribute('display', 'none'));
+      // El viewBox no se toca (los svg anidados de Verovio escalan con el): se agranda el svg a 0.9rem por espacio del
+      // pentagrama y el recorte al contenido lo hace el contenedor, con margenes negativos.
+      const em = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      svg.style.width = `${box.width * 0.9 / space}rem`;
+      svg.style.height = `${box.height * 0.9 / space}rem`;
+      const frame = svg.getBoundingClientRect();
+      const rects = [...svg.querySelectorAll('g.layer')].map((layer) => layer.getBoundingClientRect());
+      if (!rects.length) return;
+      const pad = 0.45 * em;
+      const left = Math.min(...rects.map((r) => r.left)) - pad, right = Math.max(...rects.map((r) => r.right)) + pad;
+      const top = Math.min(...rects.map((r) => r.top)) - pad, bottom = Math.max(...rects.map((r) => r.bottom)) + pad;
+      wrap.style.alignItems = 'flex-start';
+      wrap.style.width = `${(right - left) / em}rem`;
+      wrap.style.height = `${(bottom - top) / em}rem`;
+      svg.style.margin = `${(frame.top - top) / em}rem 0 0 ${(frame.left - left) / em}rem`;
+    };
     return wrap;
   }
 
@@ -3861,6 +3805,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       remove.addEventListener('click', () => { library.splice(index, 1); saveLibrary(); renderLibrary(); });
       item.append(notes, rhythm, remove);
       libraryList.appendChild(item);
+      if (notes.firstChild?.fit) notes.firstChild.fit();
     });
   }
 
@@ -4218,6 +4163,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     stage.removeAttribute('aria-busy');
     render();
     stage.classList.remove('is-loading');
+    if (patternsOn()) renderLibrary(); // los patrones se dibujan con Verovio: recien ahora se puede
   }, () => {
     stage.removeAttribute('aria-busy');
     stage.classList.remove('is-loading');

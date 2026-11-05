@@ -2177,7 +2177,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-page.has-library .score-workspace { position: relative; }
 .score-library {
   position: absolute;
-  top: 10.25rem;
+  top: 266px;
   right: calc(100% + 1rem);
   width: calc((100vw - 100%) / 2 - 2rem);
   max-height: calc(100vh - 8rem);
@@ -2221,13 +2221,14 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   cursor: grab;
   touch-action: none;
 }
-.score-pattern button:hover { background: rgba(0, 0, 0, 0.05); }
+.score-pattern button:hover { color: var(--accent); }
 .score-pattern-notes {
+  overflow: hidden;
   padding: 0.3rem 0.5rem;
   text-align: left;
   font: 600 0.78rem/1.2 system-ui, sans-serif;
 }
-.score-pattern-staff { display: flex; align-items: center; overflow: hidden; color: var(--ink); }
+.score-pattern-staff { display: flex; align-items: center; overflow: hidden; }
 .score-pattern-staff svg { flex: none; }
 .score-pattern-rhythm {
   display: flex;
@@ -2237,7 +2238,6 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   padding: 0.3rem 0.4rem;
   overflow: hidden;
   border-left: 1px solid var(--rule);
-  background: rgba(0, 0, 0, 0.03);
 }
 .score-pattern-rhythm svg { flex: none; width: 1.1rem; height: 1.1rem; }
 .score-pattern-remove {
