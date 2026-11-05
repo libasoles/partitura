@@ -1962,9 +1962,9 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 
 .score-settings-icon {
   display: inline-grid;
-  place-items: center;
+  place-items: start center;
   min-width: 2.5rem;
-  min-height: 2.5rem;
+  padding-top: 0.25rem;
 }
 
 .score-settings-icon svg { max-height: 2rem; }
