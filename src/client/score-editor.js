@@ -3998,9 +3998,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // La biblioteca de patrones es del usuario, no de la partitura: la casilla vale para todas.
     let patternsCheck = null;
     if (patterns) {
-      const heading = document.createElement('p');
-      heading.className = 'score-settings-heading score-settings-title';
-      heading.textContent = t.settingsLibrary;
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section score-settings-category';
       const field = document.createElement('label');
@@ -4013,7 +4010,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       hint.textContent = t.libraryHint;
       patternsCheck.addEventListener('change', () => { setSetting('patterns', patternsCheck.checked); applyLibrary(); });
       wrap.append(field, hint);
-      popup.append(heading, wrap);
+      popup.appendChild(wrap);
     }
 
     function sync() {
