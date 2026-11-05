@@ -3105,6 +3105,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       clearBarSelection();
       deactivateTool();
     }
+    // Tab con un compas elegido y vacio lo llena de silencios; en cualquier otro caso conserva el foco del navegador.
+    if (event.key === 'Tab' && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey && selectedMeasure !== null &&
+        !M.measures(score, selectedMeasureStaff)[selectedMeasure]?.length) {
+      event.preventDefault();
+      const mi = selectedMeasure, staff = selectedMeasureStaff;
+      change(() => M.fillWithRests(score, mi, staff));
+      selectedMeasure = mi;
+      markMeasureBars();
+      return;
+    }
     // Shift+D: sin Ctrl/Cmd/Alt no choca con ningun atajo del navegador (Cmd+D es marcador).
     if (event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey && event.code === 'KeyD') {
       event.preventDefault();

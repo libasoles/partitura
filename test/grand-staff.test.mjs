@@ -246,3 +246,21 @@ test('a two-staff fragment pastes into both staves whatever staff was asked for'
   assert.equal(target.rows[0][3][0].n, 37);
   assert.equal(target.lower[3][0].n, 25);
 });
+
+test('fillWithRests fills an empty measure with the largest rests and leaves others alone', () => {
+  const fill = (meter) => {
+    const score = plain.emptyScore();
+    score.meter = meter;
+    assert.equal(plain.fillWithRests(score, 0), true);
+    return plain.measures(score)[0].map((ev) => ev.d + (ev.dot ? '.' : '') + (ev.rest ? 'r' : ''));
+  };
+  assert.deepEqual(fill('4/4'), ['wr']);
+  assert.deepEqual(fill('3/4'), ['h.r']);
+  assert.deepEqual(fill('2/4'), ['hr']);
+  assert.deepEqual(fill('6/8'), ['h.r']);
+  assert.deepEqual(fill('9/8'), ['h.r', 'q.r']);
+  const busy = plain.emptyScore();
+  busy.rows[0][0] = [{ d: 'q', n: 37 }];
+  assert.equal(plain.fillWithRests(busy, 0), false);
+  assert.equal(plain.measures(busy)[0].length, 1);
+});

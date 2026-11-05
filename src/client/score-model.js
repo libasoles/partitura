@@ -1593,6 +1593,28 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     return order.slice(0, Math.abs(fifths)).includes(STEPS[n % 7]) ? Math.sign(fifths) : 0;
   }
 
+  // Llena de silencios un compas vacio, con los mas grandes que entren. Ninguno pasa de una blanca con puntillo (la
+  // negra con puntillo marca el pulso de los compases compuestos), salvo que sea el compas entero y quepa una redonda.
+  function fillWithRests(score, mi, staff = 0) {
+    const measure = measures(score, staff)[mi];
+    if (!measure || measure.length) return false;
+    const sizes = [['h', 1], ['h', 0], ['q', 1], ['q', 0], ['e', 1], ['e', 0], ['s', 1], ['s', 0], ['f', 1], ['f', 0]]
+      .map(([d, dot]) => ({ d, dot, size: length({ d, dot }) }));
+    let left = capacity(score, mi);
+    if (left === VALUES.w) { measure.push({ d: 'w', rest: true, at: 0 }); return true; }
+    let at = 0;
+    while (left > 0) {
+      const piece = sizes.find((p) => p.size <= left);
+      if (!piece) return false;
+      const ev = { d: piece.d, rest: true, at };
+      if (piece.dot) ev.dot = true;
+      measure.push(ev);
+      at += piece.size;
+      left -= piece.size;
+    }
+    return true;
+  }
+
   function capacity(score, mi) {
     if (score && score.measureDurations && Number.isInteger(mi) && Number.isInteger(score.measureDurations[mi])) return score.measureDurations[mi];
     const [beats, unit] = meterAt(score, mi).split('/').map(Number);
@@ -2609,7 +2631,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateSelection, length, gridOf, hints, onsets, settle, placement, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     stavesOf, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
