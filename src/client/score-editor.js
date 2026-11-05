@@ -3899,10 +3899,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       rhythm.innerHTML = lucide('square-chevrons-down');
       const remove = document.createElement('button');
       remove.type = 'button';
-      remove.className = 'score-pattern-remove tooltip';
+      remove.className = 'score-pattern-remove';
       remove.innerHTML = lucide('x');
       remove.setAttribute('aria-label', t.patternRemove);
-      remove.dataset.tooltip = t.patternRemove;
       remove.addEventListener('click', () => {
         // Se desvanece antes de salir de la lista; el patron se borra al empezar para que un segundo click no quite otro.
         library.splice(index, 1);

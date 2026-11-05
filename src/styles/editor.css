@@ -2275,8 +2275,9 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
     display: block;
     position: absolute;
     top: 266px;
-    right: calc(100% + 3.25rem); /* deja libre la franja de la leyenda de voces (1.25rem + aire) */
-    width: min(14rem, calc((100vw - 100%) / 2 - 4.25rem));
+    /* Pegada al borde izquierdo de la ventana (2rem para la x de borrar); a la derecha deja libre la franja de la leyenda de voces. */
+    left: calc(2rem - (100vw - 100%) / 2);
+    width: min(14rem, calc((100vw - 100%) / 2 - 5.25rem));
     padding: 0;
   }
 }
@@ -2293,7 +2294,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   display: grid;
   min-width: 0;
   position: relative;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) auto;
   align-items: stretch;
   transition: opacity 0.3s ease-out;
 }
@@ -2318,6 +2319,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-pattern-staff { display: flex; align-items: center; overflow: hidden; }
 .score-pattern-staff svg { flex: none; }
 .score-pattern-rhythm {
+  grid-column: 3;
   display: flex;
   align-items: center;
   gap: 0.05rem;
@@ -2344,8 +2346,6 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-pattern-remove svg { width: 1rem; height: 1rem; transition: transform 0.12s ease-out; }
 .score-pattern button.score-pattern-remove:hover, .score-pattern button.score-pattern-remove:focus-visible { color: #c0392b; }
 .score-pattern-remove:hover svg, .score-pattern-remove:focus-visible svg { transform: scale(1.35); }
-/* La biblioteca no recorta: los tooltips salen del panel. El de borrar se abre a la izquierda del icono; el del ritmo, hacia la izquierda. */
-.score-pattern-remove.tooltip::after { bottom: auto; top: 50%; left: auto; right: calc(100% + 0.6rem); transform: translateY(-50%); }
-.score-pattern-remove.tooltip::before { bottom: auto; top: 50%; left: auto; right: calc(100% + 0.3rem); transform: translateY(-50%) rotate(45deg); }
+/* La biblioteca no recorta: el tooltip del ritmo sale hacia la izquierda. */
 .score-pattern-rhythm.tooltip::after { left: auto; right: 0; transform: none; }
 .score-settings-hint { margin: 0 0 0.25rem; font-size: 0.78rem; color: var(--ink-soft); }
