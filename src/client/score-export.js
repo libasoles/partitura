@@ -191,7 +191,8 @@ export default function createExporter(editor) {
       });
       pdfToolkit.loadData(M.toMusicXml(exportScore));
       const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
-      for (let page = 1; page <= pdfToolkit.getPageCount(); page += 1) {
+      const totalPages = pdfToolkit.getPageCount();
+      for (let page = 1; page <= totalPages; page += 1) {
         const image = await rasterize(pdfPageSvg(pdfToolkit.renderToSVG(page), exportScore, columns), 1654, 2339);
         if (page > 1) pdf.addPage();
         pdf.addImage(image, 'JPEG', 0, 0, 210, 297);
@@ -207,6 +208,15 @@ export default function createExporter(editor) {
           pdf.setFontSize(18);
           pdf.setFontSize(Math.min(18, 18 * 192 / pdf.getTextWidth(exportScore.title)));
           pdf.text(exportScore.title, 8.75, 15);
+        }
+      }
+      if (totalPages > 1) {
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8);
+        pdf.setTextColor(102);
+        for (let page = 1; page <= totalPages; page += 1) {
+          pdf.setPage(page);
+          pdf.text(page + '-' + totalPages, 105, 290, { align: 'center' });
         }
       }
       pdf.save(downloadFilename(exportScore, 'pdf'));
