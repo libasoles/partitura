@@ -2181,7 +2181,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   right: calc(100% + 1rem);
   width: calc((100vw - 100%) / 2 - 2rem);
   max-height: calc(100vh - 8rem);
-  padding: 0.6rem 0;
+  padding: 0;
   overflow-y: auto;
 }
 /* Sin margen suficiente, se superpone a la partitura como un panel: nunca le quita ancho ni la desplaza. */
@@ -2190,7 +2190,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
     right: auto;
     left: 0;
     width: 12rem;
-    padding: 0.6rem;
+    padding: 0 0.6rem 0.6rem;
     z-index: 6;
     background: var(--paper);
     box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.12);
