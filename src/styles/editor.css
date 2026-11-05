@@ -2134,3 +2134,82 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   font-weight: 700;
   fill: var(--ink-soft);
 }
+
+/* ----- Pattern library: a column left of the sheet, shown from the settings ----- */
+.score-page.has-library { max-width: calc(var(--page) + 14rem); }
+.score-page.has-library .score-workspace { grid-template-columns: 12rem minmax(0, 1fr) auto; }
+.score-page.has-library .score-main { grid-column: 2; grid-row: 1; }
+.score-page.has-library .score-side { grid-column: 3; }
+
+.score-library {
+  grid-column: 1;
+  grid-row: 1;
+  position: sticky;
+  top: 6rem;
+  align-self: start;
+  max-height: calc(100vh - 8rem);
+  margin-top: 7.5rem;
+  padding: 0.6rem;
+  overflow-y: auto;
+  border: 1px dashed var(--rule);
+  border-radius: 0.75rem;
+}
+.score-library-title {
+  margin: 0 0 0.5rem;
+  font: 600 0.72rem/1 system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.score-library-empty { margin: 0; font-size: 0.82rem; color: var(--ink-soft); }
+.score-library-list { display: flex; flex-direction: column; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.score-pattern {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  border: 1px solid var(--rule);
+  border-radius: 0.5rem;
+  background: #fff;
+  overflow: hidden;
+}
+.score-pattern button {
+  min-width: 0;
+  min-height: 2.4rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: grab;
+  touch-action: none;
+}
+.score-pattern button:hover { background: rgba(0, 0, 0, 0.05); }
+.score-pattern-notes {
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  font: 600 0.78rem/1.2 system-ui, sans-serif;
+}
+.score-pattern-degrees { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.score-pattern-rhythm {
+  display: flex;
+  align-items: center;
+  gap: 0.05rem;
+  max-width: 6.5rem;
+  padding: 0.3rem 0.4rem;
+  overflow: hidden;
+  border-left: 1px solid var(--rule);
+  background: rgba(0, 0, 0, 0.03);
+}
+.score-pattern-rhythm svg { flex: none; width: 0.85rem; height: auto; }
+.score-pattern-remove {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.1rem;
+  min-height: 0;
+  height: 1.1rem;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.score-pattern-remove svg { width: 0.7rem; height: 0.7rem; }
+.score-pattern:hover .score-pattern-remove, .score-pattern-remove:focus-visible { opacity: 1; }
+.score-settings-hint { margin: 0 0 0.25rem; font-size: 0.78rem; color: var(--ink-soft); }

@@ -3,7 +3,9 @@
 
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
-export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false } = {}) {
+import { getSetting, setSetting } from './settings.js';
+
+export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, patterns = false } = {}) {
 
   const M = window.ScoreModel;
   const STORAGE_KEY = 'scoreEditor.v2';
@@ -1073,7 +1075,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   document.addEventListener('pointerdown', (event) => {
-    if (!event.target.closest('.score-barline-trigger, .score-insert-measure')) clearBarSelection();
+    if (!event.target.closest('.score-barline-trigger, .score-insert-measure, .score-library')) clearBarSelection();
   });
 
   function removeSelectedBars() {
@@ -2606,7 +2608,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       drag.active = true;
       hideSelectionMenu();
       if (drag.insert) return;
-      drag.ghost = startGhost(drag.glyph, event, drag.kind);
+      drag.ghost = drag.pattern ? patternGhost(drag.pattern, drag.flat, event) : startGhost(drag.glyph, event, drag.kind);
       if (drag.group) addGroupToGhost(drag.ghost, drag.group, drag.from);
       document.body.classList.add('score-dragging');
     }
@@ -2636,6 +2638,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (d.ghost) d.ghost.remove();
     if (cancelled) return;
     if (!d.active) {
+      if (d.pattern) { applyToChosenMeasure(d.pattern, d.flat); return; }
       if (d.group) setPicks([d.from]);
       if (d.item) activateTool(d.item);
       else if (d.from && isModifier(activeItem)) applyModifier(activeItem, d.from);
@@ -2649,6 +2652,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       return;
     }
     if (d.insert) return;
+    if (d.pattern) {
+      const at = aimed(event);
+      const target = locate(at.clientX, at.clientY);
+      if (target) applyPattern(d.pattern, d.flat, { mi: target.mi, staff: target.staff, at: target.t, n: target.n });
+      markSelected();
+      return;
+    }
     if (isModifier(d.item)) {
       const at = aimed(event);
       const hit = eventUnder(at.clientX, at.clientY);
@@ -2966,7 +2976,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   document.addEventListener('pointerdown', (event) => {
     if (!(event.target instanceof Element)) return;
     // Los campos del titulo y el autor tambien quedan fuera de la seleccion musical.
-    if ((picks().length || selectedNavigation.length || selectedBeam || selectedHairpin) && !event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-side-actions, .score-doc-tab, [popover]')) setPicks([]);
+    if ((picks().length || selectedNavigation.length || selectedBeam || selectedHairpin) && !event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-side-actions, .score-doc-tab, .score-library, [popover]')) setPicks([]);
     if (!activeItem) return;
     if (event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-side-actions, .score-doc-tab, [popover], button, a, input, select, textarea')) return;
     deactivateTool();
@@ -2985,6 +2995,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey && event.code === 'KeyD') {
       event.preventDefault();
       if (!event.repeat) duplicateSelected();
+      return;
+    }
+    // Shift+S: con la biblioteca activa guarda como patron lo elegido (la tecla S sola sigue siendo el sostenido).
+    if (event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey && event.code === 'KeyS' && patternsOn()) {
+      event.preventDefault();
+      if (!event.repeat) savePattern();
       return;
     }
     if (!event.metaKey && !event.ctrlKey && !event.altKey && !meterPopup.matches(':popover-open') && !clefPopup.matches(':popover-open') && !dynamicsPopup.matches(':popover-open') && !tuningPopup.matches(':popover-open')) {
@@ -3702,6 +3718,142 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     alignVoiceLegend();
   }
 
+  // ---- biblioteca de patrones (el sitio la ofrece con `patterns`; se activa en los ajustes) ----
+
+  // Un patron es ritmo y grados de la escala (ver `M.patternFrom`), no notas: sirve en cualquier tonalidad. La biblioteca
+  // es del usuario y no de una partitura, asi que vive con las opciones y no viaja en el documento.
+  const LIBRARY_LIMIT = 60;
+  const patternsOn = () => patterns && settings && getSetting('patterns', false) === true;
+  let library = [];
+  const libraryPanel = document.createElement('aside');
+  libraryPanel.className = 'score-library';
+  libraryPanel.hidden = true;
+  libraryPanel.setAttribute('aria-label', t.patternsTitle);
+  const libraryTitle = document.createElement('h2');
+  libraryTitle.className = 'score-library-title';
+  libraryTitle.textContent = t.patternsTitle;
+  const libraryEmpty = document.createElement('p');
+  libraryEmpty.className = 'score-library-empty';
+  libraryEmpty.textContent = t.patternsEmpty;
+  const libraryList = document.createElement('ul');
+  libraryList.className = 'score-library-list';
+  libraryPanel.append(libraryTitle, libraryEmpty, libraryList);
+  if (patterns && settings) {
+    const saved = getSetting('patternItems', []);
+    library = (Array.isArray(saved) ? saved : []).map(M.cleanPattern).filter(Boolean).slice(0, LIBRARY_LIMIT);
+    document.querySelector('.score-workspace').prepend(libraryPanel);
+  }
+
+  function renderLibrary() {
+    libraryList.replaceChildren();
+    libraryEmpty.hidden = library.length > 0;
+    library.forEach((pattern, index) => {
+      const item = document.createElement('li');
+      item.className = 'score-pattern';
+      const section = (flat, label) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = flat ? 'score-pattern-rhythm' : 'score-pattern-notes';
+        button.setAttribute('aria-label', label);
+        button.title = label;
+        // Sin foco por el pointerdown: se arrastra o se hace click, como los botones de la paleta.
+        button.addEventListener('pointerdown', (event) => {
+          if (event.button !== 0) return;
+          event.preventDefault();
+          beginDrag(event, { pattern, flat, kind: 'pattern' });
+        });
+        button.addEventListener('click', (event) => { if (event.detail === 0) applyToChosenMeasure(pattern, flat); });
+        return button;
+      };
+      const degrees = M.patternDegrees(pattern);
+      const notes = section(false, t.patternRelative + (degrees ? ': ' + degrees : ''));
+      const label = document.createElement('span');
+      label.className = 'score-pattern-degrees';
+      label.textContent = degrees || '·';
+      notes.appendChild(label);
+      const rhythm = section(true, t.patternRhythm);
+      // Una figura por tiempo: las notas de un acorde se dibujan una sola vez.
+      pattern.events.filter((ev, i, all) => !all.slice(0, i).some((o) => o.mi === ev.mi && o.at === ev.at)).forEach((ev) => {
+        rhythm.appendChild(glyphFor({ kind: ev.rest ? 'rest' : 'note', d: ev.d }));
+      });
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'score-pattern-remove tooltip';
+      remove.innerHTML = lucide('x');
+      remove.setAttribute('aria-label', t.patternRemove);
+      remove.dataset.tooltip = t.patternRemove;
+      remove.addEventListener('click', () => { library.splice(index, 1); saveLibrary(); renderLibrary(); });
+      item.append(notes, rhythm, remove);
+      libraryList.appendChild(item);
+    });
+  }
+
+  function saveLibrary() {
+    setSetting('patternItems', library);
+  }
+
+  function applyLibrary() {
+    const on = patternsOn();
+    libraryPanel.hidden = !on;
+    toolbars.classList.toggle('has-library', on);
+    if (on) renderLibrary();
+  }
+
+  // Shift+S: las figuras elegidas o, sin ninguna, el compas elegido.
+  function savePattern() {
+    const refs = picks().filter((ref) => eventAt(ref));
+    const pattern = refs.length ? M.patternFrom(score, refs) : selectedMeasure !== null ? M.patternFromMeasure(score, selectedMeasure, selectedMeasureStaff) : null;
+    if (!pattern) return say(refs.length ? t.patternOneStaff : t.patternNothing);
+    const key = JSON.stringify(pattern);
+    if (library.some((other) => JSON.stringify(other) === key)) return;
+    library.unshift(pattern);
+    library.length = Math.min(library.length, LIBRARY_LIMIT);
+    saveLibrary();
+    renderLibrary();
+  }
+
+  // Escribe el patron donde cae `target`: su primera nota con altura queda en la altura del puntero.
+  function applyPattern(pattern, flat, { mi, staff, at, n }) {
+    const trial = M.clone(score);
+    M.restoreTabReferences(trial, M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs));
+    const created = M.applyPattern(trial, pattern, { mi, staff, at, n, flat });
+    if (!created) return say(t.full);
+    change(() => {
+      Object.assign(score, trial);
+      selected = created[created.length - 1];
+      group = created.length > 1 ? created : [];
+    }, M.captureTabReferences(trial));
+  }
+
+  // Un click sobre el patron lo escribe en el compas elegido, desde su inicio y en la linea del medio del pentagrama.
+  function applyToChosenMeasure(pattern, flat) {
+    if (selectedMeasure === null) return say(t.patternPickMeasure);
+    const mi = selectedMeasure, staff = selectedMeasureStaff;
+    applyPattern(pattern, flat, { mi, staff, at: pattern.first, n: M.bottomLine(score, mi, staff) + 4 });
+  }
+
+  // El fantasma del patron: una figura por evento, con la separacion de tiempo y de altura que tendran al soltarlas.
+  function patternGhost(pattern, flat, event) {
+    const lines = layout[0] && layout[0].lines;
+    const space = lines ? (lines[4] - lines[0]) / 4 : 10;
+    const capacity = M.capacity(score, 0);
+    const anchor = pattern.events.find((ev) => !ev.rest && !ev.dn) || pattern.events[0];
+    const timeOf = (ev) => (ev.mi * capacity + ev.at) / M.DIVISIONS * space * 3;
+    const kindOf = (ev) => (ev.rest ? 'rest' : 'note');
+    const ghost = startGhost(glyphFor({ kind: kindOf(anchor), d: anchor.d }), event, kindOf(anchor));
+    pattern.events.filter((ev) => ev !== anchor).forEach((ev) => {
+      const dx = timeOf(ev) - timeOf(anchor);
+      const dy = ev.rest || flat ? 0 : -(ev.dn - (anchor.dn || 0)) * space / 2;
+      const member = document.createElement('div');
+      member.style.cssText = 'position:absolute;left:' + dx + 'px;top:' + dy + 'px';
+      ghost.appendChild(member);
+      const probe = startGhost(glyphFor({ kind: kindOf(ev), d: ev.d }), { clientX: 0, clientY: 0 }, kindOf(ev));
+      probe.remove();
+      member.appendChild(probe.firstChild);
+    });
+    return ghost;
+  }
+
   // ---- ajustes: instrumento, tempo y grupos de herramientas (el sitio los activa con `settings`) ----
 
   if (settings) {
@@ -3843,7 +3995,29 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       return [name, check, fallback];
     });
 
+    // La biblioteca de patrones es del usuario, no de la partitura: la casilla vale para todas.
+    let patternsCheck = null;
+    if (patterns) {
+      const heading = document.createElement('p');
+      heading.className = 'score-settings-heading score-settings-title';
+      heading.textContent = t.settingsLibrary;
+      const wrap = document.createElement('div');
+      wrap.className = 'score-settings-section score-settings-category';
+      const field = document.createElement('label');
+      field.className = 'score-settings-check';
+      patternsCheck = document.createElement('input');
+      patternsCheck.type = 'checkbox';
+      field.append(patternsCheck, document.createTextNode(t.libraryPatterns));
+      const hint = document.createElement('p');
+      hint.className = 'score-settings-hint';
+      hint.textContent = t.libraryHint;
+      patternsCheck.addEventListener('change', () => { setSetting('patterns', patternsCheck.checked); applyLibrary(); });
+      wrap.append(field, hint);
+      popup.append(heading, wrap);
+    }
+
     function sync() {
+      if (patternsCheck) patternsCheck.checked = patternsOn();
       instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === M.INSTRUMENTS[i]; });
       tempoSlider.value = String(score.tempo || 120);
       showTempo();
@@ -3875,6 +4049,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   });
   document.getElementById('scoreNewTab').addEventListener('click', newTab);
   renderTabs();
+  applyLibrary();
 
   document.getElementById('scoreClear').addEventListener('click', async (event) => {
     const button = event.currentTarget;
