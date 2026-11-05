@@ -6,6 +6,13 @@
   gap: 0.75rem;
 }
 
+/* En pantallas anchas la barra lateral vive en el margen de la pagina (columna de ancho 0): la partitura ocupa todo el ancho, igual que el titulo y las pestanas. */
+@media (min-width: 900px) {
+  .score-page { max-width: calc(var(--page) + 5rem); padding-inline: max(var(--gutter), 4.5rem); }
+  .score-workspace { grid-template-columns: minmax(0, 1fr) 0; column-gap: 0; }
+  .score-side { width: max-content; margin-left: 0.75rem; }
+}
+
 .score-side {
   position: sticky;
   top: 6rem;
@@ -1986,6 +1993,8 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   padding: 0;
   list-style: none;
 }
+/* Sin altura de linea extra: el primer circulo empieza justo en la primera linea del pentagrama, como el primer icono de la barra derecha. */
+.score-voice-legend li { display: flex; }
 .score-voice-legend button, .score-voice-swatch {
   display: inline-grid;
   place-items: center;
@@ -2175,13 +2184,18 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   padding: 0.6rem 0;
   overflow-y: auto;
 }
-/* Sin margen suficiente, vuelve a ser una columna de la grilla. */
+/* Sin margen suficiente, se superpone a la partitura como un panel: nunca le quita ancho ni la desplaza. */
 @media (max-width: 1500px) {
-  .score-page.has-library { max-width: calc(var(--page) + 14rem); }
-  .score-page.has-library .score-workspace { grid-template-columns: 12rem minmax(0, 1fr) auto; }
-  .score-page.has-library .score-main { grid-column: 2; grid-row: 1; }
-  .score-page.has-library .score-side { grid-column: 3; }
-  .score-library { position: sticky; top: 6rem; right: auto; width: auto; grid-column: 1; grid-row: 1; align-self: start; padding: 0.6rem 0; }
+  .score-library {
+    right: auto;
+    left: 0;
+    width: 12rem;
+    padding: 0.6rem;
+    z-index: 6;
+    background: var(--paper);
+    box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.12);
+    border-radius: 0.5rem;
+  }
 }
 .score-library-title {
   margin: 0 0 0.5rem;
