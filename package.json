@@ -35,7 +35,7 @@
     "@fontsource-variable/montserrat": "^5.3.0",
     "@playwright/test": "^1.64.1",
     "astro": "^7.4.1",
-    "guitar-chords": "github:libasoles/guitar-chords#7cc09d1170c65ea8f735a4a6f71593ffb9160092",
+    "guitar-chords": "github:libasoles/guitar-chords#4466d74ef6ccfc5a3461c1afc5d1b93dcfe4dd0f",
     "lighthouse": "^13.6.0",
     "typescript": "^5.9.0"
   },

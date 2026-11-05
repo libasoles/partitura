@@ -3,6 +3,7 @@ dist/
 .astro/
 public/vendor/verovio-*
 public/vendor/chords-*
+public/vendor/chord-search-*
 .DS_Store
 .claude/
 .vscode/

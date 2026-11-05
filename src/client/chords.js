@@ -33,64 +33,26 @@ export function normalize(text) {
 }
 
 // Indice de nombres y alias -> digitacion. "dim" a secas usa la del dim7, como en el diccionario.
-export function indexChords(chords) {
+// `fold` es la normalizacion del buscador de guitar-chords (minusculas, solfeo -> americano): con ella un nombre que no
+// coincide exacto igual se encuentra ("si" es B, "c" es C). Primero manda la coincidencia exacta, que distingue m7 de M7.
+export function indexChords(chords, fold) {
   const byName = new Map();
   for (const chord of chords) {
     for (const candidate of [chord.name, ...(chord.aliases || [])]) {
       const key = normalize(candidate);
       byName.set(key, chord);
       if (key.endsWith('dim7')) byName.set(key.slice(0, -1), chord);
+      if (fold && !byName.has('~' + fold(candidate))) byName.set('~' + fold(candidate), chord);
     }
   }
+  byName.fold = fold;
   return byName;
 }
 
-// Notas en solfeo -> letra americana ("Si" es B, "Sol" es G). Sin tildes: "Dó" y "Do" valen lo mismo.
-const SOLFEGE = { do: 'C', re: 'D', mi: 'E', fa: 'F', sol: 'G', la: 'A', si: 'B' };
-const SOLFEGE_ROOT = /^(sol|do|re|mi|fa|la|si)/i;
-
-// Interpretaciones de un texto con la nota en americano: la propia y, si empieza con solfeo, la traducida.
-function americanReadings(text) {
-  const plain = normalize(String(text).trim()).normalize('NFD').replace(/[̀-ͯ]/g, '');
-  const readings = [];
-  const match = SOLFEGE_ROOT.exec(plain);
-  if (match) readings.push(SOLFEGE[match[1].toLowerCase()] + plain.slice(match[1].length));
-  readings.push(plain);
-  return readings;
-}
-
 export function findChord(index, text) {
-  for (const reading of americanReadings(text)) {
-    const found = reading ? index.get(reading) : null;
-    if (found) return found;
-  }
-  return null;
-}
-
-// Letra, alteracion y calidad de un nombre americano ("Bbm7" -> B, b, m7).
-const splitName = (name) => {
-  const match = /^([A-Ga-g])([#b]?)(.*)$/.exec(normalize(name));
-  return match ? { root: match[1].toUpperCase() + match[2], rest: match[3].toLowerCase() } : null;
-};
-
-// Busca por nota y calidad, en americano o solfeo: la nota debe coincidir exacta y la calidad por comienzo
-// ("Si" -> B, Bm, B7...; nunca un acorde que apenas contenga esas letras). Los mas cortos primero.
-export function searchChords(chords, text, limit = 6) {
-  for (const reading of americanReadings(text)) {
-    const query = splitName(reading);
-    if (!query) continue;
-    const found = [];
-    for (const chord of chords) {
-      let best = null;
-      for (const candidate of [chord.name, ...(chord.aliases || [])]) {
-        const parts = splitName(candidate);
-        if (parts && parts.root === query.root && parts.rest.startsWith(query.rest) && (best === null || parts.rest.length < best)) best = parts.rest.length;
-      }
-      if (best !== null) found.push({ chord, size: best });
-    }
-    if (found.length) return found.sort((x, y) => x.size - y.size).slice(0, limit).map((entry) => entry.chord);
-  }
-  return [];
+  const key = normalize(String(text).trim());
+  if (!key) return null;
+  return index.get(key) || (index.fold && index.get('~' + index.fold(text))) || null;
 }
 
 const rootOf = (name) => {

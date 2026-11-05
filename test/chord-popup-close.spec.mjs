@@ -19,6 +19,25 @@ async function writeChord(page, name) {
   return staff;
 }
 
+test('a name without fingering opens a search: solfege and any case find the chord, and picking one renames it', async ({ page }) => {
+  await guitar(page);
+  await writeChord(page, 'Qx');
+  await page.locator('.score-chord-trigger').click();
+  const popup = page.locator('#scoreChordPopup');
+  await expect(popup.getByText('No hay digitación para este acorde')).toBeVisible();
+  const field = popup.getByRole('searchbox');
+  await expect(field).toHaveValue('Qx');
+  await field.fill('si');
+  const first = popup.locator('.score-chord-results button').first();
+  await expect(first).toContainText('B');
+  await expect(popup.getByText('No hay digitación para este acorde')).toBeHidden();
+  await expect(popup.locator('.score-chord-results button', { hasText: 'Em(add9)' })).toHaveCount(0);
+  await first.click();
+  expect(await page.evaluate(() => window.scoreEditor.score.chords)).toEqual({ 0: [{ at: 0, name: 'B' }] });
+  await expect(popup.locator('.score-chord-picture svg.chord-diagram')).toBeVisible();
+  await expect(popup.getByRole('searchbox')).toBeHidden();
+});
+
 test('a click outside the chord popup closes it', async ({ page }) => {
   await guitar(page);
   const staff = await writeChord(page, 'Am7');
