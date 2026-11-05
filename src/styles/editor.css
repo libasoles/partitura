@@ -2074,6 +2074,10 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   pointer-events: none;
 }
 
+.score-chord-popup:not(:popover-open) {
+  display: none; /* el display del popup pisaria el del popover cerrado */
+}
+
 .score-chord-popup {
   display: flex;
   flex-direction: column;
