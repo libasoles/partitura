@@ -45,22 +45,52 @@ export function indexChords(chords) {
   return byName;
 }
 
-export function findChord(index, text) {
-  const key = normalize(String(text).trim());
-  return key ? index.get(key) || null : null;
+// Notas en solfeo -> letra americana ("Si" es B, "Sol" es G). Sin tildes: "Dó" y "Do" valen lo mismo.
+const SOLFEGE = { do: 'C', re: 'D', mi: 'E', fa: 'F', sol: 'G', la: 'A', si: 'B' };
+const SOLFEGE_ROOT = /^(sol|do|re|mi|fa|la|si)/i;
+
+// Interpretaciones de un texto con la nota en americano: la propia y, si empieza con solfeo, la traducida.
+function americanReadings(text) {
+  const plain = normalize(String(text).trim()).normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const readings = [];
+  const match = SOLFEGE_ROOT.exec(plain);
+  if (match) readings.push(SOLFEGE[match[1].toLowerCase()] + plain.slice(match[1].length));
+  readings.push(plain);
+  return readings;
 }
 
-// Acordes del diccionario cuyo nombre o alias empieza con la busqueda, y luego los que la contienen.
-export function searchChords(chords, text, limit = 8) {
-  const query = normalize(String(text).trim()).toLowerCase();
-  if (!query) return [];
-  const starts = [], inside = [];
-  for (const chord of chords) {
-    const keys = [chord.name, ...(chord.aliases || [])].map((candidate) => normalize(candidate).toLowerCase());
-    if (keys.some((key) => key.startsWith(query))) starts.push(chord);
-    else if (keys.some((key) => key.includes(query))) inside.push(chord);
+export function findChord(index, text) {
+  for (const reading of americanReadings(text)) {
+    const found = reading ? index.get(reading) : null;
+    if (found) return found;
   }
-  return [...starts, ...inside].slice(0, limit);
+  return null;
+}
+
+// Letra, alteracion y calidad de un nombre americano ("Bbm7" -> B, b, m7).
+const splitName = (name) => {
+  const match = /^([A-Ga-g])([#b]?)(.*)$/.exec(normalize(name));
+  return match ? { root: match[1].toUpperCase() + match[2], rest: match[3].toLowerCase() } : null;
+};
+
+// Busca por nota y calidad, en americano o solfeo: la nota debe coincidir exacta y la calidad por comienzo
+// ("Si" -> B, Bm, B7...; nunca un acorde que apenas contenga esas letras). Los mas cortos primero.
+export function searchChords(chords, text, limit = 6) {
+  for (const reading of americanReadings(text)) {
+    const query = splitName(reading);
+    if (!query) continue;
+    const found = [];
+    for (const chord of chords) {
+      let best = null;
+      for (const candidate of [chord.name, ...(chord.aliases || [])]) {
+        const parts = splitName(candidate);
+        if (parts && parts.root === query.root && parts.rest.startsWith(query.rest) && (best === null || parts.rest.length < best)) best = parts.rest.length;
+      }
+      if (best !== null) found.push({ chord, size: best });
+    }
+    if (found.length) return found.sort((x, y) => x.size - y.size).slice(0, limit).map((entry) => entry.chord);
+  }
+  return [];
 }
 
 const rootOf = (name) => {

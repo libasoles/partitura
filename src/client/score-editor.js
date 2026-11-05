@@ -1913,8 +1913,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     box.className = 'score-chord-searchbox';
     box.insertAdjacentHTML('beforeend', lucide('search'));
     box.append(field);
-    search.append(box, results);
-    chordPopup.append(picture, unknown, search, nav);
+    search.append(box, results, unknown);
+    chordPopup.append(picture, search, nav);
     document.querySelector('.score-page').appendChild(chordPopup);
     chordPopup.parts = { picture, unknown, nav, previous, next, count, search, field, results };
 
@@ -1936,6 +1936,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         item.append(button);
         return item;
       }));
+      unknown.hidden = !!found.length || !chordLib;
     };
     chordPopup.fillSearch = fill;
     field.addEventListener('input', fill);
@@ -1996,7 +1997,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     picture.replaceChildren();
     if (positions.length) picture.append(chordLib.drawDiagram(positions[variant], t.chordDiagram.replace('{name}', chord.name)));
     picture.hidden = !positions.length;
-    unknown.hidden = !!positions.length || !chordLib;
     const searching = !positions.length && !!chordLib;
     if (searching && search.dataset.for !== mi + ':' + at + ':' + chord.name) {
       search.dataset.for = mi + ':' + at + ':' + chord.name;
