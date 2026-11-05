@@ -510,6 +510,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (eventAt(selected)) applyModifier(item, selected);
       return;
     }
+    // Con figuras elegidas, la tecla solo les da formato: no queda ninguna herramienta activa.
+    if ((item.kind === 'note' || item.kind === 'rest') && picks().some((ref) => eventAt(ref))) deactivateTool();
     // La nota muerta no cambia la duracion: marca (o, si todas ya lo son, desmarca) las notas elegidas.
     if (item.dead) {
       const notes = picks().map((ref) => eventAt(ref)).filter((ev) => ev && !ev.rest);
