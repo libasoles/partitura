@@ -11,6 +11,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const STORAGE_KEY = 'scoreEditor.v2';
   const LEGACY_KEY = 'scoreEditor.v1'; // guardada con 8 divisiones por negra
   const SCALE = 60;
+  // From here the page has side margins (see editor.css) wide enough for the voices legend; the pattern library needs more.
+  const WIDE_PAGE = window.matchMedia('(min-width: 900px)');
+  const LIBRARY_PAGE = window.matchMedia('(min-width: 1560px)');
   const HISTORY_LIMIT = 100;
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const t = JSON.parse(document.getElementById('scoreStrings').textContent);
@@ -775,7 +778,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // ---- dibujo -------------------------------------------------------------
 
-  const VOICE_MARGIN = 60;
   function layoutOptions(width, extra) {
     return Object.assign({
       scale: SCALE,
@@ -785,8 +787,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       header: 'none',
       footer: 'none',
       svgViewBox: true,
-      // The voices toolbar needs room left of the staff (and of the grand-staff brace).
-      pageMarginLeft: settings && score.tools?.voices ? 60 + VOICE_MARGIN : 60,
+      pageMarginLeft: 60,
       pageMarginRight: 60,
       pageMarginTop: 60,
       pageMarginBottom: 60,
@@ -815,7 +816,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     alignVoiceLegend();
   }
 
-  // The voices toolbar sits left of the staff, level with the top line of the first staff.
+  // The voices toolbar sits level with the top line of the first staff and never takes width from the sheet: on wide screens it
+  // goes in the page margin outside the stage; on narrow ones, in the staff's own left margin (left of the clef or brace).
   function alignVoiceLegend() {
     const line = stage.querySelector('g.staff > path');
     if (!line || !voiceLegend.isConnected) return;
@@ -823,7 +825,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.style.top = Math.max(0, line.getBoundingClientRect().top - origin.top) + 'px';
     // Left of the brace (grand staff) or of the first staff line, never over it.
     const edge = (stage.querySelector('g.grpSym') || line).getBoundingClientRect().left - origin.left;
-    voiceLegend.style.left = Math.max(0, edge - voiceLegend.offsetWidth - 48) + 'px';
+    voiceLegend.style.left = (WIDE_PAGE.matches ? -(voiceLegend.offsetWidth + 16) : Math.max(0, edge - voiceLegend.offsetWidth - 6)) + 'px';
   }
 
   function render() {
@@ -3805,7 +3807,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Un patron es ritmo y grados de la escala (ver `M.patternFrom`), no notas: sirve en cualquier tonalidad. La biblioteca
   // es del usuario y no de una partitura, asi que vive con las opciones y no viaja en el documento.
   const LIBRARY_LIMIT = 60;
-  const patternsOn = () => patterns && settings && getSetting('patterns', false) === true;
+  const patternsOn = () => patternsAvailable() && getSetting('patterns', false) === true;
+  // Una columna mas a la izquierda solo cabe sin quitarle ancho a la partitura en pantallas anchas; en tablet no se ofrece.
+  const patternsAvailable = () => patterns && settings && LIBRARY_PAGE.matches;
   let library = [];
   const libraryPanel = document.createElement('aside');
   libraryPanel.className = 'score-library';
@@ -4135,12 +4139,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       hint.className = 'score-settings-hint';
       hint.textContent = t.libraryHint;
       patternsCheck.addEventListener('change', () => { setSetting('patterns', patternsCheck.checked); applyLibrary(); });
+      wrap.hidden = !LIBRARY_PAGE.matches;
+      LIBRARY_PAGE.addEventListener('change', () => { wrap.hidden = !LIBRARY_PAGE.matches; applyLibrary(); });
       wrap.append(field, hint);
       popup.appendChild(wrap);
     }
 
     function sync() {
-      if (patternsCheck) patternsCheck.checked = patternsOn();
+      if (patternsCheck) patternsCheck.checked = getSetting('patterns', false) === true;
       instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === M.INSTRUMENTS[i]; });
       tempoSlider.value = String(score.tempo || 120);
       showTempo();
