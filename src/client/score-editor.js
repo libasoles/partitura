@@ -3415,6 +3415,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     piano: '<path d="M18.5 8c-1.4 0-2.6-.8-3.2-2A6.87 6.87 0 0 0 2 9v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8.5C22 9.6 20.4 8 18.5 8"/><path d="M2 14h20"/><path d="M6 14v4"/><path d="M10 14v4"/><path d="M14 14v4"/><path d="M18 14v4"/>',
     guitar: '<path d="m11.9 12.1 4.514-4.514"/><path d="M20.1 2.3a1 1 0 0 0-1.4 0l-1.114 1.114A2 2 0 0 0 17 4.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 17.828 7h1.344a2 2 0 0 0 1.414-.586L21.7 5.3a1 1 0 0 0 0-1.4z"/><path d="m6 16 2 2"/><path d="M8.2 9.9C8.7 8.8 9.8 8 11 8c2.8 0 5 2.2 5 5 0 1.2-.8 2.3-1.9 2.8l-.9.4A2 2 0 0 0 12 18a4 4 0 0 1-4 4c-3.3 0-6-2.7-6-6a4 4 0 0 1 4-4 2 2 0 0 0 1.8-1.2z"/><circle cx="11.5" cy="12.5" r=".5" fill="currentColor"/>',
     settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+    'square-chevrons-down': '<path d="M9 14L12 17L15 14"/><path d="M9 8L12 11L15 8"/><rect x="3" y="3" width="18" height="18" rx="2"/>',
     plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',
     minus: '<path d="M5 12h14"/>',
     'file-text': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
@@ -3738,14 +3739,43 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const mid = (lo + hi) / 2;
     const half = Math.max(6, Math.ceil((hi - lo) / 2) + 3);
     const height = half * 2;
-    const WIDTH = 6;
     const wrap = document.createElement('span');
     wrap.className = 'score-pattern-staff';
+    const WIDTH = 7;
+    const BEAMS = { e: 1, s: 2, f: 3 };
+    const yOf = (ev) => half - (ev.dn - mid);
+    // Las corcheas y menores seguidas, dentro de un mismo tiempo, se barran; una suelta lleva bandera.
+    const groups = [];
+    columns.forEach((column, i) => {
+      const lead = column.events.find((ev) => !ev.rest);
+      column.lead = lead;
+      column.index = i;
+      const before = columns[i - 1];
+      const joins = lead && BEAMS[lead.d] && before?.lead && BEAMS[before.lead.d] && before.mi === column.mi
+        && Math.floor(before.at / 24) === Math.floor(column.at / 24) && lead.beam !== 'break';
+      if (joins) before.group.push(column), column.group = before.group;
+      else column.group = [column];
+    });
     columns.forEach((column) => {
+      if (!column.lead) return;
+      const ys = column.events.filter((ev) => !ev.rest).map(yOf);
+      column.top = Math.min(...ys);
+      column.bottom = Math.max(...ys);
+    });
+    columns.forEach((column) => {
+      if (!column.lead || column.group[0] !== column) return;
+      const down = column.group.reduce((sum, c) => sum + (c.top + c.bottom) / 2, 0) / column.group.length < half;
+      column.group.forEach((c) => { c.down = down; });
+      const stemEnd = down ? Math.max(...column.group.map((c) => c.bottom)) + 6 : Math.min(...column.group.map((c) => c.top)) - 6;
+      column.group.forEach((c) => { c.stemEnd = stemEnd; });
+    });
+    columns.forEach((column, i) => {
       const svg = document.createElementNS(SVG_NS, 'svg');
+      const next = columns[i + 1];
       svg.setAttribute('viewBox', `0 0 ${WIDTH} ${height}`);
       svg.style.width = `${WIDTH * 0.2}rem`;
       svg.style.height = `${height * 0.2}rem`;
+      svg.style.overflow = 'visible';
       svg.setAttribute('aria-hidden', 'true');
       let markup = '';
       for (let line = -2; line <= 2; line += 1) markup += `<line x1="0" x2="${WIDTH}" y1="${half + line * 2}" y2="${half + line * 2}" stroke="currentColor" stroke-opacity=".35" stroke-width=".25"/>`;
@@ -3754,11 +3784,39 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           markup += `<svg x="0.5" y="${half - 5}" width="5" height="10" viewBox="0 -12 30 56" fill="currentColor">${glyphFor({ kind: 'rest', d: ev.d }).innerHTML}</svg>`;
           return;
         }
-        const y = half - (ev.dn - mid);
+        const y = yOf(ev);
         const open = ev.d === 'w' || ev.d === 'h';
-        markup += `<ellipse cx="3" cy="${y}" rx="1.5" ry="1" transform="rotate(-20 3 ${y})" fill="${open ? 'none' : 'currentColor'}" stroke="currentColor" stroke-width=".35"/>`;
-        if (ev.d !== 'w') markup += y > half ? `<line x1="4.4" x2="4.4" y1="${y}" y2="${y - 6}" stroke="currentColor" stroke-width=".35"/>` : `<line x1="1.6" x2="1.6" y1="${y}" y2="${y + 6}" stroke="currentColor" stroke-width=".35"/>`;
+        markup += `<ellipse cx="3" cy="${y}" rx="1.5" ry="1" transform="rotate(-20 3 ${y})" fill="${open ? 'none' : 'currentColor'}" stroke="currentColor" stroke-width="${open ? '.4' : '.2'}"/>`;
+        if (ev.dot) markup += `<circle cx="5.3" cy="${y - 0.6}" r=".4" fill="currentColor"/>`;
       });
+      if (column.lead && column.lead.d !== 'w') {
+        const x = column.down ? 1.6 : 4.4;
+        const from = column.down ? column.top : column.bottom;
+        markup += `<line x1="${x}" x2="${x}" y1="${from}" y2="${column.stemEnd}" stroke="currentColor" stroke-width=".35"/>`;
+        const levels = BEAMS[column.lead.d] || 0;
+        const sign = column.down ? -1 : 1;
+        const group = column.group;
+        const here = group.indexOf(column);
+        if (levels && group.length === 1) {
+          for (let level = 0; level < levels; level += 1) {
+            const y0 = column.stemEnd + sign * level * 1.3;
+            markup += `<path d="M${x} ${y0} q2 1 2.2 4" fill="none" stroke="currentColor" stroke-width=".6" transform="${column.down ? `translate(0 ${2 * y0}) scale(1 -1)` : ''}"/>`;
+          }
+        } else if (levels && next && group[here + 1] === next) {
+          const nx = (next.down ? 1.6 : 4.4) + WIDTH;
+          const depth = Math.min(levels, BEAMS[next.lead.d]);
+          for (let level = 0; level < depth; level += 1) {
+            const y0 = column.stemEnd + sign * level * 1.2;
+            markup += `<polygon points="${x},${y0} ${nx},${y0} ${nx},${y0 + sign * 0.8} ${x},${y0 + sign * 0.8}" fill="currentColor"/>`;
+          }
+        }
+        if (levels && group.length > 1 && here > 0 && !(group[here - 1] && BEAMS[group[here - 1].lead.d] >= levels)) {
+          for (let level = BEAMS[group[here - 1].lead.d]; level < levels; level += 1) {
+            const y0 = column.stemEnd + sign * level * 1.2;
+            markup += `<polygon points="${x - 2},${y0} ${x},${y0} ${x},${y0 + sign * 0.8} ${x - 2},${y0 + sign * 0.8}" fill="currentColor"/>`;
+          }
+        }
+      }
       svg.innerHTML = markup;
       wrap.appendChild(svg);
     });
@@ -3789,10 +3847,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const notes = section(false, t.patternRelative);
       notes.appendChild(patternStaff(pattern));
       const rhythm = section(true, t.patternRhythm);
-      // Una figura por tiempo: las notas de un acorde se dibujan una sola vez.
-      pattern.events.filter((ev, i, all) => !all.slice(0, i).some((o) => o.mi === ev.mi && o.at === ev.at)).forEach((ev) => {
-        rhythm.appendChild(glyphFor({ kind: ev.rest ? 'rest' : 'note', d: ev.d }));
-      });
+      rhythm.innerHTML = lucide('square-chevrons-down');
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = 'score-pattern-remove tooltip';
