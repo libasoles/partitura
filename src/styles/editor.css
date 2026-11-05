@@ -2275,8 +2275,8 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
     display: block;
     position: absolute;
     top: 266px;
-    right: calc(100% + 1rem);
-    width: min(14rem, calc((100vw - 100%) / 2 - 2rem));
+    right: calc(100% + 3.25rem); /* deja libre la franja de la leyenda de voces (1.25rem + aire) */
+    width: min(14rem, calc((100vw - 100%) / 2 - 4.25rem));
     padding: 0;
   }
 }
