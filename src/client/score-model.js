@@ -54,10 +54,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
   };
   const LOWER_CLEF = 'bass'; // clave del segundo pentagrama del piano
   // Tablas por compas que se desplazan juntas al insertar, quitar o dividir compases (`lower` es el segundo pentagrama).
-  const BY_MEASURE = ['navigation', 'barlines', 'keys', 'clefs', 'lowerClefs', 'meters', 'barres', 'hairpins', 'measureDurations', 'measureWidths', 'lower'];
+  const BY_MEASURE = ['navigation', 'barlines', 'keys', 'clefs', 'lowerClefs', 'meters', 'barres', 'hairpins', 'chords', 'measureDurations', 'measureWidths', 'lower'];
   const PER_ROW = 4;
   const MIN_ROWS = 3;
   const MAX_FRET = 24;
+  const MAX_CHORD_NAME = 16;
+  const MAX_CHORD_VARIANTS = 12; // tope de variantes de digitacion guardadas por acorde
   const GRID = 6; // semicorchea: la posicion se redondea a esta cuadricula (2 dentro de un tresillo, 3 con fusas)
   const BOTTOM_LINE = 30; // E4: linea inferior de la clave de sol
   const LOWEST = 15;
@@ -875,7 +877,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     Object.entries(score.lower || {}).forEach(([mi, measure]) => {
       if (positions.get(+mi + 1) !== positions.get(+mi) + 1) measure.forEach((ev) => { delete ev.tie; delete ev.slur; });
     });
-    ['navigation', 'barlines', 'barres', 'hairpins', 'measureDurations', 'measureWidths', 'lower'].forEach((name) => {
+    ['navigation', 'barlines', 'barres', 'hairpins', 'chords', 'measureDurations', 'measureWidths', 'lower'].forEach((name) => {
       if (!score[name]) return;
       const moved = {};
       // Una cejilla o un regulador que cruza compases solo sigue unido si esos compases se mueven juntos.
@@ -1088,9 +1090,18 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
         if (last === mi && Number.isInteger(h.to)) h.to -= at;
       }
     });
+    // Los acordes escritos despues del corte pasan al compas nuevo.
+    const movedChords = (score.chords?.[mi] || []).filter((chord) => chord.at >= at).map((chord) => Object.assign({}, chord, { at: chord.at - at }));
+    if (score.chords?.[mi]) score.chords[mi] = score.chords[mi].filter((chord) => chord.at < at);
     BY_MEASURE.forEach((name) => {
       if (score[name]) score[name] = shiftKeys(score[name], mi + 1, 1);
     });
+    if (movedChords.length) {
+      if (!score.chords) score.chords = {};
+      score.chords[mi + 1] = movedChords;
+    }
+    if (score.chords?.[mi] && !score.chords[mi].length) delete score.chords[mi];
+    if (score.chords && !Object.keys(score.chords).length) delete score.chords;
     if (lowerCut) {
       score.lower[mi] = lowerCut.left;
       score.lower[mi + 1] = lowerCut.right;
@@ -1160,6 +1171,35 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     if (!score.barres || !score.barres[mi]) return false;
     delete score.barres[mi];
     if (!Object.keys(score.barres).length) delete score.barres;
+    return true;
+  }
+
+  // Acordes: nombres escritos sobre el pentagrama (`score.chords[mi]`, ordenados por `at`). Uno por tiempo de cada compas.
+  // `variant` es la digitacion elegida entre las del diccionario; 0 (la primera) no se guarda.
+  function chordAt(score, mi, at) {
+    return ((score.chords && score.chords[mi]) || []).find((chord) => chord.at === at);
+  }
+
+  function setChord(score, mi, at, name, variant) {
+    name = typeof name === 'string' ? name.trim() : '';
+    if (!Number.isInteger(mi) || mi < 0 || mi >= measures(score).length || !Number.isInteger(at) || at < 0 || at >= capacity(score, mi)) return false;
+    if (!name || name.length > MAX_CHORD_NAME) return false;
+    const list = ((score.chords && score.chords[mi]) || []).filter((chord) => chord.at !== at);
+    const old = chordAt(score, mi, at);
+    // Renombrar un acorde conserva la variante solo si no se pide otra: cada nombre tiene sus propias digitaciones.
+    const keep = variant === undefined ? (old && old.name === name ? old.variant : 0) : variant;
+    list.push(Object.assign({ at, name }, Number.isInteger(keep) && keep > 0 && keep < MAX_CHORD_VARIANTS ? { variant: keep } : {}));
+    if (!score.chords) score.chords = {};
+    score.chords[mi] = list.sort((a, b) => a.at - b.at);
+    return true;
+  }
+
+  function removeChord(score, mi, at) {
+    const list = score.chords && score.chords[mi];
+    if (!list || !list.some((chord) => chord.at === at)) return false;
+    score.chords[mi] = list.filter((chord) => chord.at !== at);
+    if (!score.chords[mi].length) delete score.chords[mi];
+    if (!Object.keys(score.chords).length) delete score.chords;
     return true;
   }
 
@@ -1304,7 +1344,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
   // Sin instrumento elegido, lo dice la partitura: clave de guitarra, TAB o cejillas son de guitarra.
   function instrumentOf(score) {
     if (score && INSTRUMENTS.includes(score.instrument)) return score.instrument;
-    return defaultClef === 'guitar' || clefOf(score) === 'guitar' || (score && (score.showTabs || (score.barres && Object.keys(score.barres).length))) ? 'guitar' : 'piano';
+    return defaultClef === 'guitar' || clefOf(score) === 'guitar' || (score && (score.showTabs || (score.barres && Object.keys(score.barres).length) || (score.chords && Object.keys(score.chords).length))) ? 'guitar' : 'piano';
   }
 
   // La guitarra se escribe en clave de sol con 8 y admite TAB; el piano no tiene TAB y deja la clave de guitarra.
@@ -1455,6 +1495,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
       if (h.at >= capacity(score)) removeHairpin(score, mi, h);
       else if (h.to >= capacity(score)) delete h.to;
     });
+    Object.keys(score.chords || {}).forEach((mi) => {
+      score.chords[mi] = score.chords[mi].filter((chord) => chord.at < capacity(score));
+      if (!score.chords[mi].length) delete score.chords[mi];
+    });
+    if (score.chords && !Object.keys(score.chords).length) delete score.chords;
     return true;
   }
 
@@ -1717,6 +1762,18 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
       if (Number.isInteger(to) && (span ? to > 0 : to > at) && to < capacity(meterContext, +index + span)) result.to = to;
       barres[index] = result;
     });
+    const chords = {};
+    Object.entries(data.chords || {}).forEach(([index, list]) => {
+      if (!/^(0|[1-9]\d*)$/.test(index) || +index >= total || !Array.isArray(list)) return;
+      const kept = [];
+      list.forEach((chord) => {
+        const at = chord && chord.at * factor;
+        const name = chord && typeof chord.name === 'string' ? chord.name.trim() : '';
+        if (!Number.isInteger(at) || at < 0 || at >= capacity(meterContext, +index) || !name || name.length > MAX_CHORD_NAME || kept.some((other) => other.at === at)) return;
+        kept.push(Object.assign({ at, name }, Number.isInteger(chord.variant) && chord.variant > 0 && chord.variant < MAX_CHORD_VARIANTS ? { variant: chord.variant } : {}));
+      });
+      if (kept.length) chords[index] = kept.sort((a, b) => a.at - b.at);
+    });
     const measureDurations = {};
     Object.entries(data.measureDurations || {}).forEach(([index, duration]) => {
       const size = duration * factor;
@@ -1740,7 +1797,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
       if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isFinite(width) && width > 0 && width <= 1) measureWidths[index] = width;
     });
     const tabs = sanitizeTabs(data.tabs, rows.reduce((sum, row) => sum + row.length, 0));
-    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, Object.hasOwn(CLEFS, data.lowerClef) ? { lowerClef: data.lowerClef } : {}, Object.keys(lowerClefs).length ? { lowerClefs } : {}, Object.keys(lower).length ? { lower } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
+    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, Object.hasOwn(CLEFS, data.lowerClef) ? { lowerClef: data.lowerClef } : {}, Object.keys(lowerClefs).length ? { lowerClefs } : {}, Object.keys(lower).length ? { lower } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(chords).length ? { chords } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
   }
 
   // Rellena huecos con silencios ocultos: el final del compas y el espacio entre figuras sueltas.
@@ -2296,7 +2353,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
           ...(barre.span ? [] : [stop(Number.isInteger(barre.to) ? barre.to : capacity(score, mi))]),
         ] : closing ? [stop(Number.isInteger(closing.to) ? closing.to : capacity(score, mi))] : [];
         const stopXml = !barre && closing ? barreMarks[0].xml : barreMarks.length > 1 ? barreMarks[1].xml : '';
-        const marks = barreMarks.concat(wedges).sort((a, b) => a.t - b.t);
+        // Los acordes tambien son del renglon: se escriben en negrita sobre el pentagrama de arriba, antes de la figura de su tiempo.
+        const chordMarks = staff ? [] : ((score.chords && score.chords[mi]) || []).filter((chord) => chord.at < capacity(score, mi)).map((chord) => ({
+          // Si la figura de su tiempo ya no existe, el nombre se apoya en la anterior para no perderse.
+          chord: true, t: Math.max(0, ...starts.filter((start) => start <= chord.at)), xml: `<direction placement="above"><direction-type><words font-weight="bold" font-style="normal">${chord.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</words></direction-type></direction>`,
+        }));
+        const marks = barreMarks.concat(wedges, chordMarks).sort((a, b) => a.t - b.t);
         let barreOpen = !barre && Boolean(closing);
         let barreClosed = false;
         const lanes = voices(measure);
@@ -2314,12 +2376,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
           const hidden = (from, to) => {
             let at = from;
             marks.forEach((mark) => {
-              if (mark.done || mark.t < at || mark.t > to || (mark.wedge ? mark.begin && !mark.begin.done : !mark.start && !barreOpen)) return;
+              if (mark.done || mark.t < at || mark.t > to || (mark.chord ? false : mark.wedge ? mark.begin && !mark.begin.done : !mark.start && !barreOpen)) return;
               pad(at, mark.t);
               xml += mark.xml;
               at = mark.t;
               mark.done = true;
-              if (mark.wedge) return;
+              if (mark.wedge || mark.chord) return;
               if (mark.start) barreOpen = true;
               else barreClosed = true;
             });
@@ -2424,7 +2486,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, duplicateSelection, length, gridOf, hints, onsets, settle, placement, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     stavesOf, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
-    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, MAX_CHORD_NAME, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }

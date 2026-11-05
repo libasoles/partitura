@@ -3,7 +3,7 @@
 
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
-export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false } = {}) {
+export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false } = {}) {
 
   const M = window.ScoreModel;
   const STORAGE_KEY = 'scoreEditor.v2';
@@ -421,6 +421,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       say(placed ? '' : t.hairpinTaken);
       return;
     }
+    if (item.kind === 'chord') {
+      // Escribe el nombre sobre la nota soltada (o al inicio del compas); si ya hay uno ahi, abre el suyo.
+      startChordDraft(target.mi, target.onNote ? target.t : 0);
+      say('');
+      return;
+    }
     if (item.kind === 'barre') {
       // Sobre una nota que no es la primera arranca ahi; si no, cubre desde el inicio del compas.
       const existing = score.barres && score.barres[target.mi];
@@ -470,7 +476,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function isPlacing(item) {
-    return item && (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'navigation' || item.kind === 'hairpin');
+    return item && (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'chord' || item.kind === 'navigation' || item.kind === 'hairpin');
   }
 
   function isModifier(item) {
@@ -846,6 +852,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     markMeasureBars();
     mountRowTools();
     mountBarreInputs();
+    mountChords();
     mountTabs();
     document.getElementById('scoreTabToggle')?.setAttribute('aria-pressed', String(!!score.showTabs));
     applyTools();
@@ -1593,7 +1600,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     Object.keys(score.barres || {}).forEach((key) => {
       const mi = Number(key);
       const barre = score.barres[mi];
-      const label = stage.querySelector('[id="m' + mi + '"] g.dir');
+      const label = [...stage.querySelectorAll('[id="m' + mi + '"] g.dir')].find((node) => !isChordDir(node));
       if (!label) return;
       const box = label.getBoundingClientRect();
       const field = document.createElement('span');
@@ -1635,6 +1642,297 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       }
     });
     focusBarre = null;
+  }
+
+  // ---- acordes (guitarra) ---------------------------------------------------------
+  // Nombres escritos sobre el pentagrama. Verovio los dibuja en negrita (ver toMusicXml); aca viven la zona que invita a
+  // escribirlos al pasar el mouse, el campo de texto y el popup con la digitacion y sus variantes. El diccionario es el de
+  // guitar-chords, que el build publica como JSON (scripts/lib/chords-data.mjs) y se pide la primera vez que se usa.
+
+  const chordsOn = chords && Boolean(__CHORDS_FILE__);
+  const guitarOn = () => !settings || M.instrumentOf(score) === 'guitar';
+  let chordLib = null;
+  let chordLoading = null;
+  let chordDraft = null; // { mi, at, text } del acorde que se esta escribiendo, aun sin guardar
+  let chordOpen = null; // { mi, at } del acorde cuyo popup esta abierto
+  let chordZone = null;
+  let chordPopup = null;
+
+  function loadChords() {
+    if (!chordLoading) {
+      chordLoading = Promise.all([import('./chords.js'), fetch(vendorUrl(__CHORDS_FILE__)).then((response) => response.json())])
+        .then(([lib, rows]) => { chordLib = Object.assign({ index: lib.indexChords(rows) }, lib); refreshChordPopup(); })
+        .catch(() => { chordLoading = null; });
+    }
+    return chordLoading;
+  }
+
+  const isChordDir = (node) => !!node.querySelector('tspan[font-weight="bold"]');
+  const squash = (text) => text.replace(/\s+/g, '');
+
+  // Una columna por tiempo con figuras en el pentagrama de arriba (un compas vacio tiene solo la del inicio de la musica).
+  function chordColumns(mi) {
+    const origin = stage.getBoundingClientRect();
+    const starts = M.onsets(M.measures(score)[mi]);
+    const columns = new Map();
+    eventNodes(mi, 0).forEach((node, i) => { if (!columns.has(starts[i])) columns.set(starts[i], centerX(node, origin)); });
+    if (!columns.size) columns.set(0, layout[mi].start);
+    return [...columns].map(([at, x]) => ({ at, x })).sort((a, b) => a.x - b.x);
+  }
+
+  // Donde se escribe: sobre el pentagrama, mas arriba que cejillas y nombres ya escritos, y sin pisar el renglon anterior.
+  function chordBand(mi) {
+    const m = layout[mi];
+    const space = (m.lines[4] - m.lines[0]) / 4;
+    const above = Math.max(-Infinity, ...layout.filter((other) => other.bottom < m.top - 1).map((other) => other.bottom));
+    return { space, top: Math.max(m.top - 7 * space, above + space), bottom: m.top - 3 * space, center: m.top - 4.5 * space };
+  }
+
+  function chordZoneAt(clientX, clientY) {
+    const origin = stage.getBoundingClientRect();
+    const x = clientX - origin.left, y = clientY - origin.top;
+    for (let mi = 0; mi < layout.length; mi += 1) {
+      const m = layout[mi];
+      if (x < m.left || x > m.right) continue;
+      const band = chordBand(mi);
+      if (band.bottom - band.top < band.space * 1.5 || y < band.top || y > band.bottom) continue;
+      const columns = chordColumns(mi);
+      const column = columns.reduce((best, c) => (Math.abs(c.x - x) < Math.abs(best.x - x) ? c : best));
+      const gap = Math.min(...columns.filter((c) => c !== column).map((c) => Math.abs(c.x - column.x)), band.space * 6);
+      return { mi, at: column.at, x: column.x, y: band.center + band.space * 0.9, width: Math.max(band.space * 2.5, Math.min(gap, band.space * 6)), band };
+    }
+    return null;
+  }
+
+  function showChordZone(zone) {
+    if (!zone || M.chordAt(score, zone.mi, zone.at) || (chordDraft && chordDraft.mi === zone.mi && chordDraft.at === zone.at)) {
+      if (chordZone) chordZone.hidden = true;
+      stage.classList.remove('is-chord-zone');
+      return;
+    }
+    if (!chordZone || !chordZone.isConnected) {
+      chordZone = document.createElement('div');
+      chordZone.className = 'score-chord-zone';
+      chordZone.setAttribute('aria-hidden', 'true');
+      stage.appendChild(chordZone);
+    }
+    chordZone.hidden = false;
+    chordZone.style.left = zone.x - zone.width / 2 + 'px';
+    chordZone.style.top = zone.y + 'px';
+    chordZone.style.width = zone.width + 'px';
+    stage.classList.add('is-chord-zone');
+    if (!chordLib) loadChords();
+  }
+
+  function updateChordZone(event) {
+    const over = event && event.target;
+    const free = event && chordsOn && guitarOn() && !activeItem && !drag && !measureDrag && !shiftMeasures
+      && !(over && over.closest && over.closest('button, input, .score-selection-menu, .score-hairpin-ui, .score-barre-span'));
+    showChordZone(free ? chordZoneAt(event.clientX, event.clientY) : null);
+  }
+
+  function startChordDraft(mi, at) {
+    if (M.chordAt(score, mi, at)) { openChord(mi, at); return; }
+    chordDraft = { mi, at, text: '' };
+    mountChordDraft();
+  }
+
+  function mountChordDraft() {
+    if (!chordDraft || !layout[chordDraft.mi]) { chordDraft = null; return; }
+    const draft = chordDraft;
+    const columns = chordColumns(draft.mi);
+    const column = columns.filter((c) => c.at <= draft.at).pop() || columns[0];
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'score-chord-draft';
+    input.maxLength = M.MAX_CHORD_NAME;
+    input.value = draft.text;
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('aria-label', t.chordName);
+    const fit = () => { input.style.width = Math.max(3, input.value.length + 1.5) + 'ch'; };
+    fit();
+    const band = chordBand(draft.mi);
+    input.style.left = column.x + 'px';
+    input.style.top = band.center + 'px';
+    const finish = (save) => {
+      // Un redibujado quita el campo sin terminar de escribir: el borrador sigue y se vuelve a montar.
+      if (chordDraft !== draft || !input.isConnected) return;
+      chordDraft = null;
+      const name = input.value.trim();
+      input.remove();
+      if (save && name) {
+        if (!change(() => M.setChord(score, draft.mi, draft.at, name))) say(t.chordName);
+      }
+    };
+    input.addEventListener('input', () => { draft.text = input.value; fit(); });
+    input.addEventListener('keydown', (event) => {
+      event.stopPropagation();
+      if (event.key === 'Enter') { event.preventDefault(); finish(true); }
+      else if (event.key === 'Escape') { event.preventDefault(); finish(false); }
+    });
+    input.addEventListener('blur', () => finish(true));
+    stage.appendChild(input);
+    input.focus({ preventScroll: true });
+  }
+
+  // Un boton transparente sobre cada nombre dibujado: abre el popup con su digitacion.
+  function mountChords() {
+    chordZone = null;
+    if (!chordsOn) return;
+    const origin = stage.getBoundingClientRect();
+    const used = new Set();
+    Object.keys(score.chords || {}).forEach((key) => {
+      const mi = Number(key);
+      const dirs = [...stage.querySelectorAll('[id="m' + mi + '"] g.dir')].filter(isChordDir);
+      score.chords[mi].forEach((chord) => {
+        const dir = dirs.find((node) => !used.has(node) && squash(node.textContent) === squash(chord.name));
+        if (!dir) return;
+        used.add(dir);
+        const box = dir.getBoundingClientRect();
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'score-chord-trigger';
+        button.dataset.measure = mi;
+        button.dataset.at = chord.at;
+        button.setAttribute('aria-label', t.chord + ': ' + chord.name);
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.style.left = box.left - origin.left - 4 + 'px';
+        button.style.top = box.top - origin.top - 2 + 'px';
+        button.style.width = box.width + 8 + 'px';
+        button.style.height = box.height + 4 + 'px';
+        let wasOpen = false;
+        // Un click sobre el nombre con su popup abierto lo cierra: el pointerdown ya lo descarto antes de que llegue el click.
+        button.addEventListener('pointerdown', () => { wasOpen = !!chordPopup && chordPopup.matches(':popover-open') && !!chordOpen && chordOpen.mi === mi && chordOpen.at === chord.at; });
+        button.addEventListener('click', () => { if (!wasOpen) openChord(mi, chord.at); });
+        stage.appendChild(button);
+      });
+    });
+    if (chordDraft) mountChordDraft();
+    refreshChordPopup();
+  }
+
+  function buildChordPopup() {
+    chordPopup = document.createElement('div');
+    chordPopup.id = 'scoreChordPopup';
+    chordPopup.className = 'score-meter-popup score-chord-popup';
+    chordPopup.setAttribute('popover', 'auto');
+    chordPopup.setAttribute('role', 'dialog');
+    chordPopup.setAttribute('aria-label', t.chord);
+    const head = document.createElement('div');
+    head.className = 'score-chord-head';
+    const name = document.createElement('input');
+    name.type = 'text';
+    name.className = 'score-chord-name';
+    name.maxLength = M.MAX_CHORD_NAME;
+    name.autocomplete = 'off';
+    name.spellcheck = false;
+    name.setAttribute('aria-label', t.chordName);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.className = 'score-chord-remove';
+    remove.setAttribute('aria-label', t.chordRemove);
+    remove.title = t.chordRemove;
+    remove.innerHTML = lucide('trash');
+    head.append(name, remove);
+    const picture = document.createElement('div');
+    picture.className = 'score-chord-picture';
+    const unknown = document.createElement('p');
+    unknown.className = 'score-chord-unknown';
+    unknown.textContent = t.chordUnknown;
+    const nav = document.createElement('div');
+    nav.className = 'score-chord-variants';
+    const previous = document.createElement('button');
+    previous.type = 'button';
+    previous.setAttribute('aria-label', t.chordPrev);
+    previous.title = t.chordPrev;
+    previous.innerHTML = lucide('chevronLeft');
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.setAttribute('aria-label', t.chordNext);
+    next.title = t.chordNext;
+    next.innerHTML = lucide('chevronRight');
+    const count = document.createElement('span');
+    count.setAttribute('aria-live', 'polite');
+    nav.append(previous, count, next);
+    chordPopup.append(head, picture, unknown, nav);
+    document.querySelector('.score-page').appendChild(chordPopup);
+    chordPopup.parts = { name, remove, picture, unknown, nav, previous, next, count };
+
+    const commitName = () => {
+      const open = chordOpen;
+      const chord = open && M.chordAt(score, open.mi, open.at);
+      if (!chord) return;
+      const value = name.value.trim();
+      if (value === chord.name) return;
+      if (!value) { chordPopup.hidePopover(); change(() => M.removeChord(score, open.mi, open.at)); return; }
+      if (!change(() => M.setChord(score, open.mi, open.at, value))) name.value = chord.name;
+    };
+    name.addEventListener('keydown', (event) => {
+      event.stopPropagation();
+      if (event.key === 'Enter') { event.preventDefault(); commitName(); name.blur(); }
+      else if (event.key === 'Escape') name.value = (chordOpen && M.chordAt(score, chordOpen.mi, chordOpen.at) || { name: '' }).name;
+    });
+    name.addEventListener('change', commitName);
+    remove.addEventListener('click', () => {
+      const open = chordOpen;
+      chordPopup.hidePopover();
+      if (open) change(() => M.removeChord(score, open.mi, open.at));
+      stage.focus({ preventScroll: true });
+    });
+    const step = (delta) => {
+      const open = chordOpen;
+      const chord = open && M.chordAt(score, open.mi, open.at);
+      const found = chord && chordLib && chordLib.findChord(chordLib.index, chord.name);
+      if (!found) return;
+      const total = Math.min(chordLib.positionsOf(found).length, M.MAX_CHORD_VARIANTS);
+      const variant = ((chord.variant || 0) + delta + total) % total;
+      change(() => M.setChord(score, open.mi, open.at, chord.name, variant));
+    };
+    previous.addEventListener('click', () => step(-1));
+    next.addEventListener('click', () => step(1));
+    chordPopup.addEventListener('toggle', (event) => {
+      if (event.newState === 'closed') chordOpen = null;
+      stage.querySelectorAll('.score-chord-trigger').forEach((button) => {
+        button.setAttribute('aria-expanded', String(event.newState === 'open' && !!chordOpen && Number(button.dataset.measure) === chordOpen.mi && Number(button.dataset.at) === chordOpen.at));
+      });
+    });
+  }
+
+  async function openChord(mi, at) {
+    if (!chordPopup) buildChordPopup();
+    chordOpen = { mi, at };
+    await loadChords();
+    if (!chordOpen || chordOpen.mi !== mi || chordOpen.at !== at) return;
+    refreshChordPopup(true);
+  }
+
+  // Dibuja el popup del acorde abierto (nombre, digitacion y variante) junto a su nombre, o lo cierra si ya no existe.
+  function refreshChordPopup(show) {
+    if (!chordPopup || !chordOpen) return;
+    const { mi, at } = chordOpen;
+    const chord = M.chordAt(score, mi, at);
+    const trigger = chord && stage.querySelector('.score-chord-trigger[data-measure="' + mi + '"][data-at="' + at + '"]');
+    if (!trigger) { if (chordPopup.matches(':popover-open')) chordPopup.hidePopover(); chordOpen = null; return; }
+    if (!show && !chordPopup.matches(':popover-open')) return;
+    const { name, picture, unknown, nav, previous, next, count } = chordPopup.parts;
+    if (document.activeElement !== name) name.value = chord.name;
+    const found = chordLib && chordLib.findChord(chordLib.index, chord.name);
+    const positions = found ? chordLib.positionsOf(found).slice(0, M.MAX_CHORD_VARIANTS) : [];
+    const variant = Math.min(chord.variant || 0, Math.max(positions.length - 1, 0));
+    picture.replaceChildren();
+    if (positions.length) picture.append(chordLib.drawDiagram(positions[variant], t.chordDiagram.replace('{name}', chord.name)));
+    picture.hidden = !positions.length;
+    unknown.hidden = !!positions.length || !chordLib;
+    nav.hidden = positions.length < 2;
+    count.textContent = t.chordVariant.replace('{n}', variant + 1).replace('{total}', positions.length);
+    previous.disabled = next.disabled = positions.length < 2;
+    if (!chordPopup.matches(':popover-open')) chordPopup.showPopover();
+    const anchor = trigger.getBoundingClientRect();
+    const box = chordPopup.getBoundingClientRect();
+    const below = anchor.bottom + 6;
+    chordPopup.style.left = Math.max(8, Math.min(anchor.left + anchor.width / 2 - box.width / 2, window.innerWidth - box.width - 8)) + 'px';
+    chordPopup.style.top = Math.max(8, below + box.height > window.innerHeight - 8 ? anchor.top - box.height - 6 : below) + 'px';
   }
 
   // ---- reguladores (crescendo y diminuendo) -------------------------------------
@@ -2177,7 +2475,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const x = item?.kind === 'navigation' ? layout[hit.mi][['dc', 'ds'].includes(item.mark) ? 'right' : 'left']
       : item && item.kind === 'bar' && item.bar !== 'double' ? layout[hit.mi][item.bar === 'start' ? 'left' : 'right']
       : item && item.kind === 'bar' && item.bar === 'double' ? hit.rawX
-      : item && (item.kind === 'barre' || item.kind === 'hairpin') && !hit.onNote ? layout[hit.mi].left : hit.x;
+      : item && (item.kind === 'barre' || item.kind === 'chord' || item.kind === 'hairpin') && !hit.onNote ? layout[hit.mi].left : hit.x;
     line.style.left = x + 'px';
     // Notas y silencios marcan el pentagrama donde caen; barras, repeticiones y reguladores son de todo el renglon.
     const whole = item && item.kind !== 'note' && item.kind !== 'rest';
@@ -2265,7 +2563,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const raw = hoverPoint;
     const point = raw && aimed(raw);
     const over = point && document.elementFromPoint(point.clientX, point.clientY);
-    const overStage = over && stage.contains(over) && !over.closest('.score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-hairpin-ui, .score-selection-menu');
+    const overStage = over && stage.contains(over) && !over.closest('.score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu');
     const hit = activeItem && !shiftMeasures && !measureDrag && !drag && overStage && locate(point.clientX, point.clientY);
     if (!hit) { clearHoverGhost(); return; }
     if (!hoverGhost) {
@@ -2284,10 +2582,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (event.pointerType !== 'mouse') return;
     hoverPoint = { clientX: event.clientX, clientY: event.clientY };
     updateHoverGhost();
+    updateChordZone(event);
   });
   stage.addEventListener('pointerleave', () => {
     hoverPoint = null;
     clearHoverGhost();
+    updateChordZone(null);
   });
   window.addEventListener('blur', () => {
     hoverPoint = null;
@@ -2396,7 +2696,19 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       selectNavigation(navigation, event);
       return;
     }
-    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-hairpin-ui, .score-selection-menu')) return;
+    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu')) return;
+    // Sin herramienta, la zona sobre el pentagrama abre el campo para escribir un acorde.
+    if (chordsOn && guitarOn() && !activeItem && event.button === 0 && event.pointerType === 'mouse') {
+      const zone = chordZoneAt(event.clientX, event.clientY);
+      if (zone) {
+        event.preventDefault();
+        event.stopPropagation();
+        setPicks([]);
+        startChordDraft(zone.mi, zone.at);
+        showChordZone(null);
+        return;
+      }
+    }
     // Las cabezas graves pueden quedar dentro de TAB: la partitura recibe
     // el gesto antes de que el componente enfoque y redibuje su celda.
     const overTab = event.target.closest('.score-tab');
@@ -3112,6 +3424,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     minus: '<path d="M5 12h14"/>',
     'file-text': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
     'file-code': '<path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+    chevronLeft: '<path d="m15 18-6-6 6-6"/>',
+    chevronRight: '<path d="m9 18 6-6-6-6"/>',
     trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
     // Sin equivalente en Lucide: ligadura (arco entre dos notas) y ligadura quitada.
     link: '<ellipse cx="3" cy="8" rx="3" ry="2" transform="rotate(-25 3 8)" fill="currentColor" stroke="none"/><ellipse cx="21" cy="8" rx="3" ry="2" transform="rotate(-25 21 8)" fill="currentColor" stroke="none"/><path d="M4 13c1.500 7 14.500 7 16 0"/>',
@@ -3170,6 +3484,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     'bar:start': '<path d="M10 4v24" stroke="currentColor" stroke-width="3.5"/><path d="M15 4v24" stroke="currentColor" stroke-width="1.6"/><circle cx="21" cy="12" r="1.8"/><circle cx="21" cy="20" r="1.8"/>',
     'bar:end': '<path d="M15 4v24" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v24" stroke="currentColor" stroke-width="3.5"/><circle cx="9" cy="12" r="1.8"/><circle cx="9" cy="20" r="1.8"/>',
     barre: '<text x="3" y="18" font-size="16" font-weight="700" font-family="serif">C</text><path d="M3 24h24" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2.500" fill="none"/>',
+    chord: '<text x="15" y="21" text-anchor="middle" font-size="14" font-family="serif" font-weight="700">Am</text>',
     dead: '<path d="M8.500 19.500l11 11M19.500 19.500l-11 11" stroke="currentColor" stroke-width="2.200" fill="none"/><path d="M20.3 22.8V-12.3" stroke="currentColor" stroke-width="1.5" fill="none"/>',
     dot: '<circle cx="15" cy="15" r="3.200"/>',
     'acc:#': '<path d="M11 6v20M18 4v20M7.500 12.500l14-3.500M7.500 21l14-3.500" stroke="currentColor" stroke-width="1.800" fill="none"/>',
@@ -3181,6 +3496,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (item.kind === 'navigation') return 'nav:' + item.mark;
     if (item.kind === 'bar') return 'bar:' + item.bar;
     if (item.kind === 'barre') return 'barre';
+    if (item.kind === 'chord') return 'chord';
     if (item.kind === 'hairpin') return 'hairpin:' + item.hairpin;
     if (item.dead) return 'dead';
     if (item.kind === 'note' || item.kind === 'rest') return item.kind + ':' + item.d;
@@ -3228,6 +3544,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   const BARS = [
     { kind: 'barre', label: t.barre },
+    ...(chordsOn ? [{ kind: 'chord', label: t.chordTool }] : []),
     { kind: 'bar', bar: 'start', label: t.barRepeatStart },
     { kind: 'bar', bar: 'end', label: t.barRepeatEnd },
     { kind: 'bar', bar: 'double', label: t.barDouble },
@@ -3253,7 +3570,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const shown = button.textContent.trim();
     if (shown && !item.label.toLowerCase().includes(shown.toLowerCase())) button.setAttribute('aria-label', shown + ': ' + item.label);
     button.setAttribute('aria-pressed', 'false');
-    button.dataset.group = item.kind === 'bar' || item.kind === 'navigation' ? 'repeats' : item.kind === 'hairpin' ? 'dynamics' : item.kind === 'barre' ? 'barre' : '';
+    button.dataset.group = item.kind === 'bar' || item.kind === 'navigation' ? 'repeats' : item.kind === 'hairpin' ? 'dynamics' : item.kind === 'barre' || item.kind === 'chord' ? 'barre' : '';
     if (item.kind === 'bar') {
       button.dataset.barline = item.bar;
       button.addEventListener('click', (event) => {
@@ -3268,7 +3585,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       button.dataset.hairpin = item.hairpin;
       button.addEventListener('click', (event) => { if (event.detail === 0) activateTool(item); });
     }
-    if (item.kind === 'barre') {
+    if (item.kind === 'barre' || item.kind === 'chord') {
       button.dataset.tool = item.kind;
       button.addEventListener('click', (event) => {
         if (event.detail === 0) activateTool(item);
@@ -3291,7 +3608,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       event.preventDefault();
       beginDrag(event, { item, kind: item.kind, glyph: glyphFor(item) });
     });
-    (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'navigation' || item.kind === 'hairpin' ? barlines : palette).appendChild(button);
+    (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'chord' || item.kind === 'navigation' || item.kind === 'hairpin' ? barlines : palette).appendChild(button);
   });
 
   // TAB: muestra u oculta una tablatura bajo cada renglon.

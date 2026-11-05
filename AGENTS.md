@@ -67,6 +67,15 @@
 - Mostrar u ocultar los grupos de repetición, dinámica y voces es por partitura (`score.tools`, `M.setTool`), no global: viaja con el documento y la leyenda de voces se coloca a la izquierda de la llave.
 - Con piano y los ajustes activos, cada renglón es un gran pentagrama (ver la sección siguiente). Cambiar a guitarra lo oculta sin borrarlo.
 
+### Acordes (guitarra)
+
+- **Modelo**: `score.chords[mi]` es la lista, ordenada por `at`, de `{ at, name, variant? }` (un acorde por tiempo y compás; `variant` es la digitación elegida y 0 no se guarda). Mismo patrón que `barres`: está en `BY_MEASURE`, se parte con `setBarline`, `setMeter` quita los que ya no caben y `sanitize` descarta lo inválido. Una partitura con acordes se infiere de guitarra (`instrumentOf`).
+- **Render**: `toMusicXml` escribe cada nombre como `<words font-weight="bold">` sobre el pentagrama de arriba, antes de la figura de su tiempo (si esa figura ya no existe se apoya en la anterior). Así lo dibuja Verovio y sale igual en PDF. Verovio no conserva el `id` de la dirección: el editor reconoce los nombres por la negrita y los empareja con `score.chords` por texto y orden (`mountChords`). No se importan al leer MusicXML.
+- **Escribir**: con guitarra y sin herramienta activa, pasar el mouse a 3–7 espacios sobre la primera línea muestra un subrayado (`.score-chord-zone`) en la columna de la figura más cercana; un clic abre el campo (`.score-chord-draft`). El botón de la paleta (grupo de guitarra, `data-tool="chord"`) hace lo mismo al soltarlo sobre una nota. Enter o salir del campo guarda; Escape o vacío cancela.
+- **Popup**: clic sobre un nombre (`.score-chord-trigger`) abre `#scoreChordPopup`, anclado a él: nombre editable, quitar, digitación y selectores de variante (que pasan por `change`, así se deshacen). Un nombre que no está en el diccionario queda escrito y el popup lo avisa.
+- **Diccionario**: viene de `guitar-chords` (devDependency fijada a un commit de GitHub). `scripts/lib/chords-data.mjs` lo lee en el build y publica `public/vendor/chords-<hash>.json` (sin `notes`; en `.gitignore`); `__CHORDS_FILE__` lleva el nombre al editor, que lo pide la primera vez que se usa junto con `src/client/chords.js` (búsqueda por nombre o alias, variantes calculadas —cejilla de mi/la, dim7 movible, alternativas guardadas— y el diagrama SVG). Sin la dependencia el nombre queda vacío y no hay acordes.
+- **Activación por sitio**: `startEditor({ chords: true })`. guitar-chords no lo activa porque los estilos (`editor.css`) son de cada sitio. Al actualizar la versión de `guitar-chords`, correr `npm install --save-dev github:libasoles/guitar-chords#<commit>`.
+
 ### Gran pentagrama (piano)
 
 Solo existe con `instrumentOf(score) === 'piano'` y `createScoreModel({ grandStaff: true })`; `runtime.js` lo activa junto con `settings`, así que guitar-chords (un pentagrama, clave de guitarra, sin ajustes) no cambia. `M.stavesOf(score)` es la única fuente: 1 o 2.
