@@ -91,6 +91,19 @@ test('MusicXML writes each name in bold above the staff, before the figure of it
   assert.ok(xml.indexOf('>G</words>') < xml.lastIndexOf('<note '), 'the second name comes before the second note');
 });
 
+test('names without a figure at their time keep their own position instead of piling up at the start', () => {
+  const score = guitar();
+  score.rows[0][0] = [];
+  M.setChord(score, 0, 0, 'A7');
+  M.setChord(score, 0, 24, 'Ok');
+  M.setChord(score, 0, 48, 'Em');
+  const xml = M.toMusicXml(score);
+  const measure = xml.slice(xml.indexOf('<measure'));
+  const order = [...measure.matchAll(/<words font-weight="bold"[^>]*>([^<]*)<\/words>|<note print-object="no">/g)].map((m) => m[1] || 'gap');
+  assert.deepEqual(order.filter((x) => x !== 'gap'), ['A7', 'Ok', 'Em']);
+  assert.ok(order.indexOf('Ok') > order.indexOf('A7') + 1 && order.indexOf('gap') < order.indexOf('Ok'), 'a hidden gap separates the names');
+});
+
 test('the build publishes the guitar-chords dictionary and names are found by name or alias', () => {
   assert.match(chordsFileName(), /^chords-[0-9a-f]{10}\.json$/);
   const index = indexChords(require('guitar-chords').CHORDS);

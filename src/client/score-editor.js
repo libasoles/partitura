@@ -356,7 +356,18 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return group.length > 1 ? group : selected ? [selected] : [];
   }
 
+  // Nombres de acorde elegidos con el arrastre de seleccion: [{ mi, at }].
+  let selectedChords = [];
+
+  function markChords() {
+    stage.querySelectorAll('.score-chord-trigger').forEach((button) => {
+      const on = selectedChords.some((c) => c.mi === Number(button.dataset.measure) && c.at === Number(button.dataset.at));
+      button.classList.toggle('is-selected', on);
+    });
+  }
+
   function setPicks(list) {
+    selectedChords = [];
     selectedNavigation = [];
     selectedHairpin = null;
     selectedBeam = null;
@@ -729,6 +740,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function removeSelected() {
+    if (selectedChords.length) {
+      const chords = selectedChords;
+      selectedChords = [];
+      if (chordPopup) chordPopup.hidePopover();
+      change(() => chords.map(({ mi, at }) => M.removeChord(score, mi, at)).some(Boolean));
+      return;
+    }
     if (selectedHairpin) {
       const { mi, at } = selectedHairpin;
       change(() => {
@@ -1874,6 +1892,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       });
     });
     if (chordDraft) mountChordDraft();
+    markChords();
     refreshChordPopup();
   }
 
@@ -3033,6 +3052,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       return b.left <= r.right && b.right >= r.left && b.top <= r.bottom && b.bottom >= r.top;
     }).map(refOfNode).filter(Boolean);
     setPicks(m.base.concat(found.filter((f) => !m.base.some((b) => same(b, f)))));
+    const chords = [...stage.querySelectorAll('.score-chord-trigger')].filter((node) => {
+      const b = node.getBoundingClientRect();
+      return b.left <= r.right && b.right >= r.left && b.top <= r.bottom && b.bottom >= r.top;
+    }).map((node) => ({ mi: Number(node.dataset.measure), at: Number(node.dataset.at) }));
+    if (chords.length) {
+      selectedChords = chords;
+      markChords();
+    }
   }
 
   document.addEventListener('pointerup', (event) => endMarquee(event, false));

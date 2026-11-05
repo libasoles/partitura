@@ -2070,6 +2070,11 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   background: rgb(10 91 214 / 12%);
 }
 
+.score-chord-trigger.is-selected {
+  background: color-mix(in srgb, var(--brand-yellow) 55%, transparent);
+  filter: none;
+}
+
 .score-chord-trigger.is-dragging {
   z-index: 3;
   background: rgb(10 91 214 / 18%);

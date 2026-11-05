@@ -2479,8 +2479,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
         const stopXml = !barre && closing ? barreMarks[0].xml : barreMarks.length > 1 ? barreMarks[1].xml : '';
         // Los acordes tambien son del renglon: se escriben en negrita sobre el pentagrama de arriba, antes de la figura de su tiempo.
         const chordMarks = staff ? [] : ((score.chords && score.chords[mi]) || []).filter((chord) => chord.at < capacity(score, mi)).map((chord) => ({
-          // Si la figura de su tiempo ya no existe, el nombre se apoya en la anterior para no perderse.
-          chord: true, t: Math.max(0, ...starts.filter((start) => start <= chord.at)), xml: `<direction placement="above"><direction-type><words font-weight="bold" font-style="normal">${chord.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</words></direction-type></direction>`,
+          // Si no hay figura en su tiempo, el nombre se escribe en un hueco oculto justo ahi, asi que no se amontona con los demas.
+          // Solo si cae dentro de una figura (no en su inicio) se apoya en el inicio de esa figura.
+          chord: true, t: measure.some((ev, i) => starts[i] < chord.at && chord.at < starts[i] + length(ev)) ? Math.max(0, ...starts.filter((start) => start <= chord.at)) : chord.at, xml: `<direction placement="above"><direction-type><words font-weight="bold" font-style="normal">${chord.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</words></direction-type></direction>`,
         }));
         const marks = barreMarks.concat(wedges, chordMarks).sort((a, b) => a.t - b.t);
         let barreOpen = !barre && Boolean(closing);
