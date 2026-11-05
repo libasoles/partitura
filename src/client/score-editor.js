@@ -1093,6 +1093,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function clearBarSelection() {
     selectedMeasure = null;
     stage.querySelectorAll('.is-bar-selected').forEach((node) => node.classList.remove('is-bar-selected'));
+    stage.querySelectorAll('.score-insert-measure').forEach((button) => button.remove());
     stage.querySelectorAll('.score-barline-trigger').forEach((button) => button.setAttribute('aria-pressed', 'false'));
   }
 
