@@ -2436,7 +2436,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const actions = M.selectionActions(score, list);
     if (!actions.length) return;
     const origin = stage.getBoundingClientRect();
-    const boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
+    let boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
+    // Con figuras en renglones distintos la caja envolvente queda lejos de todas: el menu se ancla sobre la primera.
+    const first = boxes.reduce((a, b) => (b.top < a.top ? b : a));
+    if (boxes.some((b) => b.top > first.bottom)) boxes = [first];
     const top = Math.min(...boxes.map((b) => b.top)) - origin.top;
     const bottom = Math.max(...boxes.map((b) => b.bottom)) - origin.top;
     const left = Math.min(...boxes.map((b) => b.left)) - origin.left;
