@@ -4139,6 +4139,23 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       popup.appendChild(wrap);
     }
 
+    // Cada glifo se recorta a su tinta: la caja comun deja mas aire arriba en unos que en otros
+    // y la distancia al checkbox se veria despareja.
+    let fitted = false;
+    function fitIcons() {
+      if (fitted) return;
+      fitted = true;
+      popup.querySelectorAll('.score-settings-icon svg').forEach((svg) => {
+        try {
+          const box = svg.getBBox();
+          if (!box.width || !box.height) return;
+          svg.setAttribute('viewBox', `${box.x} ${box.y} ${box.width} ${box.height}`);
+          svg.setAttribute('width', String(box.width));
+          svg.setAttribute('height', String(box.height));
+        } catch { /* sin caja medible: queda como estaba */ }
+      });
+    }
+
     function sync() {
       if (patternsCheck) patternsCheck.checked = patternsOn();
       instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === M.INSTRUMENTS[i]; });
@@ -4153,6 +4170,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (popup.matches(':popover-open')) { popup.hidePopover(); return; }
       sync();
       popup.showPopover();
+      fitIcons();
       // Se abre a la izquierda del engranaje, que esta pegado al borde derecho.
       const anchor = cog.getBoundingClientRect();
       const box = popup.getBoundingClientRect();
