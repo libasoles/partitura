@@ -10,7 +10,7 @@ Este repositorio mantiene el sitio Astro y la implementación reutilizable del e
 - **De cada sitio:** HTML, CSS, textos, navegación y posición de las herramientas. `bindActions` conecta botones propios a las acciones compartidas; no consulta una disposición particular.
 - **Configurables al arrancar:** `defaultClef` (`treble` aquí, `guitar` en guitar-chords), `saveDelay` (300 ms aquí, 0 allá), `vendorBase`, `bindActions` y `settings` (engranaje con instrumento, tempo y grupos de herramientas; apagado por defecto porque su popup se estiliza en `editor.css`). Con `settings` el modelo se crea con `grandStaff` y el piano se dibuja como gran pentagrama (ver `AGENTS.md`); sin él, un solo pentagrama como siempre.
 
-- **Acordes (`chords`):** apagado por defecto, como `settings`. Con `startEditor({ chords: true })` la guitarra ofrece escribir nombres de acorde sobre el pentagrama y ver su digitación (ver `AGENTS.md`). Necesita el diccionario de `guitar-chords`, que `buildEditor` publica en `vendor/` como `chords-<hash>.json` si esa dependencia se resuelve, y los estilos `.score-chord-*` y `.chord-diagram*` de `editor.css`, que son de cada sitio.
+- **Acordes (`chords`):** apagado por defecto, como `settings`. Con `startEditor({ chords: true })` la guitarra ofrece escribir nombres de acorde sobre el pentagrama y ver su digitación (ver `AGENTS.md`). Necesita el diccionario de `guitar-chords`, que `buildEditor` publica en `vendor/` como `chords-<hash>.json` (y su buscador, empaquetado, como `chord-search-<hash>.js`) si esa dependencia se resuelve, y los estilos `.score-chord-*` y `.chord-diagram*` de `editor.css`, que son de cada sitio.
 
 Se conserva el formato y las claves de los datos guardados. Los sitios mantienen almacenamientos separados por origen.
 

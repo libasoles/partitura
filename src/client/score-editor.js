@@ -1665,8 +1665,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function loadChords() {
     if (!chordLoading) {
-      chordLoading = Promise.all([import('./chords.js'), fetch(vendorUrl(__CHORDS_FILE__)).then((response) => response.json())])
-        .then(([lib, rows]) => { chordLib = Object.assign({ rows, index: lib.indexChords(rows) }, lib); refreshChordPopup(); })
+      const searchModule = __CHORD_SEARCH_FILE__ ? import(/* @vite-ignore */ vendorUrl(__CHORD_SEARCH_FILE__)).catch(() => null) : Promise.resolve(null);
+      chordLoading = Promise.all([import('./chords.js'), fetch(vendorUrl(__CHORDS_FILE__)).then((response) => response.json()), searchModule])
+        .then(([lib, rows, search]) => { chordLib = Object.assign({ rows, search, index: lib.indexChords(rows, search && search.normalize) }, lib); refreshChordPopup(); })
         .catch(() => { chordLoading = null; });
     }
     return chordLoading;
@@ -1924,7 +1925,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (open && M.chordAt(score, open.mi, open.at)) change(() => M.setChord(score, open.mi, open.at, name));
     };
     const fill = () => {
-      const found = chordLib ? chordLib.searchChords(chordLib.rows, field.value, 6) : [];
+      const found = chordLib && chordLib.search ? chordLib.search.matchChords(field.value, chordLib.rows).slice(0, 6) : [];
       results.replaceChildren(...found.map((chord) => {
         const item = document.createElement('li');
         const button = document.createElement('button');

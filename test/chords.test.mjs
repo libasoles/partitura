@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import M from '../src/client/score-model.js';
 import { indexChords, findChord, positionsOf } from '../src/client/chords.js';
-import { chordsFileName } from '../scripts/lib/chords-data.mjs';
+import { chordsFileName, chordSearchFileName } from '../scripts/lib/chords-data.mjs';
 const require = createRequire(import.meta.url);
 
 const guitar = () => ({ ...M.emptyScore(), clef: 'guitar' });
@@ -100,6 +100,22 @@ test('the build publishes the guitar-chords dictionary and names are found by na
   assert.notEqual(findChord(index, 'Em7').name, findChord(index, 'Emaj7').name, 'm7 and maj7 are not the same chord');
   assert.equal(findChord(index, 'Qx'), null);
   assert.equal(findChord(index, '  '), null);
+});
+
+test('the build publishes guitar-chords search and names resolve through its normalization (solfege, any case)', async () => {
+  const file = chordSearchFileName();
+  assert.match(file, /^chord-search-[0-9a-f]{10}\.js$/);
+  const { matchChords, normalize } = await import(new URL('../public/vendor/' + file, import.meta.url));
+  const rows = require('guitar-chords').CHORDS;
+  const index = indexChords(rows, normalize);
+  assert.equal(findChord(index, 'Si').name, 'B');
+  assert.equal(findChord(index, 'sol7').name, 'G7');
+  assert.equal(findChord(index, 'c').name, 'C');
+  assert.notEqual(findChord(index, 'Em7').name, findChord(index, 'Emaj7').name, 'the exact match still tells m7 from maj7');
+  const names = matchChords('Si', rows).map((chord) => chord.name);
+  assert.equal(names[0], 'B');
+  assert.ok(!names.includes('Em(add9)'));
+  assert.equal(matchChords('si', rows)[0].name, 'B', 'case does not matter');
 });
 
 test('a chord has its stored fingering, a movable barre one and the hand-picked alternates', () => {

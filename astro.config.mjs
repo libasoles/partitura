@@ -3,7 +3,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { locales, pathFor, rootPath, termsPath, tutorialsPath } from './src/i18n/index.ts';
 import { slugs } from './src/lib/tutorials.ts';
-import { chordsFileName } from './scripts/lib/chords-data.mjs';
+import { chordsFileName, chordSearchFileName } from './scripts/lib/chords-data.mjs';
 
 // The public origin. Canonical URLs, hreflang, Open Graph and the sitemap are built from it, so override it for staging:
 //   SITE_URL=https://your-domain.com npm run build
@@ -26,7 +26,7 @@ const verovioVersion = JSON.parse(readFileSync(new URL('./node_modules/verovio/p
 export default defineConfig({
   site,
   // El diccionario de acordes sale de guitar-chords y se publica con el hash en el nombre (scripts/lib/chords-data.mjs).
-  vite: { define: { __VEROVIO_FILE__: JSON.stringify(`verovio-${verovioVersion}.js`), __CHORDS_FILE__: JSON.stringify(chordsFileName()) } },
+  vite: { define: { __VEROVIO_FILE__: JSON.stringify(`verovio-${verovioVersion}.js`), __CHORDS_FILE__: JSON.stringify(chordsFileName()), __CHORD_SEARCH_FILE__: JSON.stringify(chordSearchFileName()) } },
   // Every page is rendered to HTML at build time and served as static files: the fastest response and the full
   // content in the markup crawlers read. Only the editor itself runs in the browser.
   output: 'static',
