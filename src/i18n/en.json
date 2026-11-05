@@ -141,7 +141,7 @@
     "patternNothing": "Select notes or a measure to save a pattern (Shift+S).",
     "patternOneStaff": "A pattern is saved from a single staff.",
     "patternRelative": "Apply keeping the relation between notes",
-    "patternRhythm": "Apply the rhythm only, all at the same pitch",
+    "patternRhythm": "Copies the notes without intervals",
     "patternRemove": "Remove pattern",
     "patternPickMeasure": "Select a measure to apply the pattern to, or drag it onto the score.",
     "tabToggle": "Tablature under each row",
