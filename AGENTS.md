@@ -129,4 +129,4 @@ No es una PWA: no hay manifest ni service worker.
 ## Pendiente
 
 - Páginas de contenido adicionales (guías, ejemplos) para ampliar el posicionamiento.
-- Astro está fijado en la 6.x porque la 7 pide Node >= 22.23.4.
+- Astro 7.4.1 pide Node >= 22.22. `npm audit` aún marca avisos moderados en `lighthouse` (`glob`/`minimatch`, solo herramienta de medición); su "arreglo" es un downgrade, así que no se aplica.
