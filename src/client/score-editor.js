@@ -440,6 +440,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (item.kind === 'chord') {
       // Escribe el nombre sobre la nota soltada (o al inicio del compas); si ya hay uno ahi, abre el suyo.
       startChordDraft(target.mi, target.onNote ? target.t : 0);
+      deactivateTool();
       say('');
       return;
     }
@@ -3629,7 +3630,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     'bar:start': '<path d="M10 4v24" stroke="currentColor" stroke-width="3.5"/><path d="M15 4v24" stroke="currentColor" stroke-width="1.6"/><circle cx="21" cy="12" r="1.8"/><circle cx="21" cy="20" r="1.8"/>',
     'bar:end': '<path d="M15 4v24" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v24" stroke="currentColor" stroke-width="3.5"/><circle cx="9" cy="12" r="1.8"/><circle cx="9" cy="20" r="1.8"/>',
     barre: '<text x="3" y="18" font-size="16" font-weight="700" font-family="serif">C</text><path d="M3 24h24" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2.500" fill="none"/>',
-    chord: '<text x="15" y="21" text-anchor="middle" font-size="14" font-family="serif" font-weight="700">Am</text>',
+    chord: '<text x="15" y="21" text-anchor="middle" font-size="18" font-family="serif" font-weight="700">Am</text>',
     dead: '<path d="M8.500 19.500l11 11M19.500 19.500l-11 11" stroke="currentColor" stroke-width="2.200" fill="none"/><path d="M20.3 22.8V-12.3" stroke="currentColor" stroke-width="1.5" fill="none"/>',
     dot: '<circle cx="15" cy="15" r="3.200"/>',
     'acc:#': '<path d="M11 6v20M18 4v20M7.500 12.500l14-3.500M7.500 21l14-3.500" stroke="currentColor" stroke-width="1.800" fill="none"/>',
