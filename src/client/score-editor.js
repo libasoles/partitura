@@ -1740,7 +1740,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function updateChordZone(event) {
     const over = event && event.target;
-    const free = event && chordsOn && guitarOn() && !activeItem && !drag && !chordMove && !measureDrag && !shiftMeasures
+    const free = event && chordsOn && guitarOn() && !activeItem && !drag && !chordMove && !measureDrag && !shiftMeasures && !marquee
       && !(over && over.closest && over.closest('button, input, .score-selection-menu, .score-hairpin-ui, .score-barre-span'));
     showChordZone(free ? chordZoneAt(event.clientX, event.clientY) : null);
   }
@@ -2990,6 +2990,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function beginMarquee(event, additive) {
     marquee = { x: event.clientX, y: event.clientY, id: event.pointerId, active: false, additive, base: additive ? picks().slice() : [], el: null };
+    showChordZone(null);
   }
 
   function marqueeRect(m, event) {
