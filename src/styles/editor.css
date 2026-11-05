@@ -1865,6 +1865,39 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   accent-color: var(--accent-brand);
 }
 
+.score-settings-radio.is-icon { gap: 0.6rem; }
+
+/* The icon is the radio: the native circle is hidden (still focusable) and the chosen icon takes the accent. */
+.score-settings-radio.is-icon input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.score-settings-radio.is-icon svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  color: var(--ink-soft);
+  stroke-width: 2;
+  transition: color 0.12s, transform 0.12s;
+}
+
+.score-settings-radio.is-icon:hover svg { color: var(--ink); }
+
+.score-settings-radio.is-icon:has(input:checked) { font-weight: 600; color: var(--accent-brand); }
+
+.score-settings-radio.is-icon:has(input:checked) svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--accent-brand);
+  stroke-width: 2.4;
+}
+
+.score-settings-radio.is-icon:has(input:focus-visible) svg { outline: 2px solid var(--accent-brand); outline-offset: 3px; border-radius: 4px; }
+
 .score-settings-slider-line {
   display: flex;
   align-items: center;
