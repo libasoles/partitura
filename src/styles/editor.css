@@ -2111,6 +2111,54 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   display: none;
 }
 
+.score-chord-search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 10rem;
+}
+
+.score-chord-search[hidden] {
+  display: none;
+}
+
+.score-chord-search input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.score-chord-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.score-chord-results button {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.score-chord-results button:hover {
+  background: var(--surface);
+  color: var(--blue-france);
+}
+
 .score-chord-unknown {
   margin: 0;
   font-size: 0.8rem;
@@ -2119,7 +2167,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 
 .chord-diagram {
   display: block;
-  width: 12rem;
+  width: 7.5rem;
   height: auto;
 }
 

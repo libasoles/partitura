@@ -1669,7 +1669,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function loadChords() {
     if (!chordLoading) {
       chordLoading = Promise.all([import('./chords.js'), fetch(vendorUrl(__CHORDS_FILE__)).then((response) => response.json())])
-        .then(([lib, rows]) => { chordLib = Object.assign({ index: lib.indexChords(rows) }, lib); refreshChordPopup(); })
+        .then(([lib, rows]) => { chordLib = Object.assign({ rows, index: lib.indexChords(rows) }, lib); refreshChordPopup(); })
         .catch(() => { chordLoading = null; });
     }
     return chordLoading;
@@ -1777,6 +1777,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         if (!change(() => M.setChord(score, draft.mi, draft.at, name))) say(t.chordName);
       }
     };
+    draft.finish = finish;
     input.addEventListener('input', () => { draft.text = input.value; fit(); });
     input.addEventListener('keydown', (event) => {
       event.stopPropagation();
@@ -1863,9 +1864,49 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const count = document.createElement('span');
     count.setAttribute('aria-live', 'polite');
     nav.append(previous, count, next);
-    chordPopup.append(picture, unknown, nav);
+    const search = document.createElement('div');
+    search.className = 'score-chord-search';
+    const field = document.createElement('input');
+    field.type = 'search';
+    field.autocomplete = 'off';
+    field.spellcheck = false;
+    field.maxLength = M.MAX_CHORD_NAME;
+    field.placeholder = t.chordSearch;
+    field.setAttribute('aria-label', t.chordSearch);
+    const results = document.createElement('ul');
+    results.className = 'score-chord-results';
+    search.append(field, results);
+    chordPopup.append(picture, unknown, search, nav);
     document.querySelector('.score-page').appendChild(chordPopup);
-    chordPopup.parts = { picture, unknown, nav, previous, next, count };
+    chordPopup.parts = { picture, unknown, nav, previous, next, count, search, field, results };
+
+    // Elegir un resultado reemplaza el nombre del acorde; la digitacion pasa a ser la de ese nombre.
+    const pick = (name) => {
+      const open = chordOpen;
+      if (open && M.chordAt(score, open.mi, open.at)) change(() => M.setChord(score, open.mi, open.at, name));
+    };
+    const fill = () => {
+      const found = chordLib ? chordLib.searchChords(chordLib.rows, field.value) : [];
+      results.replaceChildren(...found.map((chord) => {
+        const item = document.createElement('li');
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = chord.name;
+        button.addEventListener('click', () => pick(chord.name));
+        item.append(button);
+        return item;
+      }));
+    };
+    chordPopup.fillSearch = fill;
+    field.addEventListener('input', fill);
+    field.addEventListener('keydown', (event) => {
+      event.stopPropagation();
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        const first = results.querySelector('button');
+        if (first) first.click();
+      }
+    });
 
     const step = (delta) => {
       const open = chordOpen;
@@ -1886,6 +1927,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     });
   }
 
+  // Un click fuera termina el campo de escritura y cierra el popup, aunque otro manejador del escenario atienda el click.
+  document.addEventListener('pointerdown', (event) => {
+    if (chordDraft && chordDraft.finish && !event.target.closest('.score-chord-draft')) chordDraft.finish(true);
+    if (chordPopup && chordPopup.matches(':popover-open') && !event.target.closest('.score-chord-popup, .score-chord-trigger')) chordPopup.hidePopover();
+  }, true);
+
   async function openChord(mi, at) {
     if (!chordPopup) buildChordPopup();
     chordOpen = { mi, at };
@@ -1902,7 +1949,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const trigger = chord && stage.querySelector('.score-chord-trigger[data-measure="' + mi + '"][data-at="' + at + '"]');
     if (!trigger) { if (chordPopup.matches(':popover-open')) chordPopup.hidePopover(); chordOpen = null; return; }
     if (!show && !chordPopup.matches(':popover-open')) return;
-    const { picture, unknown, nav, previous, next, count } = chordPopup.parts;
+    const { picture, unknown, nav, previous, next, count, search, field } = chordPopup.parts;
     const found = chordLib && chordLib.findChord(chordLib.index, chord.name);
     const positions = found ? chordLib.positionsOf(found).slice(0, M.MAX_CHORD_VARIANTS) : [];
     const variant = Math.min(chord.variant || 0, Math.max(positions.length - 1, 0));
@@ -1910,6 +1957,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (positions.length) picture.append(chordLib.drawDiagram(positions[variant], t.chordDiagram.replace('{name}', chord.name)));
     picture.hidden = !positions.length;
     unknown.hidden = !!positions.length || !chordLib;
+    const searching = !positions.length && !!chordLib;
+    if (searching && search.dataset.for !== mi + ':' + at + ':' + chord.name) {
+      search.dataset.for = mi + ':' + at + ':' + chord.name;
+      field.value = chord.name;
+      chordPopup.fillSearch();
+    }
+    if (!searching) delete search.dataset.for;
+    search.hidden = !searching;
     nav.hidden = positions.length < 2;
     count.textContent = t.chordVariant.replace('{n}', variant + 1).replace('{total}', positions.length);
     previous.disabled = next.disabled = positions.length < 2;

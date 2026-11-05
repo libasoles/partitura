@@ -111,6 +111,7 @@
     "chordNext": "Variante siguiente",
     "chordVariant": "Variante {n} de {total}",
     "chordDiagram": "Digitación del acorde {name}",
+    "chordSearch": "Buscar acorde",
     "chordUnknown": "No hay digitación para este acorde",
     "hairpinCresc": "Crescendo",
     "hairpinDim": "Diminuendo",

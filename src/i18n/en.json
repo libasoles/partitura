@@ -111,6 +111,7 @@
     "chordNext": "Next variant",
     "chordVariant": "Variant {n} of {total}",
     "chordDiagram": "Fingering for chord {name}",
+    "chordSearch": "Search chord",
     "chordUnknown": "No fingering for this chord",
     "hairpinCresc": "Crescendo",
     "hairpinDim": "Diminuendo",

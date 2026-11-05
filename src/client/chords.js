@@ -50,6 +50,19 @@ export function findChord(index, text) {
   return key ? index.get(key) || null : null;
 }
 
+// Acordes del diccionario cuyo nombre o alias empieza con la busqueda, y luego los que la contienen.
+export function searchChords(chords, text, limit = 8) {
+  const query = normalize(String(text).trim()).toLowerCase();
+  if (!query) return [];
+  const starts = [], inside = [];
+  for (const chord of chords) {
+    const keys = [chord.name, ...(chord.aliases || [])].map((candidate) => normalize(candidate).toLowerCase());
+    if (keys.some((key) => key.startsWith(query))) starts.push(chord);
+    else if (keys.some((key) => key.includes(query))) inside.push(chord);
+  }
+  return [...starts, ...inside].slice(0, limit);
+}
+
 const rootOf = (name) => {
   const match = /^([A-G][#b]?)/.exec(normalize(name));
   return match ? NOTE_INDEX[match[1]] ?? null : null;
