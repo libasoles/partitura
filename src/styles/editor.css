@@ -1975,3 +1975,162 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   background: #fff;
   color: var(--voice);
 }
+
+/* ---- acordes (guitarra): zona de escritura, campo, nombre clicable y popup con la digitacion ---- */
+
+.score-chord-zone {
+  position: absolute;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent-brand);
+  pointer-events: none;
+}
+
+.score-stage.is-chord-zone {
+  cursor: text;
+}
+
+.score-chord-draft,
+.score-chord-name {
+  box-sizing: content-box;
+  padding: 0 0.2rem;
+  border: 0;
+  border-bottom: 2px solid var(--accent-brand);
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font: 700 1.1rem/1.6rem var(--serif);
+}
+
+.score-chord-draft {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  background: var(--paper);
+  text-align: center;
+}
+
+.score-chord-trigger {
+  position: absolute;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.score-chord-trigger:hover,
+.score-chord-trigger[aria-expanded="true"] {
+  background: rgb(10 91 214 / 12%);
+}
+
+.score-chord-popup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.score-chord-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.score-chord-name {
+  width: 7rem;
+  text-align: center;
+}
+
+.score-chord-remove,
+.score-chord-variants button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.score-chord-remove:hover,
+.score-chord-variants button:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--blue-france);
+}
+
+.score-chord-variants button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.score-chord-variants {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.score-chord-picture[hidden],
+.score-chord-unknown[hidden],
+.score-chord-variants[hidden] {
+  display: none;
+}
+
+.score-chord-unknown {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.chord-diagram {
+  display: block;
+}
+
+.chord-diagram__string,
+.chord-diagram__fret {
+  stroke: var(--ink-soft);
+  stroke-width: 1;
+}
+
+.chord-diagram__fret--nut {
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.chord-diagram__position,
+.chord-diagram__string-name {
+  font-family: var(--sans);
+  font-size: 9px;
+  fill: var(--ink-soft);
+}
+
+.chord-diagram__barre,
+.chord-diagram__finger {
+  fill: var(--accent);
+}
+
+.chord-diagram__finger-label {
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 700;
+  fill: var(--paper);
+}
+
+.chord-diagram__open {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.chord-diagram__mute {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--ink-soft);
+}
