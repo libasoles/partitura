@@ -3778,7 +3778,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       svg.style.overflow = 'visible';
       svg.setAttribute('aria-hidden', 'true');
       let markup = '';
-      for (let line = -2; line <= 2; line += 1) markup += `<line x1="0" x2="${WIDTH}" y1="${half + line * 2}" y2="${half + line * 2}" stroke="currentColor" stroke-opacity=".35" stroke-width=".25"/>`;
       column.events.forEach((ev) => {
         if (ev.rest) {
           markup += `<svg x="0.5" y="${half - 5}" width="5" height="10" viewBox="0 -12 30 56" fill="currentColor">${glyphFor({ kind: 'rest', d: ev.d }).innerHTML}</svg>`;
@@ -3910,7 +3909,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const space = lines ? (lines[4] - lines[0]) / 4 : 10;
     const capacity = M.capacity(score, 0);
     const anchor = pattern.events.find((ev) => !ev.rest && !ev.dn) || pattern.events[0];
-    const timeOf = (ev) => (ev.mi * capacity + ev.at) / M.DIVISIONS * space * 3;
+    // Ademas del tiempo, un paso fijo por columna: las figuras cortas no quedan pegadas.
+    const starts = [...new Set(pattern.events.map((ev) => ev.mi * capacity + ev.at))].sort((a, b) => a - b);
+    const timeOf = (ev) => (ev.mi * capacity + ev.at) / M.DIVISIONS * space * 3 + starts.indexOf(ev.mi * capacity + ev.at) * space * 1.6;
     const kindOf = (ev) => (ev.rest ? 'rest' : 'note');
     const ghost = startGhost(glyphFor({ kind: kindOf(anchor), d: anchor.d }), event, kindOf(anchor));
     pattern.events.filter((ev) => ev !== anchor).forEach((ev) => {

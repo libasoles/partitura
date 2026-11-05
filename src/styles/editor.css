@@ -2191,16 +2191,13 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   color: var(--ink-soft);
 }
 .score-library-empty { margin: 0; font-size: 0.82rem; color: var(--ink-soft); }
-.score-library-list { display: flex; flex-direction: column; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.score-library-list { display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
 .score-pattern {
-  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  border: 1px solid var(--rule);
-  border-radius: 0.5rem;
-  background: #fff;
-  overflow: hidden;
+  grid-template-columns: minmax(0, 1fr) auto 1.1rem;
+  align-items: stretch;
 }
+.score-pattern + .score-pattern { border-top: 1px solid var(--rule); }
 .score-pattern button {
   min-width: 0;
   min-height: 2.4rem;
@@ -2230,12 +2227,10 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 .score-pattern-rhythm svg { flex: none; width: 1.1rem; height: 1.1rem; }
 .score-pattern-remove {
-  position: absolute;
-  top: 0;
-  right: 0;
   width: 1.1rem;
   min-height: 0;
   height: 1.1rem;
+  align-self: center;
   padding: 0;
   opacity: 0;
   cursor: pointer;
