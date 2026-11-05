@@ -3432,7 +3432,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const instrumentRow = section(t.settingsInstrument);
     const instruments = M.INSTRUMENTS.map((id) => {
       const field = document.createElement('label');
-      field.className = 'score-settings-radio';
+      field.className = 'score-settings-radio is-icon';
       const radio = document.createElement('input');
       radio.type = 'radio';
       radio.name = 'scoreInstrument';
