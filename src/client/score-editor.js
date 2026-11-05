@@ -1909,7 +1909,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     field.setAttribute('aria-label', t.chordSearch);
     const results = document.createElement('ul');
     results.className = 'score-chord-results';
-    search.append(field, results);
+    const box = document.createElement('label');
+    box.className = 'score-chord-searchbox';
+    box.insertAdjacentHTML('beforeend', lucide('search'));
+    box.append(field);
+    search.append(box, results);
     chordPopup.append(picture, unknown, search, nav);
     document.querySelector('.score-page').appendChild(chordPopup);
     chordPopup.parts = { picture, unknown, nav, previous, next, count, search, field, results };
@@ -1920,12 +1924,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (open && M.chordAt(score, open.mi, open.at)) change(() => M.setChord(score, open.mi, open.at, name));
     };
     const fill = () => {
-      const found = chordLib ? chordLib.searchChords(chordLib.rows, field.value) : [];
+      const found = chordLib ? chordLib.searchChords(chordLib.rows, field.value, 6) : [];
       results.replaceChildren(...found.map((chord) => {
         const item = document.createElement('li');
         const button = document.createElement('button');
         button.type = 'button';
-        button.textContent = chord.name;
+        const name = document.createElement('span');
+        name.textContent = chord.name;
+        button.append(name, chordLib.drawDiagram(chordLib.positionsOf(chord)[0], t.chordDiagram.replace('{name}', chord.name)));
         button.addEventListener('click', () => pick(chord.name));
         item.append(button);
         return item;
@@ -3515,6 +3521,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     'file-text': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
     'file-code': '<path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
     chevronLeft: '<path d="m15 18-6-6 6-6"/>',
+    search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',
     trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
     // Sin equivalente en Lucide: ligadura (arco entre dos notas) y ligadura quitada.
