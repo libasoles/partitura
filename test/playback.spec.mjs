@@ -30,6 +30,35 @@ async function enable(page) {
   await page.keyboard.press('Escape');
 }
 
+for (const tools of [{ voices: true, playback: true }, { voices: true }, { playback: true }]) {
+  test(`the left toolbar stays in the viewport while scrolling (${Object.keys(tools).join(', ')})`, async ({ page }) => {
+    await open(page, 'piano', {
+      rows: Array.from({ length: 12 }, () => [[{ d: 'w', n: 35 }]]), tools,
+    });
+    const first = page.locator(tools.playback ? '#scorePlayback' : '.score-voice-legend');
+    const last = page.locator(tools.voices ? '.score-voice-legend' : '#scorePlayback');
+    const initial = await first.boundingBox();
+    const stickyTop = await page.locator('.score-side').evaluate(e => parseFloat(getComputedStyle(e).top));
+    for (const y of [initial.y + 100, initial.y + 400]) {
+      await page.evaluate(y => window.scrollTo(0, y), y);
+      await expect.poll(async () => (await first.boundingBox()).y).toBeCloseTo(stickyTop, 0);
+      expect((await last.boundingBox()).y + (await last.boundingBox()).height).toBeLessThan(1000);
+      expect((await first.boundingBox()).x).toBeCloseTo(initial.x, 0);
+    }
+    await page.evaluate(() => {
+      const stage = document.querySelector('#scoreStage').getBoundingClientRect();
+      window.scrollBy(0, stage.bottom - 100);
+    });
+    await expect.poll(async () => {
+      const end = await last.boundingBox();
+      const stage = await page.locator('#scoreStage').boundingBox();
+      return end.y + end.height - stage.y - stage.height;
+    }).toBeLessThanOrEqual(1);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(async () => (await first.boundingBox()).y).toBeCloseTo(initial.y, 0);
+  });
+}
+
 test('play follows active voices on both staves and clears the cached track when they change', async ({ page }) => {
   await open(page, 'piano', {
     rows: [[[{ d: 'w', n: 35, v: 1, at: 0 }, { d: 'w', n: 37, v: 2, at: 0 }]]],

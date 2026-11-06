@@ -860,10 +860,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const line = stage.querySelector('g.staff > path');
     if (!line) return;
     const origin = stage.getBoundingClientRect();
-    const top = Math.max(0, line.getBoundingClientRect().top - origin.top);
+    const staffTop = Math.max(0, line.getBoundingClientRect().top - origin.top);
     // Left of the brace (grand staff) or of the first staff line, never over it.
     const edge = (stage.querySelector('g.grpSym') || line).getBoundingClientRect().left - origin.left;
     const playbackShown = playButton.isConnected && !playButton.hidden;
+    const playbackHeight = playbackShown ? playButton.offsetHeight : 0;
+    const legendHeight = voiceLegend.isConnected ? voiceLegend.offsetHeight : 0;
+    const height = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
+    // Follow the right toolbar's sticky offset, stopping at the end of the sheet.
+    // Keep the natural position in short viewports, where the right toolbar also scrolls with the page.
+    const side = barlines.closest('.score-side');
+    const stickyTop = side ? parseFloat(getComputedStyle(side).top) : NaN;
+    const top = Number.isFinite(stickyTop)
+      ? Math.max(staffTop, Math.min(stickyTop - origin.top, origin.height - height))
+      : staffTop;
     const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0);
     const left = WIDE_PAGE.matches ? -(width + 16) : Math.max(0, edge - width - 6);
     if (playbackShown) {
@@ -873,6 +883,17 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 8 : 0)) + 'px';
     voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
   }
+
+  let leftToolbarFrame = 0;
+  function scheduleLeftToolbarAlignment() {
+    if (leftToolbarFrame) return;
+    leftToolbarFrame = requestAnimationFrame(() => {
+      leftToolbarFrame = 0;
+      alignVoiceLegend();
+    });
+  }
+  window.addEventListener('scroll', scheduleLeftToolbarAlignment, { passive: true });
+  window.addEventListener('resize', scheduleLeftToolbarAlignment);
 
   function render() {
     if (playbackState !== 'idle' && (playbackDocument !== score || playbackSnapshot !== JSON.stringify(score))) resetPlayback();
