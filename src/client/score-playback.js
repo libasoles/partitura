@@ -1,15 +1,11 @@
 import { soundingNotes } from './score-notes.js';
 
 // Per-sound envelope: `attack` fades in, `release` rings past the note's end so consecutive notes overlap (legato).
-// Na and La reuse the Ah samples and open a low-pass filter from `open` = [cutoff Hz, seconds] to imitate the consonant.
 const PLUCKED = { attack: 0.005, release: 0.03, within: true };
 const CHOIR = {
   ah: { file: 'choir-ah', attack: 0.09, release: 0.14 },
   oh: { file: 'choir-oh', attack: 0.09, release: 0.14 },
-  na: { file: 'choir-ah', attack: 0.04, release: 0.12, open: [380, 0.14] },
-  la: { file: 'choir-ah', attack: 0.03, release: 0.12, open: [1100, 0.08] },
-  // `tone` is a fixed low-pass cutoff: a neutral, darker vowel (Uh) and a closed-mouth hum (Mm, from the Oh samples).
-  uh: { file: 'choir-ah', attack: 0.07, release: 0.14, tone: 1500 },
+  // Uh keeps the saved `mm` ID and uses a closed-mouth hum from the Oh samples.
   mm: { file: 'choir-oh', attack: 0.1, release: 0.16, tone: 550 },
 };
 
@@ -102,12 +98,10 @@ export function createPlayer(context, vendorUrl, onEnded) {
         gain.gain.setValueAtTime(1, fadeStart);
         gain.gain.linearRampToValueAtTime(0, fadeEnd);
         let filter;
-        if (shape.open || shape.tone) {
+        if (shape.tone) {
           filter = context.createBiquadFilter();
           filter.type = 'lowpass';
-          const cutoff = shape.tone || 12000;
-          filter.frequency.setValueAtTime(shape.open ? shape.open[0] : cutoff, start);
-          if (shape.open) filter.frequency.exponentialRampToValueAtTime(cutoff, start + shape.open[1]);
+          filter.frequency.setValueAtTime(shape.tone, start);
           source.connect(filter);
           filter.connect(gain);
         } else source.connect(gain);

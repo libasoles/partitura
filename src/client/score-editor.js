@@ -422,11 +422,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     M.everyMeasure(score).forEach(M.settle);
     M.pruneLower(score);
     M.restoreTabReferences(score, tabRefs, window.ScoreFingering.complete);
+    recordChange(before);
+    return true;
+  }
+
+  function recordChange(before) {
     history.push(before);
     if (history.length > HISTORY_LIMIT) history.shift();
     save();
     render();
-    return true;
   }
 
   function undo() {
@@ -1022,7 +1026,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   window.addEventListener('resize', scheduleLeftToolbarAlignment);
 
   function render() {
-    if (playbackState !== 'idle' && (playbackDocument !== score || playbackSnapshot !== JSON.stringify(score))) resetPlayback();
+    if (playbackState !== 'idle' && (playbackDocument !== score || playbackSnapshot !== playbackSnapshotOf(score))) {
+      const previous = JSON.parse(playbackSnapshot);
+      const current = JSON.parse(playbackSnapshotOf(score));
+      delete previous.sound;
+      delete current.sound;
+      if (playbackDocument === score && JSON.stringify(previous) === JSON.stringify(current)) {
+        playbackSnapshot = playbackSnapshotOf(score);
+        if (playbackTrack) refreshPlaybackSound();
+      } else resetPlayback();
+    }
     if (!toolkit) return;
     const width = stage.clientWidth;
     if (!width) return;
@@ -4341,6 +4354,32 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     playbackState = 'idle';
     syncPlayback();
   }
+  function playbackSnapshotOf(document) {
+    const clean = M.clone(document);
+    M.pruneLower(clean);
+    return JSON.stringify(clean);
+  }
+  // A sound change can arrive while samples are loading; only use the latest timbre.
+  async function preparePlaybackTrack(request) {
+    let sound, track;
+    do {
+      sound = M.soundOf(score);
+      track = await player.prepare(M.clone(score), M, toolOn('voices', false) ? shownVoices : null, VOICE_COUNT);
+    } while (request === playbackRequest && sound !== M.soundOf(score));
+    return { ...track, sound };
+  }
+  async function refreshPlaybackSound() {
+    const request = ++playbackRequest;
+    try {
+      const track = await preparePlaybackTrack(request);
+      if (request !== playbackRequest) return;
+      playbackTrack = track;
+      // Keep the old sound playing during the download and switch at the current audio time.
+      if (playbackState === 'playing') player.play(track, player.position);
+    } catch (error) {
+      if (request === playbackRequest) say(t.playbackError);
+    }
+  }
   syncPlayback();
   playButton.addEventListener('click', async () => {
     clearPlaybackHint();
@@ -4355,7 +4394,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const restart = playbackState !== 'paused' || from !== playbackSelectionPosition;
     const request = ++playbackRequest;
     playbackDocument = score;
-    playbackSnapshot = JSON.stringify(score);
+    playbackSnapshot = playbackSnapshotOf(score);
     playbackState = 'loading';
     syncPlayback();
     try {
@@ -4364,7 +4403,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
       if (request !== playbackRequest) return;
       player ||= createPlayer(audioContext, vendorUrl, resetPlayback);
-      const track = playbackTrack || await player.prepare(score, M, toolOn('voices', false) ? shownVoices : null, VOICE_COUNT);
+      const track = playbackTrack?.sound === M.soundOf(score) ? playbackTrack : await preparePlaybackTrack(request);
       if (request !== playbackRequest) return;
       playbackTrack = track;
       playbackState = 'playing';
@@ -4786,7 +4825,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       field.append(radio, document.createTextNode(t['sound' + id[0].toUpperCase() + id.slice(1)]));
       radio.addEventListener('change', () => {
         if (M.soundOf(score) === id) return;
-        change(() => M.setSound(score, id));
+        const before = M.clone(score);
+        M.pruneLower(before);
+        M.setSound(score, id);
+        recordChange(before);
         sync();
       });
       soundRow.appendChild(field);

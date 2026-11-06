@@ -20,7 +20,7 @@ async function open(page, instrument = 'piano', overrides = {}) {
       }
     };
   }, { instrument, overrides });
-  await page.goto('/es/');
+  await page.goto(instrument === 'voices' ? '/es/#pro' : '/es/');
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
 }
 
@@ -316,7 +316,7 @@ for (const instrument of ['piano', 'guitar']) {
   });
 }
 
-for (const [sound, file] of [[undefined, 'choir-ah'], ['oh', 'choir-oh'], ['na', 'choir-ah'], ['la', 'choir-ah'], ['uh', 'choir-ah'], ['mm', 'choir-oh']]) test(`voices (${sound || 'default'}): plays the choir samples`, async ({ page }) => {
+for (const [sound, file] of [[undefined, 'choir-ah'], ['oh', 'choir-oh'], ['mm', 'choir-oh']]) test(`voices (${sound || 'default'}): plays the choir samples`, async ({ page }) => {
   const audioRequests = [];
   page.on('request', (request) => { if (request.url().includes('/audio/')) audioRequests.push(request.url()); });
   await page.addInitScript((sound) => {
@@ -412,4 +412,50 @@ test('changing instrument while sounds load prevents stale playback', async ({ p
   await expect(button).toHaveAttribute('aria-busy', 'false');
   await expect(button).toHaveAccessibleName('Reproducir');
   expect(await page.evaluate(() => window.audioStarts)).toEqual([]);
+});
+
+test('changing choir sound keeps playing at the current position while new samples load', async ({ page }) => {
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  await page.route('**/choir-oh.json', async (route) => { await pending; await route.continue(); });
+  await open(page, 'voices', { parts: 2, tempo: 30, tools: { playback: true } });
+  const button = page.locator('#scorePlayback');
+  await button.click();
+  await expect(button).toHaveAccessibleName('Pausar');
+  await page.waitForFunction(() => Number(document.querySelector('.score-playback-cursor')?.dataset.time) > 2);
+  await page.locator('#scoreSettingsToggle').click();
+  await expect(page.locator('input[name="scoreSound"]')).toHaveCount(3);
+  await expect(page.getByRole('radio', { name: 'Uh', exact: true })).toHaveValue('mm');
+  const before = await page.locator('.score-playback-cursor').getAttribute('data-time');
+  await page.getByRole('radio', { name: 'Oh', exact: true }).check();
+  await expect(button).toHaveAccessibleName('Pausar');
+  await page.waitForFunction((before) => Number(document.querySelector('.score-playback-cursor')?.dataset.time) > Number(before) + 1, before);
+  expect(await page.evaluate(() => window.audioStarts.length)).toBe(2);
+  release();
+  await page.waitForFunction(() => window.audioStarts.length === 4);
+  await expect(button).toHaveAccessibleName('Pausar');
+  expect(await page.evaluate(() => window.audioStarts[2].args[1])).toBeGreaterThan(0.2);
+  expect(Number(await page.locator('.score-playback-cursor').getAttribute('data-time'))).toBeGreaterThan(Number(before));
+  await page.getByRole('radio', { name: 'Uh', exact: true }).check();
+  await page.waitForFunction(() => window.audioStarts.length === 6);
+  await expect(button).toHaveAccessibleName('Pausar');
+});
+
+test('changing choir sound during pause keeps the position and resumes with the new sound', async ({ page }) => {
+  await open(page, 'voices', { parts: 2, tempo: 30, tools: { playback: true } });
+  const button = page.locator('#scorePlayback');
+  await button.click();
+  await expect(button).toHaveAccessibleName('Pausar');
+  await page.waitForFunction(() => Number(document.querySelector('.score-playback-cursor')?.dataset.time) > 2);
+  await button.click();
+  const before = await page.locator('.score-playback-cursor').getAttribute('data-time');
+  await page.locator('#scoreSettingsToggle').click();
+  await page.getByRole('radio', { name: 'Uh', exact: true }).check();
+  await expect(button).toHaveAccessibleName('Reproducir');
+  await page.keyboard.press('Escape');
+  await button.click();
+  await expect(button).toHaveAccessibleName('Pausar');
+  await page.waitForFunction(() => window.audioStarts.length === 4);
+  expect(Number(await page.locator('.score-playback-cursor').getAttribute('data-time'))).toBeGreaterThanOrEqual(Number(before));
+  expect(await page.evaluate(() => window.audioStarts[2].args[1])).toBeGreaterThan(0.2);
 });
