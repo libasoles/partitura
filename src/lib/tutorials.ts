@@ -97,7 +97,7 @@ function rawTutorialBody(slug: Slug, s: Strings): string {
     case 'shortcuts': {
       const sections = s.tutorials.shortcutSections;
       if (!sections) return renderShortcuts(s);
-      const drawings = [null, null, demos.copy, demos.duplicateVoice, demos.adjustCopy, demos.keyboardTie];
+      const drawings = [null, null, demos.fillRests, null, demos.copy, demos.duplicateVoice, demos.adjustCopy, demos.keyboardTie];
       return sections.map((text, i) => `<p>${text}</p>` + (i === 0 ? renderShortcutDiagram(s) : '') +
         (drawings[i] ? demo(drawings[i]!, s, text) : '')).join('');
     }

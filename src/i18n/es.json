@@ -742,10 +742,18 @@
     "shortcutSections": [
       "Apretá la tecla de una figura para elegirla y hacé clic en el pentagrama para colocarla.",
       "Apretá <kbd>A</kbd> para deseleccionar la herramienta actual.",
+      "Para llenar un compás vacío con silencios, seleccionalo con un clic y apretá <kbd>Tab</kbd>. En piano se llena solo el pentagrama elegido.",
+      "Si el compás ya tiene figuras, <kbd>Mayús</kbd> + <kbd>Tab</kbd> completa con silencios lo que le falta a cada voz.",
       "Con figuras seleccionadas, <kbd>Mayús</kbd> + <kbd>D</kbd> las duplica justo después de la última seleccionada, siguiendo en los compases que vengan.",
       "<kbd>Mayús</kbd> + <kbd>↑</kbd> o <kbd>Mayús</kbd> + <kbd>↓</kbd> duplica la selección una tercera diatónica arriba o abajo, en una voz independiente y en el mismo tiempo.",
       "La copia queda seleccionada; usá <kbd>↑</kbd> y <kbd>↓</kbd> para ajustar su altura.",
-      "Con dos notas seleccionadas, presioná <kbd>(</kbd> o <kbd>)</kbd> para agregar o quitar la ligadura, si se pueden ligar. Es la misma acción que el botón contextual de ligadura. El atajo reconoce el carácter: usá la combinación que escriba el paréntesis en tu teclado, en cualquier sistema operativo."
+      "Con dos notas seleccionadas, presioná <kbd>(</kbd> o <kbd>)</kbd> para agregar o quitar la ligadura, si se pueden ligar. Es la misma acción que el botón contextual de ligadura. El atajo reconoce el carácter: usá la combinación que escriba el paréntesis en tu teclado, en cualquier sistema operativo.",
+      "<kbd>←</kbd> y <kbd>→</kbd> pasan a la figura de al lado; <kbd>Mayús</kbd> + <kbd>←</kbd> o <kbd>Mayús</kbd> + <kbd>→</kbd> amplían la selección. <kbd>↑</kbd> y <kbd>↓</kbd> suben o bajan lo seleccionado un paso.",
+      "<kbd>Delete</kbd> o <kbd>Retroceso</kbd> borran las figuras seleccionadas, o el compás o la barra elegidos. <kbd>Esc</kbd> suelta la selección.",
+      "<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> deshace el último cambio.",
+      "<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd> copia las figuras seleccionadas; hacé clic en el compás de destino y pegá con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Con <kbd>Mayús</kbd> apretada al pegar no se copian compás, clave ni armadura.",
+      "Con la biblioteca de patrones activada en los ajustes, <kbd>Mayús</kbd> + <kbd>S</kbd> guarda como patrón las figuras elegidas o, sin ninguna, el compás elegido.",
+      "Con la reproducción activada en los ajustes, la <kbd>barra espaciadora</kbd> alterna entre play y pausa."
     ]
   },
   "tutorialsPath": "tutoriales",
