@@ -4,7 +4,7 @@
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
 import { getSetting, setSetting } from './settings.js';
-import { withIntervals } from './score-intervals.js';
+import { hasIntervals, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
 
 export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, patterns = false } = {}) {
@@ -1004,7 +1004,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       playButton.style.top = top + 'px';
       playButton.style.left = (left + (width - playButton.offsetWidth) / 2) + 'px';
     }
-    voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 8 : 0)) + 'px';
+    voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 14 : 0)) + 'px';
     voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
     intervalButton.style.top = (top + height - intervalsHeight) + 'px';
     intervalButton.style.left = (left + (width - intervalButton.offsetWidth) / 2) + 'px';
@@ -1890,7 +1890,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return chordLoading;
   }
 
-  const isIntervalDir = (node) => /^[IVX]+$/.test(squash(node.textContent));
+  const isIntervalDir = (node) => /^\d+$/.test(squash(node.textContent));
   const INTERVAL_GAP = 9; // separacion minima (px) entre las etiquetas de intervalos y lo que tienen debajo
   const CHORD_GAP = 4;
 
@@ -4399,7 +4399,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   intervalButton.setAttribute('aria-label', t.toolsIntervals);
   intervalButton.setAttribute('aria-pressed', 'false');
   intervalButton.addEventListener('click', () => {
-    if (intervalDocuments.has(score)) intervalDocuments.delete(score); else intervalDocuments.add(score);
+    if (intervalDocuments.has(score)) intervalDocuments.delete(score);
+    else if (hasIntervals(score, M)) intervalDocuments.add(score);
+    else return say(t.intervalsNeedVoices);
     render();
   });
   ['pointerdown', 'mousedown', 'click'].forEach((type) => intervalButton.addEventListener(type, (event) => event.stopPropagation()));
