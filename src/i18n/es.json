@@ -104,7 +104,7 @@
     "barreStart": "Inicio de la cejilla",
     "barreEnd": "Fin de la cejilla",
     "chord": "Acorde",
-    "chordTool": "Acorde (o clic sobre el pentagrama, arriba de las notas)",
+    "chordTool": "Acorde: colocá la herramienta Am sobre una nota",
     "chordZone": "Escribir un acorde",
     "chordName": "Nombre del acorde",
     "chordRemove": "Quitar acorde",
@@ -416,6 +416,22 @@
       "scores": [
         "Varias partituras y guardado",
         "Trabajá en varias partituras a la vez; todo se guarda solo en tu navegador."
+      ],
+      "voices": [
+        "Escribir segundas voces",
+        "Duplicá una melodía hacia arriba o abajo y editá cada línea por separado."
+      ],
+      "playback": [
+        "Escuchar la partitura",
+        "Reproducí piano o guitarra, empezá en un compás y escuchá voces por separado."
+      ],
+      "patterns": [
+        "Biblioteca de patrones",
+        "Guardá un motivo y reutilizá sus intervalos o solo su ritmo."
+      ],
+      "chords": [
+        "Acordes de guitarra",
+        "Escribí nombres sobre el pentagrama y consultá sus digitaciones y variantes."
       ]
     },
     "stepsHeading": "Paso a paso",
@@ -437,7 +453,8 @@
           "Para anteponer una nota, colocala a la izquierda de la primera figura del compás, dejando un espacio entre ambas: las figuras de la voz más cercana se corren para hacerle lugar. Si la colocás sobre la misma columna, empieza al mismo tiempo en otra voz.",
           "Para intercalar una nota o un silencio, colocalo en el espacio entre dos columnas: se inserta antes de la columna de la derecha en la voz más cercana a la altura elegida. Las figuras siguientes se corren si caben en el compás.",
           "La herramienta sigue activa después de cada figura, así que podés escribir una frase entera sin volver a elegirla. Las corcheas y las figuras más cortas se unen con barra solas.",
-          "Apretá <kbd>A</kbd> o <kbd>Esc</kbd> para soltar la herramienta y volver a seleccionar figuras."
+          "Apretá <kbd>A</kbd> o <kbd>Esc</kbd> para soltar la herramienta y volver a seleccionar figuras.",
+          "Para llenar un compás vacío con silencios, seleccionalo con un clic y presioná <kbd>Tab</kbd>. Se usan los valores más grandes que completan su duración; en piano se llena solo el pentagrama elegido."
         ],
         "tip": "Si una figura no cabe en lo que queda del compás, el editor te avisa y no la coloca."
       },
@@ -452,13 +469,16 @@
         "steps": [
           "Hacé clic en una figura para seleccionarla. Con <kbd>Mayús</kbd>, <kbd>Ctrl</kbd> o <kbd>Cmd</kbd> sumás más. Arrastrando desde un lugar vacío del pentagrama las encerrás con un rectángulo.",
           "<kbd>↑</kbd> y <kbd>↓</kbd> suben o bajan la selección un paso del pentagrama; <kbd>←</kbd> y <kbd>→</kbd> pasan a la figura de al lado. También podés arrastrar las figuras a otro lugar.",
+          "Con <kbd>Mayús</kbd> + <kbd>←</kbd>/<kbd>→</kbd> ampliás la selección a las figuras vecinas. Con <kbd>Mayús</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> creás una copia en otra voz, un paso arriba o abajo y en el mismo tiempo; las copias quedan seleccionadas.",
           "<kbd>Delete</kbd> o <kbd>Retroceso</kbd> las borra. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> deshace el último cambio y <kbd>Esc</kbd> suelta la selección."
         ]
       },
       "copy": {
         "steps": [
           "Seleccioná una o más figuras y apretá <kbd>Mayús</kbd> + <kbd>D</kbd>: se copian justo después de la última seleccionada, siguiendo en los compases que vengan.",
-          "Para llevarlas a otro lugar, copialas con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, hacé clic en el compás de destino y pegá con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Funciona también entre partituras abiertas."
+          "Para llevarlas a otro lugar, copialas con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, hacé clic en el compás de destino y pegá con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Funciona también entre partituras abiertas.",
+          "Para escribir una segunda voz, usá <kbd>Mayús</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd>: la copia queda un paso arriba o abajo, con los mismos tiempos y duraciones. Soltá Mayús y ajustá su altura con las flechas. Funciona en cualquiera de los dos pentagramas del piano.",
+          "Copiar, pegar y duplicar conserva las ligaduras de prolongación y de expresión cuando sus dos extremos están incluidos. Para reutilizar el motivo en otras alturas o conservar solo su ritmo, guardalo en la biblioteca de patrones con <kbd>Mayús</kbd> + <kbd>S</kbd>."
         ],
         "tip": "Si mantenés <kbd>Mayús</kbd> al pegar, se copian solo las figuras, sin los cambios de clave, armadura o compás."
       },
@@ -473,7 +493,9 @@
       "ties": {
         "steps": [
           "Seleccioná dos notas seguidas con <kbd>Mayús</kbd>+clic. En el menú que aparece sobre ellas elegí <em>Ligadura</em>: si suenan igual se dibuja una ligadura de prolongación y, si no, una de expresión.",
+          "Podés ligar notas consecutivas de una misma voz dentro del compás, o la última columna de un compás con la primera del siguiente. Los dos extremos deben pertenecer al mismo pentagrama.",
           "Para quitarla, seleccioná las mismas notas y elegí <em>Quitar ligadura</em>. También podés presionar <kbd>(</kbd> o <kbd>)</kbd> para agregar o quitar la ligadura entre las notas seleccionadas, si se pueden ligar.",
+          "También podés hacer clic directamente sobre el arco para seleccionarlo y presionar <kbd>Delete</kbd> o <kbd>Retroceso</kbd> para quitar la ligadura sin borrar las notas.",
           "Las barras funcionan igual: seleccioná figuras seguidas y elegí <em>Barrar</em> para unirlas o <em>Separar</em> para cortar la barra. Si no tocás nada, el editor las agrupa solo según el compás."
         ]
       },
@@ -534,12 +556,15 @@
       },
       "settings": {
         "steps": [
-          "Abrí los <strong>Ajustes</strong> con el engranaje, la primera herramienta de la barra lateral. Valen para la partitura que estás viendo, se guardan con ella y se pueden deshacer con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
+          "Abrí los <strong>Ajustes</strong> con el engranaje, la primera herramienta de la barra derecha. Salvo la biblioteca de patrones, valen para la partitura que estás viendo, se guardan con ella y se pueden deshacer con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
           "<strong>Instrumento:</strong> con <em>Piano</em> cada renglón es un gran pentagrama, con clave de Sol arriba y de Fa abajo unidos por una llave, y se ocultan TAB y cejilla. Con <em>Guitarra</em> hay un solo pentagrama en clave de Sol de guitarra y aparecen el botón TAB y la cejilla. Cambiar de uno a otro no borra nada: lo que no se ve queda guardado.",
           "<strong>Tempo:</strong> el deslizador va de 20 a 300 negras por minuto. Se escribe como indicación metronómica sobre el primer compás y define la velocidad del MIDI exportado. <em>Sin indicación</em> la quita.",
-          "<strong>Herramientas:</strong> activá o desactivá <em>Repetición</em>, <em>Dinámica</em> y <em>Voces</em> para mostrar u ocultar sus botones en la barra lateral. Ocultar un grupo no borra lo que ya escribiste.",
+          "<strong>Herramientas:</strong> activá o desactivá <em>Repetición</em>, <em>Dinámica</em> y <em>Voces</em> para mostrar u ocultar sus controles en las barras del editor. Ocultar un grupo no borra lo que ya escribiste.",
           "<strong>Voces:</strong> con <em>Voces</em> activo cada voz se pinta de un color (1 a 4) y aparece una leyenda a la izquierda de la llave. En la leyenda elegís qué voces colorear; nunca se oculta una figura.",
-          "<strong>Gran pentagrama:</strong> cada pentagrama tiene sus propias figuras, silencios, voces y clave (el menú de clave dice a cuál afecta). Los compases, la armadura, la métrica, las barras, las repeticiones y el tempo son comunes a los dos. Las dinámicas y reguladores se escriben entre ambos."
+          "<strong>Gran pentagrama:</strong> cada pentagrama tiene sus propias figuras, silencios, voces y clave (el menú de clave dice a cuál afecta). Los compases, la armadura, la métrica, las barras, las repeticiones y el tempo son comunes a los dos. Las dinámicas y reguladores se escriben entre ambos.",
+          "<strong>Reproducción:</strong> activala para mostrar reproducir/pausar a la izquierda del pentagrama. Usa el instrumento y el tempo de esta partitura. Con Voces activo, los números elegidos en la leyenda también filtran lo que escuchás; sin ninguno elegido suenan todas.",
+          "<strong>Biblioteca de patrones:</strong> abre un panel aparte para guardar y reutilizar motivos con Mayús+S. Esta preferencia y los patrones son del usuario y del navegador, no de cada partitura.",
+          "Las barras izquierda y derecha y la biblioteca de patrones se mantienen a mano al hacer scroll; en pantallas de poca altura, las barras se desplazan con la página."
         ],
         "tip": "Al exportar, el piano sale en MusicXML como una sola parte de dos pentagramas y en MIDI cada pentagrama suena en su canal."
       },
@@ -547,7 +572,8 @@
         "steps": [
           "Abrí el menú <strong>☰</strong> arriba a la derecha.",
           "<em>Cargar archivo…</em> abre un MusicXML (<code>.musicxml</code>, <code>.xml</code>) o un MIDI (<code>.mid</code>) y lo convierte en una partitura nueva.",
-          "<em>Exportar</em> descarga la partitura: <strong>PDF</strong> para imprimir, <strong>MusicXML</strong> para MuseScore, Finale, Sibelius o Dorico y <strong>MIDI</strong> para escucharla en cualquier programa."
+          "<em>Exportar</em> descarga la partitura: <strong>PDF</strong> para imprimir, <strong>MusicXML</strong> para MuseScore, Finale, Sibelius o Dorico y <strong>MIDI</strong> para escucharla en cualquier programa.",
+          "Si el PDF ocupa varias páginas, se numeran automáticamente; un PDF de una sola página no lleva número."
         ]
       },
       "scores": {
@@ -557,6 +583,49 @@
           "El botón de la papelera borra la partitura que estás viendo, y antes te pide confirmación."
         ],
         "tip": "Si borrás los datos del navegador se pierden las partituras: exportá en MusicXML las que quieras conservar."
+      },
+      "voices": {
+        "steps": [
+          "Seleccioná una nota o una frase en el pentagrama. Para ampliar la selección, usá <kbd>Mayús</kbd>+clic o <kbd>Mayús</kbd> + <kbd>←</kbd>/<kbd>→</kbd>.",
+          "Presioná <kbd>Mayús</kbd> + <kbd>↑</kbd> para duplicarla un paso del pentagrama más arriba, o <kbd>Mayús</kbd> + <kbd>↓</kbd> para hacerlo más abajo. Las copias empiezan en los mismos tiempos y conservan las duraciones, los puntillos, los grupos irregulares y las ligaduras cuyos dos extremos estén seleccionados.",
+          "Las copias quedan seleccionadas. Soltá <kbd>Mayús</kbd> y usá <kbd>↑</kbd>/<kbd>↓</kbd> para ajustar solo su altura. Por ejemplo, duplicá hacia abajo y bajá una vez más para escribir una tercera diatónica bajo la melodía. También podés seleccionar y editar cada nota de la nueva línea.",
+          "Cada voz seleccionada se duplica en una voz independiente del mismo pentagrama. Funciona arriba y abajo en el piano; la copia no pasa al otro pentagrama. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> deshace la duplicación.",
+          "Activá <em>Voces</em> en los ajustes para ver la leyenda de colores a la izquierda. Elegí los números de las voces que querés colorear: las demás figuras siguen visibles. Si también activás <em>Reproducción</em>, podés escuchar solo las voces elegidas."
+        ],
+        "tip": "El editor rechaza la duplicación si una nota ya existe a esa altura y tiempo, se excede el registro o el límite de 16 voces, o no puede conservar los tiempos. En la tablatura, Mayús+↑/↓ cambia de cuerda sin duplicar: para crear voces, seleccioná las notas en el pentagrama."
+      },
+      "playback": {
+        "steps": [
+          "Abrí el engranaje de <em>Ajustes</em> y activá <em>Reproducción</em> en <em>Herramientas</em>. Aparece el botón de reproducir a la izquierda del pentagrama, encima de la leyenda de voces.",
+          "Elegí <em>Piano</em> o <em>Guitarra</em> y ajustá el tempo. Se escuchan las notas escritas con sonido de piano o guitarra de nylon; en piano suenan ambos pentagramas. La primera vez puede aparecer <em>Cargando sonidos…</em>.",
+          "Pulsá <em>Reproducir</em>. Una barra vertical sigue la posición de la música y pasa al renglón siguiente. Sin selección empieza desde el principio; con notas o un compás elegidos, desde el inicio de ese compás (el primero si elegiste varios).",
+          "Pulsá <em>Pausar</em> para conservar la posición y volvé a reproducir para continuar. Si durante la pausa elegís otro compás, la siguiente reproducción arranca allí.",
+          "Para escuchar una línea por separado, activá <em>Voces</em> y elegí sus números en la leyenda: el filtro se aplica a los dos pentagramas. Sin ninguna voz elegida se escuchan todas. Cambiar esa selección detiene y reinicia la reproducción.",
+          "Editar la música, cambiar de partitura u ocultar la página detiene la reproducción y reinicia su posición. Volvé a pulsar reproducir cuando quieras escuchar el resultado."
+        ],
+        "tip": "El filtro de voces solo afecta a lo que escuchás en el editor: el archivo MIDI exportado incluye todas las voces. El tempo elegido también se usa en el MIDI."
+      },
+      "patterns": {
+        "steps": [
+          "En <em>Ajustes</em>, activá <em>Biblioteca de patrones</em>. Se abre el panel <em>Patrones</em> a la izquierda del editor. Esta opción es tuya y se mantiene al cambiar de partitura.",
+          "Seleccioná las figuras de un solo pentagrama y presioná <kbd>Mayús</kbd> + <kbd>S</kbd>. Sin figuras seleccionadas, elegí un compás con un clic y usá el mismo atajo para guardarlo. Guardar otra vez el mismo patrón no lo agrega dos veces.",
+          "Cada patrón muestra sus grados y sus figuras. Arrastrá la zona izquierda, la de grados, al pentagrama: la primera nota toma la altura de destino y las demás conservan su distancia en pasos de escala. Las figuras fantasma anticipan dónde quedará.",
+          "Arrastrá la zona derecha, la de figuras, para aplicar solo el ritmo: todas las notas se escriben a la misma altura. Se conservan los silencios, las duraciones, los puntillos, los grupos irregulares y las ligaduras internas.",
+          "También podés elegir un compás y hacer clic en una de las dos zonas: el patrón se escribe desde el inicio del compás, sobre la línea del medio. Si no cabe, el editor no lo aplica.",
+          "Usá <em>Quitar patrón</em> para eliminarlo de la biblioteca. La biblioteca conserva hasta 60 patrones y está disponible entre las partituras de este navegador."
+        ],
+        "tip": "Los patrones guardan relaciones entre notas, no la tonalidad, las alteraciones ni las voces originales. La biblioteca es local y no viaja al exportar una partitura; borrar los datos del sitio también la borra."
+      },
+      "chords": {
+        "steps": [
+          "Elegí <em>Guitarra</em> en los ajustes y activá la herramienta <strong>Am</strong> de la paleta. Colocala sobre la nota donde empieza el acorde: aparece un campo para el nombre.",
+          "Escribí el nombre, por ejemplo <em>Am</em>, y presioná <kbd>Enter</kbd> o salí del campo para guardar. <kbd>Esc</kbd> o dejarlo vacío cancela. Después de escribirlo, la herramienta se desactiva.",
+          "Hacé clic sobre un nombre ya escrito para abrir su panel: podés editarlo, quitarlo y consultar el diagrama de digitación. Los selectores de variante muestran otras posiciones del mismo acorde y guardan la que elegís.",
+          "Si el nombre no tiene digitación disponible, queda escrito y el panel lo avisa. Podés usar el buscador para encontrar un acorde del diccionario.",
+          "Arrastrá el nombre a otro tiempo o compás: la zona subrayada indica el destino. Solo puede haber un acorde en cada tiempo; no se mueve a un lugar que ya tiene otro.",
+          "Para borrar varios nombres juntos, arrastrá un rectángulo de selección que los abarque y presioná <kbd>Delete</kbd> o <kbd>Retroceso</kbd>. Los cambios se pueden deshacer con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>."
+        ],
+        "tip": "Los nombres se imprimen sobre el pentagrama y salen también en PDF. El diagrama sirve de consulta: escribir un nombre de acorde no agrega sus notas al pentagrama ni hace que suenen en la reproducción."
       }
     },
     "seo": {
@@ -655,6 +724,22 @@
       "scores": [
         "Trabajar con varias partituras y guardado automático",
         "Mantené varias partituras abiertas a la vez; todo se guarda solo en tu navegador, sin cuenta."
+      ],
+      "voices": [
+        "Cómo escribir una segunda voz en una partitura",
+        "Creá una segunda voz con Mayús y las flechas arriba o abajo, conservando el ritmo. Ajustá las notas y escuchá cada voz en el editor Partitura."
+      ],
+      "playback": [
+        "Cómo reproducir una partitura de piano o guitarra online",
+        "Escuchá tu partitura en Partitura: activar reproducción, ajustar el tempo, pausar, comenzar desde un compás y escuchar solo las voces elegidas."
+      ],
+      "patterns": [
+        "Cómo guardar y reutilizar patrones musicales en Partitura",
+        "Guardá notas o un compás con Mayús+S y aplicá el patrón en otra altura, conservando los intervalos o usando solo el ritmo. Guía de la biblioteca de patrones."
+      ],
+      "chords": [
+        "Cómo escribir acordes de guitarra y ver sus digitaciones",
+        "Agregá acordes con la herramienta Am, editá nombres y variantes, movelos entre tiempos y borralos juntos en el editor de partituras Partitura."
       ]
     },
     "related": "Tutoriales relacionados",

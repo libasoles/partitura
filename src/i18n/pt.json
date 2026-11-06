@@ -104,7 +104,7 @@
     "barreStart": "Início da pestana",
     "barreEnd": "Fim da pestana",
     "chord": "Acorde",
-    "chordTool": "Acorde (ou clique na pauta, acima das notas)",
+    "chordTool": "Acorde: coloque a ferramenta Am sobre uma nota",
     "chordZone": "Escrever um acorde",
     "chordName": "Nome do acorde",
     "chordRemove": "Remover acorde",
@@ -416,6 +416,22 @@
       "scores": [
         "Várias partituras e salvamento",
         "Trabalhe em várias partituras ao mesmo tempo; tudo é salvo sozinho no navegador."
+      ],
+      "voices": [
+        "Escrever segundas vozes",
+        "Duplique uma melodia acima ou abaixo e edite cada linha separadamente."
+      ],
+      "playback": [
+        "Ouvir a partitura",
+        "Reproduza piano ou violão, comece em um compasso e ouça vozes separadamente."
+      ],
+      "patterns": [
+        "Biblioteca de padrões",
+        "Salve um motivo e reutilize seus intervalos ou apenas seu ritmo."
+      ],
+      "chords": [
+        "Acordes de violão",
+        "Escreva nomes sobre a pauta e consulte digitações e variantes."
       ]
     },
     "stepsHeading": "Passo a passo",
@@ -437,7 +453,8 @@
           "Para inserir uma nota antes das existentes, coloque-a à esquerda da primeira figura do compasso, deixando um espaço entre elas: as figuras da voz mais próxima se deslocam para abrir espaço. Na mesma coluna, a nota começa ao mesmo tempo em outra voz.",
           "Para intercalar uma nota ou pausa, coloque-a no espaço entre duas colunas: ela entra antes da coluna da direita, na voz mais próxima da altura escolhida. As figuras seguintes se deslocam se couberem no compasso.",
           "A ferramenta continua ativa depois de cada figura, então dá para escrever uma frase inteira sem escolher de novo. Colcheias e figuras mais curtas se unem com barra sozinhas.",
-          "Aperte <kbd>A</kbd> ou <kbd>Esc</kbd> para soltar a ferramenta e voltar a selecionar figuras."
+          "Aperte <kbd>A</kbd> ou <kbd>Esc</kbd> para soltar a ferramenta e voltar a selecionar figuras.",
+          "Para preencher um compasso vazio com pausas, selecione-o com um clique e pressione <kbd>Tab</kbd>. São usados os maiores valores que completam sua duração; no piano, apenas a pauta escolhida é preenchida."
         ],
         "tip": "Se uma figura não cabe no que sobra do compasso, o editor avisa e não a coloca."
       },
@@ -452,13 +469,16 @@
         "steps": [
           "Clique numa figura para selecioná-la. Com <kbd>Shift</kbd>, <kbd>Ctrl</kbd> ou <kbd>Cmd</kbd> você soma mais. Arrastando a partir de um ponto vazio da pauta, você as cerca com um retângulo.",
           "<kbd>↑</kbd> e <kbd>↓</kbd> sobem ou descem a seleção um passo da pauta; <kbd>←</kbd> e <kbd>→</kbd> passam para a figura ao lado. Também dá para arrastar as figuras para outro lugar.",
+          "Use <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd> para ampliar a seleção às figuras vizinhas. <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> cria uma cópia em outra voz, um passo acima ou abaixo no mesmo tempo; as cópias ficam selecionadas.",
           "<kbd>Delete</kbd> ou <kbd>Backspace</kbd> apaga. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> desfaz a última alteração e <kbd>Esc</kbd> solta a seleção."
         ]
       },
       "copy": {
         "steps": [
           "Selecione uma ou mais figuras e aperte <kbd>Shift</kbd> + <kbd>D</kbd>: elas são copiadas logo depois da última selecionada, seguindo pelos compassos seguintes.",
-          "Para levá-las a outro lugar, copie com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, clique no compasso de destino e cole com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Funciona também entre partituras abertas."
+          "Para levá-las a outro lugar, copie com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, clique no compasso de destino e cole com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Funciona também entre partituras abertas.",
+          "Para escrever uma segunda voz, use <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd>: a cópia fica um passo acima ou abaixo, com os mesmos tempos e durações. Solte Shift e ajuste sua altura com as setas. Funciona nas duas pautas do piano.",
+          "Copiar, colar e duplicar mantém as ligaduras de prolongamento e de expressão quando as duas pontas estão incluídas. Para reutilizar o motivo em outras alturas ou manter apenas seu ritmo, salve-o na biblioteca de padrões com <kbd>Shift</kbd> + <kbd>S</kbd>."
         ],
         "tip": "Se você segurar <kbd>Shift</kbd> ao colar, só as figuras são coladas, sem as mudanças de clave, armadura ou compasso."
       },
@@ -473,7 +493,9 @@
       "ties": {
         "steps": [
           "Selecione duas notas seguidas com <kbd>Shift</kbd>+clique. No menu que aparece sobre elas, escolha <em>Ligadura</em>: se soam iguais, desenha-se uma ligadura de prolongamento; se não, uma de expressão.",
+          "Você pode ligar notas consecutivas da mesma voz dentro do compasso, ou a última coluna de um compasso com a primeira do seguinte. As duas pontas devem pertencer à mesma pauta.",
           "Para tirar, selecione as mesmas notas e escolha <em>Remover ligadura</em>. Você também pode pressionar <kbd>(</kbd> ou <kbd>)</kbd> para adicionar ou remover a ligadura entre as notas selecionadas, se elas puderem ser ligadas.",
+          "Você também pode clicar diretamente no arco para selecioná-lo e pressionar <kbd>Delete</kbd> ou <kbd>Backspace</kbd> para remover a ligadura sem apagar as notas.",
           "As barras funcionam igual: selecione figuras seguidas e escolha <em>Barrar</em> para uni-las ou <em>Separar</em> para cortar a barra. Se você não mexer, o editor as agrupa sozinho conforme o compasso."
         ]
       },
@@ -534,12 +556,15 @@
       },
       "settings": {
         "steps": [
-          "Abra os <strong>Ajustes</strong> com a engrenagem, a primeira ferramenta da barra lateral. Valem para a partitura que você está vendo, são salvos com ela e podem ser desfeitos com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
+          "Abra os <strong>Ajustes</strong> com a engrenagem, a primeira ferramenta da barra direita. Exceto a biblioteca de padrões, valem para a partitura que você está vendo, são salvos com ela e podem ser desfeitos com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
           "<strong>Instrumento:</strong> com <em>Piano</em> cada sistema é uma pauta dupla, com clave de Sol em cima e de Fá embaixo unidas por uma chave, e TAB e pestana ficam ocultos. Com <em>Violão</em> há uma única pauta em clave de Sol de violão e aparecem o botão TAB e a pestana. Trocar de um para o outro não apaga nada: o que não aparece continua salvo.",
           "<strong>Andamento:</strong> o controle vai de 20 a 300 semínimas por minuto. É escrito como indicação de metrônomo sobre o primeiro compasso e define a velocidade do MIDI exportado. <em>Sem indicação</em> a remove.",
-          "<strong>Ferramentas:</strong> ative ou desative <em>Repetição</em>, <em>Dinâmica</em> e <em>Vozes</em> para mostrar ou ocultar seus botões na barra lateral. Ocultar um grupo não apaga o que você já escreveu.",
+          "<strong>Ferramentas:</strong> ative ou desative <em>Repetição</em>, <em>Dinâmica</em> e <em>Vozes</em> para mostrar ou ocultar seus controles nas barras do editor. Ocultar um grupo não apaga o que você já escreveu.",
           "<strong>Vozes:</strong> com <em>Vozes</em> ativo, cada voz recebe uma cor (1 a 4) e aparece uma legenda à esquerda da chave. Na legenda você escolhe quais vozes colorir; nenhuma figura é ocultada.",
-          "<strong>Pauta dupla:</strong> cada pauta tem suas próprias figuras, pausas, vozes e clave (o menu de clave diz qual delas muda). Compassos, armadura, fórmula de compasso, barras, repetições e andamento são comuns às duas. As dinâmicas e os reguladores são escritos entre elas."
+          "<strong>Pauta dupla:</strong> cada pauta tem suas próprias figuras, pausas, vozes e clave (o menu de clave diz qual delas muda). Compassos, armadura, fórmula de compasso, barras, repetições e andamento são comuns às duas. As dinâmicas e os reguladores são escritos entre elas.",
+          "<strong>Reprodução:</strong> ative para mostrar reproduzir/pausar à esquerda da pauta. Usa o instrumento e o andamento desta partitura. Com Vozes ativo, os números escolhidos na legenda também filtram o que você ouve; sem nenhum escolhido, todas as vozes soam.",
+          "<strong>Biblioteca de padrões:</strong> abre um painel separado para salvar e reutilizar motivos com Shift+S. Essa preferência e os padrões são do usuário e do navegador, não de cada partitura.",
+          "As barras esquerda e direita e a biblioteca de padrões ficam acessíveis ao rolar a página; em telas de pouca altura, as barras rolam com a página."
         ],
         "tip": "Ao exportar, o piano vai em MusicXML como uma única parte com duas pautas e, no MIDI, cada pauta toca em seu canal."
       },
@@ -547,7 +572,8 @@
         "steps": [
           "Abra o menu <strong>☰</strong> no canto superior direito.",
           "<em>Carregar arquivo…</em> abre um MusicXML (<code>.musicxml</code>, <code>.xml</code>) ou um MIDI (<code>.mid</code>) e o transforma numa partitura nova.",
-          "<em>Exportar</em> baixa a partitura: <strong>PDF</strong> para imprimir, <strong>MusicXML</strong> para MuseScore, Finale, Sibelius ou Dorico e <strong>MIDI</strong> para ouvir em qualquer programa."
+          "<em>Exportar</em> baixa a partitura: <strong>PDF</strong> para imprimir, <strong>MusicXML</strong> para MuseScore, Finale, Sibelius ou Dorico e <strong>MIDI</strong> para ouvir em qualquer programa.",
+          "PDFs com várias páginas são numerados automaticamente; um PDF de uma página não recebe número."
         ]
       },
       "scores": {
@@ -557,6 +583,49 @@
           "O botão da lixeira apaga a partitura que você está vendo e antes pede confirmação."
         ],
         "tip": "Se você limpar os dados do navegador, as partituras se perdem: exporte em MusicXML as que quiser guardar."
+      },
+      "voices": {
+        "steps": [
+          "Selecione uma nota ou frase na pauta. Amplie a seleção com <kbd>Shift</kbd>+clique ou <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd>.",
+          "Pressione <kbd>Shift</kbd> + <kbd>↑</kbd> para duplicar um passo da pauta acima, ou <kbd>Shift</kbd> + <kbd>↓</kbd> para duplicar abaixo. As cópias começam nos mesmos tempos e mantêm durações, pontos, grupos irregulares e ligaduras cujas duas pontas estejam selecionadas.",
+          "As cópias ficam selecionadas. Solte <kbd>Shift</kbd> e use <kbd>↑</kbd>/<kbd>↓</kbd> para ajustar apenas sua altura. Por exemplo, duplique abaixo e desça mais uma vez para escrever uma terça diatônica sob a melodia. Você também pode selecionar e editar cada nota da nova linha.",
+          "Cada voz selecionada ganha uma cópia independente na mesma pauta. Funciona nas duas pautas do piano; a cópia não passa para a outra pauta. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> desfaz a duplicação.",
+          "Ative <em>Vozes</em> nos ajustes para mostrar a legenda de cores à esquerda. Escolha os números das vozes que quer colorir; as outras figuras continuam visíveis. Com <em>Reprodução</em> também ativa, você pode ouvir apenas as vozes escolhidas."
+        ],
+        "tip": "A duplicação é recusada se uma nota já existe nessa altura e tempo, se ultrapassa o registro ou o limite de 16 vozes, ou se não puder manter os tempos. Na tablatura, Shift+↑/↓ muda de corda sem duplicar: selecione as notas na pauta para criar vozes."
+      },
+      "playback": {
+        "steps": [
+          "Abra a engrenagem de <em>Ajustes</em> e ative <em>Reprodução</em> em <em>Ferramentas</em>. O botão de reproduzir aparece à esquerda da pauta, acima da legenda de vozes.",
+          "Escolha <em>Piano</em> ou <em>Violão</em> e ajuste o andamento. As notas escritas soam com piano ou violão de nylon; no piano, as duas pautas são reproduzidas. Na primeira vez pode aparecer <em>Carregando sons…</em>.",
+          "Pressione <em>Reproduzir</em>. Uma barra vertical acompanha a música e passa para o próximo sistema. Sem seleção, começa do início; com notas ou um compasso selecionados, começa no início desse compasso (o primeiro se houver vários).",
+          "Pressione <em>Pausar</em> para manter a posição e reproduza novamente para continuar. Se escolher outro compasso durante a pausa, a próxima reprodução começa nele.",
+          "Para ouvir uma linha separadamente, ative <em>Vozes</em> e escolha seus números na legenda: o filtro vale para as duas pautas. Sem vozes escolhidas, todas são reproduzidas. Alterar essa seleção interrompe a reprodução e reinicia sua posição.",
+          "Editar a música, trocar de partitura ou ocultar a página interrompe a reprodução e reinicia sua posição. Pressione reproduzir novamente quando quiser ouvir o resultado."
+        ],
+        "tip": "O filtro de vozes só afeta a reprodução no editor: o MIDI exportado inclui todas as vozes. O andamento escolhido também é usado no MIDI."
+      },
+      "patterns": {
+        "steps": [
+          "Em <em>Ajustes</em>, ative <em>Biblioteca de padrões</em>. O painel <em>Padrões</em> abre à esquerda do editor. Essa opção é sua e permanece ativa ao trocar de partitura.",
+          "Selecione figuras de uma só pauta e pressione <kbd>Shift</kbd> + <kbd>S</kbd>. Sem figuras selecionadas, escolha um compasso com um clique e use o mesmo atalho para salvá-lo. Salvar o mesmo padrão novamente não cria uma duplicata.",
+          "Cada padrão mostra graus e figuras. Arraste a área esquerda, dos graus, para a pauta: a primeira nota recebe a altura de destino e as outras mantêm a distância em passos da escala. As figuras fantasma mostram onde ficará.",
+          "Arraste a área direita, das figuras, para aplicar apenas o ritmo: todas as notas ficam na mesma altura. Pausas, durações, pontos, grupos irregulares e ligaduras internas são mantidos.",
+          "Você também pode escolher um compasso e clicar em uma das áreas: o padrão é escrito desde o início do compasso, na linha do meio. Se não couber, o editor não o aplica.",
+          "Use <em>Remover padrão</em> para excluir um item da biblioteca. Ela guarda até 60 padrões e fica disponível entre as partituras deste navegador."
+        ],
+        "tip": "Os padrões guardam relações entre notas, não a tonalidade, as alterações ou as vozes originais. A biblioteca é local e não acompanha a exportação de uma partitura; apagar os dados do site também a apaga."
+      },
+      "chords": {
+        "steps": [
+          "Escolha <em>Violão</em> nos ajustes e ative a ferramenta <strong>Am</strong> na paleta. Coloque-a sobre a nota em que o acorde começa: aparece um campo para o nome.",
+          "Escreva o nome, por exemplo <em>Am</em>, e pressione <kbd>Enter</kbd> ou saia do campo para salvar. <kbd>Esc</kbd> ou um campo vazio cancela. A ferramenta é desativada depois de escrever o acorde.",
+          "Clique em um nome já escrito para abrir seu painel: você pode editá-lo, removê-lo e consultar o diagrama de digitação. Os seletores de variante mostram outras posições do mesmo acorde e salvam sua escolha.",
+          "Se o nome não tiver digitação disponível, ele continua escrito e o painel avisa. Use a busca para encontrar um acorde no dicionário.",
+          "Arraste o nome para outro tempo ou compasso: a área sublinhada indica o destino. Só pode haver um acorde em cada tempo; não é possível movê-lo para onde já existe outro.",
+          "Para apagar vários nomes juntos, arraste um retângulo de seleção que os inclua e pressione <kbd>Delete</kbd> ou <kbd>Backspace</kbd>. Desfaça as alterações com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>."
+        ],
+        "tip": "Os nomes aparecem sobre a pauta e no PDF exportado. O diagrama serve de consulta: escrever o nome de um acorde não adiciona suas notas à pauta nem faz com que soem na reprodução."
       }
     },
     "seo": {
@@ -655,6 +724,22 @@
       "scores": [
         "Trabalhar com várias partituras e salvamento automático",
         "Mantenha várias partituras abertas ao mesmo tempo; tudo é salvo sozinho no navegador, sem conta."
+      ],
+      "voices": [
+        "Como escrever uma segunda voz em uma partitura",
+        "Crie uma segunda voz com Shift e as setas para cima ou para baixo, mantendo o ritmo. Ajuste as notas e ouça cada voz no editor Partitura."
+      ],
+      "playback": [
+        "Como reproduzir uma partitura de piano ou violão online",
+        "Ouça sua partitura no Partitura: ative a reprodução, ajuste o andamento, pause, comece em um compasso e ouça apenas as vozes escolhidas."
+      ],
+      "patterns": [
+        "Como salvar e reutilizar padrões musicais no Partitura",
+        "Salve notas ou um compasso com Shift+S e aplique o padrão em outra altura, mantendo os intervalos ou usando apenas o ritmo. Guia da biblioteca de padrões."
+      ],
+      "chords": [
+        "Como escrever acordes de violão e ver suas digitações",
+        "Adicione acordes com a ferramenta Am, edite nomes e variantes, mova-os entre tempos e apague vários juntos no editor de partituras Partitura."
       ]
     },
     "related": "Tutoriais relacionados",

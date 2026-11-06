@@ -104,7 +104,7 @@
     "barreStart": "Barre start",
     "barreEnd": "Barre end",
     "chord": "Chord",
-    "chordTool": "Chord (or click on the staff, above the notes)",
+    "chordTool": "Chord: place the Am tool on a note",
     "chordZone": "Write a chord",
     "chordName": "Chord name",
     "chordRemove": "Remove chord",
@@ -416,6 +416,22 @@
       "scores": [
         "Several scores and saving",
         "Work on several scores at once; everything saves itself in your browser."
+      ],
+      "voices": [
+        "Writing a second voice",
+        "Duplicate a melody above or below and edit each line independently."
+      ],
+      "playback": [
+        "Listening to your score",
+        "Play piano or guitar, start at a measure and listen to voices separately."
+      ],
+      "patterns": [
+        "Pattern library",
+        "Save a motif and reuse its intervals or just its rhythm."
+      ],
+      "chords": [
+        "Guitar chords",
+        "Write names above the staff and explore fingerings and variants."
       ]
     },
     "stepsHeading": "Step by step",
@@ -437,7 +453,8 @@
           "To prepend a note, place it to the left of the first figure in the measure, leaving a gap between them: the figures in the nearest voice shift to make room. Placing it on the same column starts it at the same time in another voice.",
           "To insert a note or rest between figures, place it in the gap between two columns: it is inserted before the right column in the voice nearest the chosen pitch. The following figures shift if they fit in the measure.",
           "The tool stays active after each figure, so you can write a whole phrase without picking it again. Eighth notes and shorter ones beam themselves.",
-          "Press <kbd>A</kbd> or <kbd>Esc</kbd> to drop the tool and go back to selecting figures."
+          "Press <kbd>A</kbd> or <kbd>Esc</kbd> to drop the tool and go back to selecting figures.",
+          "To fill an empty measure with rests, click to select it and press <kbd>Tab</kbd>. The largest values that complete its duration are used; in piano mode, only the selected staff is filled."
         ],
         "tip": "If a figure does not fit in what is left of the measure, the editor tells you and does not place it."
       },
@@ -452,13 +469,16 @@
         "steps": [
           "Click a figure to select it. <kbd>Shift</kbd>, <kbd>Ctrl</kbd> or <kbd>Cmd</kbd> adds more. Dragging from an empty spot on the staff encloses them in a rectangle.",
           "<kbd>↑</kbd> and <kbd>↓</kbd> raise or lower the selection by one staff step; <kbd>←</kbd> and <kbd>→</kbd> move to the next figure. You can also drag the figures elsewhere.",
+          "Use <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd> to extend the selection to neighboring figures. <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> creates a copy in another voice, one step above or below at the same time; the copies stay selected.",
           "<kbd>Delete</kbd> or <kbd>Backspace</kbd> removes them. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes the last change and <kbd>Esc</kbd> clears the selection."
         ]
       },
       "copy": {
         "steps": [
           "Select one or more figures and press <kbd>Shift</kbd> + <kbd>D</kbd>: they are copied right after the last selected one, carrying on into the measures that follow.",
-          "To bring them somewhere else, copy with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, click the destination measure and paste with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. It works between open scores too."
+          "To bring them somewhere else, copy with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, click the destination measure and paste with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. It works between open scores too.",
+          "To write a second voice, use <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd>: the copy sits one step above or below with the same timing and durations. Release Shift and adjust its pitch with the arrows. This works in either piano staff.",
+          "Copying, pasting and duplicating preserve ties and slurs when both ends are included. To reuse a motif at other pitches or keep only its rhythm, save it to the pattern library with <kbd>Shift</kbd> + <kbd>S</kbd>."
         ],
         "tip": "Hold <kbd>Shift</kbd> while pasting to paste only the figures, without clef, key or meter changes."
       },
@@ -473,7 +493,9 @@
       "ties": {
         "steps": [
           "Select two consecutive notes with <kbd>Shift</kbd>+click. In the menu over them choose <em>Tie</em>: if they sound the same a tie is drawn, otherwise a slur.",
+          "You can link consecutive notes in the same voice within a measure, or the last column of a measure with the first of the next. Both ends must be on the same staff.",
           "To remove it, select the same notes and choose <em>Remove tie</em>. You can also press <kbd>(</kbd> or <kbd>)</kbd> to toggle the tie or slur between the selected notes, if they can be linked.",
+          "You can also click an arc directly to select it, then press <kbd>Delete</kbd> or <kbd>Backspace</kbd> to remove the tie or slur without deleting the notes.",
           "Beams work the same way: select consecutive figures and choose <em>Beam</em> to join them or <em>Unbeam</em> to split the beam. If you do nothing, the editor groups them by the meter."
         ]
       },
@@ -534,12 +556,15 @@
       },
       "settings": {
         "steps": [
-          "Open <strong>Settings</strong> with the cog, the first tool in the sidebar. They apply to the score you are looking at, are saved with it, and can be undone with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
+          "Open <strong>Settings</strong> with the cog, the first tool in the right toolbar. Except for the pattern library, they apply to the score you are looking at, are saved with it, and can be undone with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
           "<strong>Instrument:</strong> with <em>Piano</em> every system is a grand staff, treble clef above and bass clef below joined by a brace, and TAB and barre are hidden. With <em>Guitar</em> there is a single staff in guitar treble clef, and the TAB button and barre appear. Switching between them deletes nothing: whatever is hidden stays saved.",
           "<strong>Tempo:</strong> the slider goes from 20 to 300 quarter notes per minute. It is written as a metronome mark above the first measure and sets the speed of the exported MIDI. <em>No marking</em> removes it.",
-          "<strong>Tools:</strong> turn <em>Repeats</em>, <em>Dynamics</em> and <em>Voices</em> on or off to show or hide their buttons in the sidebar. Hiding a group does not delete what you already wrote.",
+          "<strong>Tools:</strong> turn <em>Repeats</em>, <em>Dynamics</em> and <em>Voices</em> on or off to show or hide their controls in the editor toolbars. Hiding a group does not delete what you already wrote.",
           "<strong>Voices:</strong> with <em>Voices</em> on, each voice gets a color (1 to 4) and a legend appears to the left of the brace. In the legend you choose which voices to color; no note is ever hidden.",
-          "<strong>Grand staff:</strong> each staff has its own notes, rests, voices and clef (the clef menu says which one it changes). Measures, key signature, time signature, barlines, repeats and tempo are shared by both. Dynamics and hairpins are written between the two."
+          "<strong>Grand staff:</strong> each staff has its own notes, rests, voices and clef (the clef menu says which one it changes). Measures, key signature, time signature, barlines, repeats and tempo are shared by both. Dynamics and hairpins are written between the two.",
+          "<strong>Playback:</strong> enable it to show play/pause to the left of the staff. It uses this score’s instrument and tempo. With Voices enabled, the selected legend numbers also filter what you hear; with none selected, all voices play.",
+          "<strong>Pattern library:</strong> opens a separate panel to save and reuse motifs with Shift+S. This preference and the patterns belong to the user and browser, rather than to each score.",
+          "The left and right toolbars and the pattern library stay within reach as you scroll; on short screens, the toolbars scroll with the page."
         ],
         "tip": "On export, piano goes into MusicXML as a single part with two staves, and in MIDI each staff plays on its own channel."
       },
@@ -547,7 +572,8 @@
         "steps": [
           "Open the <strong>☰</strong> menu at the top right.",
           "<em>Load file…</em> opens a MusicXML (<code>.musicxml</code>, <code>.xml</code>) or a MIDI (<code>.mid</code>) file and turns it into a new score.",
-          "<em>Export</em> downloads the score: <strong>PDF</strong> to print, <strong>MusicXML</strong> for MuseScore, Finale, Sibelius or Dorico, and <strong>MIDI</strong> to play it in any program."
+          "<em>Export</em> downloads the score: <strong>PDF</strong> to print, <strong>MusicXML</strong> for MuseScore, Finale, Sibelius or Dorico, and <strong>MIDI</strong> to play it in any program.",
+          "Multi-page PDFs are numbered automatically; a single-page PDF has no page number."
         ]
       },
       "scores": {
@@ -557,6 +583,49 @@
           "The trash button clears the score you are looking at, and asks for confirmation first."
         ],
         "tip": "Clearing your browser data loses the scores: export as MusicXML the ones you want to keep."
+      },
+      "voices": {
+        "steps": [
+          "Select a note or phrase on the staff. Extend the selection with <kbd>Shift</kbd>+click or <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd>.",
+          "Press <kbd>Shift</kbd> + <kbd>↑</kbd> to duplicate it one staff step above, or <kbd>Shift</kbd> + <kbd>↓</kbd> to duplicate it below. The copies start at the same times and keep durations, dots, tuplets, and ties or slurs whose two ends are selected.",
+          "The copies stay selected. Release <kbd>Shift</kbd> and use <kbd>↑</kbd>/<kbd>↓</kbd> to adjust only their pitch. For example, duplicate below and move down once more to write a diatonic third below the melody. You can also select and edit individual notes in the new line.",
+          "Each selected voice gets an independent copy on the same staff. This works in either piano staff; the copy does not move to the other staff. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes the duplication.",
+          "Enable <em>Voices</em> in settings to show the color legend on the left. Select the voice numbers to color; the other figures stay visible. With <em>Playback</em> enabled too, you can listen only to the selected voices."
+        ],
+        "tip": "Duplication is rejected if a note already exists at that pitch and time, the pitch range or 16-voice limit is exceeded, or timing cannot be preserved. In tablature, Shift+↑/↓ changes strings without duplicating: select notes on the staff to create voices."
+      },
+      "playback": {
+        "steps": [
+          "Open the <em>Settings</em> gear and enable <em>Playback</em> under <em>Tools</em>. A play button appears to the left of the staff, above the voice legend.",
+          "Choose <em>Piano</em> or <em>Guitar</em> and set the tempo. The written notes play with a piano or nylon guitar sound; both staves play in piano mode. You may see <em>Loading sounds…</em> the first time.",
+          "Press <em>Play</em>. A vertical bar follows the music and moves to the next system. With no selection, playback starts at the beginning; with notes or a measure selected, it starts at that measure’s beginning (the first if several are selected).",
+          "Press <em>Pause</em> to keep the position, then play again to resume. If you select a different measure while paused, the next playback starts there.",
+          "To hear a line separately, enable <em>Voices</em> and select its numbers in the legend: the filter applies to both staves. With no voices selected, all voices play. Changing this selection stops playback and resets its position.",
+          "Editing the music, switching scores or hiding the page stops playback and resets its position. Press play again when you want to hear the result."
+        ],
+        "tip": "The voice filter only affects playback in the editor: exported MIDI includes all voices. MIDI also uses the selected tempo."
+      },
+      "patterns": {
+        "steps": [
+          "Enable <em>Pattern library</em> in <em>Settings</em>. The <em>Patterns</em> panel opens to the left of the editor. This is your preference and stays enabled when you switch scores.",
+          "Select figures from a single staff and press <kbd>Shift</kbd> + <kbd>S</kbd>. With no figures selected, click a measure and use the same shortcut to save it. Saving the same pattern again does not add a duplicate.",
+          "Each pattern shows scale degrees and figures. Drag the left area, with the degrees, onto the staff: the first note takes the destination pitch and the others keep their distance in scale steps. Ghost figures preview the result.",
+          "Drag the right area, with the figures, to apply only the rhythm: all notes use the same pitch. Rests, durations, dots, tuplets, and internal ties and slurs are preserved.",
+          "You can also select a measure and click either area: the pattern starts at the beginning of the measure on the middle line. If it does not fit, the editor does not apply it.",
+          "Use <em>Remove pattern</em> to delete an item from the library. The library keeps up to 60 patterns and is available across scores in this browser."
+        ],
+        "tip": "Patterns store relationships between notes, not the original key, accidentals or voices. The library is local and is not included when you export a score; clearing site data also clears the library."
+      },
+      "chords": {
+        "steps": [
+          "Choose <em>Guitar</em> in settings and activate the <strong>Am</strong> tool in the palette. Place it on the note where the chord starts: a name field appears.",
+          "Type a name, such as <em>Am</em>, and press <kbd>Enter</kbd> or leave the field to save. <kbd>Esc</kbd> or an empty field cancels. The tool deactivates after you write the chord.",
+          "Click an existing name to open its panel: edit it, remove it or view its fingering diagram. The variant controls show other positions for the same chord and save your choice.",
+          "If no fingering is available for a name, the name stays written and the panel tells you. Use the search field to find a chord in the dictionary.",
+          "Drag a name to another beat or measure: the underlined area marks the destination. Only one chord is allowed at each time; it cannot move onto another chord.",
+          "To delete several names together, drag a selection rectangle around them and press <kbd>Delete</kbd> or <kbd>Backspace</kbd>. Undo changes with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>."
+        ],
+        "tip": "Chord names appear above the staff and in PDF exports. The diagram is a reference: writing a chord name does not add its notes to the staff or make them sound during playback."
       }
     },
     "seo": {
@@ -655,6 +724,22 @@
       "scores": [
         "Work on several scores and auto-save in your browser",
         "Keep several scores open at once; everything is saved automatically in your browser, no account needed."
+      ],
+      "voices": [
+        "How to write a second voice in a score",
+        "Create a second voice with Shift and the up or down arrow, keeping the rhythm. Adjust the notes and listen to individual voices in Partitura."
+      ],
+      "playback": [
+        "How to play a piano or guitar score online",
+        "Listen to your score in Partitura: enable playback, set the tempo, pause, start from a measure and listen only to selected voices."
+      ],
+      "patterns": [
+        "How to save and reuse musical patterns in Partitura",
+        "Save notes or a measure with Shift+S and apply the pattern at another pitch, keeping intervals or using only the rhythm. A guide to the pattern library."
+      ],
+      "chords": [
+        "How to write guitar chords and view their fingerings",
+        "Add chords with the Am tool, edit names and variants, move them between beats and delete several at once in the Partitura score editor."
       ]
     },
     "related": "Related tutorials",

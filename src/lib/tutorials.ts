@@ -4,10 +4,10 @@ import * as demos from './demos.js';
 
 /** The sidebar: every tutorial, grouped. The order here is the reading order of "previous" and "next". */
 export const categories = [
-  { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'accidentals', 'shortcuts', 'dots', 'settings'] },
-  { id: 'editing', slugs: ['select-move', 'copy', 'tuplets', 'ties'] },
+  { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'accidentals', 'shortcuts', 'dots', 'settings', 'playback'] },
+  { id: 'editing', slugs: ['select-move', 'copy', 'voices', 'patterns', 'tuplets', 'ties'] },
   { id: 'structure', slugs: ['signatures', 'measures', 'delete-barline', 'repeats', 'dynamics'] },
-  { id: 'guitar', slugs: ['tab-toggle', 'edit-tab', 'move-tab', 'refinger', 'barre'] },
+  { id: 'guitar', slugs: ['tab-toggle', 'edit-tab', 'move-tab', 'refinger', 'chords', 'barre'] },
   { id: 'files', slugs: ['files', 'scores', 'faq'] },
 ] as const;
 
@@ -82,9 +82,12 @@ export const related: Record<Slug, Slug[]> = {
   accidentals: ['notes-rests', 'signatures', 'shortcuts'],
   shortcuts: ['notes-rests', 'accidentals', 'select-move'],
   dots: ['notes-rests', 'ties', 'tuplets'],
-  settings: ['tab-toggle', 'dynamics', 'repeats'],
+  settings: ['playback', 'voices', 'patterns'],
+  playback: ['settings', 'voices', 'files'],
   'select-move': ['copy', 'measures', 'shortcuts'],
-  copy: ['select-move', 'measures', 'repeats'],
+  copy: ['voices', 'patterns', 'select-move'],
+  voices: ['copy', 'playback', 'settings'],
+  patterns: ['copy', 'ties', 'settings'],
   tuplets: ['notes-rests', 'ties', 'dots'],
   ties: ['dots', 'tuplets', 'notes-rests'],
   signatures: ['measures', 'accidentals', 'repeats'],
@@ -96,6 +99,7 @@ export const related: Record<Slug, Slug[]> = {
   'edit-tab': ['move-tab', 'tab-toggle', 'refinger'],
   'move-tab': ['edit-tab', 'refinger', 'barre'],
   refinger: ['move-tab', 'edit-tab', 'barre'],
+  chords: ['tab-toggle', 'refinger', 'barre'],
   barre: ['tab-toggle', 'refinger', 'edit-tab'],
   files: ['scores', 'faq', 'start'],
   scores: ['files', 'faq', 'start'],
