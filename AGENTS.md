@@ -72,6 +72,10 @@
 
 Con voces elegidas en la leyenda y la herramienta Voces activa, play reproduce solo esas voces en ambos pentagramas; sin voces elegidas reproduce todas. Cambiar la selección de voces detiene y reinicia la reproducción. El filtro no afecta al MIDI exportado.
 
+### Puntillo
+
+- Un click limpio (sin arrastre) sobre una nota, sin herramienta activa ni grupo seleccionado, cicla el puntillo: uno, doble y ninguno (`applyModifier`, `kind: 'dot'`; si el doble no entra, vuelve a ninguno). No hay `dblclick`; los silencios no se puntúan con click. La tecla <kbd>P</kbd> sigue aplicándolo con la herramienta.
+
 ### Biblioteca de patrones
 
 - **Activación**: casilla "Biblioteca de patrones" en los ajustes (una opción más de Herramientas); es del usuario, no de la partitura (`getSetting('patterns')`). La biblioteca vive en `localStorage` (`patternItems`, tope 60), no viaja en el documento. `startEditor({ patterns: true })` la ofrece; `.score-page.has-library` abre una columna a la izquierda del editor con `.score-library` ("PATRONES", vacía: "No hay patrones guardados").

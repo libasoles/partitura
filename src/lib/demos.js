@@ -721,8 +721,9 @@ export function doubleDot(s, aria) {
   const x = d.firstX + 80;
   d.note(x, pitch('G4'), 'q', d.life(0.05));
   d.add(x + 18, d.y(pitch('G4')) - SP / 2, '<circle r="1.8"/>', d.life(3.15, 7.15, 0.03), { keep: false, cls: 'd-toggled-dot' });
-  [3, 3.13, 7, 7.13].forEach(t => d.click(t, x + 5, d.y(2)));
-  d.pointer([[0.5, 280, 95], [2.6, x + 5, d.y(2)], [3.6, x + 5, d.y(2)], [4.8, 280, 95], [6.6, x + 5, d.y(2)], [7.6, x + 5, d.y(2)], [8.5, 280, 95]]);
+  d.add(x + 25, d.y(pitch('G4')) - SP / 2, '<circle r="1.8"/>', d.life(5.15, 7.15, 0.03), { keep: false, cls: 'd-second-dot' });
+  [3, 3.13, 5, 5.13, 7, 7.13].forEach(t => d.click(t, x + 5, d.y(2)));
+  d.pointer([[0.5, 280, 95], [2.6, x + 5, d.y(2)], [7.6, x + 5, d.y(2)], [8.5, 280, 95]]);
   return d.html(aria);
 }
 

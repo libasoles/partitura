@@ -19,7 +19,7 @@
   "scoreShortcutsRests": "Rests",
   "scoreShortcutsMarks": "Dot and accidentals",
   "scoreDotTitle": "Dot",
-  "scoreDotBody": "Double-click a note to add its dot; double-click again to remove it.",
+  "scoreDotBody": "Click a note to add a dot; click again for a double dot, and once more to remove it.",
   "scoreBarTitle": "Delete a barline",
   "scoreBarBody": "Click a single, double or repeat barline to highlight it in yellow, then press Delete to remove it.",
   "scoreTabEditTitle": "Edit a tab",
@@ -336,7 +336,7 @@
       ],
       "dots": [
         "Dotted notes",
-        "Add or remove a dot with a double click."
+        "Add, double or remove a dot by clicking the note."
       ],
       "delete-barline": [
         "Delete a barline",
@@ -460,7 +460,7 @@
           "Press <kbd>S</kbd> for a sharp, <kbd>B</kbd> for a flat or <kbd>C</kbd> for a natural. They are in the palette too.",
           "Click the note you want to alter: the sign appears to its left.",
           "You can also select a note first, then press <kbd>S</kbd>, <kbd>B</kbd> or <kbd>C</kbd>: the accidental applies directly to the selection without another click.",
-          "Dots work the same way: press <kbd>P</kbd> and click the note, or double-click it."
+          "Dots work the same way: press <kbd>P</kbd> and click the note, or just click the note with no tool in hand: dot, double dot, none."
         ]
       },
       "select-move": {
@@ -645,7 +645,7 @@
       ],
       "dots": [
         "Dotted notes: add a dot to a note or rest",
-        "How to add or remove a dot on a note or rest in the online score editor with a double click, and how a dot changes its length."
+        "How to add or remove a dot on a note or rest in the online score editor by clicking the note, and how a dot changes its length."
       ],
       "delete-barline": [
         "How to delete a barline in a music score",
