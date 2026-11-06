@@ -106,8 +106,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   // Messages are Radix alert toasts; an empty text leaves any toast to expire on its own.
-  function say(text) {
-    if (text && window.SiteToast) window.SiteToast.show(text, { variant: 'alert' });
+  function say(text, options = {}) {
+    if (text && window.SiteToast) window.SiteToast.show(text, { variant: 'alert', ...options });
   }
 
   function vendorUrl(file) {
@@ -5068,8 +5068,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- menu del sitio: cargar y exportar ----------------------------------
 
   // Una partitura cargada se abre en una pestana nueva, sin tocar la actual.
-  function openScore(loaded) {
+  function openScore(loaded, { tools } = {}) {
     applyUrlDefaults(loaded, urlDefaults, M);
+    if (tools) loaded.tools = { ...tools };
     docs[active] = score;
     histories[active] = history;
     docs.push(loaded);

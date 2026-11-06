@@ -34,13 +34,13 @@ export default function createExporter(editor) {
 
 
   // Una partitura cargada se abre en una pestana nueva, sin tocar la actual.
-  async function loadFile(file) {
+  async function loadFile(file, options) {
     try {
       const midi = isMidiFile(file);
       const loaded = midi ? ScoreIO.parseMidi(await file.arrayBuffer(), M) : ScoreIO.parseMusicXml(await file.text(), M);
       if (typeof loaded.title !== 'string' || !loaded.title) loaded.title = file.name.replace(/\.[^.]+$/, '') || editor.defaultTitle;
-      editor.openScore(loaded);
-      say(t.importDone);
+      editor.openScore(loaded, options);
+      say(t.importDone, { duration: 2000 });
     } catch (e) {
       say(t.importFailed);
     }
@@ -51,7 +51,9 @@ export default function createExporter(editor) {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Score download failed: ${response.status}`);
     const name = decodeURIComponent(new URL(url, location.href).pathname.split('/').pop());
-    await loadFile(new File([await response.blob()], name, { type: 'application/vnd.recordare.musicxml+xml' }));
+    await loadFile(new File([await response.blob()], name, { type: 'application/vnd.recordare.musicxml+xml' }), {
+      tools: { repeats: false, dynamics: false, voices: true, playback: true, intervals: true },
+    });
   }
 
   // Verovio numera el primer compas de cada renglon; en una partitura de uso personal sobran.

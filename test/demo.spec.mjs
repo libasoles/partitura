@@ -24,7 +24,7 @@ test('demo is fetched only on selection and opens through the importer in a new 
   await expect(page.locator('#scoreTitle')).toHaveValue('Demo de prueba');
   await expect(page.locator('#scoreAuthor')).toHaveValue('Autor de prueba');
   expect(requests).toBe(1);
-  expect(await page.evaluate(() => window.scoreEditor.score.tools)).toEqual({ repeats: false, dynamics: false, voices: true, playback: true, intervals: false });
+  expect(await page.evaluate(() => window.scoreEditor.score.tools)).toEqual({ repeats: false, dynamics: false, voices: true, playback: true, intervals: true });
   expect(await page.evaluate(() => window.scoreEditor.score.sound)).toBe('oh');
   await page.locator('.score-doc-tab-label').first().click();
   await expect(page.locator('#scoreTitle')).toHaveValue('Mi partitura');
@@ -42,15 +42,15 @@ test('a failed demo download preserves the current score and allows retry', asyn
 });
 
 test('the published song imports its three choir staves and URL defaults without #pro', async ({ page }) => {
-  await ready(page, '/pt/?tools=voices,play,intervals&sound=mm');
+  await ready(page, '/pt/?tools=repeats,dynamics&sound=mm');
   await page.locator('#siteMenuToggle').click();
   await page.locator('[data-demo-url]').click();
   await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');
-  await expect(page.locator('#scoreAuthor')).toHaveValue('Aca Seca Trío');
+  await expect(page.locator('#scoreAuthor')).toHaveValue('Aca Seca Trío / Leda Valladares');
   expect(await page.evaluate(() => {
     const score = window.scoreEditor.score;
-    return { staves: window.ScoreModel.stavesOf(score), instrument: score.instrument, sound: score.sound, intervals: score.tools.intervals };
-  })).toEqual({ staves: 3, instrument: 'voices', sound: 'mm', intervals: true });
+    return { staves: window.ScoreModel.stavesOf(score), instrument: score.instrument, sound: score.sound, tools: score.tools };
+  })).toEqual({ staves: 3, instrument: 'voices', sound: 'mm', tools: { repeats: false, dynamics: false, voices: true, playback: true, intervals: true } });
   await expect(page.locator('#scoreStage g.note[id^="p"]')).not.toHaveCount(0);
 });
 
