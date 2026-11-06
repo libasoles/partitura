@@ -4448,8 +4448,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   intervalButton.className = 'score-palette-item score-interval-toggle tooltip';
   intervalButton.type = 'button';
   intervalButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 4 5.765 15.835a.25.25 0 00.47 0L18 4"/></svg>';
-  intervalButton.dataset.tooltip = t.toolsIntervals;
-  intervalButton.setAttribute('aria-label', t.toolsIntervals);
+  intervalButton.dataset.tooltip = t.toolsIntervalsTooltip;
+  intervalButton.setAttribute('aria-label', t.toolsIntervalsTooltip);
   intervalButton.setAttribute('aria-pressed', 'false');
   intervalButton.addEventListener('click', () => {
     if (intervalDocuments.has(score)) intervalDocuments.delete(score);

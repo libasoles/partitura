@@ -19,7 +19,7 @@ test('interval toggle sits below voices and engraves stacked intervals on both s
   const voice = await page.locator('.score-voice-legend').boundingBox();
   const box = await button.boundingBox();
   expect(box.y).toBeGreaterThan(voice.y + voice.height);
-  await expect(button).toHaveAttribute('data-tooltip', 'Intervalos');
+  await expect(button).toHaveAttribute('data-tooltip', 'Intervalos entre voces');
   const toolbarPosition = () => page.evaluate(() => ({
     left: parseFloat(document.querySelector('#scoreIntervals').style.top),
     right: parseFloat(document.querySelector('.score-side').style.marginTop),
