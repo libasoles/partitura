@@ -769,7 +769,12 @@
       [
         "Todos tus dispositivos",
         "Accedé a tus partituras desde múltiples computadoras y tablets (no incluye celulares)."
-      ],
+  ,
+      [
+        "Duplicar partituras",
+        "Duplicá una partitura para probar variantes sin perder la original."
+      ]
+    ],
       [
         "Archivo",
         "Creá carpetas de partituras para mantenerlas organizadas."

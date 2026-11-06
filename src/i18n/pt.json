@@ -772,7 +772,12 @@
       [
         "Todos os seus dispositivos",
         "Acesse suas partituras de vários computadores e tablets (celulares não incluídos)."
-      ],
+  ,
+      [
+        "Duplicar partituras",
+        "Duplique uma partitura para testar variações sem perder a original."
+      ]
+    ],
       [
         "Arquivo",
         "Crie pastas de partituras para mantê-las organizadas."
