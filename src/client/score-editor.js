@@ -908,6 +908,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   window.addEventListener('resize', scheduleLeftToolbarAlignment);
 
   function render() {
+    clearPlaybackHint();
     if (playbackState !== 'idle' && (playbackDocument !== score || playbackSnapshot !== JSON.stringify(score))) resetPlayback();
     if (!toolkit) return;
     const width = stage.clientWidth;
@@ -2508,7 +2509,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         beam.querySelectorAll(':scope > polygon').forEach((node) => node.classList.add('is-selected'));
       }
     });
-    rememberPlaybackMeasure(selected?.mi ?? selectedPlaybackMeasure());
+    rememberPlaybackSelection();
     updateSelectionMenu();
   }
 
@@ -3107,6 +3108,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     pureClick = null;
     if (cancelled || Math.hypot(event.clientX - c.x, event.clientY - c.y) >= 5) return;
     selectMeasureBars(event);
+    showPlaybackHint(event);
   }
 
   document.addEventListener('pointerup', (event) => endPureClick(event, false));
@@ -3888,12 +3890,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   let player = null, audioContext = null, playbackState = 'idle', playbackRequest = 0, playbackTrack = null;
   let playbackDocument = null, playbackSnapshot = null;
-  let playbackSelectionMeasure = null;
-  let playbackActivityDocument = null, playbackActivityMeasure = null;
+  let playbackSelectionPosition = null;
+  let playbackActivityDocument = null, playbackActivityMeasure = null, playbackActivityAt = 0;
+  let playbackMarkedSelection = null;
   let playbackFrame = null, playbackLayout = [];
   const playbackCursor = document.createElement('span');
   playbackCursor.className = 'score-playback-cursor';
   playbackCursor.setAttribute('aria-hidden', 'true');
+  let playbackHint = null, playbackHintAnimation = null;
 
   function selectedPlaybackMeasure() {
     const measures = [
@@ -3909,39 +3913,109 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return measures.length ? Math.min(...measures) : null;
   }
 
-  function rememberPlaybackMeasure(mi) {
+  function rememberPlaybackMeasure(mi, at = 0) {
     if (playbackActivityDocument !== score) {
       playbackActivityDocument = score;
       playbackActivityMeasure = null;
+      playbackActivityAt = 0;
     }
-    if (mi !== null) playbackActivityMeasure = mi;
+    if (mi !== null) { playbackActivityMeasure = mi; playbackActivityAt = at; }
   }
 
-  function activePlaybackMeasure() {
+  function rememberPlaybackSelection() {
+    const hasSelection = selected || selectedChords.length || selectedNavigation.length || selectedLink || selectedBeam || selectedHairpin;
+    const mi = hasSelection ? selected?.mi ?? selectedPlaybackMeasure() : null;
+    const at = selected ? M.onsets(laneOf(selected)[selected.mi])[selected.i] : 0;
+    const key = JSON.stringify([mi, selected, at]);
+    if (playbackActivityDocument !== score || playbackMarkedSelection !== key) {
+      playbackMarkedSelection = key;
+      if (mi !== null) rememberPlaybackMeasure(mi, at ?? 0);
+    }
+  }
+
+  function playbackOffset(mi, at = 0) {
+    return (measureOffset(0, mi) + at) * 60 / (score.tempo || 120) / M.DIVISIONS;
+  }
+
+  function activePlaybackPosition() {
     rememberPlaybackMeasure(null);
-    return Math.min(playbackActivityMeasure ?? 0, M.measures(score).length - 1);
+    const mi = Math.min(playbackActivityMeasure ?? 0, M.measures(score).length - 1);
+    return playbackOffset(mi, Math.min(playbackActivityAt, M.capacity(score, mi)));
   }
 
-  function playbackOffset(mi) {
-    return measureOffset(0, mi) * 60 / (score.tempo || 120) / M.DIVISIONS;
+  function playbackPositionAt(event, mi) {
+    const ref = eventUnder(event.clientX, event.clientY);
+    if (ref) return M.onsets(laneOf(ref)[ref.mi])[ref.i];
+    measurePlayback();
+    const { anchors } = playbackLayout[mi];
+    const x = event.clientX - stage.getBoundingClientRect().left;
+    if (x <= anchors[0].x) return 0;
+    for (let i = 1; i < anchors.length; i += 1) {
+      const a = anchors[i - 1], b = anchors[i];
+      if (x <= b.x) return a.time + (b.time - a.time) * (x - a.x) / (b.x - a.x);
+    }
+    return M.capacity(score, mi);
   }
 
-  // Record the gesture even when it clears a selection or revisits the same measure.
-  stage.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || event.target.closest('.score-playback, .score-voice-legend, .score-selection-menu, .score-insert-measure')) return;
+  function playbackMeasureAt(event) {
     const origin = stage.getBoundingClientRect();
     const ref = eventUnder(event.clientX, event.clientY);
     const node = event.target.closest('[data-measure], g.measure');
     const mi = ref?.mi ?? (node ? Number(node.dataset.measure ?? node.id.slice(1)) : layout.findIndex((m) =>
       event.clientX >= origin.left + m.left && event.clientX <= origin.left + m.right &&
       event.clientY >= origin.top + m.top - 24 && event.clientY <= origin.top + m.bottom + 24));
+    return Number.isInteger(mi) && mi >= 0 ? mi : locate(event.clientX, event.clientY)?.mi ?? -1;
+  }
+
+  function clearPlaybackHint() {
+    playbackHintAnimation?.cancel();
+    playbackHintAnimation = null;
+    playbackHint?.remove();
+    playbackHint = null;
+    playbackCursor.hidden = false;
+  }
+
+  function showPlaybackHint(event) {
+    if (playButton.hidden || event.button !== 0) return;
+    const mi = playbackMeasureAt(event);
+    if (!layout[mi]) return;
+    rememberPlaybackMeasure(mi, playbackPositionAt(event, mi));
+    clearPlaybackHint();
+    const origin = stage.getBoundingClientRect();
+    const bounds = layout[mi];
+    const hint = document.createElement('span');
+    hint.className = 'score-playback-hint';
+    hint.setAttribute('aria-hidden', 'true');
+    hint.dataset.measure = String(mi);
+    hint.style.transform = `translate(${event.clientX - origin.left - 1}px, ${bounds.top - 8}px)`;
+    hint.style.height = (bounds.bottom - bounds.top + 16) + 'px';
+    playbackHint = hint;
+    playbackCursor.hidden = true;
+    stage.appendChild(hint);
+    playbackHintAnimation = hint.animate([
+      { opacity: 0.8, offset: 0 },
+      { opacity: 0.8, offset: 0.35 },
+      { opacity: 0 },
+    ], { duration: 900, easing: 'ease-out', fill: 'forwards' });
+    playbackHintAnimation.onfinish = () => {
+      if (playbackState !== 'playing') playbackCursor.remove();
+      clearPlaybackHint();
+    };
+  }
+
+  // Record the gesture even when it clears a selection or revisits the same measure.
+  stage.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || event.target.closest('.score-playback, .score-voice-legend, .score-selection-menu, .score-insert-measure')) return;
+    const mi = playbackMeasureAt(event);
     if (!Number.isInteger(mi) || mi < 0 || mi >= M.measures(score).length) return;
-    rememberPlaybackMeasure(mi);
+    const at = playbackPositionAt(event, mi);
+    rememberPlaybackMeasure(mi, at);
     // A new gesture during pause chooses a fresh start, including in the same measure.
-    playbackSelectionMeasure = null;
+    playbackSelectionPosition = null;
     if (playbackState === 'playing') {
-      player.play(playbackTrack, playbackOffset(mi));
-      playbackSelectionMeasure = mi;
+      const from = playbackOffset(mi, at);
+      player.play(playbackTrack, from);
+      playbackSelectionPosition = from;
       if (playbackState === 'playing') animatePlayback();
     }
   }, true);
@@ -4015,6 +4089,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     playButton.disabled = loading;
   }
   function resetPlayback() {
+    clearPlaybackHint();
     cancelAnimationFrame(playbackFrame);
     playbackCursor.remove();
     playbackLayout = [];
@@ -4023,12 +4098,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     playbackTrack = null;
     playbackDocument = null;
     playbackSnapshot = null;
-    playbackSelectionMeasure = null;
+    playbackSelectionPosition = null;
     playbackState = 'idle';
     syncPlayback();
   }
   syncPlayback();
   playButton.addEventListener('click', async () => {
+    clearPlaybackHint();
     if (playbackState === 'playing') {
       player.pause();
       playbackState = 'paused';
@@ -4036,8 +4112,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       syncPlayback();
       return;
     }
-    const fromMeasure = activePlaybackMeasure();
-    const restart = playbackState !== 'paused' || fromMeasure !== playbackSelectionMeasure;
+    const from = activePlaybackPosition();
+    const restart = playbackState !== 'paused' || from !== playbackSelectionPosition;
     const request = ++playbackRequest;
     playbackDocument = score;
     playbackSnapshot = JSON.stringify(score);
@@ -4053,9 +4129,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (request !== playbackRequest) return;
       playbackTrack = track;
       playbackState = 'playing';
-      const startMeasure = activePlaybackMeasure();
-      if (restart) playbackSelectionMeasure = startMeasure;
-      player.play(track, restart ? playbackOffset(startMeasure) : undefined);
+      const start = activePlaybackPosition();
+      if (restart) playbackSelectionPosition = start;
+      player.play(track, restart ? start : undefined);
       if (playbackState === 'playing') { measurePlayback(); animatePlayback(); }
       syncPlayback();
     } catch (error) {

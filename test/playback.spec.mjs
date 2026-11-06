@@ -146,7 +146,7 @@ test('the playhead follows audio and notation, pauses, and moves to the next row
 });
 
 for (const staff of ['e', 'l']) {
-  test(`play starts at the selected ${staff === 'e' ? 'upper' : 'lower'} note's measure, including its initial rest`, async ({ page }) => {
+  test(`play starts at the selected ${staff === 'e' ? 'upper' : 'lower'} note's onset, skipping its initial rest`, async ({ page }) => {
     await open(page, 'piano', {
       rows: [[[{ d: 'w', n: 35 }], [{ d: 'q', rest: true }, { d: 'q', n: 37 }, { d: 'h', n: 38 }]], [[{ d: 'w', n: 39 }]]],
       lower: { 0: [{ d: 'w', n: 28 }], 1: [{ d: 'q', rest: true }, { d: 'q', n: 28 }, { d: 'h', n: 29 }], 2: [{ d: 'w', n: 30 }] },
@@ -162,9 +162,9 @@ for (const staff of ['e', 'l']) {
       firstAttack: window.audioStarts[0].args[0] - window.playbackContext.currentTime,
       notes: window.audioStarts.length,
     }));
-    expect(timing.time).toBeGreaterThanOrEqual(96);
-    expect(timing.time).toBeLessThan(120);
-    expect(timing.firstAttack).toBeGreaterThan(0.25);
+    expect(timing.time).toBeGreaterThanOrEqual(120);
+    expect(timing.time).toBeLessThan(144);
+    expect(timing.firstAttack).toBeLessThan(0.15);
     expect(timing.notes).toBe(6);
     await button.click();
     await page.locator(`[id="${staff}2-0"] .notehead`).click({ force: true });
@@ -175,7 +175,7 @@ for (const staff of ['e', 'l']) {
 }
 
 for (const staff of ['e', 'l']) {
-  test(`play remembers the last ${staff} measure after deselecting and seeks while playing`, async ({ page }) => {
+  test(`play remembers the last ${staff} position after deselecting and seeks while playing`, async ({ page }) => {
     await open(page, 'piano', {
       rows: [[[{ d: 'w', n: 35 }], [{ d: 'w', n: 37 }], [{ d: 'w', n: 39 }]]],
       lower: { 0: [{ d: 'w', n: 28 }], 1: [{ d: 'w', n: 29 }], 2: [{ d: 'w', n: 30 }] },
@@ -213,6 +213,51 @@ for (const staff of ['e', 'l']) {
     await expect(cursor).toHaveAttribute('data-measure', '1');
   });
 }
+
+test('neutral clicks preview the exact playback position, fade out, and keep it after resizing', async ({ page }) => {
+  await open(page, 'piano', {
+    rows: [[[{ d: 'q', n: 35 }, { d: 'q', n: 37 }, { d: 'h', n: 38 }]]],
+    tools: { playback: true }, tempo: 60,
+  });
+  const hint = page.locator('.score-playback-hint');
+  const head = page.locator('[id="e0-1"] .notehead');
+  await head.click();
+  await expect(hint).toHaveCount(0);
+  const before = await page.locator('[id="e0-0"] .notehead').boundingBox();
+  const after = await head.boundingBox();
+  const staff = await page.locator('[id="m0"] > g.staff > path').first().boundingBox();
+  const x = (before.x + before.width / 2 + after.x + after.width / 2) / 2;
+  await page.mouse.click(x, staff.y - 15);
+  await expect(hint).toHaveCount(1);
+  expect((await hint.boundingBox()).x + 1).toBeCloseTo(x, 0);
+  await hint.evaluate((node) => { node.getAnimations()[0].pause(); node.getAnimations()[0].currentTime = 700; });
+  expect(await hint.evaluate((node) => Number(getComputedStyle(node).opacity))).toBeLessThan(0.5);
+  await hint.evaluate((node) => node.getAnimations()[0].finish());
+  await expect(hint).toHaveCount(0);
+  await page.setViewportSize({ width: 1300, height: 1000 });
+  await page.locator('#scorePlayback').click();
+  const cursor = page.locator('.score-playback-cursor');
+  await expect(cursor).toHaveCount(1);
+  const time = Number(await cursor.getAttribute('data-time'));
+  expect(time).toBeGreaterThanOrEqual(11);
+  expect(time).toBeLessThan(20);
+  await expect(hint).toHaveCount(0);
+  await head.click({ force: true });
+  expect(Number(await cursor.getAttribute('data-time'))).toBeGreaterThanOrEqual(24);
+  expect(Number(await cursor.getAttribute('data-time'))).toBeLessThan(32);
+  await expect(hint).toHaveCount(0);
+  await page.locator('#scorePlayback').click();
+  const a = await head.boundingBox();
+  const b = await page.locator('[id="e0-2"] .notehead').boundingBox();
+  const line = await page.locator('[id="m0"] > g.staff > path').first().boundingBox();
+  await page.mouse.click((a.x + a.width / 2 + b.x + b.width / 2) / 2, line.y - 15);
+  await expect(hint).toHaveCount(1);
+  await page.locator('#scorePlayback').click();
+  await expect(hint).toHaveCount(0);
+  await expect(page.locator('#scorePlayback')).toHaveAccessibleName('Pausar');
+  expect(Number(await cursor.getAttribute('data-time'))).toBeGreaterThanOrEqual(35);
+  expect(Number(await cursor.getAttribute('data-time'))).toBeLessThan(44);
+});
 
 test('space toggles playback only when enabled and outside text fields', async ({ page }) => {
   await open(page);

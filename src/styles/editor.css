@@ -1995,7 +1995,8 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   cursor: pointer;
 }
 .score-playback[aria-busy="true"] { opacity: 0.5; cursor: progress; }
-.score-playback-cursor {
+.score-playback-cursor,
+.score-playback-hint {
   position: absolute;
   top: 0;
   left: 0;
