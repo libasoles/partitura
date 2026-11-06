@@ -1515,8 +1515,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return true;
   }
 
-  // La nota siguiente (en orden de lectura) de un pentagrama que puede llevar letra: { mi, at } o null. `back` va hacia atras.
-  function nextLyricSpot(score, mi, at, staff = 0, back = false) {
+  // Las notas (en orden de lectura) de un pentagrama que pueden llevar letra: [{ mi, at }].
+  function lyricSpots(score, staff = 0) {
     const all = measures(score);
     const spots = [];
     all.forEach((measure, k) => {
@@ -1524,8 +1524,30 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       const starts = onsets(lane);
       [...new Set(lane.map((ev, i) => (ev.rest ? null : starts[i])).filter((start) => start !== null))].sort((a, b) => a - b).forEach((start) => spots.push({ mi: k, at: start }));
     });
+    return spots;
+  }
+
+  // La nota siguiente de un pentagrama que puede llevar letra: { mi, at } o null. `back` va hacia atras.
+  function nextLyricSpot(score, mi, at, staff = 0, back = false) {
+    const spots = lyricSpots(score, staff);
     const here = spots.findIndex((spot) => spot.mi === mi && spot.at === at);
     return spots[here + (back ? -1 : 1)] || null;
+  }
+
+  // Reparte una letra ya dividida en silabas ([{ text, hy }]) desde la nota { mi, at }, una por nota, atravesando compases.
+  // Sobrescribe las silabas que pisa. Devuelve cuantas puso y cuantas quedaron sin nota, o null si el origen no es una nota.
+  function distributeLyrics(score, mi, at, staff, syllables) {
+    const spots = lyricSpots(score, staff);
+    const first = spots.findIndex((spot) => spot.mi === mi && spot.at === at);
+    if (first < 0 || staff >= lyricStaves(score)) return null;
+    let placed = 0;
+    for (const syllable of syllables) {
+      const spot = spots[first + placed];
+      if (!spot) break;
+      if (!setLyric(score, spot.mi, spot.at, syllable.text + (syllable.hy ? '-' : ''), staff)) break;
+      placed += 1;
+    }
+    return { placed, left: syllables.length - placed };
   }
 
   // Silabas de un pentagrama en orden de lectura, con su posicion en la palabra para MusicXML: single | begin | middle | end.
@@ -2978,7 +3000,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, setParts, setRegister, REGISTERS, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
-    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, removeLyric, nextLyricSpot, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }

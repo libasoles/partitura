@@ -7,6 +7,7 @@ import { ARCHIVE_CHOIRS } from './choir-sounds.js';
 import { getSetting, setSetting } from './settings.js';
 import { hasIntervals, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
+import { lyricSyllables } from './lyrics-text.js';
 import { applyUrlDefaults } from './url-defaults.js';
 
 export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, lyrics = false, patterns = false, urlDefaults = {} } = {}) {
@@ -2077,6 +2078,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Verovio dibuja `<lyric>` bajo el pentagrama de la nota (g.verse). El campo se apoya en esa linea y cada silaba dibujada
   // tiene un boton transparente encima: clic o doble clic la edita, Suprimir la quita. Espacio, Tab o un guion avanzan a la nota siguiente.
   const lyricsOn = lyrics;
+  let syllabifyLoading = null;
+
+  // El silabeo de el-silbador se pide recien al pegar una letra (el build lo publica en `vendor/`). Sin el, cada palabra es una silaba.
+  function loadSyllabify() {
+    if (!syllabifyLoading) syllabifyLoading = (__SYLLABIFY_FILE__ ? import(/* @vite-ignore */ vendorUrl(__SYLLABIFY_FILE__)) : Promise.resolve({})).catch(() => ({}));
+    return syllabifyLoading;
+  }
   let lyricDraft = null; // { mi, at, staff, text } de la silaba que se esta escribiendo, aun sin guardar
 
   // Nodo de la primera nota (no silencio) de ese pentagrama que empieza en `at`.
@@ -2156,6 +2164,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         input.value = input.value.trim() + '-';
         finish(true, 1);
       }
+    });
+    // Pegar una letra la reparte en silabas, una por nota, desde esta y a traves de los compases.
+    input.addEventListener('paste', (event) => {
+      const pasted = event.clipboardData && event.clipboardData.getData('text');
+      if (!pasted || !pasted.trim()) return;
+      event.preventDefault();
+      if (lyricDraft !== draft) return;
+      lyricDraft = null;
+      input.remove();
+      loadSyllabify().then((lib) => {
+        const syllables = lyricSyllables(pasted, lib);
+        let result = null;
+        change(() => { result = M.distributeLyrics(score, draft.mi, draft.at, draft.staff, syllables); return Boolean(result && result.placed); });
+        say(result && result.left ? t.lyricLeft.replace('{n}', result.left) : '');
+      });
     });
     input.addEventListener('blur', () => finish(true));
     stage.appendChild(input);
