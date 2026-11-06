@@ -76,6 +76,7 @@ Las dim7 no usan `DEG` (simétricas: cualquier raíz es igual de «grado»; ver 
 | `W.inv2` | 0,3 extra | triada en 2ª inversión, la más débil |
 | `W.tonic` | 1,5 | bajo final = tónica (la mitad en el comienzo) |
 | `W.sig` | 0,8 | armadura como prior |
+| `W.sixth` | 1,5 | séptima (m7) sobre el VI grado en modo mayor (Am7/C) gana a la sexta con las mismas notas (C6); regla pedida por el usuario, añadida tras el prototipo |
 | `W.held` | 0,8 | mismo nombre que la columna anterior (acorde sostenido) |
 | `FORMA` | triada 0, 7/m7 −0,1, maj7 −0,2, m7b5/dim −0,3, 6 −0,6, m6/dim7 −0,8, aug −1, sus/m(maj7) −1,2 | prior intrínseco |
 | Raíz (desde → hacia, mod 12) | +5 (sube 4ª, cae 5ª) 1; +7 0,5; 0 0,5; ±2 0,3 (+2) / 0,2 (−2); terceras (3, 4, 8, 9) 0,3; 1, 6, 11 −0,5 | movimiento de raíz |
@@ -182,8 +183,7 @@ usa `b` y `#`; `m(maj7)` se parsea porque el sufijo es no voraz hasta la barra.)
 4. **dim7.** `C | {Bdim7, Ddim7/B, Fdim7/B…} | C` → **Bdim7**; `Am | {G#dim7, Bdim7/G#, Ddim7/G#…} | Am` → **G#dim7**. Todos los candidatos tienen las
    mismas notas; decide `dim7 → raíz+1` (+1,2) y el bajo (sin `DEG`, no ganan por «grado»). Sin esa regla salía Fdim7/B porque IV pesa más que vii.
 
-Resultado de la tonalidad en un caso difícil: `Dm | E7 | {C6, Am7/C}` se estimó **Do mayor** (el final C6 empuja a C); el análisis correcto probable
-es La menor con Am7/C. Los pesos `tonic` vs perfil están en tensión; ver límites.
+Caso difícil: `Dm | E7 | {C6, Am7/C}` se estimaba Do mayor y salía C6; con `W.sixth` sale **Am7/C**. En el ii–V–I (`Dm7 | G7 | {C6, Am7/C}`) sigue ganando C6: el contexto pesa más que el bono.
 
 ## 7. Límites conocidos
 
