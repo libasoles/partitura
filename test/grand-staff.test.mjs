@@ -264,3 +264,41 @@ test('fillWithRests fills an empty measure with the largest rests and leaves oth
   assert.equal(plain.fillWithRests(busy, 0), false);
   assert.equal(plain.measures(busy)[0].length, 1);
 });
+
+test('completing a measure preserves notes and fills each voice to the barline', () => {
+  const score = plain.emptyScore();
+  const measure = score.rows[0][0] = [
+    { d: 'h', n: 40, at: 0, v: 1 },
+    { d: 'q', n: 28, at: 0, v: 2 },
+    { d: 'q', n: 42, at: 48, v: 1 },
+  ];
+  const before = structuredClone(measure), starts = plain.onsets(measure);
+  assert.equal(plain.fillWithRests(score, 0, 0, true), true);
+  assert.deepEqual(measure.slice(0, 3), before);
+  assert.deepEqual(plain.onsets(measure).slice(0, 3), starts);
+  assert.deepEqual(measure.slice(3), [
+    { d: 'q', rest: true, at: 72, v: 1 },
+    { d: 'h', rest: true, at: 24, dot: true, v: 2 },
+  ]);
+  assert.equal(plain.measureLength(measure), 96);
+  assert.equal(plain.fillWithRests(score, 0, 0, true), false);
+});
+
+test('completing the lower staff respects the local meter and leaves the upper staff alone', () => {
+  const score = piano();
+  score.meters = { 1: '3/4' };
+  score.lower[1] = [{ d: 'q', n: 25, at: 0 }];
+  const upper = structuredClone(score.rows);
+  assert.equal(G.fillWithRests(score, 1, 1, true), true);
+  assert.deepEqual(score.rows, upper);
+  assert.deepEqual(score.lower[1], [{ d: 'q', n: 25, at: 0 }, { d: 'h', rest: true, at: 24 }]);
+});
+
+test('an unrepresentable remaining duration does not partially fill a measure', () => {
+  const score = plain.emptyScore();
+  score.measureDurations = { 0: 28 };
+  score.rows[0][0] = [{ d: 'q', n: 37 }];
+  const before = structuredClone(score);
+  assert.equal(plain.fillWithRests(score, 0, 0, true), false);
+  assert.deepEqual(score, before);
+});

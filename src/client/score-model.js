@@ -1669,25 +1669,32 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     return order.slice(0, Math.abs(fifths)).includes(STEPS[n % 7]) ? Math.sign(fifths) : 0;
   }
 
-  // Llena de silencios un compas vacio, con los mas grandes que entren. Ninguno pasa de una blanca con puntillo (la
+  // Llena de silencios un compas vacio o completa sus voces, con los mas grandes que entren. Ninguno pasa de una blanca con puntillo (la
   // negra con puntillo marca el pulso de los compases compuestos), salvo que sea el compas entero y quepa una redonda.
-  function fillWithRests(score, mi, staff = 0) {
+  function fillWithRests(score, mi, staff = 0, complete = false) {
     const measure = measures(score, staff)[mi];
-    if (!measure || measure.length) return false;
+    if (!measure || (measure.length && !complete)) return false;
     const sizes = [['h', 1], ['h', 0], ['q', 1], ['q', 0], ['e', 1], ['e', 0], ['s', 1], ['s', 0], ['f', 1], ['f', 0]]
       .map(([d, dot]) => ({ d, dot, size: length({ d, dot }) }));
-    let left = capacity(score, mi);
-    if (left === VALUES.w) { measure.push({ d: 'w', rest: true, at: 0 }); return true; }
-    let at = 0;
-    while (left > 0) {
-      const piece = sizes.find((p) => p.size <= left);
-      if (!piece) return false;
-      const ev = { d: piece.d, rest: true, at };
-      if (piece.dot) ev.dot = true;
-      measure.push(ev);
-      at += piece.size;
-      left -= piece.size;
+    const { lanes } = arrange(measure);
+    const additions = [];
+    for (const [k, lane] of lanes.entries()) {
+      let at = lane.end, left = capacity(score, mi) - at;
+      if (left < 0) return false;
+      while (left > 0) {
+        const piece = at === 0 && left === VALUES.w ? { d: 'w', size: VALUES.w } : sizes.find((p) => p.size <= left);
+        if (!piece) return false;
+        const ev = { d: piece.d, rest: true, at };
+        if (piece.dot) ev.dot = true;
+        if (lanes.length > 1) ev.v = k + 1;
+        additions.push(ev);
+        at += piece.size;
+        left -= piece.size;
+      }
     }
+    if (!additions.length) return false;
+    settle(measure);
+    measure.push(...additions);
     return true;
   }
 

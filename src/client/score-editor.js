@@ -3195,12 +3195,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       clearBarSelection();
       deactivateTool();
     }
-    // Tab con un compas elegido y vacio lo llena de silencios; en cualquier otro caso conserva el foco del navegador.
-    if (event.key === 'Tab' && !event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey && selectedMeasure !== null &&
-        !M.measures(score, selectedMeasureStaff)[selectedMeasure]?.length) {
+    // Tab llena un compas vacio; Shift+Tab tambien completa con silencios las voces de uno empezado.
+    if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey && !event.altKey && selectedMeasure !== null &&
+        (event.shiftKey || !M.measures(score, selectedMeasureStaff)[selectedMeasure]?.length)) {
       event.preventDefault();
       const mi = selectedMeasure, staff = selectedMeasureStaff;
-      change(() => M.fillWithRests(score, mi, staff));
+      change(() => M.fillWithRests(score, mi, staff, event.shiftKey));
       selectedMeasure = mi;
       markMeasureBars();
       return;
