@@ -4,6 +4,7 @@
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
 import { getSetting, setSetting } from './settings.js';
+import { withIntervals } from './score-intervals.js';
 
 export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, patterns = false } = {}) {
 
@@ -331,6 +332,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // La visibilidad de TAB se conserva; sus referencias vuelven con las figuras.
     if (score.showTabs) restored.showTabs = true;
     else delete restored.showTabs;
+    if (intervalDocuments.has(score)) intervalDocuments.add(restored);
     score = Object.assign(restored, { title: score.title }, score.author ? { author: score.author } : {});
     clearBarSelection();
     selected = null;
@@ -878,7 +880,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const playbackShown = playButton.isConnected && !playButton.hidden;
     const playbackHeight = playbackShown ? playButton.offsetHeight : 0;
     const legendHeight = voiceLegend.isConnected ? voiceLegend.offsetHeight : 0;
-    const height = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
+    const intervalsHeight = intervalButton.isConnected ? intervalButton.offsetHeight : 0;
+    const height = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight + (intervalsHeight ? intervalsHeight + (playbackHeight || legendHeight ? 8 : 0) : 0);
     // Follow the right toolbar's sticky offset, stopping at the end of the sheet.
     // Keep the natural position in short viewports, where the right toolbar also scrolls with the page.
     const side = barlines.closest('.score-side');
@@ -886,7 +889,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const top = Number.isFinite(stickyTop)
       ? Math.max(staffTop, Math.min(stickyTop - origin.top, origin.height - height))
       : staffTop;
-    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0);
+    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, intervalButton.isConnected ? intervalButton.offsetWidth : 0);
     const left = WIDE_PAGE.matches ? -(width + 16) : Math.max(0, edge - width - 6);
     if (playbackShown) {
       playButton.style.top = top + 'px';
@@ -894,6 +897,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 8 : 0)) + 'px';
     voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
+    intervalButton.style.top = (top + height - intervalsHeight) + 'px';
+    intervalButton.style.left = (left + (width - intervalButton.offsetWidth) / 2) + 'px';
   }
 
   let leftToolbarFrame = 0;
@@ -914,7 +919,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!width) return;
     renderedWidth = width;
     toolkit.setOptions(layoutOptions(width, score.showTabs && tabSpace ? { spacingSystem: Math.min(48, 12 + tabSpace), pageMarginBottom: 60 + tabSpace } : undefined));
-    toolkit.loadData(M.toMusicXml(score));
+    const xml = M.toMusicXml(score);
+    toolkit.loadData(settings && toolOn('intervals', false) && intervalDocuments.has(score) ? withIntervals(xml, score, M) : xml);
     tuningPopup.hidePopover();
     meterPopup.hidePopover();
     clefPopup.hidePopover();
@@ -2917,7 +2923,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       selectNavigation(navigation, event);
       return;
     }
-    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu, .score-playback, .score-voice-legend')) return;
+    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu, .score-playback, .score-interval-toggle, .score-voice-legend')) return;
     const link = event.target.closest('g.tie, g.slur');
     if (link && !activeItem && linkRefs.has(link)) {
       event.preventDefault();
@@ -4004,7 +4010,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Record the gesture even when it clears a selection or revisits the same measure.
   stage.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || event.target.closest('.score-playback, .score-voice-legend, .score-selection-menu, .score-insert-measure')) return;
+    if (event.button !== 0 || event.target.closest('.score-playback, .score-interval-toggle, .score-voice-legend, .score-selection-menu, .score-insert-measure')) return;
     const mi = playbackMeasureAt(event);
     if (!Number.isInteger(mi) || mi < 0 || mi >= M.measures(score).length) return;
     clearPlaybackHint();
@@ -4149,6 +4155,22 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   window.addEventListener('pagehide', resetPlayback);
   document.addEventListener('visibilitychange', () => { if (document.hidden) resetPlayback(); });
 
+  // The analysis toggle is a view preference for each open document.
+  const intervalDocuments = new WeakSet();
+  const intervalButton = document.createElement('button');
+  intervalButton.id = 'scoreIntervals';
+  intervalButton.className = 'score-palette-item score-interval-toggle tooltip';
+  intervalButton.type = 'button';
+  intervalButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 4 5.765 15.835a.25.25 0 00.47 0L18 4"/></svg>';
+  intervalButton.title = t.toolsIntervals;
+  intervalButton.setAttribute('aria-label', t.toolsIntervals);
+  intervalButton.setAttribute('aria-pressed', 'false');
+  intervalButton.addEventListener('click', () => {
+    if (intervalDocuments.has(score)) intervalDocuments.delete(score); else intervalDocuments.add(score);
+    render();
+  });
+  ['pointerdown', 'mousedown', 'click'].forEach((type) => intervalButton.addEventListener(type, (event) => event.stopPropagation()));
+
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
@@ -4158,6 +4180,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     playButton.hidden = !settings || !toolOn('playback', false);
     if (playButton.hidden) clearPlaybackHint();
     if (settings) stage.appendChild(playButton);
+    intervalButton.remove();
+    if (settings && toolOn('intervals', false)) stage.appendChild(intervalButton);
+    intervalButton.setAttribute('aria-pressed', String(intervalDocuments.has(score)));
     alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
@@ -4580,7 +4605,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       check.addEventListener('change', () => {
         M.setTool(score, name, check.checked);
         save();
-        if (name === 'voices') render(); else { applyTools(); applyVoices(); }
+        if (name === 'voices' || name === 'intervals') render(); else { applyTools(); applyVoices(); }
       });
       wrap.append(field, icons);
       toolsGrid.appendChild(wrap);
