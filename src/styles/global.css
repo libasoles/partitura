@@ -370,6 +370,8 @@ a { color: var(--blue-france); }
 
 /* ----- Pro plan page ----- */
 
+.pro-title { display: flex; align-items: center; gap: 0.6rem; }
+.pro-mark { flex: none; width: 3.6rem; height: 3.7rem; }
 .pro-lead { margin: 0 0 1rem; font-size: 1.1rem; color: var(--ink-soft); }
 .pro-features { list-style: none; margin: 0 0 2.5rem; padding: 0; display: grid; gap: 0.7rem; }
 .pro-features li { display: flex; align-items: flex-start; gap: 0.7rem; }
