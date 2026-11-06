@@ -88,7 +88,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const data = window.ScoreStore.stored; // cargado desde IndexedDB antes de arrancar (storage.js)
       if (data && Array.isArray(data.scores) && data.scores.length) {
         // `closed` marks a score taken off the tab strip (Pro); it stays stored and listed in the site menu.
-        const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}));
+        const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}, one && one.demo === true ? { demo: true } : {}));
         const active = Math.min(Math.max(data.active | 0, 0), scores.length - 1);
         delete scores[active].closed;
         return { scores, active };
@@ -184,7 +184,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function renderScoresMenu() {
     if (!proTabs || !scoresMenu) return;
-    scoresMenu.replaceChildren(...docs.map((one, index) => {
+    scoresMenu.replaceChildren(...docs.flatMap((one, index) => {
+      if (one.demo) return [];
       const item = document.createElement('li');
       item.setAttribute('role', 'none');
       const button = document.createElement('button');
@@ -380,6 +381,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Closing only takes the tab off the strip: the score stays stored, and listed in the site menu.
   function closeTab(index) {
     if (!proTabs || !isOpen(index) || openCount() < 2) return;
+    // Demo copies have no entry in the scores menu to reopen them from.
+    if (docs[index].demo) {
+      if (index === active) switchTo(docs.findIndex((_, i) => i !== index && isOpen(i)));
+      docs.splice(index, 1);
+      histories.splice(index, 1);
+      if (active > index) active -= 1;
+      save();
+      renderTabs();
+      return;
+    }
     docs[active] = score;
     histories[active] = history;
     if (index === active) {
@@ -5068,8 +5079,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- menu del sitio: cargar y exportar ----------------------------------
 
   // Una partitura cargada se abre en una pestana nueva, sin tocar la actual.
-  function openScore(loaded, { tools } = {}) {
+  function openScore(loaded, { tools, demo = false } = {}) {
     applyUrlDefaults(loaded, urlDefaults, M);
+    if (demo) loaded.demo = true;
     if (tools) loaded.tools = { ...tools };
     docs[active] = score;
     histories[active] = history;

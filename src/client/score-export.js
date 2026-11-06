@@ -52,6 +52,7 @@ export default function createExporter(editor) {
     if (!response.ok) throw new Error(`Score download failed: ${response.status}`);
     const name = decodeURIComponent(new URL(url, location.href).pathname.split('/').pop());
     await loadFile(new File([await response.blob()], name, { type: 'application/vnd.recordare.musicxml+xml' }), {
+      demo: true,
       tools: { repeats: false, dynamics: false, voices: true, playback: true, intervals: true },
     });
   }

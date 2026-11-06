@@ -41,6 +41,40 @@ test('a failed demo download preserves the current score and allows retry', asyn
   await expect(page.locator('#scoreTitle')).toHaveValue('Conservar');
 });
 
+test('demo copies stay out of personal scores across edits, reloads and repeated openings', async ({ page }) => {
+  await page.route(`**${demoPath}`, (route) => route.fulfill({ contentType: 'application/xml', body: xml }));
+  await ready(page, '/es/#pro');
+  await page.locator('#scoreTitle').fill('Mi canción');
+  const openDemo = async () => {
+    await page.locator('#siteMenuToggle').click();
+    await page.locator('[data-demo-url]').click();
+    await expect(page.locator('#scoreTitle')).toHaveValue('Demo de prueba');
+  };
+  await openDemo();
+  await page.locator('#scoreTitle').fill('Demo editada');
+  await openDemo();
+  await expect(page.locator('.score-doc-tab')).toHaveCount(3);
+  await page.evaluate(() => window.ScoreStore.flush());
+  await page.reload();
+  await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
+  await expect(page.locator('.score-doc-tab')).toHaveCount(3);
+  await page.locator('#siteMenuToggle').click();
+  await expect(page.locator('#menuScores [role=menuitem]')).toHaveText(['Mi canción']);
+  await page.locator('#siteMenuToggle').click();
+  // Closing a demo discards just that copy; the other remains editable.
+  await page.locator('.score-doc-tab.is-active .score-doc-tab-close').click();
+  await expect(page.locator('.score-doc-tab')).toHaveCount(2);
+  await page.locator('.score-doc-tab:not(.is-active) .score-doc-tab-label').click();
+  await expect(page.locator('#scoreTitle')).toHaveValue('Demo editada');
+  await page.locator('#scoreClear').click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'Borrar', exact: true }).click();
+  await expect(page.locator('.score-doc-tab')).toHaveCount(1);
+  await expect(page.locator('#scoreTitle')).toHaveValue('Mi canción');
+  await openDemo();
+  await page.locator('#siteMenuToggle').click();
+  await expect(page.locator('#menuScores [role=menuitem]')).toHaveText(['Mi canción']);
+});
+
 test('the published song imports its three choir staves and URL defaults without #pro', async ({ page }) => {
   await ready(page, '/pt/?tools=repeats,dynamics&sound=mm');
   await page.locator('#siteMenuToggle').click();
