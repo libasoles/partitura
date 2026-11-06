@@ -4454,7 +4454,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   intervalButton.addEventListener('click', () => {
     if (intervalDocuments.has(score)) intervalDocuments.delete(score);
     else if (hasIntervals(score, M, shownVoices)) intervalDocuments.add(score);
-    else return say(t.intervalsNeedVoices);
+    else return say(hasIntervals(score, M, null) ? t.intervalsPickVoices : t.intervalsNeedVoices);
     render();
   });
   ['pointerdown', 'mousedown', 'click'].forEach((type) => intervalButton.addEventListener(type, (event) => event.stopPropagation()));

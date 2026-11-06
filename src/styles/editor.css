@@ -2475,6 +2475,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   height: 2rem;
   min-height: 2rem;
   min-width: 2rem;
+  margin-block: 0.75rem;
   padding: 0;
   cursor: pointer;
 }
@@ -2531,6 +2532,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   .score-palette .score-palette-item { min-width: 2.75rem; padding-inline: 0.25rem; }
   .score-playback,
   .score-interval-toggle { width: 2.75rem; height: 2.75rem; min-width: 2.75rem; min-height: 2.75rem; }
+  .score-interval-toggle { margin-block: 0.375rem; }
   .score-voice-legend li { width: 2.75rem; min-height: 2.75rem; align-items: center; justify-content: center; }
   .score-voice-legend button { position: relative; }
   /* Preserve the small colored circles while expanding their clickable area. */

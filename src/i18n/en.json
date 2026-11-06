@@ -151,6 +151,7 @@
     "toolsIntervals": "Intervals",
     "toolsIntervalsTooltip": "Intervals between voices",
     "intervalsNeedVoices": "Intervals measure the distance between notes of two or more voices sounding together. This score has no simultaneous notes yet.",
+    "intervalsPickVoices": "Pick two or more voices in the legend to see the intervals between them.",
     "play": "Play",
     "pause": "Pause",
     "playbackLoading": "Loading sounds…",
