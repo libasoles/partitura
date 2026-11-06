@@ -9,7 +9,7 @@ import { hasIntervals, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
 import { applyUrlDefaults } from './url-defaults.js';
 
-export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, patterns = false, urlDefaults = {} } = {}) {
+export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, lyrics = false, patterns = false, urlDefaults = {} } = {}) {
 
   const M = window.ScoreModel;
   const STORAGE_KEY = 'scoreEditor.v2';
@@ -568,6 +568,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       say(placed ? '' : t.hairpinTaken);
       return;
     }
+    if (item.kind === 'lyric') {
+      // La silaba va bajo la nota soltada; en piano, solo en el pentagrama de arriba.
+      deactivateTool();
+      if (!target.onNote) return say(t.lyricNeedsNote);
+      if (target.staff >= M.lyricStaves(score)) return say(t.lyricPianoTop);
+      if (!startLyricDraft(target.mi, target.t, target.staff)) return say(t.lyricNeedsNote);
+      say('');
+      return;
+    }
     if (item.kind === 'chord') {
       // Escribe el nombre sobre la nota soltada (o al inicio del compas); si ya hay uno ahi, abre el suyo.
       startChordDraft(target.mi, target.onNote ? target.t : 0);
@@ -634,7 +643,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function isPlacing(item) {
-    return item && (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'chord' || item.kind === 'navigation' || item.kind === 'hairpin');
+    return item && (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'chord' || item.kind === 'lyric' || item.kind === 'navigation' || item.kind === 'hairpin');
   }
 
   function isModifier(item) {
@@ -1093,6 +1102,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     mountRowTools();
     mountBarreInputs();
     mountChords();
+    mountLyrics();
     mountTabs();
     document.getElementById('scoreTabToggle')?.setAttribute('aria-pressed', String(!!score.showTabs));
     applyTools();
@@ -2062,6 +2072,132 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     input.focus({ preventScroll: true });
   }
 
+
+  // ---- Letra: una silaba bajo cada nota ------------------------------------------------------------------------------
+  // Verovio dibuja `<lyric>` bajo el pentagrama de la nota (g.verse). El campo se apoya en esa linea y cada silaba dibujada
+  // tiene un boton transparente encima: clic o doble clic la edita, Suprimir la quita. Espacio, Tab o un guion avanzan a la nota siguiente.
+  const lyricsOn = lyrics;
+  let lyricDraft = null; // { mi, at, staff, text } de la silaba que se esta escribiendo, aun sin guardar
+
+  // Nodo de la primera nota (no silencio) de ese pentagrama que empieza en `at`.
+  function lyricNote(mi, at, staff) {
+    const measure = M.measures(score, staff)[mi] || [];
+    const starts = M.onsets(measure);
+    const i = measure.findIndex((ev, k) => starts[k] === at && !ev.rest);
+    return i < 0 ? null : eventNodes(mi, staff)[i] || null;
+  }
+
+  // Donde cae la silaba: bajo el pentagrama, y debajo de las notas que lo desbordan.
+  function lyricLine(mi, staff, node) {
+    const lines = layout[mi].staves[staff];
+    const space = (lines[4] - lines[0]) / 4;
+    const origin = stage.getBoundingClientRect();
+    const verse = node && node.querySelector('g.verse');
+    if (verse) return { space, y: verse.getBoundingClientRect().bottom - origin.top };
+    const low = node ? node.getBoundingClientRect().bottom - origin.top : 0;
+    return { space, y: Math.max(lines[4] + space * 4.2, low + space * 2) };
+  }
+
+  function startLyricDraft(mi, at, staff, edit) {
+    if (!lyricsOn || !lyricNote(mi, at, staff)) return false;
+    const old = M.lyricAt(score, mi, at, staff);
+    lyricDraft = { mi, at, staff, text: edit !== undefined ? edit : old ? old.text + (old.hy ? '-' : '') : '' };
+    mountLyricDraft();
+    return true;
+  }
+
+  function mountLyricDraft() {
+    const draft = lyricDraft;
+    const node = draft && layout[draft.mi] && lyricNote(draft.mi, draft.at, draft.staff);
+    if (!node) { lyricDraft = null; return; }
+    const origin = stage.getBoundingClientRect();
+    const line = lyricLine(draft.mi, draft.staff, node);
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'score-lyric-draft';
+    input.maxLength = M.MAX_LYRIC + 1;
+    input.value = draft.text;
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('aria-label', t.lyricName);
+    const fit = () => { input.style.width = Math.max(3, input.value.length + 1.5) + 'ch'; };
+    fit();
+    input.style.fontSize = line.space * 2 + 'px';
+    input.style.left = centerX(node, origin) + 'px';
+    input.style.top = line.y + 'px';
+    // Guarda y, si se pide, sigue con la nota vecina del mismo pentagrama (`step`: 1 adelante, -1 atras).
+    const finish = (save, step = 0) => {
+      // Un redibujado quita el campo sin terminar de escribir: el borrador sigue y se vuelve a montar.
+      if (lyricDraft !== draft || !input.isConnected) return;
+      lyricDraft = null;
+      const text = input.value.trim();
+      input.remove();
+      if (save) {
+        const had = M.lyricAt(score, draft.mi, draft.at, draft.staff);
+        if (text && M.parseLyric(text)) change(() => M.setLyric(score, draft.mi, draft.at, text, draft.staff));
+        else if (!text && had) change(() => M.removeLyric(score, draft.mi, draft.at, draft.staff));
+        else if (text) say(t.lyricName);
+      }
+      const next = step && M.nextLyricSpot(score, draft.mi, draft.at, draft.staff, step < 0);
+      if (next) startLyricDraft(next.mi, next.at, draft.staff);
+    };
+    draft.finish = finish;
+    input.addEventListener('input', () => { draft.text = input.value; fit(); });
+    input.addEventListener('keydown', (event) => {
+      event.stopPropagation();
+      if (event.isComposing) return;
+      if (event.key === 'Enter') { event.preventDefault(); finish(true); }
+      else if (event.key === 'Escape') { event.preventDefault(); finish(false); }
+      else if (event.key === 'Tab') { event.preventDefault(); finish(true, event.shiftKey ? -1 : 1); }
+      else if (event.key === ' ' && input.value.trim()) { event.preventDefault(); finish(true, 1); }
+      else if (event.key === '-' && input.value.trim() && !input.value.trim().endsWith('-')) {
+        // Un guion marca que la palabra sigue en la nota siguiente.
+        event.preventDefault();
+        input.value = input.value.trim() + '-';
+        finish(true, 1);
+      }
+    });
+    input.addEventListener('blur', () => finish(true));
+    stage.appendChild(input);
+    input.focus({ preventScroll: true });
+    input.select();
+  }
+
+  function mountLyrics() {
+    if (!lyricsOn) return;
+    const origin = stage.getBoundingClientRect();
+    Object.keys(score.lyrics || {}).forEach((key) => {
+      const mi = Number(key);
+      score.lyrics[mi].forEach((lyric) => {
+        const staff = lyric.s || 0;
+        if (staff >= M.lyricStaves(score) || !layout[mi]) return;
+        const node = lyricNote(mi, lyric.at, staff);
+        const verse = node && node.querySelector('g.verse');
+        if (!verse) return;
+        const box = verse.getBoundingClientRect();
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'score-lyric-trigger';
+        button.dataset.measure = mi;
+        button.dataset.at = lyric.at;
+        button.dataset.staff = staff;
+        button.setAttribute('aria-label', t.lyric + ': ' + lyric.text + (lyric.hy ? '-' : ''));
+        button.style.left = box.left - origin.left - 4 + 'px';
+        button.style.top = box.top - origin.top - 2 + 'px';
+        button.style.width = Math.max(box.width, 12) + 8 + 'px';
+        button.style.height = box.height + 4 + 'px';
+        button.addEventListener('click', () => startLyricDraft(mi, lyric.at, staff));
+        button.addEventListener('keydown', (event) => {
+          if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+          event.preventDefault();
+          change(() => M.removeLyric(score, mi, lyric.at, staff));
+        });
+        stage.appendChild(button);
+      });
+    });
+    if (lyricDraft) mountLyricDraft();
+  }
+
   // Un boton transparente sobre cada nombre dibujado: abre el popup con su digitacion.
   function mountChords() {
     chordZone = null;
@@ -2883,7 +3019,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const x = item?.kind === 'navigation' ? layout[hit.mi][['dc', 'ds'].includes(item.mark) ? 'right' : 'left']
       : item && item.kind === 'bar' && item.bar !== 'double' ? layout[hit.mi][item.bar === 'start' ? 'left' : 'right']
       : item && item.kind === 'bar' && item.bar === 'double' ? hit.rawX
-      : item && (item.kind === 'barre' || item.kind === 'chord' || item.kind === 'hairpin') && !hit.onNote ? layout[hit.mi].left : hit.x;
+      : item && (item.kind === 'barre' || item.kind === 'chord' || item.kind === 'lyric' || item.kind === 'hairpin') && !hit.onNote ? layout[hit.mi].left : hit.x;
     line.style.left = x + 'px';
     // Notas y silencios marcan el pentagrama donde caen; barras, repeticiones y reguladores son de todo el renglon.
     const whole = item && item.kind !== 'note' && item.kind !== 'rest';
@@ -4009,6 +4145,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     'bar:start': '<path d="M10 4v24" stroke="currentColor" stroke-width="3.5"/><path d="M15 4v24" stroke="currentColor" stroke-width="1.6"/><circle cx="21" cy="12" r="1.8"/><circle cx="21" cy="20" r="1.8"/>',
     'bar:end': '<path d="M15 4v24" stroke="currentColor" stroke-width="1.6"/><path d="M20 4v24" stroke="currentColor" stroke-width="3.5"/><circle cx="9" cy="12" r="1.8"/><circle cx="9" cy="20" r="1.8"/>',
     barre: '<text x="3" y="18" font-size="16" font-weight="700" font-family="serif">C</text><path d="M3 24h24" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2.500" fill="none"/>',
+    lyric: '<g transform="translate(3 4)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></g>',
     chord: '<text x="15" y="21" text-anchor="middle" font-size="18" font-family="serif" font-weight="700">Am</text>',
     dead: '<path d="M8.500 19.500l11 11M19.500 19.500l-11 11" stroke="currentColor" stroke-width="2.200" fill="none"/><path d="M20.3 22.8V-12.3" stroke="currentColor" stroke-width="1.5" fill="none"/>',
     dot: '<circle cx="15" cy="15" r="3.200"/>',
@@ -4022,6 +4159,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (item.kind === 'bar') return 'bar:' + item.bar;
     if (item.kind === 'barre') return 'barre';
     if (item.kind === 'chord') return 'chord';
+    if (item.kind === 'lyric') return 'lyric';
     if (item.kind === 'hairpin') return 'hairpin:' + item.hairpin;
     if (item.dead) return 'dead';
     if (item.kind === 'note' || item.kind === 'rest') return item.kind + ':' + item.d;
@@ -4070,6 +4208,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const BARS = [
     { kind: 'barre', label: t.barre },
     ...(chordsOn ? [{ kind: 'chord', label: t.chordTool }] : []),
+    ...(lyrics ? [{ kind: 'lyric', label: t.lyricTool }] : []),
     { kind: 'bar', bar: 'start', label: t.barRepeatStart },
     { kind: 'bar', bar: 'end', label: t.barRepeatEnd },
     { kind: 'bar', bar: 'double', label: t.barDouble },
@@ -4095,7 +4234,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const shown = button.textContent.trim();
     if (shown && !item.label.toLowerCase().includes(shown.toLowerCase())) button.setAttribute('aria-label', shown + ': ' + item.label);
     button.setAttribute('aria-pressed', 'false');
-    button.dataset.group = item.kind === 'bar' || item.kind === 'navigation' ? 'repeats' : item.kind === 'hairpin' ? 'dynamics' : item.kind === 'barre' || item.kind === 'chord' ? 'barre' : '';
+    button.dataset.group = item.kind === 'bar' || item.kind === 'navigation' ? 'repeats' : item.kind === 'hairpin' ? 'dynamics' : item.kind === 'barre' || item.kind === 'chord' ? 'barre' : item.kind === 'lyric' ? 'lyrics' : '';
     if (item.kind === 'bar') {
       button.dataset.barline = item.bar;
       button.addEventListener('click', (event) => {
@@ -4110,7 +4249,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       button.dataset.hairpin = item.hairpin;
       button.addEventListener('click', (event) => { if (event.detail === 0) activateTool(item); });
     }
-    if (item.kind === 'barre' || item.kind === 'chord') {
+    if (item.kind === 'barre' || item.kind === 'chord' || item.kind === 'lyric') {
       button.dataset.tool = item.kind;
       button.addEventListener('click', (event) => {
         if (event.detail === 0) activateTool(item);
@@ -4133,7 +4272,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       event.preventDefault();
       beginDrag(event, { item, kind: item.kind, glyph: glyphFor(item) });
     });
-    (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'chord' || item.kind === 'navigation' || item.kind === 'hairpin' ? barlines : palette).appendChild(button);
+    (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'chord' || item.kind === 'lyric' || item.kind === 'navigation' || item.kind === 'hairpin' ? barlines : palette).appendChild(button);
   });
 
   // TAB: muestra u oculta una tablatura bajo cada renglon.
@@ -4462,7 +4601,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
-    const shown = { repeats: !settings || toolOn('repeats'), dynamics: !settings || toolOn('dynamics'), barre: guitar };
+    const shown = { repeats: !settings || toolOn('repeats'), dynamics: !settings || toolOn('dynamics'), barre: guitar, lyrics: true };
     barlines.querySelectorAll('[data-group]').forEach((button) => { if (button.dataset.group) button.hidden = !shown[button.dataset.group]; });
     tabToggle.hidden = !guitar;
     playButton.hidden = !settings || !toolOn('playback', false);

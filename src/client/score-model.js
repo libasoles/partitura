@@ -61,7 +61,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   const laneKey = (staff) => LANE_KEYS[staff - 1];
   const LOWER_CLEFS = CLEF_KEYS.slice(1).map(([, map]) => map);
   // Tablas por compas que se desplazan juntas al insertar, quitar o dividir compases.
-  const BY_MEASURE = ['navigation', 'barlines', 'keys', 'clefs', ...LOWER_CLEFS, 'meters', 'barres', 'hairpins', 'chords', 'measureDurations', 'measureWidths', ...LANE_KEYS];
+  const BY_MEASURE = ['navigation', 'barlines', 'keys', 'clefs', ...LOWER_CLEFS, 'meters', 'barres', 'hairpins', 'chords', 'lyrics', 'measureDurations', 'measureWidths', ...LANE_KEYS];
   // Coro (Voces): registro de cada pentagrama; el registro decide la clave.
   const REGISTERS = { soprano: 'treble', mezzo: 'treble', alto: 'treble', tenor: 'guitar', baritone: 'bass', bass: 'bass' };
   const DEFAULT_REGISTERS = ['soprano', 'alto', 'tenor', 'bass'];
@@ -72,6 +72,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   const MIN_ROWS = 3;
   const MAX_FRET = 24;
   const MAX_CHORD_NAME = 16;
+  const MAX_LYRIC = 24; // letras de una silaba: tope de caracteres
   const MAX_CHORD_VARIANTS = 12; // tope de variantes de digitacion guardadas por acorde
   const GRID = 6; // semicorchea: la posicion se redondea a esta cuadricula (2 dentro de un tresillo, 3 con fusas)
   const BOTTOM_LINE = 30; // E4: linea inferior de la clave de sol
@@ -1127,7 +1128,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     LANE_KEYS.forEach((name) => Object.entries(score[name] || {}).forEach(([mi, measure]) => {
       if (positions.get(+mi + 1) !== positions.get(+mi) + 1) edge(measure, 'last').forEach((i) => { delete measure[i].tie; delete measure[i].slur; });
     }));
-    ['navigation', 'barlines', 'barres', 'hairpins', 'chords', 'measureDurations', 'measureWidths', ...LANE_KEYS].forEach((name) => {
+    ['navigation', 'barlines', 'barres', 'hairpins', 'chords', 'lyrics', 'measureDurations', 'measureWidths', ...LANE_KEYS].forEach((name) => {
       if (!score[name]) return;
       const moved = {};
       // Una cejilla o un regulador que cruza compases solo sigue unido si esos compases se mueven juntos.
@@ -1342,9 +1343,17 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     // Los acordes escritos despues del corte pasan al compas nuevo.
     const movedChords = (score.chords?.[mi] || []).filter((chord) => chord.at >= at).map((chord) => Object.assign({}, chord, { at: chord.at - at }));
     if (score.chords?.[mi]) score.chords[mi] = score.chords[mi].filter((chord) => chord.at < at);
+    const movedLyrics = (score.lyrics?.[mi] || []).filter((lyric) => lyric.at >= at).map((lyric) => Object.assign({}, lyric, { at: lyric.at - at }));
+    if (score.lyrics?.[mi]) score.lyrics[mi] = score.lyrics[mi].filter((lyric) => lyric.at < at);
     BY_MEASURE.forEach((name) => {
       if (score[name]) score[name] = shiftKeys(score[name], mi + 1, 1);
     });
+    if (movedLyrics.length) {
+      if (!score.lyrics) score.lyrics = {};
+      score.lyrics[mi + 1] = movedLyrics;
+    }
+    if (score.lyrics?.[mi] && !score.lyrics[mi].length) delete score.lyrics[mi];
+    if (score.lyrics && !Object.keys(score.lyrics).length) delete score.lyrics;
     if (movedChords.length) {
       if (!score.chords) score.chords = {};
       score.chords[mi + 1] = movedChords;
@@ -1462,6 +1471,74 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     if (!setChord(copy, toMi, toAt, chord.name, chord.variant || 0)) return false;
     if (copy.chords) score.chords = copy.chords; else delete score.chords;
     return true;
+  }
+
+  // Letras: una silaba escrita bajo una nota (`score.lyrics[mi]`, lista ordenada por pentagrama y `at`). Una por nota y pentagrama.
+  // `s` es el pentagrama (0 no se guarda) y `hy` indica que la silaba sigue en la proxima nota (se dibuja un guion).
+  // Cada instrumento escribe letra en el pentagrama de arriba; Voces, en cada uno de los que muestra.
+  function lyricStaves(score) {
+    return instrumentOf(score) === 'voices' ? stavesOf(score) : 1;
+  }
+
+  const lyricOrder = (a, b) => (a.s || 0) - (b.s || 0) || a.at - b.at;
+
+  function lyricAt(score, mi, at, staff = 0) {
+    return ((score.lyrics && score.lyrics[mi]) || []).find((lyric) => lyric.at === at && (lyric.s || 0) === staff);
+  }
+
+  // Un guion final ("glo-") marca que la palabra sigue; el guion no es parte del texto guardado.
+  function parseLyric(text) {
+    text = typeof text === 'string' ? text.trim() : '';
+    const hy = /-$/.test(text);
+    if (hy) text = text.replace(/-+$/, '').trim();
+    return text && text.length <= MAX_LYRIC ? { text, hy } : null;
+  }
+
+  function setLyric(score, mi, at, text, staff = 0) {
+    const parsed = parseLyric(text);
+    if (!parsed || !Number.isInteger(mi) || mi < 0 || mi >= measures(score).length || staff < 0 || staff >= lyricStaves(score)) return false;
+    const measure = staff ? (score[laneKey(staff)] && score[laneKey(staff)][mi]) || [] : measures(score)[mi];
+    const starts = onsets(measure);
+    if (!measure.some((ev, i) => starts[i] === at && !ev.rest)) return false;
+    const list = ((score.lyrics && score.lyrics[mi]) || []).filter((lyric) => lyric.at !== at || (lyric.s || 0) !== staff);
+    list.push(Object.assign({ at, text: parsed.text }, staff ? { s: staff } : {}, parsed.hy ? { hy: true } : {}));
+    if (!score.lyrics) score.lyrics = {};
+    score.lyrics[mi] = list.sort(lyricOrder);
+    return true;
+  }
+
+  function removeLyric(score, mi, at, staff = 0) {
+    if (!lyricAt(score, mi, at, staff)) return false;
+    score.lyrics[mi] = score.lyrics[mi].filter((lyric) => lyric.at !== at || (lyric.s || 0) !== staff);
+    if (!score.lyrics[mi].length) delete score.lyrics[mi];
+    if (!Object.keys(score.lyrics).length) delete score.lyrics;
+    return true;
+  }
+
+  // La nota siguiente (en orden de lectura) de un pentagrama que puede llevar letra: { mi, at } o null. `back` va hacia atras.
+  function nextLyricSpot(score, mi, at, staff = 0, back = false) {
+    const all = measures(score);
+    const spots = [];
+    all.forEach((measure, k) => {
+      const lane = staff ? (score[laneKey(staff)] && score[laneKey(staff)][k]) || [] : measure;
+      const starts = onsets(lane);
+      [...new Set(lane.map((ev, i) => (ev.rest ? null : starts[i])).filter((start) => start !== null))].sort((a, b) => a - b).forEach((start) => spots.push({ mi: k, at: start }));
+    });
+    const here = spots.findIndex((spot) => spot.mi === mi && spot.at === at);
+    return spots[here + (back ? -1 : 1)] || null;
+  }
+
+  // Silabas de un pentagrama en orden de lectura, con su posicion en la palabra para MusicXML: single | begin | middle | end.
+  function lyricMap(score, staff) {
+    const map = new Map();
+    let open = false;
+    Object.keys(score.lyrics || {}).map(Number).sort((a, b) => a - b).forEach((mi) => {
+      score.lyrics[mi].filter((lyric) => (lyric.s || 0) === staff).forEach((lyric) => {
+        map.set(mi + ':' + lyric.at, { text: lyric.text, syllabic: open ? (lyric.hy ? 'middle' : 'end') : (lyric.hy ? 'begin' : 'single') });
+        open = Boolean(lyric.hy);
+      });
+    });
+    return map;
   }
 
   // Reguladores: crescendo ('cresc') y diminuendo ('dim'). Como la cejilla, van de `at` a `to` (por defecto el final del compas)
@@ -1798,6 +1875,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       if (!score.chords[mi].length) delete score.chords[mi];
     });
     if (score.chords && !Object.keys(score.chords).length) delete score.chords;
+    Object.keys(score.lyrics || {}).forEach((mi) => {
+      score.lyrics[mi] = score.lyrics[mi].filter((lyric) => lyric.at < capacity(score));
+      if (!score.lyrics[mi].length) delete score.lyrics[mi];
+    });
+    if (score.lyrics && !Object.keys(score.lyrics).length) delete score.lyrics;
     return true;
   }
 
@@ -2080,6 +2162,19 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       });
       if (kept.length) chords[index] = kept.sort((a, b) => a.at - b.at);
     });
+    const lyrics = {};
+    Object.entries(data.lyrics || {}).forEach(([index, list]) => {
+      if (!/^(0|[1-9]\d*)$/.test(index) || +index >= total || !Array.isArray(list)) return;
+      const kept = [];
+      list.forEach((lyric) => {
+        const at = lyric && lyric.at * factor;
+        const staff = lyric && lyric.s ? lyric.s : 0;
+        const parsed = lyric && parseLyric(lyric.text);
+        if (!Number.isInteger(at) || at < 0 || at >= capacity(meterContext, +index) || !parsed || !Number.isInteger(staff) || staff < 0 || staff >= MAX_PARTS || kept.some((other) => other.at === at && (other.s || 0) === staff)) return;
+        kept.push(Object.assign({ at, text: parsed.text }, staff ? { s: staff } : {}, parsed.hy || lyric.hy === true ? { hy: true } : {}));
+      });
+      if (kept.length) lyrics[index] = kept.sort(lyricOrder);
+    });
     const measureDurations = {};
     Object.entries(data.measureDurations || {}).forEach(([index, duration]) => {
       const size = duration * factor;
@@ -2103,7 +2198,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isFinite(width) && width > 0 && width <= 1) measureWidths[index] = width;
     });
     const tabs = sanitizeTabs(data.tabs, rows.reduce((sum, row) => sum + row.length, 0));
-    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, Array.isArray(data.registers) && data.registers.some((r) => Object.hasOwn(REGISTERS, r)) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (Object.hasOwn(REGISTERS, data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(chords).length ? { chords } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
+    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, Array.isArray(data.registers) && data.registers.some((r) => Object.hasOwn(REGISTERS, r)) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (Object.hasOwn(REGISTERS, data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(chords).length ? { chords } : {}, Object.keys(lyrics).length ? { lyrics } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
   }
 
   // Rellena huecos con silencios ocultos: el final del compas y el espacio entre figuras sueltas.
@@ -2603,7 +2698,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // `roles`: { tie: ['start'|'stop'], slur: [...], tuplet: 'start'|'stop'|'both' } de los extremos de esta nota.
-  function noteXml(ev, id, beams, chord, voice, alter, roles, stem, mult, staff = 0) {
+  function noteXml(ev, id, beams, chord, voice, alter, roles, stem, mult, staff = 0, lyric = null) {
     const dur = length(ev);
     const base = VALUES[ev.d];
     const ties = (roles && roles.tie) || [];
@@ -2630,6 +2725,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const marks = ties.map((type) => `<tied type="${type}"/>`).concat(slurs.map((type) => `<slur type="${type}" number="1"/>`));
     if (tuplet) (tuplet === 'both' ? ['start', 'stop'] : [tuplet]).forEach((type) => { marks.push(`<tuplet type="${type}"/>`); });
     if (marks.length) xml += `<notations>${marks.join('')}</notations>`;
+    if (lyric) xml += `<lyric number="1"><syllabic>${lyric.syllabic}</syllabic><text>${lyric.text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</text></lyric>`;
     return xml + '</note>';
   }
 
@@ -2682,6 +2778,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     });
     const rowFirsts = new Set(rowStarts(score));
     const endings = navigationEndings(score);
+    const lyricMaps = Array.from({ length: lyricStaves(score) }, (_, staff) => lyricMap(score, staff));
     all.forEach((measure, mi) => {
       const [beats, unit] = meterAt(score, mi).split('/');
       xml += `<measure number="${mi + 1}" id="m${mi}"${capacity(score, mi) < capacity({ meter: meterAt(score, mi) }) ? ' implicit="yes"' : ''}>`;
@@ -2782,7 +2879,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
             group.indices.forEach((i, ci) => {
               const own = roles.get(staff + ':' + mi + '-' + i) || {};
               const tuplet = ci === 0 && span && (span.first === span.last ? 'both' : gi === span.first ? 'start' : gi === span.last ? 'stop' : undefined);
-              xml += noteXml(measure[i], `${ID_PREFIX[staff]}${mi}-${i}`, beams[index++], ci > 0, voiceBase + vi + 1, alters[i], Object.assign({}, own, { tuplet }), stemOf(vi, all.length), mult, staff);
+              // La silaba va en la primera voz que tenga una nota en ese tiempo.
+              const key = mi + ':' + group.at;
+              const lyric = ci === 0 && !measure[i].rest && lyricMaps[staff] && lyricMaps[staff].get(key);
+              if (lyric) lyricMaps[staff].delete(key);
+              xml += noteXml(measure[i], `${ID_PREFIX[staff]}${mi}-${i}`, beams[index++], ci > 0, voiceBase + vi + 1, alters[i], Object.assign({}, own, { tuplet }), stemOf(vi, all.length), mult, staff, lyric);
             });
             cursor = group.at + group.size;
           });
@@ -2868,7 +2969,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, registerOf, soundOf, setSound, CHOIR_SOUNDS, setParts, setRegister, REGISTERS, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
-    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, removeLyric, nextLyricSpot, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }

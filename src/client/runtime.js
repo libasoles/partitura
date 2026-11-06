@@ -12,5 +12,6 @@ export async function startEditor({ defaultClef = 'treble', saveDelay = 300, ...
   window.ScoreModel = createScoreModel({ defaultClef, grandStaff: Boolean(options.settings), choir: Boolean(options.settings) && (isPro() || urlChoir) });
   await initStorage({ saveDelay });
   if (window.ScoreStore.stored) document.getElementById('scoreStage')?.classList.add('is-loading');
-  start(options);
+  // Letra (sílabas bajo las notas) es Pro: solo con #pro en la URL.
+  start({ ...options, lyrics: Boolean(options.lyrics) && isPro() });
 }
