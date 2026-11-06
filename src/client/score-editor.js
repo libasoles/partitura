@@ -3727,28 +3727,31 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   });
   registerPopup.append(registerHeading, registerList);
 
-  // Los nombres de los registros se escriben arriba del primer pentagrama, tras la indicacion de tempo (si la hay).
+  // Cada registro se escribe sobre su propio pentagrama, a la distancia que Verovio deja a la indicacion de tempo (si la hay, el primero va tras ella).
   function mountRegisterButtons() {
     if (!M.choir || M.instrumentOf(score) !== 'voices') return;
     const first = stage.querySelector('g.measure');
-    const staffLine = first && first.querySelector(':scope > g.staff > path');
-    if (!staffLine) return;
+    const staves = first ? [...first.querySelectorAll(':scope > g.staff')] : [];
+    if (!staves.length) return;
     const origin = stage.getBoundingClientRect();
     const tempo = stage.querySelector('g.tempo');
     const tempoBox = tempo && tempo.getBoundingClientRect();
-    const line = staffLine.getBoundingClientRect();
-    let x = tempoBox && tempoBox.width ? tempoBox.right + 16 : line.left + 4;
-    const y = tempoBox && tempoBox.height ? (tempoBox.top + tempoBox.bottom) / 2 : line.top - 14;
-    const row = document.createElement('div');
-    row.className = 'score-registers';
-    row.style.left = (x - origin.left - stage.clientLeft) + 'px';
-    row.style.top = Math.max(12, y - origin.top - stage.clientTop) + 'px';
-    for (let staff = 0; staff < M.stavesOf(score); staff += 1) {
+    const lines = staves.map((node) => node.querySelectorAll(':scope > path'));
+    if (!lines[0].length) return;
+    const firstLine = lines[0][0].getBoundingClientRect();
+    const space = lines[0].length > 1 ? lines[0][1].getBoundingClientRect().top - firstLine.top : 22;
+    const hasTempo = tempoBox && tempoBox.width && tempoBox.height;
+    const x = hasTempo ? tempoBox.right + 16 : firstLine.left + 4;
+    for (let staff = 0; staff < Math.min(M.stavesOf(score), staves.length); staff += 1) {
+      const top = lines[staff][0].getBoundingClientRect().top;
+      const y = staff === 0 && hasTempo ? (tempoBox.top + tempoBox.bottom) / 2 : top - space * 2.5;
       const name = t.registers[M.registerOf(score, staff)];
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'score-register-trigger';
       button.dataset.staff = staff;
+      button.style.left = (x - origin.left - stage.clientLeft) + 'px';
+      button.style.top = Math.max(12, y - origin.top - stage.clientTop) + 'px';
       button.textContent = name;
       button.setAttribute('aria-label', t.registerButton.replace('{n}', staff + 1).replace('{name}', name));
       button.setAttribute('aria-controls', registerPopup.id);
@@ -3763,9 +3766,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         registerPopup.style.left = Math.max(8, Math.min(anchor.left + anchor.width / 2 - box.width / 2, window.innerWidth - box.width - 8)) + 'px';
         registerPopup.style.top = Math.min(anchor.bottom + 6, window.innerHeight - box.height - 8) + 'px';
       });
-      row.appendChild(button);
+      stage.appendChild(button);
     }
-    stage.appendChild(row);
   }
 
   // Un control de clave por pentagrama de cada renglon (y por cada cambio de clave dibujado).

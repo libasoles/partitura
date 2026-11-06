@@ -2476,18 +2476,13 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 .score-interval-toggle svg { display: block; width: 18px; height: 18px; margin: auto; }
 
-/* Voces: los registros se escriben arriba del primer pentagrama, tras el tempo, y abren un popup para cambiarlos. */
-.score-registers {
+/* Voces: cada registro se escribe sobre su pentagrama (el primero, tras el tempo) y abre un popup para cambiarlo. */
+.score-register-trigger {
   position: absolute;
-  display: flex;
-  gap: 0.25rem;
   transform: translateY(-50%);
+  z-index: 2;
   font-family: var(--sans);
   font-size: 0.8rem;
-  z-index: 2;
-}
-
-.score-register-trigger {
   min-height: 44px;
   padding: 0 0.5rem;
   border: 0;
