@@ -5,10 +5,12 @@ import { soundingNotes } from './score-notes.js';
 // Per-sound envelope: `attack` fades in, `release` rings past the note's end so consecutive notes overlap (legato).
 const PLUCKED = { attack: 0.005, release: 0.03, within: true };
 const CHOIR = {
-  ah: { file: 'choir-ah', attack: 0.09, release: 0.14 },
-  oh: { file: 'choir-oh', attack: 0.09, release: 0.14 },
+  guitar: { ...PLUCKED, file: 'guitar' },
+  piano: { ...PLUCKED, file: 'piano' },
+  ah: { file: 'choir-ah', volume: 2, attack: 0.09, release: 0.14 },
+  oh: { file: 'choir-oh', volume: 2, attack: 0.09, release: 0.14 },
   // Uh keeps the saved `mm` ID and uses a closed-mouth hum from the Oh samples.
-  mm: { file: 'choir-oh', attack: 0.1, release: 0.16, tone: 550 },
+  mm: { file: 'choir-oh', volume: 2, attack: 0.1, release: 0.16, tone: 550 },
 };
 
 // This module and the instrument samples are requested only by the play gesture.
@@ -101,8 +103,8 @@ export function createPlayer(context, vendorUrl, onEnded) {
           const fadeStart = shape.within ? Math.max(start + attack, end - shape.release) : end;
           const fadeEnd = shape.within ? end : end + shape.release;
           gain.gain.setValueAtTime(0, start);
-          gain.gain.linearRampToValueAtTime(sample.volume ?? 1, start + attack);
-          gain.gain.setValueAtTime(sample.volume ?? 1, fadeStart);
+          gain.gain.linearRampToValueAtTime((sample.volume ?? 1) * (shape.volume ?? 1), start + attack);
+          gain.gain.setValueAtTime((sample.volume ?? 1) * (shape.volume ?? 1), fadeStart);
           gain.gain.linearRampToValueAtTime(0, fadeEnd);
           let filter;
           if (shape.tone || sample.tone) {

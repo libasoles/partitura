@@ -12,11 +12,11 @@ const context = {
   },
 };
 
-test('the complete 28-font archive has distinct persistent IDs', () => {
-  assert.equal(ARCHIVE_CHOIRS.length, 28);
-  assert.equal(new Set(ARCHIVE_CHOIRS.map(({ id }) => id)).size, 28);
+test('the five selected choir fonts have distinct persistent IDs', () => {
+  assert.equal(ARCHIVE_CHOIRS.length, 5);
+  assert.equal(new Set(ARCHIVE_CHOIRS.map(({ id }) => id)).size, 5);
   const M = createScoreModel({ choir: true, grandStaff: true });
-  for (const { id } of ARCHIVE_CHOIRS) {
+  for (const id of [...ARCHIVE_CHOIRS.map(({ id }) => id), 'guitar', 'piano']) {
     const score = M.emptyScore();
     M.setInstrument(score, 'voices');
     assert.equal(M.setSound(score, id), true);

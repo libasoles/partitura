@@ -349,7 +349,7 @@ test('voices: the Ajustes sound selector defaults to Ah, is voices-only and driv
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
   await page.locator('#scoreSettingsToggle').click();
   await expect(page.getByRole('radio', { name: 'Ah', exact: true })).toBeChecked();
-  await page.locator('.score-settings-radio').filter({ hasText: /^Piano$/ }).click();
+  await page.locator('label:has(input[name="scoreInstrument"][value="piano"])').click();
   await expect(page.getByRole('radio', { name: 'Oh', exact: true })).toBeHidden();
   await page.locator('.score-settings-radio').filter({ hasText: /^Voces$/ }).click();
   await page.locator('.score-settings-radio').filter({ hasText: /^Oh$/ }).click();
@@ -407,7 +407,7 @@ test('changing instrument while sounds load prevents stale playback', async ({ p
     await button.click();
     await expect(button).toHaveAttribute('aria-busy', 'true');
     await page.locator('#scoreSettingsToggle').click();
-    await page.locator('.score-settings-radio').filter({ hasText: 'Guitarra' }).click();
+    await page.locator('label:has(input[name="scoreInstrument"][value="guitar"])').click();
   } finally { release(); }
   await expect(button).toHaveAttribute('aria-busy', 'false');
   await expect(button).toHaveAccessibleName('Reproducir');
@@ -424,7 +424,7 @@ test('changing choir sound keeps playing at the current position while new sampl
   await expect(button).toHaveAccessibleName('Pausar');
   await page.waitForFunction(() => Number(document.querySelector('.score-playback-cursor')?.dataset.time) > 2);
   await page.locator('#scoreSettingsToggle').click();
-  await expect(page.locator('input[name="scoreSound"]')).toHaveCount(31);
+  await expect(page.locator('input[name="scoreSound"]')).toHaveCount(10);
   await expect(page.getByRole('radio', { name: 'Uh', exact: true })).toHaveValue('mm');
   const before = await page.locator('.score-playback-cursor').getAttribute('data-time');
   await page.getByRole('radio', { name: 'Oh', exact: true }).check();

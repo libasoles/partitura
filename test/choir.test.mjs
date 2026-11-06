@@ -94,3 +94,11 @@ test('MIDI export of a choir uses the choir program on every visible staff', () 
   for (let i = 22; i < bytes.length - 2; i += 1) if ((bytes[i] & 0xf0) === 0xc0 && bytes[i + 1] === 52) programs.push(bytes[i] & 0x0f);
   assert.deepEqual(programs, [0, 1, 2]);
 });
+
+for (const [sound, program] of [['piano', 0], ['guitar', 24], ['oh', 53], ['ah', 52]]) test(`Voices exports ${sound} on all staff channels`, () => {
+  const score = choir();
+  C.setSound(score, sound);
+  const bytes = IO.toMidi(score, C), channels = [];
+  for (let i = 22; i < bytes.length - 2; i++) if ((bytes[i] & 0xf0) === 0xc0 && bytes[i + 1] === program) channels.push(bytes[i] & 0x0f);
+  assert.deepEqual(channels, [0, 1, 2]);
+});

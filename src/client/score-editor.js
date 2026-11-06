@@ -4826,7 +4826,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       radio.type = 'radio';
       radio.name = 'scoreSound';
       radio.value = id;
-      field.append(radio, document.createTextNode(ARCHIVE_CHOIRS.find((sound) => sound.id === id)?.name || t['sound' + id[0].toUpperCase() + id.slice(1)]));
+      const label = ARCHIVE_CHOIRS.find((sound) => sound.id === id)?.name
+        || t[(['guitar', 'piano'].includes(id) ? 'instrument' : 'sound') + id[0].toUpperCase() + id.slice(1)];
+      field.append(radio, document.createTextNode(label));
       radio.addEventListener('change', () => {
         if (M.soundOf(score) === id) return;
         const before = M.clone(score);

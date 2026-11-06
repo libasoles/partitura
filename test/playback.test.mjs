@@ -48,3 +48,38 @@ test('playback tool is kept when saving/sanitizing a score', () => {
   M.setTool(score, 'playback', true);
   assert.equal(M.sanitize(score).tools.playback, true);
 });
+
+test('original choir sounds have twice the gain; piano/guitar keep their plucked envelope in Voices', async () => {
+  const { createPlayer } = await import('../src/client/score-playback.js');
+  const C = createScoreModel({ grandStaff: true, choir: true });
+  const score = C.emptyScore();
+  C.setInstrument(score, 'voices');
+  score.rows = [[[{ d: 'w', n: 35 }]]];
+  const peaks = [], files = [];
+  const context = {
+    currentTime: 0, destination: {},
+    createGain: () => ({ gain: { value: 0, setValueAtTime() {}, linearRampToValueAtTime(value) { if (value) peaks.push(value); } }, connect() {}, disconnect() {} }),
+    createBufferSource: () => ({ playbackRate: {}, connect() {}, disconnect() {}, start() {}, stop() {} }),
+    createBiquadFilter: () => ({ frequency: { setValueAtTime() {} }, connect() {}, disconnect() {} }),
+    decodeAudioData: async () => ({ duration: 30 }),
+  };
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    files.push(url);
+    return { ok: true, json: async () => ({ C4: 'data:audio/mp3;base64,AA==' }) };
+  };
+  try {
+    const player = createPlayer(context, (path) => path, () => {});
+    for (const id of ['ah', 'oh', 'mm', 'guitar', 'piano']) {
+      C.setSound(score, id);
+      const track = await player.prepare(score, C);
+      peaks.length = 0;
+      player.play(track);
+      player.stop();
+      assert.deepEqual(peaks, [id === 'guitar' || id === 'piano' ? 1 : 2]);
+      assert.equal(Boolean(track.shape.within), id === 'guitar' || id === 'piano');
+    }
+    assert.ok(files.some((url) => url.endsWith('/guitar.json')));
+    assert.ok(files.some((url) => url.endsWith('/piano.json')));
+  } finally { globalThis.fetch = previousFetch; }
+});

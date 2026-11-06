@@ -1,6 +1,6 @@
 # Zanderjaz choir archive — audition collection
 
-All 28 SF2 downloads from https://www.zanderjaz.com/downloads/soundfonts/choirs/
+Five selected SF2 downloads (Aahhs, Korg aahhs, Mellotron choir, Phil’s voice solo, Soft voice) from https://www.zanderjaz.com/downloads/soundfonts/choirs/
 Retrieved 2026-11-06. Original binary files, renamed only; original URLs and
 selected preset indices are recorded in src/client/choir-sounds.js.
 
@@ -15,9 +15,7 @@ shared choir attack/release; SF2 modulators, chorus/reverb and LFOs are not emul
 This is a sampler for comparing timbres, not a complete SoundFont synthesizer.
 
 Where there are several presets, the catalog selects a plain voice/choir preset
-rather than a major/minor chord, synth or filter-sweep patch. Alex choir has no
-preset headers; its first instrument is used directly. Several archive entries
-contain related or identical material; all original download entries are kept.
+rather than a major/minor chord, synth or filter-sweep patch.
 
 Only the selected font is fetched when Play is pressed. The SF2 is cached for the
 editor session, and PCM buffers are created only for samples used by the score.
