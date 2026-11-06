@@ -1946,6 +1946,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const isIntervalDir = (node) => /^[IVXL]+$/.test(squash(node.textContent));
   const INTERVAL_GAP = 9; // separacion minima (px) entre las etiquetas de intervalos y lo que tienen debajo
   const CHORD_GAP = 4;
+  const CHORD_NAME_GAP = 12; // separacion minima (px) entre un nombre de acorde detectado y lo que tiene debajo
 
   // Verovio a veces deja la etiqueta pegada al pentagrama o sobre una nota o plica. Cada etiqueta se apoya
   // sobre el contenido de su pentagrama (figuras, barras, silencios) con una separacion minima, y todas las de
@@ -2015,7 +2016,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       });
       const key = Math.round(staff.querySelector(':scope > path').getBoundingClientRect().top);
       const row = rows.get(key) || { goal: Infinity, items: [] };
-      row.goal = Math.min(row.goal, limit - CHORD_GAP);
+      row.goal = Math.min(row.goal, limit - CHORD_NAME_GAP);
       row.items.push({ dir, bottom: box.bottom });
       rows.set(key, row);
     });

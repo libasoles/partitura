@@ -1,4 +1,5 @@
 import { chordNames } from './chord-names.js';
+import { pickChords } from './chord-context.js';
 import { measurePitches } from './score-notes.js';
 
 // Diatonic intervals between neighbouring sounding pitches. Piano: independently on each staff. Voices (choir):
@@ -76,10 +77,12 @@ function columnChords(score, mi, M, column) {
     if (!cache.has(staff)) cache.set(staff, measurePitches(score, M, M.measures(score, staff)[mi] || [], mi));
     return cache.get(staff);
   };
-  return chordNames(column.sounding.map(({ note, i, staff }) => ({ midi: pitches(staff)[i].midi, alter: pitches(staff)[i].alter, n: note.n })));
+  const notes = column.sounding.map(({ note, i, staff }) => ({ midi: pitches(staff)[i].midi, alter: pitches(staff)[i].alter, n: note.n }));
+  return { names: chordNames(notes), pcs: [...new Set(notes.map(({ midi }) => ((midi % 12) + 12) % 12))] };
 }
 
-// Chord names to show above each column with at least three sounding voices. `names[0]` is the one shown.
+// Chord names to show above each column with at least three sounding voices. `names[0]` is the one shown, picked from the
+// candidates by the harmony of the whole line (docs/armonia-contexto.md); the rest are the alternatives.
 export function chordMarks(score, M, selectedVoices) {
   const bass = M.intervalModeOf(score) === 'bass';
   const marks = [];
@@ -89,10 +92,17 @@ export function chordMarks(score, M, selectedVoices) {
       : Array.from({ length: M.stavesOf(score) }, (_, staff) => intervalColumns(staff ? score.lower?.[mi] || [] : measure, M, selectedVoices, bass)
         .map((column) => ({ staff, indices: column.indices, at: column.at, sounding: column.sounding.map((entry) => ({ ...entry, staff })) }))).flat();
     columns.forEach((column) => {
-      const names = columnChords(score, mi, M, column);
-      if (names.length) marks.push({ mi, at: column.at, staff: column.staff ?? 0, id: `${M.ID_PREFIX[column.staff ?? 0]}${mi}-${column.indices[0]}`, names });
+      const { names, pcs } = columnChords(score, mi, M, column);
+      if (names.length) marks.push({ mi, at: column.at, staff: column.staff ?? 0, id: `${M.ID_PREFIX[column.staff ?? 0]}${mi}-${column.indices[0]}`, names, pcs });
     });
   });
+  // One harmonic line per staff (piano); in Voces the staves are the voices of one texture.
+  const lines = new Map();
+  marks.forEach((mark) => {
+    const key = M.instrumentOf(score) === 'voices' ? 0 : mark.staff;
+    lines.set(key, [...(lines.get(key) || []), mark]);
+  });
+  lines.forEach((line) => pickChords(line, M.fifthsOf(score)).forEach((names, k) => { line[k].names = names; }));
   return marks;
 }
 

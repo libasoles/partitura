@@ -32,3 +32,16 @@ test('chord marks need three simultaneous voices', () => {
   dyad.rows[0][0] = measure.slice(0, 2);
   assert.deepEqual(chordMarks(M.sanitize(dyad), M), []);
 });
+
+test('the chord of a column is picked from the harmony of the whole line', async () => {
+  const { pickChords } = await import('../src/client/chord-context.js');
+  const column = (names, pcs) => ({ names, pcs });
+  const dm7 = column(['Dm7', 'F6/D'], [2, 5, 9, 0]);
+  const g7 = column(['G7'], [7, 11, 2, 5]);
+  const ambiguous = column(['C6', 'Am7/C'], [0, 4, 7, 9]);
+  assert.equal(pickChords([dm7, g7, ambiguous])[2][0], 'C6');
+  const am = column(['Am'], [9, 0, 4]);
+  const e7 = column(['E7'], [4, 8, 11, 2]);
+  assert.equal(pickChords([am, ambiguous, column(['Dm'], [2, 5, 9]), e7, am])[1][0], 'Am7/C');
+  assert.deepEqual(pickChords([dm7, g7, ambiguous])[2], ['C6', 'Am7/C']);
+});
