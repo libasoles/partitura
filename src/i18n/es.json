@@ -459,6 +459,7 @@
         "steps": [
           "Apretá <kbd>S</kbd> para el sostenido, <kbd>B</kbd> para el bemol o <kbd>C</kbd> para el becuadro. También están en la paleta.",
           "Hacé clic sobre la nota que querés alterar: el signo aparece a su izquierda.",
+          "También podés seleccionar una nota primero y después presionar <kbd>S</kbd>, <kbd>B</kbd> o <kbd>C</kbd>: la alteración se aplica directamente a la selección, sin otro clic.",
           "Con el puntillo pasa lo mismo: apretá <kbd>P</kbd> y hacé clic sobre la nota, o hacele doble clic."
         ]
       },
@@ -745,7 +746,15 @@
     },
     "related": "Tutoriales relacionados",
     "tryItLink": "Abrir el editor de partituras Partitura",
-    "startTip": "Tu partitura se guarda automáticamente en este navegador, mientras escribís. Podés volver otro día y continuar; para conservar una copia fuera del navegador, exportala desde el menú."
+    "startTip": "Tu partitura se guarda automáticamente en este navegador, mientras escribís. Podés volver otro día y continuar; para conservar una copia fuera del navegador, exportala desde el menú.",
+    "shortcutSections": [
+      "Apretá la tecla de una figura para elegirla y hacé clic en el pentagrama para colocarla.",
+      "Apretá <kbd>A</kbd> para deseleccionar la herramienta actual.",
+      "Con figuras seleccionadas, <kbd>Mayús</kbd> + <kbd>D</kbd> las duplica justo después de la última seleccionada, siguiendo en los compases que vengan.",
+      "<kbd>Mayús</kbd> + <kbd>↑</kbd> o <kbd>Mayús</kbd> + <kbd>↓</kbd> duplica la selección una tercera diatónica arriba o abajo, en una voz independiente y en el mismo tiempo.",
+      "La copia queda seleccionada; usá <kbd>↑</kbd> y <kbd>↓</kbd> para ajustar su altura.",
+      "Con dos notas seleccionadas, presioná <kbd>(</kbd> o <kbd>)</kbd> para agregar o quitar la ligadura, si se pueden ligar. Es la misma acción que el botón contextual de ligadura. El atajo reconoce el carácter: usá la combinación que escriba el paréntesis en tu teclado, en cualquier sistema operativo."
+    ]
   },
   "tutorialsPath": "tutoriales",
   "termsPath": "terminos",

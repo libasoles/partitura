@@ -141,15 +141,13 @@ function list(items) {
   return '<ul class="tab-tutorial__list">' + items.join('') + '</ul>';
 }
 
-function renderShortcuts(strings) {
+function renderShortcutDiagram(strings) {
   const s = s_of(strings);
   const keys = (strings.scoreUiStrings && strings.scoreUiStrings.shortcuts) || {};
   const notes = NOTES.concat([DEAD]).map(function (n) { return keyCell(n[1], n[0], true); });
   const rests = RESTS.map(function (r) { return keyCell(r[1], r[0].toUpperCase()); });
   const marks = MARKS.map(function (m) { return keyCell(m[1], String(keys[m[0]] || '').toUpperCase()); });
   return (
-    '<p class="score-tutorial__intro">' + s('scoreShortcutsIntro') + '</p>' +
-    '<p>' + s('scoreShortcutsLinks') + '</p>' +
     '<div class="score-keys">' +
     keyGroup(s('scoreShortcutsNotes'), notes) +
     keyGroup(s('scoreShortcutsRests'), rests) +
@@ -158,9 +156,14 @@ function renderShortcuts(strings) {
   );
 }
 
+function renderShortcuts(strings) {
+  return '<p class="score-tutorial__intro">' + strings.scoreShortcutsIntro + '</p>' +
+    renderShortcutDiagram(strings) + '<p>' + strings.scoreShortcutsLinks + '</p>';
+}
+
 const renderDot = function (strings) { return list([dotDemo(s_of(strings))]); };
 const renderBar = function (strings) { return list([barDemo(s_of(strings))]); };
 const renderTabEdit = function (strings) { return list([tabEditDemo(s_of(strings))]); };
 const renderTabMove = function (strings) { return list([tabMoveDemo(s_of(strings))]); };
 
-export { renderShortcuts, renderDot, renderBar, renderTabEdit, renderTabMove };
+export { renderShortcutDiagram, renderShortcuts, renderDot, renderBar, renderTabEdit, renderTabMove };

@@ -137,6 +137,8 @@ No es una PWA: no hay manifest ni service worker.
 
 ## Tutoriales
 
+- Toda tecla o combinación de teclado mencionada en un tutorial debe resaltarse con `<kbd>`, también en las introducciones, los tips y los textos heredados. Las demos deben mostrar una acción por gesto y acompañar la explicación de ese gesto.
+
 - Al mencionar una herramienta, acompañar el texto con el icono que usa el editor (por ejemplo, el engranaje de Ajustes), alineado con la línea de texto.
 - «Qué podés hacer» destaca los diferenciales: crear partituras con + en el menú superior, ajustes, voces y menús contextuales. El guardado automático se explica en «Primeros pasos».
 

@@ -2,7 +2,7 @@
    what the text says (see demo.js for the engine). Each function takes the language's strings for the few labels drawn
    inside the stage and returns the figure's HTML. */
 
-import { stage, pitch, S, SP, beamGroup, pillInner, glyph } from './demo.js';
+import { stage, pitch, S, SP, beamGroup, pillInner, glyph, noteInner } from './demo.js';
 
 import { tutorialIcon } from './tutorial-icons.js';
 
@@ -63,7 +63,9 @@ export function notesRests(s, aria) {
   const x = (i) => d.firstX + i * 30;
   const eighths = [{ x: x(0), p: pitch('G4') }, { x: x(0) + 22, p: pitch('A4') }].map((n) => ({ x: n.x, y: d.y(n.p) }));
   const group = beamGroup(eighths);
-  d.add(0, 0, group.svg, d.pop(3.0), { cls: 'd-beamed' });
+  // The first click creates one flagged eighth; the second replaces it with the beamed pair.
+  d.note(x(0), pitch('G4'), 'e', [[0, { o: 0 }], [2.6, { o: 0 }], [2.61, { o: 1 }], [3.2, { o: 1 }], [3.21, { o: 0 }]], { keep: false, cls: 'd-first-eighth' });
+  d.add(0, 0, group.svg, [[0, { o: 0 }], [3.2, { o: 0 }], [3.21, { o: 1 }], [11.3, { o: 1 }], [11.8, { o: 0 }]], { cls: 'd-beamed' });
   d.click(2.6, eighths[0].x + 5, eighths[0].y);
   d.click(3.2, eighths[1].x + 5, eighths[1].y);
   d.rest(x(2) + 16, 'q', d.pop(5.6));
@@ -134,7 +136,7 @@ export function copy(s, aria) {
   d.click(1.5, notes[0].x + 5, d.y(notes[0].p));
   d.click(2.4, notes[1].x + 5, d.y(notes[1].p));
   d.keycap('Shift', 30, 3.0, 3.6, 8.2, { ky: d.h - 14 });
-  d.keycap('D', 60, 3.0, 3.6, 8.2);
+  d.keycap('D', 60, 3.0, 4.9, 8.2);
   return d.html(aria);
 }
 
@@ -392,5 +394,124 @@ export function scores(s, aria) {
   d.click(3.0, tabX[0] + 94, 14);
   d.click(6.9, tabX[0] + 41, 14);
   d.pointer([[0.6, d.w - 40, d.h - 20], ...visit(3.0, tabX[0] + 94, 14), [4.8, tabX[1] + 41, 50], ...visit(6.9, tabX[0] + 41, 14), [9.0, d.w - 40, d.h - 20]]);
+  return d.html(aria);
+}
+
+// ----- Focused gestures, placed immediately after their instructions -----
+
+export function dragFigure(s, aria) {
+  const d = stage({ id: 'drag-note', T: 10, h: 150, bottom: 100 });
+  const from = { x: 24, y: 24 };
+  const to = { x: d.firstX + 60, y: d.y(pitch('G4')) };
+  d.base('<rect class="d-panel" x="8" y="5" width="32" height="38" rx="5"/>');
+  d.add(from.x - 5, from.y + 8, noteInner(2, 'q'), d.life(0.05));
+  d.add(from.x - 5, from.y + 8, noteInner(2, 'q'), [
+    [0, { o: 0 }], [2, { o: 0, x: 0, y: 0 }], [2.1, { o: 0.45 }],
+    [4.8, { x: to.x - from.x, y: to.y - from.y - 8, o: 0.45 }], [4.81, { o: 0 }],
+  ], { keep: false, cls: 'd-drag-ghost' });
+  d.note(to.x - 5, pitch('G4'), 'q', d.pop(4.8));
+  d.click(2, from.x, from.y);
+  d.pointer([[0.5, 54, 130], [1.8, from.x, from.y], [2.1, from.x, from.y], [4.8, to.x, to.y], [5.3, to.x, to.y], [6.3, 280, 130]]);
+  return d.html(aria);
+}
+
+export function prepend(s, aria) {
+  const d = stage({ id: 'prepend', T: 10 });
+  const first = d.firstX + 42;
+  const shift = [[3.9, { x: 0 }], [4.3, { x: 40 }]];
+  ['G4', 'A4', 'B4'].forEach((n, i) => d.note(first + i * 40, pitch(n), 'q', S(d.life(0.05), shift)));
+  d.note(first - 40, pitch('E4'), 'q', d.pop(4), { cls: 'd-prepended' });
+  d.keycap('4', 26, 0.5, 1, 6.5);
+  d.pointer([[0.5, 280, 95], ...visit(4, first - 35, d.y(0)), [6, 280, 95]]);
+  d.click(4, first - 35, d.y(0));
+  return d.html(aria);
+}
+
+export function fillRests(s, aria) {
+  const d = stage({ id: 'fill-rests', T: 10, meter: [3, 4] });
+  d.add(d.firstX - 10, d.y(8) - 5, `<rect class="d-tint" width="${d.x1 - d.firstX + 10}" height="46"/>`, d.life(1.5));
+  d.click(1.5, d.firstX + 55, d.y(4));
+  d.pointer([[0.5, 280, 95], ...visit(1.5, d.firstX + 55, d.y(4)), [2.5, 280, 95]]);
+  d.keycap('Tab', 30, 2.5, 3.4, 6);
+  d.rest(d.firstX + 48, 'h', d.pop(3.6), { cls: 'd-filled-rest' });
+  d.rest(d.firstX + 142, 'q', d.pop(3.6), { cls: 'd-filled-rest' });
+  return d.html(aria);
+}
+
+export function fullMeasure(s, aria) {
+  const d = stage({ id: 'full-measure', T: 11, h: 158 });
+  ['E4', 'G4', 'A4', 'G4'].forEach((n, i) => d.note(d.firstX + i * 43, pitch(n), 'q', d.life(0.05)));
+  const x = d.firstX + 4 * 43;
+  d.note(x, pitch('F4'), 'q', d.life(2.2, 3.4), { keep: false, cls: 'd-rejected-note' });
+  d.keycap('4', 26, 0.5, 1, 3.5, { ky: 94 });
+  d.pointer([[0.5, 280, 95], ...visit(3.5, x + 5, d.y(1)), [5, 280, 95]]);
+  d.click(3.5, x + 5, d.y(1));
+  const message = s.scoreUiStrings.full;
+  d.add(20, 116, `<rect class="d-toast" width="280" height="30" rx="5"/><text class="d-toast-text" x="12" y="19" font-size="9">${message}</text><path d="M263 11l8 8m0-8-8 8" class="d-toast-close"/>`, d.life(3.6, 9.5), { cls: 'd-toast-example' });
+  return d.html(aria);
+}
+
+export function selectedAccidental(s, aria) {
+  const d = stage({ id: 'selected-accidental', T: 12 });
+  const x = d.firstX + 65;
+  const p = pitch('F4');
+  d.note(x, p, 'q', S(d.life(0.05), [[1.4, { c: INK }], [1.5, { c: SEL }]]));
+  d.pointer([[0.5, 280, 95], ...visit(1.5, x + 5, d.y(p)), [2.5, 280, 95]]);
+  d.click(1.5, x + 5, d.y(p));
+  d.keycap('S', 26, 2.5, 3.4, 5.2);
+  d.keycap('B', 26, 5.4, 6.2, 8.1);
+  d.keycap('C', 26, 8.3, 9.1, 10.4);
+  [['E262', 3.5, 6.2], ['E260', 6.3, 9.1], ['E261', 9.2, 11.3]].forEach(([mark, from, to], i) =>
+    d.add(x - SP * 1.25, d.y(p), glyph(mark, 0, 0), S(d.life(from, to, 0.05), [[0, { c: SEL }]]), { keep: i === 2 }));
+  return d.html(aria);
+}
+
+export function doubleDot(s, aria) {
+  const d = stage({ id: 'double-dot', T: 11 });
+  const x = d.firstX + 80;
+  d.note(x, pitch('G4'), 'q', d.life(0.05));
+  d.add(x + 18, d.y(pitch('G4')) - SP / 2, '<circle r="1.8"/>', d.life(3.15, 7.15, 0.03), { keep: false, cls: 'd-toggled-dot' });
+  [3, 3.13, 7, 7.13].forEach(t => d.click(t, x + 5, d.y(2)));
+  d.pointer([[0.5, 280, 95], [2.6, x + 5, d.y(2)], [3.6, x + 5, d.y(2)], [4.8, 280, 95], [6.6, x + 5, d.y(2)], [7.6, x + 5, d.y(2)], [8.5, 280, 95]]);
+  return d.html(aria);
+}
+
+export function duplicateVoice(s, aria) {
+  return voiceCopy(s, aria, false);
+}
+
+export function adjustCopy(s, aria) {
+  return voiceCopy(s, aria, true);
+}
+
+function voiceCopy(s, aria, adjust) {
+  const d = stage({ id: adjust ? 'adjust-copy' : 'duplicate-voice', T: 13 });
+  const notes = ['E4', 'G4', 'A4'];
+  notes.forEach((name, i) => {
+    const x = d.firstX + 30 + i * 55;
+    const p = pitch(name);
+    d.note(x, p, 'q', S(d.life(0.05), [[0, { c: adjust ? INK : SEL }], [3.6, { c: INK }]]), { stemDown: true, cls: 'd-source-voice' });
+    const movement = adjust ? [[4.1, { y: 0 }], [4.4, { y: -SP / 2 }], [7.6, { y: -SP / 2 }], [7.9, { y: 0 }]] : [];
+    d.note(x, p + 2, 'q', S(d.life(adjust ? 0.05 : 3.7), [[0, { c: SEL }]], movement), { stemDown: false, cls: 'd-copy-voice' });
+  });
+  if (adjust) {
+    d.keycap('↑', 26, 2.7, 4, 5.7);
+    d.keycap('↓', 26, 6.2, 7.5, 9.5);
+  } else {
+    d.keycap('Shift', 30, 2, 3.5, 6);
+    d.keycap('↑', 70, 2, 3.5, 6);
+  }
+  return d.html(aria);
+}
+
+export function keyboardTie(s, aria) {
+  const d = stage({ id: 'keyboard-tie', T: 13 });
+  const a = d.firstX + 45;
+  const b = a + 65;
+  [a, b].forEach(x => d.note(x, pitch('G4'), 'q', S(d.life(0.05), [[0, { c: SEL }]])));
+  const y = d.y(2) + 9;
+  d.add(0, 0, `<path class="d-tie" d="M${a + 5} ${y}Q${(a + b) / 2 + 5} ${y + 15} ${b + 5} ${y}"/>`, d.life(3.7, 8.2, 0.05), { keep: false, cls: 'd-keyboard-tie' });
+  d.keycap('(', 26, 2, 3.5, 5.5);
+  d.keycap(')', 26, 6.5, 8, 10);
   return d.html(aria);
 }

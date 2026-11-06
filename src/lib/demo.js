@@ -33,8 +33,8 @@ export function glyph(code, x, y, scale = 1, attrs = '') {
 }
 
 /** One note around its head centre (0, 0): head, stem (down from the middle line up), flags, dot, accidental. */
-export function noteInner(p, d, { acc, dot, bare } = {}) {
-  const down = p >= 4;
+export function noteInner(p, d, { acc, dot, bare, stemDown } = {}) {
+  const down = stemDown ?? p >= 4;
   const head = glyph(HEADS[d] || 'E0A4', 0, 0);
   let svg = head;
   if (d !== 'w') {
@@ -87,9 +87,10 @@ export function beamGroup(items, { slope = 0.5, beams = 1 } = {}) {
 /** A rounded label centred on its origin, sized to its text. */
 export function pillInner(text, { size = 9, cls = '', icon = '' } = {}) {
   const w = Math.max(24, text.length * size * 0.62 + 14) + (icon ? 16 : 0);
+  const iconPaths = icon.replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '');
   return (
     `<rect class="d-pill ${cls}" x="${f(-w / 2)}" y="${-size - 1}" width="${f(w)}" height="${size * 2 + 2}" rx="${size + 1}"/>` +
-    (icon ? `<g transform="translate(${f(-w / 2 + 5)} -6) scale(0.5)">${icon}</g>` : '') +
+    (icon ? `<g transform="translate(${f(-w / 2 + 5)} -6) scale(0.5)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconPaths}</g>` : '') +
     `<text x="${icon ? 8 : 0}" class="d-pilltext" text-anchor="middle" dominant-baseline="central" font-size="${size}">${text}</text>`
   );
 }

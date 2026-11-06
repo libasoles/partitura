@@ -463,6 +463,7 @@
         "steps": [
           "Aperte <kbd>S</kbd> para sustenido, <kbd>B</kbd> para bemol ou <kbd>C</kbd> para bequadro. Eles também estão na paleta.",
           "Clique na nota que quer alterar: o sinal aparece à esquerda dela.",
+          "Você também pode selecionar uma nota primeiro e depois pressionar <kbd>S</kbd>, <kbd>B</kbd> ou <kbd>C</kbd>: a alteração é aplicada diretamente à seleção, sem outro clique.",
           "O ponto de aumento funciona igual: aperte <kbd>P</kbd> e clique na nota, ou dê um duplo clique nela."
         ]
       },
@@ -748,7 +749,15 @@
       ]
     },
     "related": "Tutoriais relacionados",
-    "tryItLink": "Abrir o editor de partituras Partitura"
+    "tryItLink": "Abrir o editor de partituras Partitura",
+    "shortcutSections": [
+      "Pressione a tecla de uma figura para escolhê-la e clique na pauta para colocá-la.",
+      "Pressione <kbd>A</kbd> para desmarcar a ferramenta atual.",
+      "Com figuras selecionadas, <kbd>Shift</kbd> + <kbd>D</kbd> as duplica logo após a última selecionada, seguindo nos compassos seguintes.",
+      "<kbd>Shift</kbd> + <kbd>↑</kbd> ou <kbd>Shift</kbd> + <kbd>↓</kbd> duplica a seleção uma terça diatônica acima ou abaixo, em uma voz independente e no mesmo tempo.",
+      "A cópia fica selecionada; use <kbd>↑</kbd> e <kbd>↓</kbd> para ajustar sua altura.",
+      "Com duas notas selecionadas, pressione <kbd>(</kbd> ou <kbd>)</kbd> para adicionar ou remover a ligadura, se as notas puderem ser ligadas. É a mesma ação do botão contextual de ligadura. O atalho reconhece o caractere: use a combinação que escreve o parêntese no seu teclado, em qualquer sistema operacional."
+    ]
   },
   "tutorialsPath": "tutoriais",
   "termsPath": "termos",

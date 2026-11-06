@@ -1,5 +1,6 @@
 import type { Strings } from '../i18n';
-import { renderShortcuts, renderDot, renderBar, renderTabEdit, renderTabMove } from './score-tutorial.js';
+import { renderShortcutDiagram, renderShortcuts, renderDot, renderBar, renderTabEdit, renderTabMove } from './score-tutorial.js';
+import { highlightTutorialKeys } from './tutorial-keys.js';
 import * as demos from './demos.js';
 
 /** The sidebar: every tutorial, grouped. The order here is the reading order of "previous" and "next". */
@@ -44,7 +45,14 @@ const animated: Partial<Record<Slug, Demo>> = {
   scores: demos.scores,
 };
 
+const demo = (draw: Demo, s: Strings, label: string) => `<div class="tutorial-demo">${draw(s, label.replace(/<[^>]*>/g, ''))}</div>`;
+
 const figure = (slug: Slug, s: Strings) => (animated[slug] ? `<div class="tutorial-demo">${animated[slug]!(s, s.tutorials.items[slug][0])}</div>` : '');
+
+const illustrations: Partial<Record<Slug, Record<number, Demo>>> = {
+  'notes-rests': { 1: demos.dragFigure, 2: demos.prepend, 6: demos.fillRests },
+  accidentals: { 2: demos.selectedAccidental, 3: demos.doubleDot },
+};
 
 function guide(slug: Slug, s: Strings): string {
   const t = s.tutorials;
@@ -52,19 +60,28 @@ function guide(slug: Slug, s: Strings): string {
   return (
     figure(slug, s) +
     `<h2 class="tutorial-h">${t.stepsHeading}</h2>` +
-    items(body.steps, 'ol') +
-    (body.tip ? `<p class="tutorial-tip"><strong>${t.tipLabel}:</strong> ${body.tip}</p>` : '')
+    `<ol class="tutorial-list">${body.steps.map((step, i) => {
+      const draw = illustrations[slug]?.[i];
+      return `<li>${step}${draw ? demo(draw, s, step) : ''}</li>`;
+    }).join('')}</ol>` +
+    (body.tip ? `<p class="tutorial-tip"><strong>${t.tipLabel}:</strong> ${body.tip}</p>` + (slug === 'notes-rests' ? demo(demos.fullMeasure, s, body.tip) : '') : '')
   );
 }
 
 /** The HTML body of one tutorial, built from the same strings the editor catalog already carries. */
-export function tutorialBody(slug: Slug, s: Strings): string {
+function rawTutorialBody(slug: Slug, s: Strings): string {
   switch (slug) {
     case 'start':
       return figure(slug, s) + `<h2 class="tutorial-h">${s.tutorials.stepsHeading}</h2>` + items(s.scoreHow, 'ol') + figure('signatures', s) +
         (s.tutorials.startTip ? `<p class="tutorial-tip">${s.tutorials.startTip}</p>` : '');
     case 'features': return items(s.scoreFeatures, 'ul');
-    case 'shortcuts': return renderShortcuts(s);
+    case 'shortcuts': {
+      const sections = s.tutorials.shortcutSections;
+      if (!sections) return renderShortcuts(s);
+      const drawings = [null, null, demos.copy, demos.duplicateVoice, demos.adjustCopy, demos.keyboardTie];
+      return sections.map((text, i) => `<p>${text}</p>` + (i === 0 ? renderShortcutDiagram(s) : '') +
+        (drawings[i] ? demo(drawings[i]!, s, text) : '')).join('');
+    }
     case 'dots': return `<p>${s.scoreDotBody}</p>${renderDot(s)}`;
     case 'delete-barline': return `<p>${s.scoreBarBody}</p>${renderBar(s)}`;
     case 'edit-tab': return `<p>${s.scoreTabEditBody}</p>${renderTabEdit(s)}`;
@@ -73,6 +90,10 @@ export function tutorialBody(slug: Slug, s: Strings): string {
       return `<dl class="faq">${s.scoreFaq.map(([q, a]) => `<div><dt><h2>${q}</h2></dt><dd>${a}</dd></div>`).join('')}</dl>`;
     default: return guide(slug, s);
   }
+}
+
+export function tutorialBody(slug: Slug, s: Strings): string {
+  return highlightTutorialKeys(rawTutorialBody(slug, s));
 }
 
 /** Topically close tutorials, shown below each guide with descriptive anchor text (in addition to previous/next). */

@@ -463,6 +463,7 @@
         "steps": [
           "Press <kbd>S</kbd> for a sharp, <kbd>B</kbd> for a flat or <kbd>C</kbd> for a natural. They are in the palette too.",
           "Click the note you want to alter: the sign appears to its left.",
+          "You can also select a note first, then press <kbd>S</kbd>, <kbd>B</kbd> or <kbd>C</kbd>: the accidental applies directly to the selection without another click.",
           "Dots work the same way: press <kbd>P</kbd> and click the note, or double-click it."
         ]
       },
@@ -748,7 +749,15 @@
       ]
     },
     "related": "Related tutorials",
-    "tryItLink": "Open the Partitura score editor"
+    "tryItLink": "Open the Partitura score editor",
+    "shortcutSections": [
+      "Press a figure’s key to pick it, then click on the staff to place it.",
+      "Press <kbd>A</kbd> to deselect the current tool.",
+      "With figures selected, <kbd>Shift</kbd> + <kbd>D</kbd> duplicates them right after the last selected one, carrying on into the following measures.",
+      "<kbd>Shift</kbd> + <kbd>↑</kbd> or <kbd>Shift</kbd> + <kbd>↓</kbd> duplicates the selection a diatonic third above or below, in a separate voice at the same time.",
+      "The copy stays selected; use <kbd>↑</kbd> and <kbd>↓</kbd> to adjust its pitch.",
+      "With two notes selected, press <kbd>(</kbd> or <kbd>)</kbd> to add or remove a tie or slur, if the notes can be linked. This is the same action as the contextual tie button. The shortcut follows the character: use whichever combination types the parenthesis on your keyboard, on any operating system."
+    ]
   },
   "tutorialsPath": "tutorials",
   "termsPath": "terms",

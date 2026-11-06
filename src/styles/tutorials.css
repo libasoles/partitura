@@ -237,3 +237,22 @@ button.tutorial-voice { cursor: pointer; min-width: 2.75rem; min-height: 2.75rem
 .tutorial-voice-staff g.beam:has([data-example-voice="2"]) > :is(polygon, path) { fill: var(--voice-2); stroke: var(--voice-2); }
 .voice-1-off g.beam:has([data-example-voice="1"]) > :is(polygon, path),
 .voice-2-off g.beam:has([data-example-voice="2"]) > :is(polygon, path) { fill: var(--ink); stroke: var(--ink); }
+
+/* A consistent keycap for shortcuts in every tutorial, including legacy prose. */
+.tutorials kbd {
+  display: inline-block;
+  padding: 0.05em 0.35em;
+  border: 1px solid var(--rule);
+  border-bottom-width: 2px;
+  border-radius: 0.25rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.88em;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.tutorial-list > li > .tutorial-demo { margin: 0.9rem 0 1.5rem; }
+.d-toast { fill: #fff; stroke: #ddd; stroke-width: 0.8; filter: drop-shadow(0 2px 3px #0002); }
+.d-toast-text { fill: #222; font-family: var(--sans); }
+.d-toast-close { stroke: #666; stroke-width: 0.8; fill: none; }

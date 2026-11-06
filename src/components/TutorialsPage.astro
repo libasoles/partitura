@@ -1,4 +1,5 @@
 ---
+import { highlightTutorialKeys } from '../lib/tutorial-keys.js';
 import TutorialFeatures from './TutorialFeatures.astro';
 import TutorialsLayout from '../layouts/TutorialsLayout.astro';
 import { pathFor, strings, tutorialsPath, type Locale } from '../i18n';
@@ -24,7 +25,7 @@ const next = slug && index < slugs.length - 1 ? slugs[index + 1] : undefined;
   {slug && item ? (
     <article class="tutorial-body">
       <h1>{item[0]}</h1>
-      <p class="tutorial-lead">{item[1]}</p>
+      <p class="tutorial-lead" set:html={highlightTutorialKeys(item[1])} />
       {slug === 'features' && locale === 'es' ? <TutorialFeatures /> : <div set:html={tutorialBody(slug, s)} />}
       <section class="tutorial-related">
         <h2 class="tutorial-h">{t.related}</h2>
