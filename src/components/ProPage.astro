@@ -10,10 +10,10 @@ const { locale } = Astro.props;
 const s = strings(locale);
 const t = s.pro;
 const paths = Object.fromEntries(locales.map((l) => [l, proPath(l)])) as Record<Locale, string>;
-// Prices in ARS; the numbers are sent to Analytics as the event value.
+// Argentina pays in ARS (the markup); everywhere else the script below swaps in the USD price. The number is sent to Analytics as the event value.
 const plans = [
-  { id: 'monthly', name: t.monthly, price: t.monthlyPrice, period: t.monthlyPeriod, value: 2000 },
-  { id: 'yearly', name: t.yearly, price: t.yearlyPrice, period: t.yearlyPeriod, value: 16000 },
+  { id: 'monthly', name: t.monthly, price: t.monthlyPrice, usd: t.monthlyPriceUsd, period: t.monthlyPeriod, value: 2000, valueUsd: 1 },
+  { id: 'yearly', name: t.yearly, price: t.yearlyPrice, usd: t.yearlyPriceUsd, period: t.yearlyPeriod, value: 16000, valueUsd: 9 },
 ];
 ---
 
@@ -40,12 +40,12 @@ const plans = [
         {plans.map((plan) => (
           <div class="pro-plan">
             <h3>{plan.name}</h3>
-            <p class="pro-price"><span>{plan.price}</span> {plan.period}</p>
-            <button type="button" class="pro-choose" data-plan={plan.id} data-value={plan.value}>{t.choose}</button>
+            <p class="pro-price"><span data-usd={plan.usd}>{plan.price}</span> {plan.period}</p>
+            <button type="button" class="pro-choose" data-plan={plan.id} data-value={plan.value} data-value-usd={plan.valueUsd}>{t.choose}</button>
           </div>
         ))}
       </div>
-      <p class="legal-updated">{t.currency}</p>
+      <p class="legal-updated" data-usd={t.currencyUsd}>{t.currency}</p>
     </section>
 
     <section class="pro-thanks" data-pro-thanks role="status" aria-live="polite" tabindex="-1" hidden>
@@ -66,12 +66,17 @@ const plans = [
       // Funnel: pro_menu_click (menu) → pro_page_view (this page) → pro_plan_click (a plan button) → pro_waitlist_shown (the notice).
       track('pro_page_view');
       var plans = root.querySelector('[data-pro-plans]');
+      // Outside Argentina the prices are in dollars. The time zone is the signal (no request to a geolocation service).
+      var zone = '';
+      try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+      var usd = !/^America\/(Argentina\/|Buenos_Aires$|Cordoba$|Mendoza$|Jujuy$|Catamarca$|Rosario$)/.test(zone);
+      if (usd) plans.querySelectorAll('[data-usd]').forEach(function (el) { el.textContent = el.getAttribute('data-usd'); });
       var thanks = root.querySelector('[data-pro-thanks]');
       root.addEventListener('click', function (event) {
         var btn = event.target.closest('.pro-choose');
         if (!btn) return;
         var plan = btn.getAttribute('data-plan');
-        track('pro_plan_click', { plan: plan, value: Number(btn.getAttribute('data-value')), currency: 'ARS' });
+        track('pro_plan_click', { plan: plan, value: Number(btn.getAttribute(usd ? 'data-value-usd' : 'data-value')), currency: usd ? 'USD' : 'ARS' });
         plans.hidden = true;
         thanks.hidden = false;
         thanks.focus();

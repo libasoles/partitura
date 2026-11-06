@@ -761,18 +761,18 @@
   "proPath": "pro",
   "pro": {
     "metaTitle": "Plan Pro · Partitura",
-    "metaDescription": "El plan Pro de Partitura: tus partituras en todos tus dispositivos, archivo, letras de canciones y enlaces públicos. Mensual $2000 ARS o anual $16000 ARS.",
+    "metaDescription": "El plan Pro de Partitura: tus partituras en todos tus dispositivos, archivo, letras de canciones y enlaces públicos. Mensual $2000 ARS o anual $16000 ARS; fuera de Argentina, US$ 1 o US$ 9.",
     "h1": "Partitura Pro",
     "lead": "Todo lo que ya usás sigue siendo gratis. Pro suma lo que necesitás para llevar tus partituras más lejos.",
     "featuresTitle": "Qué incluye",
     "features": [
       [
         "Todos tus dispositivos",
-        "Accedé a tus partituras desde múltiples dispositivos."
+        "Accedé a tus partituras desde múltiples computadoras y tablets (no incluye celulares)."
       ],
       [
         "Archivo",
-        "Archivá partituras para mantenerlas organizadas."
+        "Creá carpetas de partituras para mantenerlas organizadas."
       ],
       [
         "Letra de canciones",
@@ -785,6 +785,9 @@
     ],
     "plansTitle": "Elegí tu plan",
     "monthly": "Plan mensual",
+    "monthlyPriceUsd": "US$ 1",
+    "yearlyPriceUsd": "US$ 9",
+    "currencyUsd": "Precios en dólares estadounidenses (USD).",
     "monthlyPrice": "$2000",
     "monthlyPeriod": "por mes",
     "yearly": "Plan anual",

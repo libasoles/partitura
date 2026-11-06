@@ -764,18 +764,18 @@
   "proPath": "pro",
   "pro": {
     "metaTitle": "Pro plan · Partitura",
-    "metaDescription": "The Partitura Pro plan: your scores on every device, archiving, song lyrics and public links. Monthly ARS 2000 or yearly ARS 16000.",
+    "metaDescription": "The Partitura Pro plan: your scores on every device, archiving, song lyrics and public links. Monthly ARS 2000 or yearly ARS 16000; outside Argentina, US$ 1 or US$ 9.",
     "h1": "Partitura Pro",
     "lead": "Everything you use today stays free. Pro adds what you need to take your scores further.",
     "featuresTitle": "What's included",
     "features": [
       [
         "All your devices",
-        "Access your scores from multiple devices."
+        "Access your scores from multiple computers and tablets (phones not included)."
       ],
       [
         "Archive",
-        "Archive scores to keep them organized."
+        "Create score folders to keep them organized."
       ],
       [
         "Song lyrics",
@@ -788,6 +788,9 @@
     ],
     "plansTitle": "Choose your plan",
     "monthly": "Monthly plan",
+    "monthlyPriceUsd": "US$ 1",
+    "yearlyPriceUsd": "US$ 9",
+    "currencyUsd": "Prices in US dollars (USD).",
     "monthlyPrice": "ARS 2000",
     "monthlyPeriod": "per month",
     "yearly": "Yearly plan",

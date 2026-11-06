@@ -764,18 +764,18 @@
   "proPath": "pro",
   "pro": {
     "metaTitle": "Plano Pro · Partitura",
-    "metaDescription": "O plano Pro do Partitura: suas partituras em todos os dispositivos, arquivo, letras de músicas e links públicos. Mensal ARS 2000 ou anual ARS 16000.",
+    "metaDescription": "O plano Pro do Partitura: suas partituras em todos os dispositivos, arquivo, letras de músicas e links públicos. Mensal ARS 2000 ou anual ARS 16000; fora da Argentina, US$ 1 ou US$ 9.",
     "h1": "Partitura Pro",
     "lead": "Tudo o que você já usa continua grátis. O Pro soma o que você precisa para levar suas partituras mais longe.",
     "featuresTitle": "O que inclui",
     "features": [
       [
         "Todos os seus dispositivos",
-        "Acesse suas partituras de vários dispositivos."
+        "Acesse suas partituras de vários computadores e tablets (celulares não incluídos)."
       ],
       [
         "Arquivo",
-        "Arquive partituras para mantê-las organizadas."
+        "Crie pastas de partituras para mantê-las organizadas."
       ],
       [
         "Letra de músicas",
@@ -788,6 +788,9 @@
     ],
     "plansTitle": "Escolha seu plano",
     "monthly": "Plano mensal",
+    "monthlyPriceUsd": "US$ 1",
+    "yearlyPriceUsd": "US$ 9",
+    "currencyUsd": "Preços em dólares americanos (USD).",
     "monthlyPrice": "ARS 2000",
     "monthlyPeriod": "por mês",
     "yearly": "Plano anual",
