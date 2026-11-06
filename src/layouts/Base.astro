@@ -51,6 +51,7 @@ const jsonLd = pageJsonLd({
     <link rel="canonical" href={canonical} />
     {locales.map((l) => <link rel="alternate" hreflang={l} href={abs(l)} />)}
     <link rel="alternate" hreflang="x-default" href={homeUrl} />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={s.ui.siteName} />
     <meta property="og:locale" content={ogLocales[locale]} />

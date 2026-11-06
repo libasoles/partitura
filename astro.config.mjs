@@ -41,6 +41,7 @@ export default defineConfig({
   build: { inlineStylesheets: 'always' },
   integrations: [
     sitemap({
+      lastmod: new Date(),
       serialize(item) {
         const path = new URL(item.url).pathname;
         const group = path === rootPath ? Object.fromEntries(locales.map((l) => [l, pathFor(l)])) : alternates.get(path);
