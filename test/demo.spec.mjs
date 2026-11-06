@@ -73,9 +73,14 @@ test('a demo opened without URL options produces a shareable link for a fresh br
     await expect(recipient.locator('.welcome-banner')).toBeHidden();
     await expect(recipient.locator('.score-doc-tab')).toHaveCount(2);
     await recipient.evaluate(() => window.ScoreStore.flush());
+    // Demos are volatile: the reload at the demo URL opens a fresh copy next to the visitor's own score.
     await recipient.reload();
     await expect(recipient.locator('#scoreTitle')).toHaveValue('Canto en la rama');
     await expect(recipient.locator('.score-doc-tab')).toHaveCount(2);
+    await recipient.goto('/es/');
+    await recipient.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
+    await expect(recipient.locator('.score-doc-tab')).toHaveCount(1);
+    await expect(recipient.locator('#scoreTitle')).not.toHaveValue('Canto en la rama');
   } finally {
     await context.close();
   }
@@ -126,19 +131,18 @@ test('demo copies stay out of personal scores across edits, reloads and repeated
   await openDemo();
   await expect(page.locator('.score-doc-tab')).toHaveCount(3);
   await page.evaluate(() => window.ScoreStore.flush());
-  await page.reload();
+  // Demos are never stored: the index shows only the personal score.
+  await page.goto('/es/#pro');
   await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
-  await expect(page.locator('.score-doc-tab')).toHaveCount(3);
+  await expect(page.locator('.score-doc-tab')).toHaveCount(1);
+  await expect(page.locator('#scoreTitle')).toHaveValue('Mi canción');
   await page.locator('#siteMenuToggle').click();
   await expect(page.locator('#menuScores [role=menuitem]')).toHaveText(['Mi canción']);
   await page.locator('#siteMenuToggle').click();
-  // Closing a demo discards just that copy; the other remains editable.
-  await page.locator('.score-doc-tab.is-active .score-doc-tab-close').click();
+  await openDemo();
   await expect(page.locator('.score-doc-tab')).toHaveCount(2);
-  await page.locator('.score-doc-tab:not(.is-active) .score-doc-tab-label').click();
-  await expect(page.locator('#scoreTitle')).toHaveValue('Demo editada');
-  await page.locator('#scoreClear').click();
-  await page.getByRole('alertdialog').getByRole('button', { name: 'Borrar', exact: true }).click();
+  // Closing a demo discards just that copy; the personal score remains.
+  await page.locator('.score-doc-tab.is-active .score-doc-tab-close').click();
   await expect(page.locator('.score-doc-tab')).toHaveCount(1);
   await expect(page.locator('#scoreTitle')).toHaveValue('Mi canción');
   await openDemo();
