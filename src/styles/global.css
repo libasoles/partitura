@@ -392,16 +392,11 @@ a { color: var(--blue-france); }
 }
 .pro-choose:hover { filter: brightness(1.1); }
 .pro-choose:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.pro-thanks {
-  margin: 1rem 0 2.5rem;
-  padding: 2rem;
-  border: 1px solid var(--rule);
-  border-left: 4px solid var(--accent);
-  border-radius: 0.6rem;
-  background: var(--surface);
-}
+.pro-thanks { margin: 2rem 0 3rem; padding: 1rem 0; text-align: center; }
 .pro-thanks:focus { outline: none; }
-.pro-thanks h2 { margin: 0 0 0.75rem; font-size: 1.5rem; }
-.pro-thanks p { margin: 0; max-width: 38rem; color: var(--ink-soft); }
+.pro-thanks-icon { color: var(--accent-brand); }
+.pro-thanks h2 { margin: 0.75rem 0 1rem; font-size: 1.8rem; line-height: 1.2; }
+.pro-thanks p { margin: 0 auto 1rem; max-width: 34rem; font-size: 1.05rem; }
+.pro-thanks p + p { font-weight: 600; }
 .pro-thanks[hidden], .pro [data-pro-plans][hidden] { display: none; }
 .pro > p:last-child { margin-top: 2rem; }

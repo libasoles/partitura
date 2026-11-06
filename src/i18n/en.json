@@ -799,7 +799,8 @@
     "currency": "Prices in Argentine pesos (ARS).",
     "choose": "Choose plan",
     "thanksTitle": "Thanks for your interest!",
-    "thanksBody": "We're working on these features, but they aren't available yet. You haven't been charged anything and there's nothing else you need to do. Meanwhile, the editor is still free.",
+    "thanksBody": "We're working on these features, but they aren't available yet.",
+    "thanksFree": "All current features will stay free.",
     "back": "Back to the editor"
   },
   "termsPath": "terms",
