@@ -1,6 +1,6 @@
 # FluidR3 instrument samples
 
-Piano (`acoustic_grand_piano`) and nylon guitar (`acoustic_guitar_nylon`) samples
+Piano (`acoustic_grand_piano`), nylon guitar (`acoustic_guitar_nylon`) and choir (`choir_aahs`, `voice_oohs`, `synth_choir` as `choir-ah`, `choir-oh`, `choir-synth`) samples
 from FluidR3 by Frank Wen, rendered as MP3 by Benjamin Gleitzman / MIDI.js Soundfonts.
 
 Source: https://github.com/gleitz/midi-js-soundfonts/tree/gh-pages/FluidR3_GM

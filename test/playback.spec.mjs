@@ -316,6 +316,50 @@ for (const instrument of ['piano', 'guitar']) {
   });
 }
 
+for (const [sound, file] of [[undefined, 'choir-ah'], ['oh', 'choir-oh'], ['synth', 'choir-synth']]) test(`voices (${sound || 'default'}): plays the choir samples`, async ({ page }) => {
+  const audioRequests = [];
+  page.on('request', (request) => { if (request.url().includes('/audio/')) audioRequests.push(request.url()); });
+  await page.addInitScript((sound) => {
+    if (!sessionStorage.getItem('playbackFixture')) localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [{
+      instrument: 'voices', parts: 2, sound, meter: '4/4', clef: 'treble', fifths: 0, tempo: 120,
+      rows: [[[{ d: 'w', n: 35 }]]], lower: { 0: [{ d: 'w', n: 28 }] }, tools: { playback: true },
+    }] }));
+    sessionStorage.setItem('playbackFixture', '1');
+  }, sound);
+  await page.goto('/es/#pro');
+  await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
+  const button = page.locator('#scorePlayback');
+  await button.click();
+  await expect(button).toHaveAccessibleName('Pausar');
+  expect(audioRequests).toHaveLength(1);
+  expect(audioRequests[0]).toContain(`/${file}.json`);
+});
+
+test('voices: the Ajustes sound selector defaults to Ah, is voices-only and drives the samples', async ({ page }) => {
+  const audioRequests = [];
+  page.on('request', (request) => { if (request.url().includes('/audio/')) audioRequests.push(request.url()); });
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem('playbackFixture')) localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [{
+      instrument: 'voices', parts: 2, meter: '4/4', clef: 'treble', fifths: 0, tempo: 120,
+      rows: [[[{ d: 'w', n: 35 }]]], lower: { 0: [{ d: 'w', n: 28 }] }, tools: { playback: true },
+    }] }));
+    sessionStorage.setItem('playbackFixture', '1');
+  });
+  await page.goto('/es/#pro');
+  await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
+  await page.locator('#scoreSettingsToggle').click();
+  await expect(page.getByRole('radio', { name: 'Ah', exact: true })).toBeChecked();
+  await page.locator('.score-settings-radio').filter({ hasText: /^Piano$/ }).click();
+  await expect(page.getByRole('radio', { name: 'Oh', exact: true })).toBeHidden();
+  await page.locator('.score-settings-radio').filter({ hasText: /^Voces$/ }).click();
+  await page.locator('.score-settings-radio').filter({ hasText: /^Oh$/ }).click();
+  await page.keyboard.press('Escape');
+  await page.locator('#scorePlayback').click();
+  await expect(page.locator('#scorePlayback')).toHaveAccessibleName('Pausar');
+  expect(audioRequests).toHaveLength(1);
+  expect(audioRequests[0]).toContain('/choir-oh.json');
+});
+
 test('playback preference persists; disabling or changing document cancels audio', async ({ page }) => {
   await open(page);
   await enable(page);
