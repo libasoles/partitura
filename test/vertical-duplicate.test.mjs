@@ -79,3 +79,47 @@ test('copied tuplets have their own group and dangling ties are removed', () => 
   assert.equal(score.rows[0][0].filter(ev => ev.tp === 1)[2].tie, true);
   assert.deepEqual(refs.map(ref => M.onsets(score.rows[0][0])[ref.i]), [0, 8, 16]);
 });
+
+for (const staff of [0, 1]) {
+  test(`duplicating a tied phrase and its last eighth separately continues voice 2 on staff ${staff}`, () => {
+    const score = M.emptyScore();
+    score.meter = '6/8';
+    const melody = [
+      { d: 'h', n: 35, v: 1, at: 0, tie: true },
+      { d: 'e', n: 35, v: 1, at: 48 },
+      { d: 'e', n: 34, v: 1, at: 60 },
+    ];
+    if (staff) score.lower = { 0: melody };
+    else score.rows[0][0] = melody;
+    const ref = i => M.refOf(staff, 0, i);
+    const firstCopies = M.duplicateVertical(score, [ref(0), ref(1)], -1);
+    assert.equal(firstCopies.length, 2);
+    // Match the user's workflow: adjust the copied pitches, then duplicate the remaining eighth.
+    firstCopies.forEach(r => { get(score, r).n -= 3; });
+    const before = structuredClone(M.measures(score, staff)[0]);
+    const lastIndex = before.findIndex(ev => ev.v === 1 && ev.at === 60);
+    const copies = M.duplicateVertical(score, [ref(lastIndex)], -1);
+    const measure = M.measures(score, staff)[0];
+    assert.equal(copies.length, 1);
+    assert.equal(get(score, copies[0]).v, 2);
+    assert.equal(get(score, copies[0]).at, 60);
+    assert.deepEqual(measure.filter((_, i) => i !== copies[0].i), before);
+    assert.deepEqual(measure.map(ev => ev.v), [1, 2, 1, 2, 1, 2]);
+    assert.equal(M.links(score).filter(link => link.type === 'tie').length, 2);
+    assert.deepEqual(M.measures(M.sanitize(score), staff)[0], measure);
+  });
+}
+
+test('duplicating earlier notes into a voice with a later entry does not renumber that entry', () => {
+  const score = M.emptyScore();
+  score.meter = '6/8';
+  score.rows[0][0] = [
+    { n: 35, d: 'h', v: 1, at: 0, tie: true },
+    { n: 35, d: 'e', v: 1, at: 48 },
+    { n: 34, d: 'e', v: 1, at: 60 },
+    { n: 30, d: 'e', v: 2, at: 60 },
+  ];
+  const copies = M.duplicateVertical(score, [0, 1].map(i => ({ mi: 0, i })), -1);
+  assert.equal(copies.length, 2);
+  assert.deepEqual(score.rows[0][0].map(ev => ev.v), [1, 2, 1, 2, 1, 2]);
+});

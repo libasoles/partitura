@@ -54,3 +54,37 @@ for (const staff of [0, 1]) {
     }
   });
 }
+
+test('duplicating a melody in separate selections continues the existing second voice', async ({ page }) => {
+  await page.addInitScript(() => {
+    const score = {
+      clef: 'guitar', instrument: 'guitar', meter: '6/8', fifths: -1,
+      rows: [[[
+        { d: 'h', n: 35, v: 1, at: 0, tie: true },
+        { d: 'e', n: 35, v: 1, at: 48 },
+        { d: 'e', n: 34, v: 1, at: 60 },
+      ], [], [], []], [[], [], [], []], [[], [], [], []]],
+    };
+    localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [score] }));
+  });
+  await page.goto('/es/');
+  await page.waitForFunction(() => window.scoreEditor);
+  await expect(page.locator('[id="e0-0"] .notehead')).toBeVisible();
+  // The hollow half-note head passes its centre hit through to the SVG;
+  // the editor selects it by coordinates rather than by the painted target.
+  const head = await page.locator('[id="e0-0"] .notehead').boundingBox();
+  await page.mouse.click(head.x + head.width / 2, head.y + head.height / 2);
+  await page.locator('[id="e0-1"] .notehead').click({ modifiers: ['ControlOrMeta'] });
+  await expect(page.locator('#scoreStage g.note.is-selected')).toHaveCount(2);
+  await page.locator('#scoreStage').focus();
+  await page.keyboard.press('Shift+ArrowDown');
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowDown');
+  const before = await page.evaluate(() => structuredClone(window.scoreEditor.score.rows[0][0]));
+  await page.locator('[id="e0-4"] .notehead').click();
+  await page.keyboard.press('Shift+ArrowDown');
+  const expected = [...before, { d: 'e', n: 32, v: 2, at: 60 }];
+  expect(await page.evaluate(() => window.scoreEditor.score.rows[0][0])).toEqual(expected);
+  await expect(page.locator('#scoreStage g.tie')).toHaveCount(2);
+  await page.keyboard.press('ControlOrMeta+z');
+  expect(await page.evaluate(() => window.scoreEditor.score.rows[0][0])).toEqual(before);
+});

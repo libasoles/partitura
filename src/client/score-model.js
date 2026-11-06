@@ -400,7 +400,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     };
   }
 
-  // Duplica a una tercera diatonica: una voz nueva por cada voz elegida, sin desplazar el ritmo original.
+  // Duplica a una tercera diatonica en una voz independiente, continuando la vecina si esta libre.
   function duplicateVertical(score, refs, delta) {
     if (delta !== 1 && delta !== -1) return null;
     const trial = clone(score);
@@ -422,9 +422,21 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
       const starts = onsets(measure);
       settleVoices(measure);
       const sourceVoices = [...new Set(group.map((r) => measure[r.i].v))].sort((a, b) => a - b);
-      if (voices(measure).length + sourceVoices.length > MAX_VOICE) return null;
-      const oldVoice = (v) => v + sourceVoices.filter((s) => delta > 0 ? s <= v : s < v).length;
-      const newVoice = (v) => oldVoice(v) - delta;
+      // Continuar la voz vecina si esta libre durante todas las figuras copiadas.
+      // Duplicar una frase por partes no debe insertar una voz nueva cada vez.
+      const reuse = new Map();
+      for (const source of sourceVoices) {
+        const target = source - delta;
+        if (target < 1 || target > MAX_VOICE || sourceVoices.includes(target)) continue;
+        const selected = group.filter(ref => measure[ref.i].v === source);
+        const overlaps = selected.some(ref => original.some((ev, i) => ev.v === target &&
+          starts[i] < starts[ref.i] + length(measure[ref.i]) && starts[ref.i] < starts[i] + length(ev)));
+        if (!overlaps) reuse.set(source, target);
+      }
+      const inserted = sourceVoices.filter(source => !reuse.has(source));
+      const oldVoice = (v) => v + inserted.filter((s) => delta > 0 ? s <= v : s < v).length;
+      const newVoice = (v) => reuse.has(v) ? oldVoice(reuse.get(v)) : oldVoice(v) - delta;
+      if (Math.max(...measure.map(ev => oldVoice(ev.v)), ...sourceVoices.map(newVoice)) > MAX_VOICE) return null;
       let nextTuplet = Math.max(0, ...measure.map((ev) => ev.tp || 0));
       const tuplets = new Map();
       const inserts = group.map((ref) => {
