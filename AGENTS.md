@@ -6,6 +6,8 @@
 - Revisar el diff antes del commit y conservar los cambios previos del usuario.
 - Mantener las instrucciones compartidas en este archivo. `CLAUDE.md` debe cargarlas mediante `@AGENTS.md`, sin duplicarlas.
 
+- Stack, comandos de desarrollo, pruebas y cómo regenerar las capturas del README: `docs/desarrollo.md`. El README es público y solo describe el producto.
+
 ## Favicon y logo
 
 - `public/favicon.svg` usa el logo del sitio con un encuadre cuadrado para las pestañas del navegador.

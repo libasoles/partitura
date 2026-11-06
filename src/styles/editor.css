@@ -904,6 +904,15 @@
   opacity: 0.35;
 }
 
+.score-marker-cell {
+  position: absolute;
+  height: 0;
+  border-bottom: 3px solid var(--accent-brand);
+  border-radius: 2px;
+  opacity: 0.6;
+  transform: translate(-50%, 1px);
+}
+
 .score-marker-ledger {
   position: absolute;
   height: 2px;

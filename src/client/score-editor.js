@@ -3029,11 +3029,25 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       marker.innerHTML = '<span class="score-marker-line"></span>';
       stage.appendChild(marker);
     }
-    marker.querySelectorAll('.score-marker-ledger').forEach((node) => node.remove());
+    marker.querySelectorAll('.score-marker-ledger, .score-marker-cell').forEach((node) => node.remove());
     if (!hit) { marker.hidden = true; return; }
     marker.hidden = false;
     const line = marker.firstChild;
     const item = drag ? drag.item : activeItem;
+    if (item && item.kind === 'lyric') {
+      // Sin guia vertical: se subraya la celda bajo la nota donde cabe la silaba.
+      line.style.height = '0';
+      const node = hit.onNote && hit.staff < M.lyricStaves(score) && lyricNote(hit.mi, hit.t, hit.staff);
+      if (!node) return;
+      const place = lyricLine(hit.mi, hit.staff, node);
+      const cell = document.createElement('span');
+      cell.className = 'score-marker-cell';
+      cell.style.left = centerX(node, stage.getBoundingClientRect()) + 'px';
+      cell.style.top = place.y + 'px';
+      cell.style.width = place.space * 3 + 'px';
+      marker.appendChild(cell);
+      return;
+    }
     const x = item?.kind === 'navigation' ? layout[hit.mi][['dc', 'ds'].includes(item.mark) ? 'right' : 'left']
       : item && item.kind === 'bar' && item.bar !== 'double' ? layout[hit.mi][item.bar === 'start' ? 'left' : 'right']
       : item && item.kind === 'bar' && item.bar === 'double' ? hit.rawX
