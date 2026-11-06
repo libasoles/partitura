@@ -32,7 +32,7 @@ test('interval toggle sits below voices and engraves stacked intervals on both s
   await page.screenshot({ path: '/tmp/partitura-intervals.png', fullPage: true });
   await expect(directions).toHaveCount(3, { timeout: 5000 });
   await expect(directions.first().locator('tspan[font-size]').first()).toHaveAttribute('font-size', '202px');
-  expect(await directions.evaluateAll(nodes => nodes.map(node => node.textContent.replace(/\s/g, '')))).toEqual(['36', '45', '5']);
+  expect(await directions.evaluateAll(nodes => nodes.map(node => node.textContent.replace(/\s/g, '')))).toEqual(['IIIVI', 'IVV', 'V']);
   const levels = await directions.first().locator('tspan.text').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top));
   expect(new Set(levels).size).toBeGreaterThan(1);
   await page.screenshot({ path: '/tmp/partitura-intervals.png', fullPage: true });

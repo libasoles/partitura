@@ -13,8 +13,17 @@ export function intervalColumns(measure, M) {
   });
 }
 
-// The label is the distance between two notes (1 = unison, 3 = third, 8 = octave), never a degree of a key.
-const roman = (value) => String(value);
+// Roman numerals show the distance between notes (I = unison, III = third, VIII = octave).
+const roman = (value) => {
+  let label = '';
+  for (const [number, numeral] of [[50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]) {
+    while (value >= number) {
+      label += numeral;
+      value -= number;
+    }
+  }
+  return label;
+};
 
 // Whether the score has any simultaneous notes for the toggle to label.
 export function hasIntervals(score, M) {

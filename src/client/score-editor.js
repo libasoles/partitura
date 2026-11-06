@@ -1906,7 +1906,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return chordLoading;
   }
 
-  const isIntervalDir = (node) => /^\d+$/.test(squash(node.textContent));
+  const isIntervalDir = (node) => /^[IVXL]+$/.test(squash(node.textContent));
   const INTERVAL_GAP = 9; // separacion minima (px) entre las etiquetas de intervalos y lo que tienen debajo
   const CHORD_GAP = 4;
 

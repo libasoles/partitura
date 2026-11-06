@@ -16,7 +16,7 @@ function choir() {
 
 test('Voces: intervals are taken between staves, each staff being one voice', () => {
   const columns = choirColumns(choir(), 0, C);
-  assert.deepEqual(columns.map((c) => c.intervals), [['3', '6'], ['3', '7']]);
+  assert.deepEqual(columns.map((c) => c.intervals), [['III', 'VI'], ['III', 'VII']]);
   assert.deepEqual(columns.map((c) => c.staff), [0, 0]);
 });
 

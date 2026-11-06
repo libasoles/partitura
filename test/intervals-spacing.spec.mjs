@@ -20,7 +20,7 @@ test('interval labels keep a minimum gap above the staff and notes, and chord na
   await expect(page.locator('#scoreIntervals')).toHaveAttribute('aria-pressed', 'true');
   await page.waitForTimeout(500);
   const result = await page.evaluate(() => {
-    const roman = /^\d+$/;
+    const roman = /^[IVXL]+$/;
     const boxes = [...document.querySelectorAll('#scoreStage g.measure g.dir')].map((node) => ({ text: node.textContent.replace(/\s/g, ''), r: node.getBoundingClientRect() }));
     const intervals = boxes.filter((b) => roman.test(b.text));
     const chords = boxes.filter((b) => !roman.test(b.text));
