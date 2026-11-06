@@ -91,6 +91,7 @@ const api = (function () {
 
     let divisions = 1;
     const flat = [];
+    const syllables = [];
     const staves = M.stavesOf(score);
     // Pentagramas de abajo (<staff>2..4</staff>), solo los que tiene el sitio; si no, todo va al primero.
     const lowers = Array.from({ length: staves - 1 }, () => ({}));
@@ -223,6 +224,9 @@ const api = (function () {
           if (v <= M.MAX_VOICE) ev.v = v;
           ev.at = Math.round(start * M.DIVISIONS / divisions);
           (staff ? lowerEvents[staff - 1] : events).push(ev);
+          const lyric = !rest && !chord && child(node, 'lyric');
+          const syllable = lyric && text(lyric, 'text');
+          if (syllable) syllables.push({ mi, at: ev.at, staff, text: syllable });
         }
       });
       // Conservar tambien la voz unica: los <chord> importados son decisiones explicitas de notacion.
@@ -243,7 +247,9 @@ const api = (function () {
     if (Object.keys(clefs).length) score.clefs = clefs;
     lowerClefs.forEach((changes, k) => { if (Object.keys(changes).length) score[M.CLEF_KEYS[k + 1][1]] = changes; });
     lowers.forEach((lane, k) => { if (Object.keys(lane).length) score[M.LANE_KEYS[k]] = lane; });
-    return M.sanitize(score);
+    M.sanitize(score);
+    syllables.forEach(({ mi, at, staff, text }) => M.setLyric(score, mi, at, text, staff));
+    return score;
   }
 
   // ---- MIDI -> partitura --------------------------------------------------
