@@ -1078,7 +1078,7 @@ body.score-dragging {
   transform: translate(-50%, -50%);
   border: 1px solid var(--brand-blue-dark);
   border-radius: 50%;
-  background: var(--brand-yellow);
+  background: var(--paper);
   color: var(--brand-blue-dark);
   cursor: pointer;
 }
@@ -1090,7 +1090,7 @@ body.score-dragging {
 
 .score-insert-measure:hover,
 .score-insert-measure:focus-visible {
-  background: var(--paper);
+  background: #ececec;
 }
 
 .score-row-tools {
