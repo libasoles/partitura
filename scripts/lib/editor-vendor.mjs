@@ -3,6 +3,7 @@ import { resolve, dirname } from 'node:path';
 import { createRequire } from 'node:module';
 import { transform } from 'esbuild';
 import { buildChordsData } from './chords-data.mjs';
+import { buildSyllabify } from './syllabify-data.mjs';
 const require = createRequire(import.meta.url);
 
 // Used by Astro and consuming builds; no network access at build time.
@@ -54,5 +55,6 @@ export async function buildEditorVendor(outdir) {
   const jspdf = readFileSync(new URL('public/vendor/jspdf.umd.min.js', root), 'utf8');
   writeFileSync(jspdfPath, jspdf.replace(/\n?\/\/# sourceMappingURL=.*\n?$/, '\n'));
   buildChordsData(out);
+  buildSyllabify(out);
   return name;
 }

@@ -35,6 +35,7 @@
     "@fontsource-variable/montserrat": "^5.3.0",
     "@playwright/test": "^1.64.1",
     "astro": "^7.4.1",
+    "el-silbador": "github:libasoles/el-silbador#a535d7dcb3b625ad478e90a2f8ab08ba431c3bc1",
     "guitar-chords": "github:libasoles/guitar-chords#77e1da59bf3192707f0468f2c7dd0be727e5dda3",
     "lighthouse": "^13.6.0",
     "typescript": "^5.9.0"

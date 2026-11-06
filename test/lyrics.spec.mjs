@@ -51,6 +51,32 @@ test('piano takes lyrics on the top staff only', async ({ page }) => {
   expect(await page.evaluate(() => window.scoreEditor.score.lyrics)).toBeUndefined();
 });
 
+test('a pasted lyric is syllabified and spread over the notes and measures', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => {
+    const { score, render } = window.scoreEditor;
+    const M = window.ScoreModel;
+    [0, 1].forEach((mi) => [0, 1, 2, 3].forEach((k) => M.insertNote(M.measures(score)[mi], { d: 'q', n: 33 }, k * 24)));
+    render();
+  });
+  await page.locator('[data-tool="lyric"]').click({ position: { x: 5, y: 5 } });
+  const note = await page.locator('#scoreStage g.measure').first().locator('.notehead').first().boundingBox();
+  await page.mouse.click(note.x + note.width / 2, note.y + note.height / 2);
+  const draft = page.locator('.score-lyric-draft');
+  await expect(draft).toBeFocused();
+  await draft.evaluate((input) => {
+    const data = new DataTransfer();
+    data.setData('text', 'Camino de la noche\nYpacaraí');
+    input.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+  });
+  // Ocho notas: las ocho primeras silabas; el resto se avisa.
+  await expect(page.locator('#scoreStage g.verse')).toHaveCount(8);
+  const lyrics = await page.evaluate(() => window.scoreEditor.score.lyrics);
+  expect(lyrics[0].map((l) => l.text)).toEqual(['Ca', 'mi', 'no', 'de']);
+  expect(lyrics[1].map((l) => l.text)).toEqual(['la', 'no', 'che', 'Y']);
+  await page.screenshot({ path: 'test-results/lyrics-pasted.png' });
+});
+
 test('lyrics are a Pro feature: no tool without #pro in the URL', async ({ page }) => {
   await open(page, '');
   await expect(page.locator('[data-tool="lyric"]')).toHaveCount(0);

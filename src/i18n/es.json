@@ -108,6 +108,7 @@
     "lyricTool": "Letra: colocá la herramienta sobre una nota y escribí la sílaba",
     "lyricName": "Sílaba bajo la nota",
     "lyricNeedsNote": "La letra va sobre una nota",
+    "lyricLeft": "Faltaron notas: quedaron {n} sílabas sin ubicar",
     "lyricPianoTop": "En piano la letra se escribe solo en el pentagrama de arriba",
     "chordRemove": "Quitar acorde",
     "chordPrev": "Variante anterior",

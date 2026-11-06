@@ -2,3 +2,4 @@
 declare const __VEROVIO_FILE__: string;
 declare const __CHORDS_FILE__: string;
 declare const __CHORD_SEARCH_FILE__: string;
+declare const __SYLLABIFY_FILE__: string;

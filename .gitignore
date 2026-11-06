@@ -4,6 +4,7 @@ dist/
 public/vendor/verovio-*
 public/vendor/chords-*
 public/vendor/chord-search-*
+public/vendor/syllabify-*
 .DS_Store
 .claude/
 .vscode/

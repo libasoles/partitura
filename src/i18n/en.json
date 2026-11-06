@@ -112,6 +112,7 @@
     "lyricTool": "Lyrics: place the tool on a note and type the syllable",
     "lyricName": "Syllable under the note",
     "lyricNeedsNote": "Lyrics go on a note",
+    "lyricLeft": "Not enough notes: {n} syllables were left out",
     "lyricPianoTop": "On piano, lyrics go on the top staff only",
     "chordRemove": "Remove chord",
     "chordPrev": "Previous variant",
