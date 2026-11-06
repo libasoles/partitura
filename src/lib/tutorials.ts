@@ -57,8 +57,7 @@ const illustrations: Partial<Record<Slug, Record<number, Demo | Demo[]>>> = {
   'notes-rests': { 1: demos.dragFigure, 2: demos.prepend, 6: demos.fillRests },
   accidentals: { 2: demos.selectedAccidental, 3: demos.doubleDot },
   settings: {
-    0: settingItem('open'), 1: settingItem('instrument'), 2: settingItem('tempo'), 3: settingItem('tools'), 4: settingItem('voices'),
-    5: demos.grandStaff, 6: settingItem('playback'), 7: settingItem('library'),
+    0: settingItem('open'), 1: settingItem('instrument'), 2: settingItem('tempo'), 3: settingItem('tools'), 4: demos.grandStaff, 5: settingItem('playback'), 6: settingItem('library'),
   },
   playback: { 0: demos.playbackEnable, 1: demos.playbackSetup, 2: demos.playbackPlay, 4: demos.playbackVoices },
   files: { 1: demos.loadFile },
