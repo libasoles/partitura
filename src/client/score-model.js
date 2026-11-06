@@ -1491,9 +1491,31 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return text && text.length <= MAX_LYRIC ? { text } : null;
   }
 
+  // Tiempos ("mi:at") de un pentagrama que continuan una ligadura de prolongacion: el sonido se sostiene, no se vuelve a atacar,
+  // asi que no llevan silaba. Una columna cuenta si todas sus notas son el final de una ligadura.
+  function tiedLyricSpots(score, staff) {
+    const targets = new Set();
+    links(score).forEach((link) => { if (link.type === 'tie' && staffOf(link.to) === staff) targets.add(link.to.mi + ':' + link.to.i); });
+    const blocked = new Set();
+    if (!targets.size) return blocked;
+    measures(score, staff).forEach((measure, mi) => {
+      const starts = onsets(measure);
+      const columns = new Map();
+      measure.forEach((ev, i) => {
+        if (ev.rest) return;
+        const column = columns.get(starts[i]) || { tied: true };
+        column.tied = column.tied && targets.has(mi + ':' + i);
+        columns.set(starts[i], column);
+      });
+      columns.forEach((column, at) => { if (column.tied) blocked.add(mi + ':' + at); });
+    });
+    return blocked;
+  }
+
   function setLyric(score, mi, at, text, staff = 0) {
     const parsed = parseLyric(text);
     if (!parsed || !Number.isInteger(mi) || mi < 0 || mi >= measures(score).length || staff < 0 || staff >= lyricStaves(score)) return false;
+    if (tiedLyricSpots(score, staff).has(mi + ':' + at)) return false;
     const measure = staff ? (score[laneKey(staff)] && score[laneKey(staff)][mi]) || [] : measures(score)[mi];
     const starts = onsets(measure);
     if (!measure.some((ev, i) => starts[i] === at && !ev.rest)) return false;
@@ -1516,12 +1538,72 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   function lyricSpots(score, staff = 0) {
     const all = measures(score);
     const spots = [];
+    const tied = tiedLyricSpots(score, staff);
     all.forEach((measure, k) => {
       const lane = staff ? (score[laneKey(staff)] && score[laneKey(staff)][k]) || [] : measure;
       const starts = onsets(lane);
-      [...new Set(lane.map((ev, i) => (ev.rest ? null : starts[i])).filter((start) => start !== null))].sort((a, b) => a - b).forEach((start) => spots.push({ mi: k, at: start }));
+      [...new Set(lane.map((ev, i) => (ev.rest ? null : starts[i])).filter((start) => start !== null))].sort((a, b) => a - b).forEach((start) => { if (!tied.has(k + ':' + start)) spots.push({ mi: k, at: start }); });
     });
     return spots;
+  }
+
+  // Reubica silabas de un pentagrama: [{ mi, at, to: { mi, at } | null, text }] (null la quita). Lo demas queda donde estaba.
+  function relocateLyrics(score, staff, moves) {
+    const lyrics = score.lyrics || {};
+    moves.forEach(({ mi, at }) => {
+      lyrics[mi] = (lyrics[mi] || []).filter((lyric) => lyric.at !== at || (lyric.s || 0) !== staff);
+    });
+    moves.forEach(({ to, text }) => {
+      if (!to) return;
+      (lyrics[to.mi] = lyrics[to.mi] || []).push(Object.assign({ at: to.at, text }, staff ? { s: staff } : {}));
+    });
+    Object.keys(lyrics).forEach((mi) => { if (lyrics[mi].length) lyrics[mi].sort(lyricOrder); else delete lyrics[mi]; });
+    if (Object.keys(lyrics).length) score.lyrics = lyrics; else delete score.lyrics;
+  }
+
+  // Lleva una silaba a otra nota del mismo pentagrama; falla si el destino no puede llevar letra (silencio, nota ligada) o ya tiene una.
+  function moveLyric(score, mi, at, toMi, toAt, staff = 0) {
+    const lyric = lyricAt(score, mi, at, staff);
+    if (!lyric || (mi === toMi && at === toAt) || staff >= lyricStaves(score)) return false;
+    if (!lyricSpots(score, staff).some((spot) => spot.mi === toMi && spot.at === toAt) || lyricAt(score, toMi, toAt, staff)) return false;
+    relocateLyrics(score, staff, [{ mi, at, to: { mi: toMi, at: toAt }, text: lyric.text }]);
+    return true;
+  }
+
+  // Las silabas (2 o mas) de las notas elegidas, de un solo pentagrama, en orden de lectura; null si no hay para unir.
+  function lyricMergeRun(score, sel) {
+    if (!score.lyrics || !sel.length) return null;
+    const staff = staffOf(sel[0]);
+    if (staff >= lyricStaves(score) || sel.some((ref) => staffOf(ref) !== staff)) return null;
+    const lane = measures(score, staff);
+    const picked = new Set(sel.map((ref) => lane[ref.mi] && ref.mi + ':' + onsets(lane[ref.mi])[ref.i]));
+    const spots = lyricSpots(score, staff);
+    const entries = [];
+    spots.forEach((spot, idx) => {
+      const lyric = lyricAt(score, spot.mi, spot.at, staff);
+      if (lyric) entries.push({ idx, mi: spot.mi, at: spot.at, text: lyric.text });
+    });
+    const chosen = entries.filter((entry) => picked.has(entry.mi + ':' + entry.at));
+    return chosen.length >= 2 ? { staff, spots, entries, chosen } : null;
+  }
+
+  // Une las silabas elegidas en la primera ("Can" + "to" = "Can-to") y corre las siguientes a la izquierda para ocupar los lugares
+  // que quedaron libres. Falla si el texto resultante es demasiado largo.
+  function mergeLyrics(score, sel) {
+    const run = lyricMergeRun(score, sel);
+    if (!run) return false;
+    const [first, ...rest] = run.chosen;
+    const text = run.chosen.map((entry) => entry.text).join('-');
+    if (text.length > MAX_LYRIC) return false;
+    const removed = new Set(rest.map((entry) => entry.idx));
+    const moves = run.entries.map((entry) => {
+      if (entry === first) return { mi: entry.mi, at: entry.at, to: { mi: entry.mi, at: entry.at }, text };
+      if (removed.has(entry.idx)) return { mi: entry.mi, at: entry.at, to: null };
+      const shift = rest.filter((other) => other.idx < entry.idx).length;
+      return { mi: entry.mi, at: entry.at, to: run.spots[entry.idx - shift], text: entry.text };
+    });
+    relocateLyrics(score, run.staff, moves);
+    return true;
   }
 
   // La nota siguiente de un pentagrama que puede llevar letra: { mi, at } o null. `back` va hacia atras.
@@ -1550,8 +1632,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // Silabas de un pentagrama por compas y tiempo, para MusicXML. Siempre `single`: Verovio solo dibuja guiones entre silabas encadenadas.
   function lyricMap(score, staff) {
     const map = new Map();
+    const tied = tiedLyricSpots(score, staff);
     Object.keys(score.lyrics || {}).map(Number).forEach((mi) => {
-      score.lyrics[mi].filter((lyric) => (lyric.s || 0) === staff).forEach((lyric) => {
+      score.lyrics[mi].filter((lyric) => (lyric.s || 0) === staff && !tied.has(mi + ':' + lyric.at)).forEach((lyric) => {
         map.set(mi + ':' + lyric.at, { text: lyric.text, syllabic: 'single' });
       });
     });
@@ -2638,6 +2721,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     if (beams && beams.joins.some((j) => !j)) actions.push('beam');
     if (beams && beams.joins.some((j) => j)) actions.push('unbeam');
     if (chordSelection(score, sel)) actions.push('joinChord');
+    if (lyricMergeRun(score, sel)) actions.push('mergeLyrics');
     [...new Set(activeVoices)].sort((a, b) => a - b).forEach((voice) => {
       if (voiceAssignment(score, sel, voice)) actions.push('assignVoice' + voice);
     });
@@ -2656,6 +2740,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       plan.forEach(({ measure, trial }) => trial.forEach((ev, i) => { measure[i].v = ev.v; measure[i].at = ev.at; }));
       return true;
     }
+    if (action === 'mergeLyrics') return mergeLyrics(score, sel);
     if (!selectionActions(score, sel).includes(action)) return false;
     if (action === 'joinChord') {
       const r = chordSelection(score, sel);
@@ -2995,7 +3080,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, setParts, setRegister, REGISTERS, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
-    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }

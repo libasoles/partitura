@@ -108,7 +108,9 @@
     "lyricTool": "Letra: colocá la herramienta sobre una nota y escribí la sílaba",
     "lyricName": "Sílaba bajo la nota",
     "lyricNeedsNote": "La letra va sobre una nota",
+    "lyricTied": "Nota ligada: la sílaba va en la nota donde empieza la ligadura",
     "lyricLeft": "Faltaron notas: quedaron {n} sílabas sin ubicar",
+    "lyricMergeLong": "Las sílabas unidas no caben en una nota",
     "lyricPianoTop": "En piano la letra se escribe solo en el pentagrama de arriba",
     "chordRemove": "Quitar acorde",
     "chordPrev": "Variante anterior",
@@ -261,6 +263,7 @@
     "beam": "Barrar",
     "unbeam": "Separar",
     "joinChord": "Formar acorde",
+    "mergeLyrics": "Unir sílabas",
     "assignVoice": "Asignar notas a voz {n}",
     "voicesUnavailable": "No se pueden asignar las notas a esa voz sin cambiar el ritmo.",
     "pdfError": "No se pudo generar el PDF.",
@@ -456,6 +459,10 @@
       "chords": [
         "Acordes de guitarra",
         "Escribí nombres sobre el pentagrama y consultá sus digitaciones y variantes."
+      ],
+      "lyrics": [
+        "Letra de canto",
+        "Escribí sílabas bajo las notas, pegá una letra entera, movelas y unílas."
       ]
     },
     "stepsHeading": "Paso a paso",
@@ -648,6 +655,22 @@
         ],
         "tip": "Los nombres se imprimen sobre el pentagrama y salen también en PDF. El diagrama sirve de consulta: escribir un nombre de acorde no agrega sus notas al pentagrama ni hace que suenen en la reproducción."
       },
+      "lyrics": {
+        "steps": [
+          "Con la herramienta <strong>Letra</strong> {{icon:lyric}}, en la barra derecha, colocá el cursor sobre la nota donde empieza la sílaba: aparece un campo bajo el pentagrama. Si no la ves, activá la casilla <em>Letra de canto</em> en los ajustes {{icon:settings}}. Con guitarra y piano la letra va en el pentagrama de arriba; con Voces, en cada pentagrama.",
+          "Escribí la sílaba y presioná <kbd>Espacio</kbd> o <kbd>Tab</kbd>: se guarda y el campo salta a la nota siguiente del mismo pentagrama, aunque esté en otro compás. <kbd>Mayús</kbd> + <kbd>Tab</kbd> vuelve a la anterior, <kbd>Enter</kbd> guarda y cierra, <kbd>Esc</kbd> cancela y dejarlo vacío borra la sílaba. Se saltean los silencios.",
+          "Entre una nota y la siguiente no se dibujan guiones: cada sílaba aparece sola bajo su nota. Un guion escrito dentro del campo es parte del texto, así que <em>en-a</em> muestra las dos sílabas bajo una misma nota, que es lo que necesitás cuando se cantan dos sílabas con un solo sonido. Se guarda tal cual y no cambia nada más.",
+          "Para cargar una letra entera, pegala con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd> dentro del campo. Se divide en sílabas (en español) y se reparte una por nota desde la que tiene el campo, atravesando los compases. Los saltos de línea se ignoran, así que podés pegar un párrafo o varios renglones, y se recortan los espacios sobrantes. Lo que ya estaba escrito en esas notas se sobrescribe; si faltan notas, el editor avisa cuántas sílabas quedaron sin ubicar.",
+          "Una nota <strong>ligada</strong> a la anterior no lleva sílaba: el sonido se sostiene, no se vuelve a atacar. La herramienta no abre el campo sobre ella, <kbd>Espacio</kbd> y el pegado la saltean y una sílaba nunca cae ahí. Por eso, en <em>Can</em>⌒<em>to</em> la sílaba <em>to</em> va en la siguiente nota que se ataca. Una ligadura de expresión, entre notas de distinta altura, no cuenta: esas notas sí se atacan y llevan sílaba.",
+          "Si ligás una nota que ya tenía sílaba, la sílaba se conserva pero deja de dibujarse y de exportarse; al quitar la ligadura reaparece. Para editar una sílaba escrita, hacé clic sobre ella; para quitarla, dejá el campo vacío o enfocala y presioná <kbd>Delete</kbd> o <kbd>Retroceso</kbd>.",
+          "Igual que con los acordes, podés <strong>arrastrar</strong> una sílaba a otra nota: la zona subrayada marca el destino. Sirve para corregir un desfase sin volver a escribirla. Solo se mueve dentro del mismo pentagrama y a una nota libre; no se acepta un silencio, una nota ligada ni una nota que ya tiene sílaba.",
+          "Para unir sílabas, elegí sus notas: arrastrá un rectángulo de selección sobre ellas o sumá cada una con <kbd>Mayús</kbd> + clic sobre la sílaba (o <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + clic). Tienen que ser del mismo pentagrama y al menos dos con sílaba. Junto a la selección aparece el menú con <em>Unir sílabas</em> {{icon:merge}}.",
+          "Al unirlas, la primera conserva su lugar y suma el texto de todas, separado por guiones: <em>Can</em> y <em>to</em> pasan a ser <em>Can-to</em> bajo la primera nota. Las sílabas siguientes se corren un lugar a la izquierda para ocupar el que quedó libre, atravesando compases, y la selección se limpia.",
+          "Con tres o más sílabas el desplazamiento acompaña: se liberan tantos lugares como sílabas se sumaron menos una, y cada sílaba posterior sube esa cantidad. Los huecos que ya había entre sílabas se respetan, y las notas ligadas se siguen saltando. Si el texto unido supera el largo máximo de una sílaba, el editor avisa y no cambia nada.",
+          "Todo se puede deshacer con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>. La letra se guarda con la partitura y sale en el PDF y en el MusicXML; no se exporta al MIDI ni se importa desde MusicXML, y no viaja en el portapapeles al copiar notas."
+        ],
+        "tip": "La letra es una función Pro: la herramienta aparece cuando la dirección termina en #pro y se puede ocultar con la casilla <em>Letra de canto</em> de los ajustes sin borrar nada. Las sílabas ocultas siguen dibujándose y exportándose, pero ya no se editan."
+      },
       "move-tab": {
         "steps": [
           "Arrastrá un número de la tablatura a otra cuerda o a otro tiempo y soltalo donde quieras.",
@@ -765,6 +788,10 @@
       "chords": [
         "Cómo escribir acordes de guitarra y ver sus digitaciones",
         "Agregá acordes con la herramienta Am, editá nombres y variantes, movelos entre tiempos y borralos juntos en el editor de partituras Partitura."
+      ],
+      "lyrics": [
+        "Cómo escribir la letra de una canción bajo las notas",
+        "Escribí sílabas bajo cada nota, pegá una letra completa para repartirla, movela entre notas, uní sílabas y respetá las ligaduras en el editor de partituras Partitura."
       ]
     },
     "related": "Tutoriales relacionados",

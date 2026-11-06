@@ -2666,3 +2666,10 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-settings-category:has(> .score-settings-check input:not(:checked)) > .score-settings-interval-modes { display: none; }
 
 .score-lyric-glyph { scale: 0.9; }
+
+.score-lyric-trigger.is-dragging {
+  z-index: 3;
+  background: rgb(10 91 214 / 18%);
+  cursor: grabbing;
+  pointer-events: none;
+}

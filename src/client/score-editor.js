@@ -581,7 +581,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       deactivateTool();
       if (!target.onNote) return say(t.lyricNeedsNote);
       if (target.staff >= M.lyricStaves(score)) return say(t.lyricPianoTop);
-      if (!startLyricDraft(target.mi, target.t, target.staff)) return say(t.lyricNeedsNote);
+      if (!startLyricDraft(target.mi, target.t, target.staff)) return say(M.tiedLyricSpots(score, target.staff).has(target.mi + ':' + target.t) ? t.lyricTied : t.lyricNeedsNote);
       say('');
       return;
     }
@@ -965,8 +965,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function applyAction(action) {
     const list = picks();
     const result = change(() => M.applySelection(score, list, action));
-    if (!result) say(action.startsWith('assignVoice') ? t.voicesUnavailable : t.full);
-    else say('');
+    if (!result) say(action.startsWith('assignVoice') ? t.voicesUnavailable : action === 'mergeLyrics' ? t.lyricMergeLong : t.full);
+    else { say(''); if (action === 'mergeLyrics') setPicks([]); }
     stage.focus({ preventScroll: true });
   }
 
@@ -2156,7 +2156,68 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const measure = M.measures(score, staff)[mi] || [];
     const starts = M.onsets(measure);
     const i = measure.findIndex((ev, k) => starts[k] === at && !ev.rest);
-    return i < 0 ? null : eventNodes(mi, staff)[i] || null;
+    // Una nota que continua una ligadura de prolongacion no lleva silaba: el sonido se sostiene.
+    return i < 0 || M.tiedLyricSpots(score, staff).has(mi + ':' + at) ? null : eventNodes(mi, staff)[i] || null;
+  }
+
+  // Referencia de la nota (la primera, si hay un acorde) que lleva la silaba de ese tiempo.
+  function lyricRef(mi, at, staff) {
+    const measure = M.measures(score, staff)[mi] || [];
+    const starts = M.onsets(measure);
+    const i = measure.findIndex((ev, k) => starts[k] === at && !ev.rest);
+    return i < 0 ? null : M.refOf(staff, mi, i);
+  }
+
+  // Las notas de un pentagrama que pueden recibir una silaba, con la x de cada una: [{ at, x }] por compas.
+  function lyricColumns(mi, staff) {
+    const origin = stage.getBoundingClientRect();
+    const measure = M.measures(score, staff)[mi] || [];
+    const starts = M.onsets(measure);
+    const tied = M.tiedLyricSpots(score, staff);
+    const columns = new Map();
+    eventNodes(mi, staff).forEach((node, i) => {
+      if (!measure[i] || measure[i].rest || tied.has(mi + ':' + starts[i]) || columns.has(starts[i])) return;
+      columns.set(starts[i], { at: starts[i], x: centerX(node, origin), node });
+    });
+    return [...columns.values()].sort((a, b) => a.x - b.x);
+  }
+
+  // Destino de una silaba que se arrastra: la nota mas cercana en horizontal del compas que esta bajo el cursor, en el mismo pentagrama.
+  function lyricZoneAt(clientX, clientY, staff) {
+    const origin = stage.getBoundingClientRect();
+    const x = clientX - origin.left, y = clientY - origin.top;
+    let best = null;
+    layout.forEach((m, mi) => {
+      const lines = m.staves[staff];
+      if (!lines || x < m.left || x > m.right) return;
+      const space = (lines[4] - lines[0]) / 4;
+      const dy = Math.abs(y - (lines[4] + space * 5));
+      if (dy > space * 9 || (best && dy >= best.dy)) return;
+      const columns = lyricColumns(mi, staff);
+      if (!columns.length) return;
+      const column = columns.reduce((a, c) => (Math.abs(c.x - x) < Math.abs(a.x - x) ? c : a));
+      const gap = Math.min(...columns.filter((c) => c !== column).map((c) => Math.abs(c.x - column.x)), space * 6);
+      best = { dy, mi, at: column.at, x: column.x, y: lyricLine(mi, staff, column.node).y + 2, width: Math.max(space * 2.5, Math.min(gap, space * 6)) };
+    });
+    return best;
+  }
+
+  let lyricZone = null;
+  function showLyricZone(zone, staff) {
+    if (!zone || M.lyricAt(score, zone.mi, zone.at, staff)) {
+      if (lyricZone) lyricZone.hidden = true;
+      return;
+    }
+    if (!lyricZone || !lyricZone.isConnected) {
+      lyricZone = document.createElement('div');
+      lyricZone.className = 'score-chord-zone score-lyric-zone';
+      lyricZone.setAttribute('aria-hidden', 'true');
+      stage.appendChild(lyricZone);
+    }
+    lyricZone.hidden = false;
+    lyricZone.style.left = zone.x - zone.width / 2 + 'px';
+    lyricZone.style.top = zone.y + 'px';
+    lyricZone.style.width = zone.width + 'px';
   }
 
   // Donde cae la silaba: bajo el pentagrama, y debajo de las notas que lo desbordan.
@@ -2264,10 +2325,49 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         button.dataset.staff = staff;
         button.setAttribute('aria-label', t.lyric + ': ' + lyric.text);
         button.style.left = box.left - origin.left - 4 + 'px';
-        button.style.top = box.top - origin.top - 2 + 'px';
+        // El texto de Verovio llega a rozar las notas bajas: el boton empieza un poco mas abajo para no taparlas.
+        button.style.top = box.top - origin.top + 3 + 'px';
         button.style.width = Math.max(box.width, 12) + 8 + 'px';
-        button.style.height = box.height + 4 + 'px';
-        button.addEventListener('click', () => startLyricDraft(mi, lyric.at, staff));
+        button.style.height = Math.max(box.height + 1, 10) + 'px';
+        button.dataset.dragged = '';
+        // Mayus, Ctrl o Cmd suman la nota de la silaba a la seleccion (para unirlas desde el menu); un click abre el campo.
+        button.addEventListener('click', (event) => {
+          if (button.dataset.dragged) return;
+          const ref = lyricRef(mi, lyric.at, staff);
+          if ((event.shiftKey || event.ctrlKey || event.metaKey) && ref) { togglePick(ref); stage.focus({ preventScroll: true }); return; }
+          setPicks([]);
+          startLyricDraft(mi, lyric.at, staff);
+        });
+        // Arrastrar la silaba la lleva a otra nota libre: la zona subrayada marca el destino.
+        button.addEventListener('pointerdown', (event) => {
+          if (event.button !== 0 || event.shiftKey || event.ctrlKey || event.metaKey) return;
+          button.dataset.dragged = '';
+          const startX = event.clientX, startY = event.clientY;
+          let moving = false;
+          const move = (e) => {
+            const dx = e.clientX - startX, dy = e.clientY - startY;
+            if (!moving && Math.hypot(dx, dy) < 5) return;
+            if (!moving) { moving = true; button.dataset.dragged = '1'; button.classList.add('is-dragging'); }
+            button.style.translate = dx + 'px ' + dy + 'px';
+            const zone = lyricZoneAt(e.clientX, e.clientY, staff);
+            showLyricZone(zone && (zone.mi !== mi || zone.at !== lyric.at) ? zone : null, staff);
+          };
+          const end = (e) => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', end);
+            window.removeEventListener('pointercancel', end);
+            if (!moving) return;
+            const zone = e.type === 'pointerup' ? lyricZoneAt(e.clientX, e.clientY, staff) : null;
+            button.classList.remove('is-dragging');
+            button.style.translate = '';
+            showLyricZone(null, staff);
+            setTimeout(() => { button.dataset.dragged = ''; });
+            if (zone && !change(() => M.moveLyric(score, mi, lyric.at, zone.mi, zone.at, staff))) say('');
+          };
+          window.addEventListener('pointermove', move);
+          window.addEventListener('pointerup', end);
+          window.addEventListener('pointercancel', end);
+        });
         button.addEventListener('keydown', (event) => {
           if (event.key !== 'Delete' && event.key !== 'Backspace') return;
           event.preventDefault();
@@ -2934,7 +3034,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     hideSelectionMenu();
     const list = picks();
     if (!list.length || drag?.active) return;
-    const actions = M.selectionActions(score, list, toolOn('voices', false) && M.instrumentOf(score) !== 'voices' ? shownVoices : []);
+    const actions = M.selectionActions(score, list, toolOn('voices', false) && M.instrumentOf(score) !== 'voices' ? shownVoices : []).filter((action) => action !== 'mergeLyrics' || lyricsActive());
     if (!actions.length) return;
     const origin = stage.getBoundingClientRect();
     let boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
@@ -3343,7 +3443,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       selectNavigation(navigation, event);
       return;
     }
-    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu, .score-playback, .score-interval-toggle, .score-chord-names-toggle, .score-voice-legend')) return;
+    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-lyric-trigger, .score-lyric-draft, .score-hairpin-ui, .score-selection-menu, .score-playback, .score-interval-toggle, .score-chord-names-toggle, .score-voice-legend')) return;
     const link = event.target.closest('g.tie, g.slur');
     if (link && !activeItem && linkRefs.has(link)) {
       event.preventDefault();
@@ -4184,6 +4284,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     chevronRight: '<path d="m9 18 6-6-6-6"/>',
     trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
     // Sin equivalente en Lucide: ligadura (arco entre dos notas) y ligadura quitada.
+    merge: '<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
     link: '<ellipse cx="3" cy="8" rx="3" ry="2" transform="rotate(-25 3 8)" fill="currentColor" stroke="none"/><ellipse cx="21" cy="8" rx="3" ry="2" transform="rotate(-25 21 8)" fill="currentColor" stroke="none"/><path d="M4 13c1.500 7 14.500 7 16 0"/>',
     unlink: '<ellipse cx="3" cy="8" rx="3" ry="2" transform="rotate(-25 3 8)" fill="currentColor" stroke="none"/><ellipse cx="21" cy="8" rx="3" ry="2" transform="rotate(-25 21 8)" fill="currentColor" stroke="none"/><path d="M4 13c1.500 7 14.500 7 16 0"/><path d="M4 3l16 18"/>',
     beam: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
@@ -4197,7 +4298,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
   };
 
-  const ACTION_ICONS = { triplet: 'triplet', untriplet: 'untriplet', link: 'link', unlink: 'unlink', beam: 'beam', unbeam: 'unbeam', joinChord: 'link' };
+  const ACTION_ICONS = { triplet: 'triplet', untriplet: 'untriplet', link: 'link', unlink: 'unlink', beam: 'beam', unbeam: 'unbeam', joinChord: 'link', mergeLyrics: 'merge' };
   // Los demas grupos (2, 4 a 9 figuras) son el icono del tresillo con su numero.
   for (let n = 2; n <= 9; n += 1) {
     if (n === 3) continue;

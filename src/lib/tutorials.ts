@@ -8,7 +8,7 @@ import * as demos from './demos.js';
 /** The sidebar: every tutorial, grouped. The order here is the reading order of "previous" and "next". */
 export const categories = [
   { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'settings', 'playback', 'shortcuts', 'faq'] },
-  { id: 'editing', slugs: ['accidentals', 'dots', 'select-move', 'copy', 'voices', 'patterns', 'tuplets', 'ties'] },
+  { id: 'editing', slugs: ['accidentals', 'dots', 'select-move', 'copy', 'voices', 'patterns', 'tuplets', 'ties', 'lyrics'] },
   { id: 'structure', slugs: ['signatures', 'measures', 'delete-barline', 'repeats', 'dynamics'] },
   { id: 'guitar', slugs: ['tab-toggle', 'edit-tab', 'move-tab', 'chords', 'barre'] },
   { id: 'files', slugs: ['files', 'scores'] },
@@ -70,6 +70,7 @@ const illustrations: Partial<Record<Slug, Record<number, Demo | Demo[]>>> = {
   ties: { 3: demos.tieDelete },
   measures: { 4: demos.measureDelete },
   'move-tab': { 0: (s) => renderTabMove(s), 2: demos.refinger },
+  lyrics: { 0: demos.lyricTool, 1: demos.lyricType, 2: demos.lyricHyphen, 3: demos.lyricPaste, 4: demos.lyricTies, 6: demos.lyricMove, 8: demos.lyricMerge, 9: demos.lyricMergeThree },
   chords: { 0: demos.chordTool, 1: demos.chordType, 2: demos.chordPopup, 4: demos.chordMove, 5: demos.chordDelete },
 };
 
@@ -132,7 +133,8 @@ export const related: Record<Slug, Slug[]> = {
   voices: ['copy', 'playback', 'settings'],
   patterns: ['copy', 'ties', 'settings'],
   tuplets: ['notes-rests', 'ties', 'dots'],
-  ties: ['dots', 'tuplets', 'notes-rests'],
+  ties: ['dots', 'tuplets', 'lyrics'],
+  lyrics: ['ties', 'chords', 'copy'],
   signatures: ['measures', 'accidentals', 'repeats'],
   measures: ['signatures', 'delete-barline', 'copy'],
   'delete-barline': ['measures', 'repeats', 'signatures'],
