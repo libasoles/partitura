@@ -948,6 +948,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     mountClefButtons();
     mountKeyButtons();
     liftBarreMarks(svg);
+    placeIntervals(svg);
     measureLayout();
     mountNavigationMarks();
     mountLinks();
@@ -1127,6 +1128,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const DYNAMIC_SCALE = 0.72;
   function liftBarreMarks(svg) {
     svg.querySelectorAll('g.measure g.dir, g.measure g.bracketSpan').forEach((node) => {
+      if (isIntervalDir(node)) return;
       const scale = node.getScreenCTM() && node.getScreenCTM().a;
       if (scale) node.setAttribute('transform', 'translate(0 ' + (-BARRE_LIFT / scale) + ') ' + (node.getAttribute('transform') || ''));
     });
@@ -1779,6 +1781,41 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return chordLoading;
   }
 
+  const isIntervalDir = (node) => /^[IVX]+$/.test(squash(node.textContent));
+  const INTERVAL_GAP = 9; // separacion minima (px) entre las etiquetas de intervalos y lo que tienen debajo
+  const CHORD_GAP = 4;
+
+  // Verovio a veces deja la etiqueta pegada al pentagrama o sobre una nota o plica. Cada etiqueta se apoya
+  // sobre el contenido de su pentagrama (figuras, barras, silencios) con una separacion minima, y todas las de
+  // un mismo pentagrama del renglon comparten la misma linea base.
+  function placeIntervals(svg) {
+    const dirs = [...svg.querySelectorAll('g.measure g.dir')].filter(isIntervalDir);
+    if (!dirs.length) return;
+    const groups = new Map();
+    dirs.forEach((dir) => {
+      const box = dir.getBoundingClientRect();
+      const staves = [...dir.closest('g.measure').querySelectorAll(':scope > g.staff')].map((staff) => ({ staff, top: staff.querySelector(':scope > path').getBoundingClientRect().top }));
+      const below = staves.filter((s) => s.top >= box.bottom - 4);
+      const target = below.length ? below.reduce((a, b) => (b.top < a.top ? b : a)) : staves[staves.length - 1];
+      if (!target) return;
+      let limit = target.top;
+      target.staff.querySelectorAll('g.note, g.chord, g.rest, g.beam, g.tuplet').forEach((node) => {
+        const r = node.getBoundingClientRect();
+        if (r.right > box.left - 2 && r.left < box.right + 2 && r.height) limit = Math.min(limit, r.top);
+      });
+      const key = Math.round(target.top);
+      const goal = limit - INTERVAL_GAP;
+      const group = groups.get(key) || { goal: Infinity, items: [] };
+      group.goal = Math.min(group.goal, goal);
+      group.items.push({ dir, bottom: box.bottom });
+      groups.set(key, group);
+    });
+    groups.forEach((group) => group.items.forEach(({ dir, bottom }) => {
+      const scale = dir.getScreenCTM() && dir.getScreenCTM().a;
+      if (scale) dir.setAttribute('transform', 'translate(0 ' + (group.goal - bottom) / scale + ') ' + (dir.getAttribute('transform') || ''));
+    }));
+  }
+
   const isChordDir = (node) => !!node.querySelector('tspan[font-weight="bold"]');
   const squash = (text) => text.replace(/\s+/g, '');
 
@@ -1904,7 +1941,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         used.add(dir);
         // Verovio lo pega al pentagrama: se sube a la linea donde se escribio, sobre el mismo lugar que mostro la zona.
         const scale = dir.getScreenCTM() && dir.getScreenCTM().a;
-        const lift = chordLineY(chordBand(mi)) - 5 + origin.top - dir.getBoundingClientRect().bottom;
+        let lift = chordLineY(chordBand(mi)) - 5 + origin.top - dir.getBoundingClientRect().bottom;
+        // Los nombres de acordes van siempre sobre las etiquetas de intervalos.
+        const own = dir.getBoundingClientRect();
+        const clear = Math.min(Infinity, ...[...stage.querySelectorAll('[id="m' + mi + '"] g.dir')].filter(isIntervalDir).map((node) => node.getBoundingClientRect()).filter((r) => r.right > own.left - 2 && r.left < own.right + 2).map((r) => r.top));
+        if (clear < Infinity) lift = Math.min(lift, clear - CHORD_GAP - own.bottom);
         if (scale) dir.setAttribute('transform', 'translate(0 ' + lift / scale + ') ' + (dir.getAttribute('transform') || ''));
         const box = dir.getBoundingClientRect();
         const button = document.createElement('button');
