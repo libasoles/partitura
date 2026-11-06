@@ -206,6 +206,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!tabDrag) return;
     const { from, before, moving } = tabDrag;
     tabDrag = null;
+    document.body.classList.remove('score-reordering-tabs');
+    if (moving) window.getSelection()?.removeAllRanges();
     tabsBar.classList.remove('is-reordering');
     tabsBar.querySelectorAll('.is-dragging, .drop-before, .drop-after').forEach((node) => {
       node.classList.remove('is-dragging', 'drop-before', 'drop-after');
@@ -248,6 +250,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     tabDrag.moving = true;
     event.preventDefault();
     tabsBar.classList.add('is-reordering');
+    document.body.classList.add('score-reordering-tabs');
+    window.getSelection()?.removeAllRanges();
     tabDrag.tab.classList.add('is-dragging');
     tabsBar.querySelectorAll('.drop-before, .drop-after').forEach((node) => node.classList.remove('drop-before', 'drop-after'));
     tabDrag.before = null;

@@ -1779,6 +1779,7 @@ html {
 .score-stage.can-move-measures,
 .score-stage.can-move-measures g.measure,
 .score-stage.can-move-measures g.measure * { cursor: pointer; }
+body.score-reordering-tabs, body.score-reordering-tabs * { user-select: none; -webkit-user-select: none; }
 body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !important; user-select: none; }
 .score-stage .is-moving-measure { opacity: 0.35; }
 .score-measure-guide {
