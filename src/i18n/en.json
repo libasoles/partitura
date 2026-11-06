@@ -745,10 +745,18 @@
     "shortcutSections": [
       "Press a figure’s key to pick it, then click on the staff to place it.",
       "Press <kbd>A</kbd> to deselect the current tool.",
+      "To fill an empty measure with rests, select it with a click and press <kbd>Tab</kbd>. On piano, only the chosen staff is filled.",
+      "If the measure already has figures, <kbd>Shift</kbd> + <kbd>Tab</kbd> completes what each voice is missing with rests.",
       "With figures selected, <kbd>Shift</kbd> + <kbd>D</kbd> duplicates them right after the last selected one, carrying on into the following measures.",
       "<kbd>Shift</kbd> + <kbd>↑</kbd> or <kbd>Shift</kbd> + <kbd>↓</kbd> duplicates the selection a diatonic third above or below, in a separate voice at the same time.",
       "The copy stays selected; use <kbd>↑</kbd> and <kbd>↓</kbd> to adjust its pitch.",
-      "With two notes selected, press <kbd>(</kbd> or <kbd>)</kbd> to add or remove a tie or slur, if the notes can be linked. This is the same action as the contextual tie button. The shortcut follows the character: use whichever combination types the parenthesis on your keyboard, on any operating system."
+      "With two notes selected, press <kbd>(</kbd> or <kbd>)</kbd> to add or remove a tie or slur, if the notes can be linked. This is the same action as the contextual tie button. The shortcut follows the character: use whichever combination types the parenthesis on your keyboard, on any operating system.",
+      "<kbd>←</kbd> and <kbd>→</kbd> move to the neighbouring figure; <kbd>Shift</kbd> + <kbd>←</kbd> or <kbd>Shift</kbd> + <kbd>→</kbd> extend the selection. <kbd>↑</kbd> and <kbd>↓</kbd> raise or lower the selection one step.",
+      "<kbd>Delete</kbd> or <kbd>Backspace</kbd> remove the selected figures, or the chosen measure or barline. <kbd>Esc</kbd> clears the selection.",
+      "<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes the last change.",
+      "<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd> copies the selected figures; click the destination measure and paste with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Hold <kbd>Shift</kbd> while pasting to leave out the meter, clef and key signature.",
+      "With the pattern library turned on in the settings, <kbd>Shift</kbd> + <kbd>S</kbd> saves the chosen figures as a pattern or, with none chosen, the chosen measure.",
+      "With playback turned on in the settings, the <kbd>space bar</kbd> toggles play and pause."
     ]
   },
   "tutorialsPath": "tutorials",

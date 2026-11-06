@@ -745,10 +745,18 @@
     "shortcutSections": [
       "Pressione a tecla de uma figura para escolhê-la e clique na pauta para colocá-la.",
       "Pressione <kbd>A</kbd> para desmarcar a ferramenta atual.",
+      "Para preencher um compasso vazio com pausas, selecione-o com um clique e pressione <kbd>Tab</kbd>. No piano, só a pauta escolhida é preenchida.",
+      "Se o compasso já tem figuras, <kbd>Shift</kbd> + <kbd>Tab</kbd> completa com pausas o que falta a cada voz.",
       "Com figuras selecionadas, <kbd>Shift</kbd> + <kbd>D</kbd> as duplica logo após a última selecionada, seguindo nos compassos seguintes.",
       "<kbd>Shift</kbd> + <kbd>↑</kbd> ou <kbd>Shift</kbd> + <kbd>↓</kbd> duplica a seleção uma terça diatônica acima ou abaixo, em uma voz independente e no mesmo tempo.",
       "A cópia fica selecionada; use <kbd>↑</kbd> e <kbd>↓</kbd> para ajustar sua altura.",
-      "Com duas notas selecionadas, pressione <kbd>(</kbd> ou <kbd>)</kbd> para adicionar ou remover a ligadura, se as notas puderem ser ligadas. É a mesma ação do botão contextual de ligadura. O atalho reconhece o caractere: use a combinação que escreve o parêntese no seu teclado, em qualquer sistema operacional."
+      "Com duas notas selecionadas, pressione <kbd>(</kbd> ou <kbd>)</kbd> para adicionar ou remover a ligadura, se as notas puderem ser ligadas. É a mesma ação do botão contextual de ligadura. O atalho reconhece o caractere: use a combinação que escreve o parêntese no seu teclado, em qualquer sistema operacional.",
+      "<kbd>←</kbd> e <kbd>→</kbd> passam para a figura vizinha; <kbd>Shift</kbd> + <kbd>←</kbd> ou <kbd>Shift</kbd> + <kbd>→</kbd> ampliam a seleção. <kbd>↑</kbd> e <kbd>↓</kbd> sobem ou descem a seleção um passo.",
+      "<kbd>Delete</kbd> ou <kbd>Backspace</kbd> apagam as figuras selecionadas, ou o compasso ou a barra escolhidos. <kbd>Esc</kbd> solta a seleção.",
+      "<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> desfaz a última alteração.",
+      "<kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd> copia as figuras selecionadas; clique no compasso de destino e cole com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Com <kbd>Shift</kbd> pressionada ao colar, compasso, clave e armadura não são copiados.",
+      "Com a biblioteca de padrões ativada nos ajustes, <kbd>Shift</kbd> + <kbd>S</kbd> guarda como padrão as figuras escolhidas ou, sem nenhuma, o compasso escolhido.",
+      "Com a reprodução ativada nos ajustes, a <kbd>barra de espaço</kbd> alterna entre play e pausa."
     ]
   },
   "tutorialsPath": "tutoriais",
