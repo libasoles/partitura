@@ -598,8 +598,8 @@
         "steps": [
           "Open the <em>Settings</em> gear and enable <em>Playback</em> under <em>Tools</em>. A play button appears to the left of the staff, above the voice legend.",
           "Choose <em>Piano</em> or <em>Guitar</em> and set the tempo. The written notes play with a piano or nylon guitar sound; both staves play in piano mode. You may see <em>Loading sounds…</em> the first time.",
-          "Press <em>Play</em>. A vertical bar follows the music and moves to the next system. With no selection, playback starts at the beginning; with notes or a measure selected, it starts at that measure’s beginning (the first if several are selected).",
-          "Press <em>Pause</em> to keep the position, then play again to resume. If you select a different measure while paused, the next playback starts there.",
+          "Press <em>Play</em> or the space bar. A vertical bar follows the music and moves to the next system. Playback starts at the last measure you used, even after deselecting its notes; if you have not used any measure yet, it starts at the beginning. During playback, click another measure to jump there immediately.",
+          "Press <em>Pause</em> or the space bar to keep your position, then play again to continue. If you choose a measure while paused, playback starts at that measure’s beginning.",
           "To hear a line separately, enable <em>Voices</em> and select its numbers in the legend: the filter applies to both staves. With no voices selected, all voices play. Changing this selection stops playback and resets its position.",
           "Editing the music, switching scores or hiding the page stops playback and resets its position. Press play again when you want to hear the result."
         ],

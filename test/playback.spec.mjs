@@ -174,6 +174,67 @@ for (const staff of ['e', 'l']) {
   });
 }
 
+for (const staff of ['e', 'l']) {
+  test(`play remembers the last ${staff} measure after deselecting and seeks while playing`, async ({ page }) => {
+    await open(page, 'piano', {
+      rows: [[[{ d: 'w', n: 35 }], [{ d: 'w', n: 37 }], [{ d: 'w', n: 39 }]]],
+      lower: { 0: [{ d: 'w', n: 28 }], 1: [{ d: 'w', n: 29 }], 2: [{ d: 'w', n: 30 }] },
+      tools: { playback: true },
+    });
+    const button = page.locator('#scorePlayback');
+    const cursor = page.locator('.score-playback-cursor');
+    await page.locator(`[id="${staff}1-0"] .notehead`).click({ force: true });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('g.note.is-selected')).toHaveCount(0);
+    await button.click();
+    await expect(cursor).toHaveAttribute('data-measure', '1');
+    expect(await page.evaluate(() => window.audioStarts.length)).toBe(4);
+    await page.evaluate(() => { window.audioStarts = []; });
+    await page.locator(`[id="${staff}0-0"] .notehead`).click({ force: true });
+    await expect(button).toHaveAccessibleName('Pausar');
+    await expect(cursor).toHaveAttribute('data-measure', '0');
+    expect(await page.evaluate(() => window.audioStarts.length)).toBe(6);
+    // Clicking empty staff space also seeks, without needing a selected note.
+    await page.evaluate(() => { window.audioStarts = []; });
+    const line = page.locator('[id="m2"] > g.staff > path').first();
+    const box = await line.boundingBox();
+    await page.mouse.click(box.x + box.width * 0.8, box.y + 5);
+    await expect(button).toHaveAccessibleName('Pausar');
+    await expect(cursor).toHaveAttribute('data-measure', '2');
+    expect(await page.evaluate(() => window.audioStarts.length)).toBe(2);
+    await button.click();
+    const paused = Number(await cursor.getAttribute('data-time'));
+    await button.click();
+    expect(Number(await cursor.getAttribute('data-time'))).toBeGreaterThanOrEqual(paused);
+    await button.click();
+    await page.locator(`[id="${staff}1-0"] .notehead`).click({ force: true });
+    await page.keyboard.press('Escape');
+    await button.click();
+    await expect(cursor).toHaveAttribute('data-measure', '1');
+  });
+}
+
+test('space toggles playback only when enabled and outside text fields', async ({ page }) => {
+  await open(page);
+  const stage = page.locator('#scoreStage');
+  const button = page.locator('#scorePlayback');
+  await stage.focus();
+  await page.keyboard.press('Space');
+  expect(await page.evaluate(() => window.audioStarts.length)).toBe(0);
+  await enable(page);
+  await stage.focus();
+  await page.keyboard.press('Space');
+  await expect(button).toHaveAccessibleName('Pausar');
+  await page.keyboard.press('Space');
+  await expect(button).toHaveAccessibleName('Reproducir');
+  await page.locator('input').first().focus();
+  await page.keyboard.press('Space');
+  await expect(button).toHaveAccessibleName('Reproducir');
+  await stage.focus();
+  await page.keyboard.press('Space');
+  await expect(button).toHaveAccessibleName('Pausar');
+});
+
 for (const instrument of ['piano', 'guitar']) {
   test(`${instrument}: lazy samples, real decoded audio, pause/resume and end`, async ({ page }) => {
     const audioRequests = [];

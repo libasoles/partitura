@@ -1192,6 +1192,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     clearBarSelection();
     selectedMeasure = mi;
     selectedMeasureStaff = staffAtY(layout[mi], event.clientY - origin.top);
+    rememberPlaybackMeasure(mi);
     markMeasureBars();
   }
 
@@ -2507,6 +2508,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         beam.querySelectorAll(':scope > polygon').forEach((node) => node.classList.add('is-selected'));
       }
     });
+    rememberPlaybackMeasure(selected?.mi ?? selectedPlaybackMeasure());
     updateSelectionMenu();
   }
 
@@ -3887,6 +3889,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   let player = null, audioContext = null, playbackState = 'idle', playbackRequest = 0, playbackTrack = null;
   let playbackDocument = null, playbackSnapshot = null;
   let playbackSelectionMeasure = null;
+  let playbackActivityDocument = null, playbackActivityMeasure = null;
   let playbackFrame = null, playbackLayout = [];
   const playbackCursor = document.createElement('span');
   playbackCursor.className = 'score-playback-cursor';
@@ -3905,6 +3908,43 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (selectedHairpin) measures.push(selectedHairpin.mi);
     return measures.length ? Math.min(...measures) : null;
   }
+
+  function rememberPlaybackMeasure(mi) {
+    if (playbackActivityDocument !== score) {
+      playbackActivityDocument = score;
+      playbackActivityMeasure = null;
+    }
+    if (mi !== null) playbackActivityMeasure = mi;
+  }
+
+  function activePlaybackMeasure() {
+    rememberPlaybackMeasure(null);
+    return Math.min(playbackActivityMeasure ?? 0, M.measures(score).length - 1);
+  }
+
+  function playbackOffset(mi) {
+    return measureOffset(0, mi) * 60 / (score.tempo || 120) / M.DIVISIONS;
+  }
+
+  // Record the gesture even when it clears a selection or revisits the same measure.
+  stage.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || event.target.closest('.score-playback, .score-voice-legend, .score-selection-menu, .score-insert-measure')) return;
+    const origin = stage.getBoundingClientRect();
+    const ref = eventUnder(event.clientX, event.clientY);
+    const node = event.target.closest('[data-measure], g.measure');
+    const mi = ref?.mi ?? (node ? Number(node.dataset.measure ?? node.id.slice(1)) : layout.findIndex((m) =>
+      event.clientX >= origin.left + m.left && event.clientX <= origin.left + m.right &&
+      event.clientY >= origin.top + m.top - 24 && event.clientY <= origin.top + m.bottom + 24));
+    if (!Number.isInteger(mi) || mi < 0 || mi >= M.measures(score).length) return;
+    rememberPlaybackMeasure(mi);
+    // A new gesture during pause chooses a fresh start, including in the same measure.
+    playbackSelectionMeasure = null;
+    if (playbackState === 'playing') {
+      player.play(playbackTrack, playbackOffset(mi));
+      playbackSelectionMeasure = mi;
+      if (playbackState === 'playing') animatePlayback();
+    }
+  }, true);
 
   function measurePlayback() {
     const origin = stage.getBoundingClientRect();
@@ -3996,10 +4036,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       syncPlayback();
       return;
     }
-    const fromMeasure = selectedPlaybackMeasure();
-    const restart = playbackState !== 'paused' || (fromMeasure !== null && fromMeasure !== playbackSelectionMeasure);
-    const from = restart ? measureOffset(0, fromMeasure || 0) * 60 / (score.tempo || 120) / M.DIVISIONS : undefined;
-    if (restart) playbackSelectionMeasure = fromMeasure;
+    const fromMeasure = activePlaybackMeasure();
+    const restart = playbackState !== 'paused' || fromMeasure !== playbackSelectionMeasure;
     const request = ++playbackRequest;
     playbackDocument = score;
     playbackSnapshot = JSON.stringify(score);
@@ -4015,7 +4053,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (request !== playbackRequest) return;
       playbackTrack = track;
       playbackState = 'playing';
-      player.play(track, from);
+      const startMeasure = activePlaybackMeasure();
+      if (restart) playbackSelectionMeasure = startMeasure;
+      player.play(track, restart ? playbackOffset(startMeasure) : undefined);
       if (playbackState === 'playing') { measurePlayback(); animatePlayback(); }
       syncPlayback();
     } catch (error) {
@@ -4023,6 +4063,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       resetPlayback();
       say(t.playbackError);
     }
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.code !== 'Space' || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.defaultPrevented || playButton.hidden) return;
+    if (event.target.closest('input, textarea, select, [contenteditable], ascii-tabs, [popover]:popover-open, [role="dialog"], button, a')) return;
+    event.preventDefault();
+    if (!event.repeat) playButton.click();
   });
   window.addEventListener('pagehide', resetPlayback);
   document.addEventListener('visibilitychange', () => { if (document.hidden) resetPlayback(); });

@@ -598,8 +598,8 @@
         "steps": [
           "Abrí el engranaje de <em>Ajustes</em> y activá <em>Reproducción</em> en <em>Herramientas</em>. Aparece el botón de reproducir a la izquierda del pentagrama, encima de la leyenda de voces.",
           "Elegí <em>Piano</em> o <em>Guitarra</em> y ajustá el tempo. Se escuchan las notas escritas con sonido de piano o guitarra de nylon; en piano suenan ambos pentagramas. La primera vez puede aparecer <em>Cargando sonidos…</em>.",
-          "Pulsá <em>Reproducir</em>. Una barra vertical sigue la posición de la música y pasa al renglón siguiente. Sin selección empieza desde el principio; con notas o un compás elegidos, desde el inicio de ese compás (el primero si elegiste varios).",
-          "Pulsá <em>Pausar</em> para conservar la posición y volvé a reproducir para continuar. Si durante la pausa elegís otro compás, la siguiente reproducción arranca allí.",
+          "Pulsá <em>Reproducir</em> o la barra espaciadora. Una barra vertical sigue la posición de la música y pasa al renglón siguiente. Empieza desde el último compás que usaste, aunque hayas deseleccionado sus notas; si todavía no usaste ninguno, desde el principio. Durante la reproducción, hacé clic en otro compás para saltar allí inmediatamente.",
+          "Pulsá <em>Pausar</em> o la barra espaciadora para conservar la posición y volvé a reproducir para continuar. Si durante la pausa elegís un compás, la siguiente reproducción arranca desde su inicio.",
           "Para escuchar una línea por separado, activá <em>Voces</em> y elegí sus números en la leyenda: el filtro se aplica a los dos pentagramas. Sin ninguna voz elegida se escuchan todas. Cambiar esa selección detiene y reinicia la reproducción.",
           "Editar la música, cambiar de partitura u ocultar la página detiene la reproducción y reinicia su posición. Volvé a pulsar reproducir cuando quieras escuchar el resultado."
         ],
