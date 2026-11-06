@@ -240,6 +240,8 @@
     "keepVoiceTiming": "Ese movimiento desplazaría otra voz.",
     "loadError": "No se pudo cargar el motor de notación.",
     "importFailed": "No se pudo leer el archivo. Probá con un MusicXML (.musicxml, .xml) o un MIDI (.mid).",
+    "dropAccepted": "Soltá para abrir en una nueva partitura",
+    "dropRejected": "Formato no compatible",
     "importDone": "Partitura cargada.",
     "tuning": "Afinación",
     "standardTuning": "Estándar"

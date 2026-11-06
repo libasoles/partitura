@@ -1,6 +1,7 @@
 /* score-export.js — Cargar y exportar partituras (MusicXML, MIDI, PDF). Se baja la primera vez que se usa el menu del sitio,
    no con el editor: nadie descarga ni importa antes de haber escrito algo. */
 import ScoreIO from './score-io.js';
+import { isMidiFile } from './score-file-types.js';
 
 // editor lo arma score-editor.js: el estado vivo del editor (la partitura activa, el modelo, Verovio) sin compartir sus variables.
 export default function createExporter(editor) {
@@ -35,7 +36,7 @@ export default function createExporter(editor) {
   // Una partitura cargada se abre en una pestana nueva, sin tocar la actual.
   async function loadFile(file) {
     try {
-      const midi = /\.midi?$/i.test(file.name);
+      const midi = isMidiFile(file);
       const loaded = midi ? ScoreIO.parseMidi(await file.arrayBuffer(), M) : ScoreIO.parseMusicXml(await file.text(), M);
       if (typeof loaded.title !== 'string' || !loaded.title) loaded.title = file.name.replace(/\.[^.]+$/, '') || editor.defaultTitle;
       editor.openScore(loaded);

@@ -244,6 +244,8 @@
     "keepVoiceTiming": "That move would shift another voice.",
     "loadError": "Could not load the notation engine.",
     "importFailed": "The file could not be read. Try a MusicXML (.musicxml, .xml) or a MIDI (.mid) file.",
+    "dropAccepted": "Drop to open in a new score",
+    "dropRejected": "Unsupported file format",
     "importDone": "Score loaded.",
     "tuning": "Tuning",
     "standardTuning": "Standard"

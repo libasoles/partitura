@@ -234,6 +234,7 @@ const api = (function () {
     let meter = null;
     let fifths = null;
     let tempo = null;
+    let title = '';
     let at = 8 + view.getUint32(4);
     let track = 0;
     while (at + 8 <= bytes.length) {
@@ -252,6 +253,7 @@ const api = (function () {
           if (status === 0xff) {
             const type = bytes[pos.i++];
             const size = readVarLen(bytes, pos);
+            if (type === 0x03 && !title) title = new TextDecoder().decode(bytes.subarray(pos.i, pos.i + size)).trim();
             if (type === 0x58 && !meter) meter = [bytes[pos.i], 2 ** bytes[pos.i + 1]];
             if (type === 0x59 && fifths === null) fifths = (bytes[pos.i] << 24) >> 24;
             if (type === 0x51 && tempo === null && size === 3) tempo = Math.round(60000000 / ((bytes[pos.i] << 16) | (bytes[pos.i + 1] << 8) | bytes[pos.i + 2]));
@@ -276,7 +278,7 @@ const api = (function () {
       }
       at = end;
     }
-    return { notes, division, meter, fifths, tempo };
+    return { notes, division, meter, fifths, tempo, title };
   }
 
   // Descompone una duracion (multiplo de la semicorchea) en figuras que existen en el modelo, de mayor a menor.
@@ -316,9 +318,10 @@ const api = (function () {
   }
 
   function parseMidi(buffer, M) {
-    const { notes, division, meter, fifths, tempo } = parseMidiFile(buffer);
+    const { notes, division, meter, fifths, tempo, title } = parseMidiFile(buffer);
     if (!notes.length) throw new Error('midi');
     const score = M.emptyScore();
+    if (title) score.title = title;
     const name = meter ? meter[0] + '/' + meter[1] : '4/4';
     if (M.METERS.includes(name)) score.meter = name;
     if (fifths !== null && Math.abs(fifths) <= 7) score.fifths = fifths;

@@ -1,4 +1,6 @@
 // Partitura's controls live in the site menu. Other hosts bind different controls.
+import { acceptsScoreFile } from './score-file-types.js';
+
 export function bindSiteActions(actions) {
   const menuToggle = document.getElementById('siteMenuToggle');
   if (menuToggle) {
@@ -11,6 +13,47 @@ export function bindSiteActions(actions) {
     fileInput.value = '';
     actions.loadFile(file);
   });
+  const dropzone = document.getElementById('scoreDropzone');
+  if (dropzone) {
+    let depth = 0;
+    const hasFiles = (transfer) => Array.from(transfer?.types || []).includes('Files');
+    const reset = () => { depth = 0; dropzone.hidden = true; };
+    const show = (transfer) => {
+      const files = Array.from(transfer.files || []);
+      const items = files.length ? files : Array.from(transfer.items || []).filter((item) => item.kind === 'file');
+      const accepted = items.length > 0 && items.every(acceptsScoreFile);
+      dropzone.classList.toggle('is-accepted', accepted);
+      dropzone.hidden = false;
+      // OS drags may hide the filename or report a generic MIME type. Allow drop
+      // so the extension can be checked before importing anything.
+      transfer.dropEffect = 'copy';
+    };
+    document.addEventListener('dragenter', (event) => {
+      if (!hasFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      depth += 1;
+      show(event.dataTransfer);
+    });
+    document.addEventListener('dragover', (event) => {
+      if (!hasFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      show(event.dataTransfer);
+    });
+    document.addEventListener('dragleave', (event) => {
+      if (dropzone.hidden) return;
+      if (--depth <= 0 || !event.relatedTarget) reset();
+    });
+    document.addEventListener('drop', async (event) => {
+      if (!hasFiles(event.dataTransfer)) return;
+      event.preventDefault();
+      reset();
+      const files = Array.from(event.dataTransfer.files);
+      if (!files.length || !files.every(acceptsScoreFile)) return;
+      for (const file of files) await actions.loadFile(file);
+    });
+    window.addEventListener('blur', reset);
+    document.addEventListener('dragend', reset);
+  }
   document.getElementById('menuExportXml')?.addEventListener('click', () => actions.exportMusicXml());
   document.getElementById('menuExportMidi')?.addEventListener('click', () => actions.exportMidi());
   document.getElementById('menuExportPdf')?.addEventListener('click', (event) => actions.exportPdf(event.currentTarget));

@@ -25,6 +25,11 @@ const clientStrings = Object.fromEntries([
 
 <Base locale={locale} title={s.scorePageTitle} description={s.scoreMetaDescription} paths={paths} editor>
   <main class="score-page" id="top">
+    <div id="scoreDropzone" class="score-dropzone" role="status" aria-live="polite" hidden>
+      <strong data-drop-accepted>{s.scoreUiStrings.dropAccepted}</strong>
+      <strong data-drop-rejected>{s.scoreUiStrings.dropRejected}</strong>
+      <span>MusicXML (.musicxml, .xml) · MIDI (.mid, .midi)</span>
+    </div>
     <WelcomeBanner locale={locale} />
 
     <MobileGate locale={locale} />
