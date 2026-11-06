@@ -2059,14 +2059,15 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     return measure;
   }
 
-  // Altura con la que se dibuja un silencio puesto en `n` sobre otras figuras: nunca encima de las notas que suenan ahi.
-  function restPitch(measure, ev, at, n) {
+  // Altura del silencio: separado de las notas y los silencios que suenan ahi.
+  function restPitch(measure, ev, at, n, defaultN = n) {
     const starts = onsets(measure);
     const end = at + length(ev);
     let result = n;
     measure.forEach((o, i) => {
-      if (o.rest || starts[i] >= end || at >= starts[i] + length(o) || Math.abs(o.n - result) >= REST_CLEARANCE) return;
-      result = result >= o.n ? o.n + REST_CLEARANCE : o.n - REST_CLEARANCE;
+      const pitch = o.n ?? defaultN;
+      if (starts[i] >= end || at >= starts[i] + length(o) || Math.abs(pitch - result) >= REST_CLEARANCE) return;
+      result = result >= pitch ? pitch + REST_CLEARANCE : pitch - REST_CLEARANCE;
     });
     return clampPitch(result);
   }
@@ -2077,7 +2078,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
   // Antes de la primera columna, antepone el silencio en la voz mas cercana y corre las figuras existentes.
   // Devuelve { measure, index }, { voice } (la voz del click) si las MAX_VOICE voces estan ocupadas en ese tiempo, o
   // { full: true } si su voz, contada en orden, ya no entra en el compas.
-  function placeRest(measure, ev, at, n, score, mi, beforeFirst = false) {
+  function placeRest(measure, ev, at, n, score, mi, beforeFirst = false, staff = 0) {
     // `at` explicito sin asentar: si el silencio se esta moviendo, las demas conservan el lugar en que se ven.
     const others = measure.map((o) => clone(o));
     const h = hints(others);
@@ -2088,7 +2089,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     delete rest.n;
     const first = Math.min(...h);
     const leading = others.filter((o) => o.at === first);
-    const pitch = (o) => o.n ?? bottomLine(score, mi) + 4;
+    const pitch = (o) => o.n ?? bottomLine(score, mi, staff) + 4;
     const ref = leading.reduce((a, b) => !a || Math.abs(pitch(b) - n) < Math.abs(pitch(a) - n) ? b : a, null);
     // Bajo un silencio inicial, anteponer a la voz grave tambien al soltar en esa columna.
     const underRest = at === first && ref && !ref.rest && leading.some((o) => o.rest && pitch(o) > n);
@@ -2111,7 +2112,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     if (clash.length) {
       const pitched = clash.filter((o) => !o.rest);
       const ref = pitched.length ? pitched.reduce((a, b) => Math.abs(a.n - n) <= Math.abs(b.n - n) ? a : b) : clash[0];
-      const above = pitched.length ? n > ref.n : n >= bottomLine(score, mi) + 4;
+      const above = pitched.length ? n > ref.n : n >= pitch(ref);
       const lanes = Math.max(...others.map((o) => o.v));
       const free = (k) => others.every((o) => o.v - 1 !== k || !overlaps(o));
       let target = -1;
@@ -2124,7 +2125,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
         others.forEach((o) => { if (o.v - 1 >= target) o.v += 1; });
       }
       rest.v = target + 1;
-      rest.n = restPitch(others, rest, at, n);
+      rest.n = restPitch(others, rest, at, n, bottomLine(score, mi, staff) + 4);
     }
     const index = insertAt(others, rest, at);
     if (!clash.length) settleVoices(others);
@@ -2148,6 +2149,28 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
       }
     }
     return insertAt(measure, ev, at);
+  }
+
+  // Intercalar en una linea: separar la columna de destino sin perder los acordes
+  // ni las alineaciones posteriores con otras voces.
+  function insertBefore(measure, ev, at, n, defaultN) {
+    settleVoices(measure);
+    const h = hints(measure);
+    const column = measure.filter((o, i) => h[i] === at);
+    if (!column.length) return null;
+    const distance = (o) => Math.abs((o.n ?? defaultN) - n);
+    const closest = column.reduce((a, b) => distance(b) < distance(a) ? b : a);
+    ev.v = closest.v;
+    measure.forEach((o, i) => { o.at = h[i] * 2 + (h[i] === at && o.v === ev.v ? 1 : 0); });
+    return insertAt(measure, ev, at * 2);
+  }
+
+  function placeBefore(measure, ev, at, n, score, mi, staff = 0) {
+    const trial = clone(measure);
+    const added = clone(ev);
+    const index = insertBefore(trial, added, at, n, bottomLine(score, mi, staff) + 4);
+    if (index === null || measureLength(trial) > capacity(score, mi)) return { full: true };
+    return { measure: trial, index };
   }
 
   // ---- seleccion: tresillos, ligaduras y barrado -------------------------
@@ -2631,7 +2654,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     stavesOf, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,

@@ -427,6 +427,8 @@
         "steps": [
           "Elegí una figura en la paleta o apretá su tecla: del <kbd>1</kbd> (fusa) al <kbd>6</kbd> (redonda) para las notas, y de <kbd>Q</kbd> a <kbd>Y</kbd> para los silencios.",
           "Hacé clic en el pentagrama: la altura del clic es la nota y la posición horizontal, el tiempo. También podés arrastrar la figura desde la paleta hasta su lugar.",
+          "Para anteponer una nota, colocala a la izquierda de la primera figura del compás, dejando un espacio entre ambas: las figuras de la voz más cercana se corren para hacerle lugar. Si la colocás sobre la misma columna, empieza al mismo tiempo en otra voz.",
+          "Para intercalar una nota o un silencio, colocalo en el espacio entre dos columnas: se inserta antes de la columna de la derecha en la voz más cercana a la altura elegida. Las figuras siguientes se corren si caben en el compás.",
           "La herramienta sigue activa después de cada figura, así que podés escribir una frase entera sin volver a elegirla. Las corcheas y las figuras más cortas se unen con barra solas.",
           "Apretá <kbd>A</kbd> o <kbd>Esc</kbd> para soltar la herramienta y volver a seleccionar figuras."
         ],

@@ -459,12 +459,22 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (item.kind === 'rest') ev.rest = true;
       else ev.n = target.n;
       if (item.dead) ev.dead = true;
+      if (Number.isFinite(target.beforeAt)) {
+        const placed = M.placeBefore(measure, ev, target.beforeAt, target.n, score, target.mi, target.staff);
+        if (!placed.measure) return say(t.full);
+        change(() => {
+          measure.splice(0, measure.length, ...placed.measure);
+          selected = activeItem ? null : M.refOf(target.staff, target.mi, placed.index);
+          group = [];
+        });
+        return;
+      }
       const spot = M.placement(measure, ev, target.t, score, target.mi);
       if (!spot) return say(noRoom(ev, target.mi));
       ev.d = spot.d;
       if (spot.dot) ev.dot = true;
       if (item.kind === 'rest') {
-        const placed = M.placeRest(measure, ev, spot.at, target.n, score, target.mi, target.beforeFirst);
+        const placed = M.placeRest(measure, ev, spot.at, target.n, score, target.mi, target.beforeFirst, target.staff);
         if (!placed.measure) return say(placed.full ? t.full : fullVoice(placed.voice));
         change(() => {
           measure.splice(0, measure.length, ...placed.measure);
@@ -631,7 +641,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     else delete moved.dot;
     if (ev.rest) {
       // Un silencio se acomoda segun las notas que suenan a la vez: arrastrarlo arriba o abajo cambia su voz y su altura.
-      const placed = M.placeRest(others, moved, spot.at, target.n, score, target.mi, target.beforeFirst);
+      const placed = M.placeRest(others, moved, spot.at, target.n, score, target.mi, target.beforeFirst, target.staff);
       if (!placed.measure) return say(placed.full ? t.full : fullVoice(placed.voice));
       // Solo, el silencio queda a la altura donde se soltó: se puede bajar para escribir una nota en el centro.
       const landed = placed.measure[placed.index];
@@ -2531,20 +2541,22 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const last = Math.max(...others.map((i) => starts[i]));
       at = Math.max(at, ...others.map((i) => starts[i] === last ? last + M.length(measure[i]) : 0));
     }
-    // Solo sobre la cabeza de una nota (no a un espacio de distancia) la figura se apila en su columna.
+    // Sobre una nota o un silencio se alinea con su columna; entre columnas se puede intercalar.
     let near = null;
     centers.forEach((c, i) => {
-      if (isOwn(i) || measure[i].rest || Math.abs(c - x) > space * 0.8) return;
+      if (isOwn(i) || Math.abs(c - x) > space * 0.8) return;
       if (!near || Math.abs(c - x) < Math.abs(near.c - x)) near = { c, i };
     });
     if (near) {
       at = starts[near.i];
       markX = near.c;
     }
+    const next = near ? null : others.filter(i => centers[i] > x).sort((a, b) => centers[a] - centers[b])[0];
     return {
       mi, staff, n, space, rawT, rawX,
+      beforeAt: next == null ? null : starts[next],
       beforeFirst: others.length > 0 && x < Math.min(...others.map((i) => centers[i])) - space * 0.8,
-      onNote: !!near,
+      onNote: !!near && !measure[near.i].rest,
       t: at,
       x: markX,
       y: lines[4] - (n - M.bottomLine(score, mi, staff)) * half,

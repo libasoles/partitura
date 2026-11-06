@@ -427,6 +427,8 @@
         "steps": [
           "Pick a figure in the palette or press its key: <kbd>1</kbd> (32nd) to <kbd>6</kbd> (whole) for notes, and <kbd>Q</kbd> to <kbd>Y</kbd> for rests.",
           "Click the staff: the height of the click is the pitch and the horizontal position is the time. You can also drag the figure from the palette to its place.",
+          "To prepend a note, place it to the left of the first figure in the measure, leaving a gap between them: the figures in the nearest voice shift to make room. Placing it on the same column starts it at the same time in another voice.",
+          "To insert a note or rest between figures, place it in the gap between two columns: it is inserted before the right column in the voice nearest the chosen pitch. The following figures shift if they fit in the measure.",
           "The tool stays active after each figure, so you can write a whole phrase without picking it again. Eighth notes and shorter ones beam themselves.",
           "Press <kbd>A</kbd> or <kbd>Esc</kbd> to drop the tool and go back to selecting figures."
         ],

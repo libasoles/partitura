@@ -427,6 +427,8 @@
         "steps": [
           "Escolha uma figura na paleta ou aperte sua tecla: de <kbd>1</kbd> (fusa) a <kbd>6</kbd> (semibreve) para notas, e de <kbd>Q</kbd> a <kbd>Y</kbd> para pausas.",
           "Clique na pauta: a altura do clique é a nota e a posição horizontal, o tempo. Você também pode arrastar a figura da paleta até o lugar.",
+          "Para inserir uma nota antes das existentes, coloque-a à esquerda da primeira figura do compasso, deixando um espaço entre elas: as figuras da voz mais próxima se deslocam para abrir espaço. Na mesma coluna, a nota começa ao mesmo tempo em outra voz.",
+          "Para intercalar uma nota ou pausa, coloque-a no espaço entre duas colunas: ela entra antes da coluna da direita, na voz mais próxima da altura escolhida. As figuras seguintes se deslocam se couberem no compasso.",
           "A ferramenta continua ativa depois de cada figura, então dá para escrever uma frase inteira sem escolher de novo. Colcheias e figuras mais curtas se unem com barra sozinhas.",
           "Aperte <kbd>A</kbd> ou <kbd>Esc</kbd> para soltar a ferramenta e voltar a selecionar figuras."
         ],
