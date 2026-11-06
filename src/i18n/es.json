@@ -823,7 +823,7 @@
       ],
       [
         "Tus partituras y tus datos",
-        "Las partituras que escribís se guardan solo en tu navegador (almacenamiento local) y no se envían a ningún servidor. Como no tenemos una copia, no podemos recuperarlas: si borrás los datos del navegador o cambiás de dispositivo se pierden. Exportá tu trabajo (PDF, MusicXML o MIDI) para conservarlo."
+        "Las partituras que escribís se guardan solo en tu navegador (almacenamiento local) y no se envían a ningún servidor. Como no tenemos una copia, no podemos recuperarlas: si borrás los datos del navegador o cambiás de dispositivo se pierden. Exportá tu trabajo (PDF, MusicXML o MIDI) para conservarlo. Partitura está en fase beta: no nos responsabilizamos por la pérdida de datos durante esta fase, ni tampoco si borrás la caché o los datos del navegador."
       ],
       [
         "Propiedad intelectual",
