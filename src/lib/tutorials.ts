@@ -61,7 +61,7 @@ function guide(slug: Slug, s: Strings): string {
 export function tutorialBody(slug: Slug, s: Strings): string {
   switch (slug) {
     case 'start':
-      return figure(slug, s) + `<h2 class="tutorial-h">${s.tutorials.stepsHeading}</h2>` + items(s.scoreHow, 'ol');
+      return figure(slug, s) + `<h2 class="tutorial-h">${s.tutorials.stepsHeading}</h2>` + items(s.scoreHow, 'ol') + figure('signatures', s);
     case 'features': return items(s.scoreFeatures, 'ul');
     case 'shortcuts': return renderShortcuts(s);
     case 'dots': return `<p>${s.scoreDotBody}</p>${renderDot(s)}`;

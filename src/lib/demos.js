@@ -45,13 +45,14 @@ function placing(d, slots, start, every, pitchY = (n) => d.y(n.p)) {
 // ----- first steps -----------------------------------------------------------------------------------------------------
 
 export function place(s, aria) {
-  const d = stage({ id: 'place', T: 11 });
+  const d = stage({ id: 'place', T: 13 });
   const notes = phrase(d, [
     ['E4', 'E4', 'F4', 'G4'].map((n) => q(n)),
-    ['G4', 'F4', 'E4', 'D4'].map((n) => q(n)),
-  ]);
+    [q('G4'), q('F4'), ...['E4', 'F4', 'E4', 'D4'].map((name) => ({ name, d: 'e' }))],
+  ], 22);
   placing(d, notes, 2.2, 0.85);
-  d.keycap('4', 26, 0.4, 1.3, 9.2);
+  d.keycap('4', 26, 0.4, 1.3, 6.2);
+  d.keycap('3', 26, 6.2, 6.8, 11.2);
   return d.html(aria);
 }
 

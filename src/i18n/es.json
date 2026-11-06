@@ -39,11 +39,9 @@
   ],
   "scoreHowH2": "Cómo escribir una partitura online",
   "scoreHow": [
-    "Poné el título y el autor arriba de la partitura.",
     "Elegí una figura o un silencio en la barra de herramientas.",
     "Hacé clic en el pentagrama para colocar cada nota; se agrupan solas en compases.",
-    "Ajustá la clave, la armadura y las barras de compás si hace falta.",
-    "Descargá la partitura en PDF o en MusicXML."
+    "Ajustá la clave, la armadura y las barras de compás si hace falta."
   ],
   "scoreFaqH2": "Preguntas frecuentes",
   "scoreFaq": [
@@ -280,10 +278,10 @@
     "betaP4": "Podés crear tus borradores acá, y exportarlos a software más potente para continuar."
   },
   "tutorials": {
-    "metaTitle": "Tutoriales · Partitura, editor de partituras online gratis",
+    "metaTitle": "Qué es · Partitura, editor de partituras online gratis",
     "metaDescription": "Aprendé a usar el editor de partituras online, gratis y sin registro, paso a paso y con animaciones: notas y silencios, edición, compases, repeticiones, dinámicas, tablatura de guitarra y archivos.",
-    "h1": "Tutoriales",
-    "intro": "Funciona directamente en tu navegador. Esto es lo que conviene saber antes de empezar.",
+    "h1": "Qué es",
+    "intro": "Un editor de partituras que funciona directamente en tu navegador. Esto es lo que conviene saber antes de empezar.",
     "welcome": {
       "cards": [
         {
