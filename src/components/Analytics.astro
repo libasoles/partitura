@@ -1,12 +1,11 @@
 ---
-// Google Tag Manager: se incluye en el <head> de cada layout/página. Una página nueva debe usar Base.astro (o este componente).
-const GTM_ID = 'GTM-T6WD2JMP';
+// Google Analytics 4 (gtag.js): se incluye en el <head> de cada layout/página. Una página nueva debe usar Base.astro (o este componente).
+const GA_ID = 'G-YX99KJ1Q99';
 ---
-<script is:inline define:vars={{ GTM_ID }}>
+<script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}></script>
+<script is:inline define:vars={{ GA_ID }}>
   window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
-  var s = document.createElement('script');
-  s.async = true;
-  s.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
-  document.head.appendChild(s);
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', GA_ID);
 </script>
