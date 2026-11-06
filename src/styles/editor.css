@@ -2430,3 +2430,14 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 /* La biblioteca no recorta: el tooltip del ritmo sale hacia la izquierda. */
 .score-pattern-rhythm.tooltip::after { left: auto; right: 0; transform: none; }
 .score-settings-hint { margin: 0 0 0.25rem; font-size: 0.78rem; color: var(--ink-soft); }
+
+/* Interval analysis follows the voices in the sticky left toolbar. */
+.score-interval-toggle {
+  position: absolute;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  padding: 0;
+  cursor: pointer;
+}
+.score-interval-toggle svg { display: block; margin: auto; }
