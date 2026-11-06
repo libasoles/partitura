@@ -41,18 +41,22 @@ export default function createExporter(editor) {
       if (typeof loaded.title !== 'string' || !loaded.title) loaded.title = file.name.replace(/\.[^.]+$/, '') || editor.defaultTitle;
       editor.openScore(loaded, options);
       say(t.importDone, { duration: 2000 });
+      return loaded;
     } catch (e) {
       say(t.importFailed);
     }
   }
 
   // Demos use the same import path as local files, including title and new-tab handling.
-  async function loadUrl(url) {
+  async function loadUrl(url, { demoId } = {}) {
     const response = await fetch(url);
     if (!response.ok) throw new Error(`Score download failed: ${response.status}`);
     const name = decodeURIComponent(new URL(url, location.href).pathname.split('/').pop());
-    await loadFile(new File([await response.blob()], name, { type: 'application/vnd.recordare.musicxml+xml' }), {
+    const file = new File([await response.blob()], name, { type: 'application/vnd.recordare.musicxml+xml' });
+    M.enableChoir();
+    return loadFile(file, {
       demo: true,
+      demoId,
       sound: 'mm',
       tools: { repeats: false, dynamics: false, voices: true, playback: true, intervals: true },
     });

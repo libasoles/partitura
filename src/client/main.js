@@ -7,7 +7,8 @@ async function start() {
   const { startEditor } = await import('./runtime.js');
   const { bindSiteActions } = await import('./site-actions.js');
   const { readUrlDefaults } = await import('./url-defaults.js');
-  const urlDefaults = readUrlDefaults(location.search);
+  const demo = document.getElementById('editor')?.dataset.demoId;
+  const urlDefaults = readUrlDefaults(demo ? '?tools=voices,play,intervals&sound=uh' : location.search);
   await startEditor({ bindActions: bindSiteActions, settings: true, chords: true, patterns: !urlDefaults.tools, urlDefaults });
 }
 

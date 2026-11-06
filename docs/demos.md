@@ -6,6 +6,16 @@ Cada apertura crea una copia independiente que se puede editar o borrar sin camb
 
 «Canto en la rama» se abre con Voces, reproducción e intervalos activos, timbre Uh y el banner oculto, equivalentes a `?tools=voices,play,intervals&sound=uh&banner=hide`.
 
+Al cargar una demo, la barra de direcciones se actualiza sin recargar la página. Se puede copiar ese enlace para compartir el original, con sus opciones:
+
+```text
+https://partitura.com.ar/es/demos/canto-en-la-rama/?tools=voices,play,intervals&sound=uh&banner=hide
+```
+
+Cada demo tiene una página estática propia en cada idioma, con título, autor, descripción, Open Graph, Twitter Cards, canonical y hreflang generados en el HTML inicial. La URL sin parámetros también carga la canción y sus opciones predeterminadas. El catálogo está en `src/client/demos.js` y las páginas se generan desde `src/pages/[locale]/demos/[demo].astro`.
+
+Abrir el enlace importa la canción automáticamente; si ya hay una copia de esa demo en el navegador, la activa sin duplicarla. Las ediciones locales no se comparten. Crear, editar o importar partituras propias no actualiza la URL. También se acepta `?demo=canto-en-la-rama` en el editor; solo admite identificadores del catálogo publicado.
+
 La URL puede fijar los grupos de herramientas activos al abrir la página:
 
 ```text

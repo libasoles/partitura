@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { locales, pathFor, proPath, rootPath, termsPath, tutorialsPath } from './src/i18n/index.ts';
 import { slugs } from './src/lib/tutorials.ts';
+import { DEMOS, demoPath } from './src/client/demos.js';
 import { chordsFileName, chordSearchFileName } from './scripts/lib/chords-data.mjs';
 
 // The public origin. Canonical URLs, hreflang, Open Graph and the sitemap are built from it, so override it for staging:
@@ -17,6 +18,7 @@ const groups = [
   Object.fromEntries(locales.map((l) => [l, termsPath(l)])),
   Object.fromEntries(locales.map((l) => [l, proPath(l)])),
   ...slugs.map((slug) => Object.fromEntries(locales.map((l) => [l, tutorialsPath(l, slug)]))),
+  ...DEMOS.map((demo) => Object.fromEntries(locales.map((l) => [l, demoPath(l, demo)]))),
 ];
 const alternates = new Map();
 for (const group of groups) for (const path of Object.values(group)) alternates.set(path, group);

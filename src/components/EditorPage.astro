@@ -4,18 +4,26 @@ import { renderEmptyStaff } from '../lib/staff.js';
 import { pathFor, strings, locales, type Locale } from '../i18n';
 import MobileGate from './MobileGate.astro';
 import WelcomeBanner from './WelcomeBanner.astro';
+import { DEMOS, demoPath } from '../client/demos.js';
 import '../styles/editor.css';
 import '../styles/mobile-gate.css';
 
 interface Props {
   locale: Locale;
+  demo?: (typeof DEMOS)[number];
 }
 
-const { locale } = Astro.props;
+const { locale, demo } = Astro.props;
 const s = strings(locale);
 // The staff the editor starts from, drawn now so the first paint (and anything that does not run JS) already has it.
 const staff = await renderEmptyStaff(undefined, undefined, { grandStaff: true });
-const paths = Object.fromEntries(locales.map((l) => [l, pathFor(l)])) as Record<Locale, string>;
+const paths = Object.fromEntries(locales.map((l) => [l, demo ? demoPath(l, demo) : pathFor(l)])) as Record<Locale, string>;
+const title = demo ? `${demo.title} — ${demo.author} | ${s.ui.siteName}` : s.scorePageTitle;
+const descriptions = demo && {
+  es: `${demo.title}, de ${demo.author}. Partitura para tres voces con reproducción e intervalos.`,
+  en: `${demo.title}, by ${demo.author}. Three-voice sheet music with playback and intervals.`,
+  pt: `${demo.title}, de ${demo.author}. Partitura para três vozes com reprodução e intervalos.`,
+};
 // The editor reads these at start-up; the toast bundle reads the same block.
 const clientStrings = Object.fromEntries([
   ...Object.entries(s.scoreUiStrings),
@@ -23,7 +31,7 @@ const clientStrings = Object.fromEntries([
 ]);
 ---
 
-<Base locale={locale} title={s.scorePageTitle} description={s.scoreMetaDescription} paths={paths} editor>
+<Base locale={locale} title={title} description={descriptions ? descriptions[locale] : s.scoreMetaDescription} author={demo?.author} hideWelcomeBanner={Boolean(demo)} paths={paths} editor>
   <main class="score-page" id="top">
     <div id="scoreDropzone" class="score-dropzone" role="status" aria-live="polite" hidden>
       <strong data-drop-accepted>{s.scoreUiStrings.dropAccepted}</strong>
@@ -34,7 +42,7 @@ const clientStrings = Object.fromEntries([
 
     <MobileGate locale={locale} />
 
-    <section id="editor"class="score-editor" aria-label={s.scoreLabel}>
+    <section id="editor" class="score-editor" aria-label={s.scoreLabel} data-demo-id={demo?.id}>
       <div class="score-workspace">
         <div class="score-main">
           <div id="scoreTabs" class="score-doc-tabs" role="group" aria-label={s.scoreTabs} data-default-title={s.scoreH1}>
@@ -47,8 +55,8 @@ const clientStrings = Object.fromEntries([
           </div>
           <p id="scoreStatus" class="score-status" role="status" aria-live="polite"></p>
           <section class="score-sheet" aria-label={s.scoreLabel}>
-            <p class="score-author"><input id="scoreAuthor" type="text" placeholder={s.scoreAuthorPlaceholder} aria-label={s.scoreAuthorLabel} /></p>
-            <div class="score-title"><input id="scoreTitle" type="text" aria-label={s.scoreTitleLabel} value={s.scoreH1} /></div>
+            <p class="score-author"><input id="scoreAuthor" type="text" placeholder={s.scoreAuthorPlaceholder} aria-label={s.scoreAuthorLabel} value={demo?.author} /></p>
+            <div class="score-title"><input id="scoreTitle" type="text" aria-label={s.scoreTitleLabel} value={demo?.title ?? s.scoreH1} /></div>
             <div id="scoreStage" class="score-stage" tabindex="0" aria-busy="true" aria-label={s.scoreLabel} set:html={staff} />
           </section>
         </div>

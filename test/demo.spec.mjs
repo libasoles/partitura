@@ -41,6 +41,60 @@ test('a failed demo download preserves the current score and allows retry', asyn
   await expect(page.locator('[data-demo-url]')).toBeEnabled();
   await expect(page.locator('.score-doc-tab')).toHaveCount(1);
   await expect(page.locator('#scoreTitle')).toHaveValue('Conservar');
+  expect(new URL(page.url()).searchParams.has('demo')).toBe(false);
+});
+
+test('a demo opened without URL options produces a shareable link for a fresh browser', async ({ page, browser }) => {
+  await ready(page, '/es/');
+  await page.locator('#scoreTitle').fill('Mi canción privada');
+  expect(new URL(page.url()).search).toBe('');
+  await page.locator('#scoreNewTab').click();
+  expect(new URL(page.url()).search).toBe('');
+  await page.locator('#menuFile').setInputFiles({ name: 'privada.musicxml', mimeType: 'application/xml', buffer: Buffer.from(xml) });
+  await expect(page.locator('#scoreTitle')).toHaveValue('Demo de prueba');
+  expect(new URL(page.url()).search).toBe('');
+  await page.locator('#siteMenuToggle').click();
+  await page.locator('[data-demo-url]').click();
+  await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');
+  await expect(page).toHaveURL(/\/es\/demos\/canto-en-la-rama\//);
+  const link = page.url();
+  const params = new URL(link).searchParams;
+  expect(Object.fromEntries(params)).toEqual({ tools: 'voices,play,intervals', sound: 'uh', banner: 'hide' });
+  expect(await page.evaluate(() => window.ScoreModel.stavesOf(window.scoreEditor.score))).toBe(3);
+  const context = await browser.newContext();
+  try {
+    const recipient = await context.newPage();
+    await recipient.goto(link);
+    await expect(recipient.locator('#scoreTitle')).toHaveValue('Canto en la rama');
+    expect(await recipient.evaluate(() => {
+      const score = window.scoreEditor.score;
+      return { staves: window.ScoreModel.stavesOf(score), sound: score.sound, tools: score.tools };
+    })).toEqual({ staves: 3, sound: 'mm', tools: { repeats: false, dynamics: false, voices: true, playback: true, intervals: true } });
+    await expect(recipient.locator('.welcome-banner')).toBeHidden();
+    await expect(recipient.locator('.score-doc-tab')).toHaveCount(2);
+    await recipient.evaluate(() => window.ScoreStore.flush());
+    await recipient.reload();
+    await expect(recipient.locator('#scoreTitle')).toHaveValue('Canto en la rama');
+    await expect(recipient.locator('.score-doc-tab')).toHaveCount(2);
+  } finally {
+    await context.close();
+  }
+});
+
+test('a demo page loads the song and its defaults even without query parameters', async ({ page }) => {
+  await ready(page, '/en/demos/canto-en-la-rama/');
+  await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');
+  await expect(page.locator('#scoreAuthor')).toHaveValue('Aca Seca Trío / Leda Valladares');
+  expect(await page.evaluate(() => window.ScoreModel.stavesOf(window.scoreEditor.score))).toBe(3);
+  await expect(page.locator('.welcome-banner')).toBeHidden();
+});
+
+test('unknown demo identifiers do not import remote files', async ({ page }) => {
+  let requested = false;
+  page.on('request', (request) => { if (new URL(request.url()).pathname.endsWith('.musicxml')) requested = true; });
+  await ready(page, '/en/?demo=https://example.com/song.musicxml');
+  await expect(page.locator('.score-doc-tab')).toHaveCount(1);
+  expect(requested).toBe(false);
 });
 
 test('demo copies stay out of personal scores across edits, reloads and repeated openings', async ({ page }) => {

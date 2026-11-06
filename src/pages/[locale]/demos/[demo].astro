@@ -1,0 +1,16 @@
+---
+import EditorPage from '../../../components/EditorPage.astro';
+import { DEMOS } from '../../../client/demos.js';
+import { locales } from '../../../i18n';
+
+export function getStaticPaths() {
+  return locales.flatMap((locale) => DEMOS.map((demo) => ({
+    params: { locale, demo: demo.id },
+    props: { locale, demo },
+  })));
+}
+
+const { locale, demo } = Astro.props;
+---
+
+<EditorPage locale={locale} demo={demo} />

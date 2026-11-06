@@ -1,16 +1,27 @@
 // Partitura's controls live in the site menu. Other hosts bind different controls.
 import { acceptsScoreFile } from './score-file-types.js';
+import { DEMOS, demoLink } from './demos.js';
 
 export function bindSiteActions(actions) {
+  const openDemo = async (demo) => {
+    const loaded = await actions.loadUrl(demo);
+    if (loaded) history.replaceState(history.state, '', demoLink(demo, location.href));
+  };
   document.querySelectorAll('[data-demo-url]').forEach((button) => {
     button.addEventListener('click', async () => {
       button.disabled = true;
       try {
-        await actions.loadUrl(button.dataset.demoUrl);
+        const demo = DEMOS.find((one) => one.url === button.dataset.demoUrl);
+        if (demo) await openDemo(demo);
       } finally {
         button.disabled = false;
       }
     });
+  });
+  const sharedId = document.getElementById('editor')?.dataset.demoId || new URLSearchParams(location.search).get('demo');
+  const sharedDemo = DEMOS.find((demo) => demo.id === sharedId);
+  if (sharedDemo) actions.ready.then(async () => {
+    if (!actions.restoreDemo(sharedDemo.id)) await openDemo(sharedDemo);
   });
   const menuToggle = document.getElementById('siteMenuToggle');
   if (menuToggle) {

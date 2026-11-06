@@ -17,9 +17,11 @@ interface Props {
   /** The editor page: its menu also loads and exports scores. */
   editor?: boolean;
   hideMenu?: boolean;
+  author?: string;
+  hideWelcomeBanner?: boolean;
 }
 
-const { locale, title, description, paths, faq, editor = false, hideMenu = false } = Astro.props;
+const { locale, title, description, paths, faq, editor = false, hideMenu = false, author, hideWelcomeBanner = false } = Astro.props;
 const verovioFile = __VEROVIO_FILE__;
 const s = strings(locale);
 const site = Astro.site!;
@@ -39,12 +41,13 @@ const jsonLd = pageJsonLd({
 ---
 
 <!doctype html>
-<html lang={s.htmlLang}>
+<html lang={s.htmlLang} class:list={{ 'banner-closed': hideWelcomeBanner }}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {author && <meta name="author" content={author} />}
     <link rel="canonical" href={canonical} />
     {locales.map((l) => <link rel="alternate" hreflang={l} href={abs(l)} />)}
     <link rel="alternate" hreflang="x-default" href={homeUrl} />

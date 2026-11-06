@@ -88,7 +88,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const data = window.ScoreStore.stored; // cargado desde IndexedDB antes de arrancar (storage.js)
       if (data && Array.isArray(data.scores) && data.scores.length) {
         // `closed` marks a score taken off the tab strip (Pro); it stays stored and listed in the site menu.
-        const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}, one && one.demo === true ? { demo: true } : {}));
+        const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}, one && one.demo === true ? { demo: true, demoId: one.demoId } : {}));
         const active = Math.min(Math.max(data.active | 0, 0), scores.length - 1);
         delete scores[active].closed;
         return { scores, active };
@@ -5079,10 +5079,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- menu del sitio: cargar y exportar ----------------------------------
 
   // Una partitura cargada se abre en una pestana nueva, sin tocar la actual.
-  function openScore(loaded, { tools, sound, demo = false } = {}) {
+  function openScore(loaded, { tools, sound, demo = false, demoId } = {}) {
     applyUrlDefaults(loaded, urlDefaults, M);
     if (demo) {
       loaded.demo = true;
+      if (demoId) loaded.demoId = demoId;
       document.documentElement.classList.add('banner-closed');
     }
     if (tools) loaded.tools = { ...tools };
@@ -5105,7 +5106,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function withExporter(action, onError) {
     return async (target) => {
       try {
-        await action(await exporter(), target);
+        return await action(await exporter(), target);
       } catch (e) {
         exporterReady = null;
         say(onError);
@@ -5114,14 +5115,22 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   // The host connects its own controls; their position and layout belong to the site.
-  bindActions({
-    loadUrl: withExporter((tools, url) => tools.loadUrl(url), t.importFailed || t.loadError),
+  const actions = {
+    loadUrl: withExporter((tools, demo) => tools.loadUrl(demo.url, { demoId: demo.id }), t.importFailed || t.loadError),
+    restoreDemo: (id) => {
+      const matches = (one) => one.demo && one.demoId === id;
+      const index = matches(score) ? active : docs.findIndex(matches);
+      if (index < 0) return false;
+      M.enableChoir();
+      switchTo(index);
+      return true;
+    },
     loadFile: withExporter((tools, file) => file && tools.loadFile(file), t.importFailed || t.loadError),
     exportMusicXml: withExporter((tools) => tools.exportMusicXml(), t.loadError),
     exportMidi: withExporter((tools) => tools.exportMidi(), t.loadError),
     exportPdf: withExporter((tools, button) => tools.exportPdf(button), t.pdfError || t.loadError),
     warm: () => exporter().catch(() => { exporterReady = null; }),
-  });
+  };
 
   // ---- arranque -----------------------------------------------------------
 
@@ -5139,7 +5148,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const loadSoon = stage.classList.contains('is-loading')
     ? new Promise((resolve) => requestAnimationFrame(() => resolve()))
     : new Promise((resolve) => whenIdle(resolve, { timeout: 1500 }));
-  loadSoon.then(loadVerovio).then(() => {
+  const ready = loadSoon.then(loadVerovio).then(() => {
     stage.removeAttribute('aria-busy');
     render();
     stage.classList.remove('is-loading');
@@ -5149,6 +5158,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     stage.classList.remove('is-loading');
     say(t.loadError);
   });
+  bindActions({ ...actions, ready });
 
   // Consola del navegador: `voces()` lista las figuras de cada compas, por voz.
   window.voces = () => console.log(M.voicesText(score));
