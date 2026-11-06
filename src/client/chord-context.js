@@ -13,7 +13,7 @@ const DEGREE = { maj: { 0: 1, 2: 0.6, 4: 0.3, 5: 0.7, 7: 0.9, 9: 0.6, 11: 0.2 },
 const FUNCTION = { maj: { 0: 0, 2: 1, 4: 0, 5: 1, 7: 2, 9: 0, 11: 2 }, min: { 0: 0, 2: 1, 3: 0, 5: 1, 7: 2, 8: 1, 10: 2, 11: 2 } };
 const FUNCTION_MOVE = { '01': 0.3, 12: 0.6, 20: 0.8, 21: -0.5 };
 const ROOT_MOVE = { 5: 1, 7: 0.5, 0: 0.5, 2: 0.3, 3: 0.3, 4: 0.3, 8: 0.3, 9: 0.3, 10: 0.2, 1: -0.5, 6: -0.5, 11: -0.5 };
-const W = { tonic: 1.5, signature: 0.8, outside: 2, inversion: 1.2, second: 0.3, secondary: 1, held: 0.8 };
+const W = { sixth: 1.5, tonic: 1.5, signature: 0.8, outside: 2, inversion: 1.2, second: 0.3, secondary: 1, held: 0.8 };
 const LETTER = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const ACCIDENTAL = { '#': 1, b: -1, bb: -2, '##': 2 };
 const mod = (n) => ((n % 12) + 12) % 12;
@@ -50,6 +50,8 @@ export function pickChords(columns, fifths = 0) {
     let score = (chord.suffix === 'dim7' ? 0 : DEGREE[key.mode][degree(chord)] ?? 0) - W.outside * out + SHAPE_PRIOR[chord.suffix];
     const secondary = out === 1 && chord.suffix === '7' && degree(chord) !== 0 && SCALE[key.mode].includes(mod(chord.root + 7 - key.tonic));
     if (secondary) score += W.secondary * 2;
+    // A seventh chord on the sixth degree (Am7/C in C major) is preferred to the sixth chord with the same notes (C6).
+    if (key.mode === 'maj' && chord.suffix === 'm7' && degree(chord) === 9) score += W.sixth;
     if (chord.bass !== chord.root) score -= W.inversion + (chord.pcs.length === 3 && chord.bass === chord.pcs[2] ? W.second : 0);
     return score;
   };
