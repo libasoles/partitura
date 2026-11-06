@@ -42,7 +42,9 @@
 
 /* En pantallas anchas la barra lateral vive en el margen de la pagina (columna de ancho 0): la partitura ocupa todo el ancho, igual que el titulo y las pestanas. */
 @media (min-width: 900px) {
-  .score-page { max-width: calc(var(--page) + 5rem); padding-inline: max(var(--gutter), 4.5rem); }
+  /* Leave room for a 44px tool, its gap and an outer gutter on both sides,
+     including when the page fills a tablet viewport. Keep the desktop sheet width. */
+  .score-page { max-width: calc(var(--page) + 8rem); padding-inline: max(var(--gutter), 6rem); }
   .score-workspace { grid-template-columns: minmax(0, 1fr) 0; column-gap: 0; }
   .score-side { width: max-content; margin-left: 0.75rem; }
 }
@@ -76,15 +78,15 @@
   padding: 0.3rem;
 }
 
-/* The sidebar hugs the right edge, so its tooltips open to the left instead of centered above. */
-.score-side-actions .tooltip::after {
+/* Keep every sidebar tooltip inside the viewport, including on tablets. */
+.score-side .tooltip::after {
   right: calc(100% + 0.6rem);
   bottom: 50%;
   left: auto;
   transform: translateY(50%);
 }
 
-.score-side-actions .tooltip::before {
+.score-side .tooltip::before {
   right: calc(100% + 0.35rem);
   bottom: 50%;
   left: auto;
@@ -2523,3 +2525,17 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 
 .score-register-options button:hover { color: var(--blue-france); }
 .score-register-options button[aria-pressed='true'] { background: color-mix(in srgb, var(--blue-france) 12%, transparent); }
+
+/* Tablets keep full-size touch targets without wasting the staff's inner margins
+   on the horizontal palette. any-pointer also covers an iPad with a trackpad. */
+@media (min-width: 900px) and (any-pointer: coarse) {
+  .score-toolbar { padding-inline: 0.75rem; }
+  .score-palette { gap: 0.1rem; }
+  .score-palette .score-palette-item { min-width: 2.75rem; padding-inline: 0.25rem; }
+  .score-playback,
+  .score-interval-toggle { width: 2.75rem; height: 2.75rem; min-width: 2.75rem; }
+  .score-voice-legend li { width: 2.75rem; min-height: 2.75rem; align-items: center; justify-content: center; }
+  .score-voice-legend button { position: relative; }
+  /* Preserve the small colored circles while expanding their clickable area. */
+  .score-voice-legend button::after { content: ''; position: absolute; inset: -0.75rem; }
+}
