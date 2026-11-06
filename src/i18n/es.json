@@ -147,7 +147,6 @@
     "toolsIntervals": "Intervalos",
     "toolsIntervalsTooltip": "Intervalos entre voces",
     "intervalsNeedVoices": "Los intervalos miden la distancia entre las notas de dos o más voces que suenan a la vez. Esta partitura todavía no tiene notas simultáneas.",
-    "intervalsPickVoices": "Elegí dos o más voces en la leyenda para ver los intervalos entre ellas.",
     "play": "Reproducir",
     "pause": "Pausar",
     "playbackLoading": "Cargando sonidos…",

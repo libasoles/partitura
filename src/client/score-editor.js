@@ -1065,7 +1065,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
     toolbarStaffTop = Math.max(0, stage.querySelector('g.staff > path').getBoundingClientRect().top - stage.getBoundingClientRect().top);
     if (settings && toolOn('voices', false) && toolOn('intervals', false) && intervalDocuments.has(score)) {
-      toolkit.loadData(withIntervals(xml, score, M, shownVoices));
+      toolkit.loadData(withIntervals(xml, score, M, shownVoices.size ? shownVoices : null));
       // Verovio drops MusicXML words' font-size. Set MEI's supported relative size
       // on the marked interval text before engraving so spacing uses the smaller labels too.
       toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="60%"'));
@@ -4453,8 +4453,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   intervalButton.setAttribute('aria-pressed', 'false');
   intervalButton.addEventListener('click', () => {
     if (intervalDocuments.has(score)) intervalDocuments.delete(score);
-    else if (hasIntervals(score, M, shownVoices)) intervalDocuments.add(score);
-    else return say(hasIntervals(score, M, null) ? t.intervalsPickVoices : t.intervalsNeedVoices);
+    else if (hasIntervals(score, M, shownVoices.size ? shownVoices : null)) intervalDocuments.add(score);
+    else return say(t.intervalsNeedVoices);
     render();
   });
   ['pointerdown', 'mousedown', 'click'].forEach((type) => intervalButton.addEventListener(type, (event) => event.stopPropagation()));
