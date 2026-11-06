@@ -35,6 +35,25 @@ const api = (function () {
     return change === -1 ? 'guitar' : 'treble';
   }
 
+  // Voces independientes escritas en un solo pentagrama (<voice> 1..3, p. ej. un coro): con el instrumento Voces
+  // (Pro) cada una va a su propio pentagrama. Un pentagrama no puede mostrar dos voces al unisono (una nota igual
+  // en el mismo tiempo se pierde), varios pentagramas si. Devuelve voz -> pentagrama, o null si no corresponde:
+  // sitio sin Voces, archivo con varios pentagramas (<staff>) o sin entre 2 y 4 voces con notas (las que solo
+  // tienen silencios no cuentan).
+  function choirStaves(M, part) {
+    if (!M.choir) return null;
+    if (Array.from(part.getElementsByTagName('staves')).some((n) => +n.textContent > 1)) return null;
+    if (Array.from(part.getElementsByTagName('staff')).some((n) => +n.textContent > 1)) return null;
+    const voices = [];
+    Array.from(part.getElementsByTagName('note')).forEach((note) => {
+      if (!child(note, 'pitch')) return;
+      const voice = text(note, 'voice') || '1';
+      if (!voices.includes(voice)) voices.push(voice);
+    });
+    if (voices.length < M.MIN_PARTS || voices.length > M.MAX_PARTS) return null;
+    return new Map(voices.map((voice, staff) => [voice, staff]));
+  }
+
   // Valor y puntillo de una nota que dura `size` (divisiones de negra del modelo), o null si no se puede escribir.
   function figureFor(M, size) {
     for (const d of Object.keys(M.VALUES)) {
@@ -58,6 +77,17 @@ const api = (function () {
     const identification = child(root, 'identification');
     const composer = identification && children(identification, 'creator').find((c) => c.getAttribute('type') === 'composer');
     if (composer) score.author = composer.textContent.trim();
+
+    const choirOf = choirStaves(M, part);
+    if (choirOf) {
+      M.setInstrument(score, 'voices');
+      M.setParts(score, choirOf.size);
+      // La clave del archivo se reparte entre los pentagramas con el registro que la usa (tenor = sol con 8).
+      const first = Array.from(part.getElementsByTagName('clef')).find((c) => !c.getAttribute('number') || c.getAttribute('number') === '1');
+      const fileClef = first ? clefName(text(first, 'sign'), parseInt(text(first, 'line'), 10), parseInt(text(first, 'clef-octave-change'), 10)) : M.clefOf(score);
+      const registers = [...new Set([...M.DEFAULT_REGISTERS, ...Object.keys(M.REGISTERS)])].filter((r) => M.REGISTERS[r] === fileClef);
+      if (registers.length) for (let k = 0; k < choirOf.size; k += 1) M.setRegister(score, k, registers[k % registers.length]);
+    }
 
     let divisions = 1;
     const flat = [];
@@ -185,8 +215,9 @@ const api = (function () {
             if (head && head.textContent.trim() === 'x') ev.dead = true;
           }
           const staffNumber = parseInt(text(node, 'staff'), 10);
-          const staff = grand && staffNumber >= 2 && staffNumber <= staves ? staffNumber - 1 : 0;
           const voice = text(node, 'voice') || '1';
+          if (choirOf && !choirOf.has(voice)) return; // voz que solo tiene silencios
+          const staff = choirOf ? choirOf.get(voice) : grand && staffNumber >= 2 && staffNumber <= staves ? staffNumber - 1 : 0;
           if (!voices[staff].has(voice)) voices[staff].set(voice, voices[staff].size + 1);
           const v = voices[staff].get(voice);
           if (v <= M.MAX_VOICE) ev.v = v;
