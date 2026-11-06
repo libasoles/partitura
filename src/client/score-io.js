@@ -496,7 +496,7 @@ const api = (function () {
     meta(0x59, [M.keyAt(score, 0) & 0xff, 0]);
     // Piano de cola acustico para el piano; guitarra de cuerdas de nylon para la guitarra; coro para las voces.
     const instrument = M.instrumentOf(score);
-    const program = instrument === 'piano' ? 0 : instrument === 'voices' ? 52 + M.CHOIR_SOUNDS.indexOf(M.soundOf(score)) : 24; // 52 Choir Aahs, 53 Voice Oohs, 54 Synth Voice
+    const program = instrument === 'piano' ? 0 : instrument === 'voices' ? (['oh', 'mm'].includes(M.soundOf(score)) ? 53 : 52) : 24; // 52 Choir Aahs (Ah, Na, La, Uh), 53 Voice Oohs (Oh, Mm)
     for (let channel = 0; channel < M.stavesOf(score); channel += 1) track.push(0, 0xc0 | channel, program);
     let previous = 0;
     events.forEach((ev) => {
