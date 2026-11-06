@@ -54,3 +54,17 @@ test('Voces: F–B is IV; a sustained G between them gives III and II', () => {
   score.lower = {};
   assert.deepEqual(choirColumns(score, 0, C).at(-1).intervals, ['IV']);
 });
+
+test('Intervals relative to the bass label every note against the lowest one', () => {
+  const score = choir();
+  score.rows[0][0] = [{ d: 'w', n: 39 }];
+  score.lower = { 0: [{ d: 'w', n: 37 }] };
+  score.lower2 = { 0: [{ d: 'w', n: 35 }] };
+  assert.deepEqual(choirColumns(score, 0, C)[0].intervals, ['III', 'III']);
+  assert.deepEqual(choirColumns(score, 0, C, null, true)[0].intervals, ['V', 'III']);
+  assert.equal(C.intervalModeOf(score), 'voices');
+  C.setIntervalMode(score, 'bass');
+  assert.equal(C.sanitize(score).intervalMode, 'bass');
+  C.setIntervalMode(score, 'voices');
+  assert.equal(score.intervalMode, undefined);
+});

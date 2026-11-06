@@ -4898,6 +4898,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const toolsGrid = document.createElement('div');
     toolsGrid.className = 'score-settings-tools';
     content.appendChild(toolsGrid);
+    let intervalModes = [];
     const checks = categories.map(([name, label, belongs, fallback = true]) => {
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section score-settings-category';
@@ -4943,6 +4944,33 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         icon.setAttribute('aria-hidden', 'true');
         icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-letter-v preview-icon"><path d="m6 4 5.765 15.835a.25.25 0 00.47 0L18 4"/></svg>';
         icons.appendChild(icon);
+      }
+      // Intervalos: respecto de las voces vecinas (por defecto) o del bajo; viaja con la partitura y se deshace.
+      if (name === 'intervals') {
+        const modes = document.createElement('div');
+        modes.className = 'score-settings-interval-modes';
+        modes.setAttribute('role', 'radiogroup');
+        modes.setAttribute('aria-label', t.toolsIntervals);
+        intervalModes = ['voices', 'bass'].map((id) => {
+          const mode = document.createElement('label');
+          mode.className = 'score-settings-radio';
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = 'scoreIntervalMode';
+          radio.value = id;
+          mode.append(radio, document.createTextNode(t[id === 'bass' ? 'intervalsBass' : 'intervalsVoices']));
+          radio.addEventListener('change', () => {
+            if (M.intervalModeOf(score) === id) return;
+            const before = M.clone(score);
+            M.pruneLower(before);
+            M.setIntervalMode(score, id);
+            recordChange(before);
+            sync();
+          });
+          modes.appendChild(mode);
+          return radio;
+        });
+        wrap.appendChild(modes);
       }
       check.addEventListener('change', () => {
         M.setTool(score, name, check.checked);
@@ -4996,6 +5024,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === instrumentIds[i]; });
       voicesCard.hidden = M.instrumentOf(score) !== 'voices';
       sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });
+      intervalModes.forEach((radio) => { radio.checked = M.intervalModeOf(score) === radio.value; });
       partsSlider.value = String(M.partsOf(score));
       showParts();
       tempoSlider.value = String(score.tempo || 120);
