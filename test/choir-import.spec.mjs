@@ -30,6 +30,7 @@ async function parse(page, url, sources) {
       const score = IO.parseMusicXml(source, M);
       const pitches = (measure) => (measure || []).filter((ev) => !ev.rest).map((ev) => `${ev.n}:${ev.d}${ev.dot ? '.' : ''}`);
       return {
+        lyrics: score.lyrics,
         instrument: M.instrumentOf(score),
         staves: M.stavesOf(score),
         registers: [0, 1, 2].map((k) => M.registerOf(score, k)),
@@ -54,6 +55,17 @@ test('with Voces (#pro), independent voices of one staff go to one staff each, u
   expect(silent.lanes.slice(0, 2)).toEqual([['39:h.'], ['35:h.']]);
   // A single voice keeps the usual import.
   expect(one.instrument).not.toBe('voices');
+});
+
+test('lyrics in the file become syllables on the staff of their voice', async ({ page }) => {
+  const lyric = (text) => `<lyric number="1"><syllabic>single</syllabic><text>${text}</text></lyric>`;
+  const sung = xml(
+    note('G', 4, 2, 'half', 1, lyric('Quien')) + note('B', 4, 1, 'quarter', 1) + back
+    + note('G', 4, 3, 'half', 2, `<dot/>${lyric('su')}`) + back
+    + note('D', 4, 2, 'half', 3) + note('F', 4, 1, 'quarter', 3, lyric('frey')),
+  );
+  const [result] = await parse(page, '/es/#pro', [sung]);
+  expect(result.lyrics).toEqual({ 0: [{ at: 0, text: 'Quien' }, { at: 0, text: 'su', s: 1 }, { at: 48, text: 'frey', s: 2 }] });
 });
 
 test('without Voces the import is unchanged', async ({ page }) => {
