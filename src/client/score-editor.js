@@ -5079,10 +5079,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- menu del sitio: cargar y exportar ----------------------------------
 
   // Una partitura cargada se abre en una pestana nueva, sin tocar la actual.
-  function openScore(loaded, { tools, demo = false } = {}) {
+  function openScore(loaded, { tools, sound, demo = false } = {}) {
     applyUrlDefaults(loaded, urlDefaults, M);
-    if (demo) loaded.demo = true;
+    if (demo) {
+      loaded.demo = true;
+      document.documentElement.classList.add('banner-closed');
+    }
     if (tools) loaded.tools = { ...tools };
+    if (sound) M.setSound(loaded, sound);
     docs[active] = score;
     histories[active] = history;
     docs.push(loaded);

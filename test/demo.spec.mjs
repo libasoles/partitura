@@ -25,7 +25,9 @@ test('demo is fetched only on selection and opens through the importer in a new 
   await expect(page.locator('#scoreAuthor')).toHaveValue('Autor de prueba');
   expect(requests).toBe(1);
   expect(await page.evaluate(() => window.scoreEditor.score.tools)).toEqual({ repeats: false, dynamics: false, voices: true, playback: true, intervals: true });
-  expect(await page.evaluate(() => window.scoreEditor.score.sound)).toBe('oh');
+  expect(await page.evaluate(() => window.scoreEditor.score.sound)).toBe('mm');
+  await expect(page.locator('.welcome-banner')).toBeHidden();
+  expect(await page.context().cookies()).not.toEqual(expect.arrayContaining([expect.objectContaining({ name: 'banner-closed' })]));
   await page.locator('.score-doc-tab-label').first().click();
   await expect(page.locator('#scoreTitle')).toHaveValue('Mi partitura');
 });
@@ -88,9 +90,10 @@ test('the published song imports its three choir staves and URL defaults without
   await expect(page.locator('#scoreStage g.note[id^="p"]')).not.toHaveCount(0);
 });
 
-for (const query of ['tools=voices,play', 'sound=oh']) {
+for (const query of ['tools=voices,play', 'sound=oh', 'sound=uh']) {
   test(`${query} enables choir import without #pro`, async ({ page }) => {
     await ready(page, `/es/?${query}`);
+    if (query === 'sound=uh') expect(await page.evaluate(() => window.scoreEditor.score.sound)).toBe('mm');
     await page.locator('#siteMenuToggle').click();
     await page.locator('[data-demo-url]').click();
     await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');

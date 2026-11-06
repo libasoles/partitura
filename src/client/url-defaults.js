@@ -9,7 +9,7 @@ export function readUrlDefaults(search) {
     if (names.has('play')) names.add('playback');
     defaults.tools = Object.fromEntries(GROUPS.map((name) => [name, names.has(name)]));
   }
-  if (params.has('sound')) defaults.sound = params.get('sound');
+  if (params.has('sound')) defaults.sound = params.get('sound') === 'uh' ? 'mm' : params.get('sound');
   return defaults;
 }
 

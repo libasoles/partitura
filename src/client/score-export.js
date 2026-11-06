@@ -53,6 +53,7 @@ export default function createExporter(editor) {
     const name = decodeURIComponent(new URL(url, location.href).pathname.split('/').pop());
     await loadFile(new File([await response.blob()], name, { type: 'application/vnd.recordare.musicxml+xml' }), {
       demo: true,
+      sound: 'mm',
       tools: { repeats: false, dynamics: false, voices: true, playback: true, intervals: true },
     });
   }
