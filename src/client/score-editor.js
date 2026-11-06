@@ -87,6 +87,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function loadAll() {
     try {
       const data = window.ScoreStore.stored; // cargado desde IndexedDB antes de arrancar (storage.js)
+      // Demos are volatile: any copy persisted by an older version is dropped.
+      if (data && Array.isArray(data.scores)) data.scores = data.scores.filter((one) => !(one && one.demo === true));
       if (data && Array.isArray(data.scores) && data.scores.length) {
         // `closed` marks a score taken off the tab strip (Pro); it stays stored and listed in the site menu.
         const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}, one && one.demo === true ? { demo: true, demoId: one.demoId } : {}));
@@ -103,7 +105,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function save() {
     M.pruneLower(score);
     docs[active] = score;
-    window.ScoreStore.save({ active, scores: docs });
+    // Demos live only in this session; they are never written to storage.
+    const kept = docs.filter((one) => !one.demo);
+    if (!kept.length) return;
+    const saved = kept.indexOf(docs[active]);
+    const before = docs.slice(0, active).filter((one) => !one.demo).length;
+    window.ScoreStore.save({ active: saved >= 0 ? saved : Math.min(before, kept.length - 1), scores: kept });
   }
 
   // Messages are Radix alert toasts; an empty text leaves any toast to expire on its own.

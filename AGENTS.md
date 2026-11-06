@@ -169,6 +169,7 @@ No es una PWA: no hay manifest ni service worker.
   borra esa clave. Las claves antiguas de una sola partitura (`scoreEditor.v1` / `v2`) se siguen leyendo una vez.
 - **Respaldo**: si IndexedDB no está disponible (modo privado, bloqueado), las partituras vuelven a guardarse en
   localStorage.
+- **Las demos son volátiles**: una partitura abierta desde una demo (`demo: true`) nunca se escribe en IndexedDB ni en el respaldo (`save()` la filtra); `loadAll` descarta las que dejó una versión anterior. Al volver al índice no aparece entre los archivos del usuario: solo se accede por su URL, que la abre de nuevo.
 - Ninguno es una copia de seguridad: limpiar los datos del sitio borra todo.
 
 ### Voces y conducción
