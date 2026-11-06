@@ -10,6 +10,6 @@ test('intervals include sustained notes, exclude ended notes and rests, and pres
     { d: 'h', n: 28, at: 0, v: 3 },
     { d: 'q', rest: true, at: 32, v: 1 }, { d: 'q', n: 25, at: 32, v: 2 },
   ], M);
-  assert.deepEqual(columns.map(c => c.intervals), [['III', 'VI'], ['IV', 'V']]);
-  assert.deepEqual(intervalColumns([{ d: 'w', n: 35, at: 0 }, { d: 'w', n: 26, at: 0 }], M)[0].intervals, ['X']);
+  assert.deepEqual(columns.map(c => c.intervals), [['3', '6'], ['4', '5']]);
+  assert.deepEqual(intervalColumns([{ d: 'w', n: 35, at: 0 }, { d: 'w', n: 26, at: 0 }], M)[0].intervals, ['10']);
 });

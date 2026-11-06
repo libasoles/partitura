@@ -32,7 +32,7 @@ test('interval toggle sits below voices and engraves stacked intervals on both s
   await page.screenshot({ path: '/tmp/partitura-intervals.png', fullPage: true });
   await expect(directions).toHaveCount(3, { timeout: 5000 });
   await expect(directions.first().locator('tspan[font-size]').first()).toHaveAttribute('font-size', '202px');
-  expect(await directions.evaluateAll(nodes => nodes.map(node => node.textContent.replace(/\s/g, '')))).toEqual(['IIIVI', 'IVV', 'V']);
+  expect(await directions.evaluateAll(nodes => nodes.map(node => node.textContent.replace(/\s/g, '')))).toEqual(['36', '45', '5']);
   const levels = await directions.first().locator('tspan.text').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top));
   expect(new Set(levels).size).toBeGreaterThan(1);
   await page.screenshot({ path: '/tmp/partitura-intervals.png', fullPage: true });
@@ -43,4 +43,20 @@ test('interval toggle sits below voices and engraves stacked intervals on both s
   await page.locator('#scoreSettingsToggle').click();
   await page.getByRole('checkbox', { name: 'Intervalos', exact: true }).uncheck();
   await expect(button).toHaveCount(0);
+});
+
+test('interval toggle explains that it needs simultaneous voices when there are none', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [{
+      instrument: 'piano', meter: '4/4', clef: 'treble', fifths: 0,
+      tools: { intervals: true },
+      rows: [[[{ d: 'h', n: 35, at: 0 }, { d: 'h', n: 33, at: 32 }]]],
+    }] }));
+  });
+  await page.goto('/es/');
+  await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
+  const button = page.locator('#scoreIntervals');
+  await button.click();
+  await expect(page.locator('.toast-description')).toContainText('dos o más voces');
+  await expect(button).toHaveAttribute('aria-pressed', 'false');
 });

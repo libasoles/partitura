@@ -13,12 +13,13 @@ export function intervalColumns(measure, M) {
   });
 }
 
-function roman(value) {
-  let result = '';
-  for (const [number, symbol] of [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]) {
-    while (value >= number) { result += symbol; value -= number; }
-  }
-  return result;
+// The label is the distance between two notes (1 = unison, 3 = third, 8 = octave), never a degree of a key.
+const roman = (value) => String(value);
+
+// Whether the score has any simultaneous notes for the toggle to label.
+export function hasIntervals(score, M) {
+  if (M.instrumentOf(score) === 'voices') return M.measures(score).some((_, mi) => choirColumns(score, mi, M).length);
+  return M.measures(score).some((measure, mi) => [measure, ...(M.stavesOf(score) > 1 ? [score.lower?.[mi] || []] : [])].some((lane) => intervalColumns(lane, M).length));
 }
 
 // Choir columns: every sounding note of every visible staff at each onset, highest first. `n` is already the
