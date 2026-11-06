@@ -5,7 +5,7 @@ import { ARCHIVE_CHOIRS } from './choir-sounds.js';
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
 import { getSetting, setSetting } from './settings.js';
-import { hasIntervals, withIntervals } from './score-intervals.js';
+import { chordMarks, hasIntervals, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
 import { applyUrlDefaults } from './url-defaults.js';
 
@@ -1017,7 +1017,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const playbackHeight = playbackShown ? playButton.offsetHeight : 0;
     const legendHeight = voiceLegend.isConnected ? voiceLegend.offsetHeight : 0;
     const intervalsHeight = intervalButton.isConnected ? intervalButton.offsetHeight : 0;
-    const height = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight + (intervalsHeight ? intervalsHeight + (playbackHeight || legendHeight ? 8 : 0) : 0);
+    const chordNamesHeight = chordNamesButton.isConnected ? chordNamesButton.offsetHeight : 0;
+    const above = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
+    const withChords = above + (chordNamesHeight ? chordNamesHeight + (above ? 8 : 0) : 0);
+    const height = withChords + (intervalsHeight ? intervalsHeight + (withChords ? 8 : 0) : 0);
     // Follow the right toolbar's sticky offset, stopping at the end of the sheet.
     // Keep the natural position in short viewports, where the right toolbar also scrolls with the page.
     const side = barlines.closest('.score-side');
@@ -1025,7 +1028,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const top = Number.isFinite(stickyTop)
       ? Math.max(staffTop, Math.min(stickyTop - origin.top, origin.height - height))
       : staffTop;
-    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, intervalButton.isConnected ? intervalButton.offsetWidth : 0);
+    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, intervalButton.isConnected ? intervalButton.offsetWidth : 0, chordNamesButton.isConnected ? chordNamesButton.offsetWidth : 0);
     const left = WIDE_PAGE.matches ? -(width + 16) : Math.max(0, edge - width - 6);
     if (playbackShown) {
       playButton.style.top = top + 'px';
@@ -1035,6 +1038,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
     intervalButton.style.top = (top + height - intervalsHeight) + 'px';
     intervalButton.style.left = (left + (width - intervalButton.offsetWidth) / 2) + 'px';
+    chordNamesButton.style.top = (top + height - intervalsHeight - (intervalsHeight ? 8 : 0) - chordNamesHeight) + 'px';
+    chordNamesButton.style.left = (left + (width - chordNamesButton.offsetWidth) / 2) + 'px';
   }
 
   let leftToolbarFrame = 0;
@@ -1073,11 +1078,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     dynamicsPopup.hidePopover();
     stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
     toolbarStaffTop = Math.max(0, stage.querySelector('g.staff > path').getBoundingClientRect().top - stage.getBoundingClientRect().top);
-    if (settings && toolOn('voices', false) && toolOn('intervals', false) && intervalDocuments.has(score)) {
-      toolkit.loadData(withIntervals(xml, score, M, shownVoices.size ? shownVoices : null));
+    const showIntervals = intervalDocuments.has(score);
+    const showChords = proChordNames && chordNameDocuments.has(score);
+    if (settings && toolOn('voices', false) && toolOn('intervals', false) && (showIntervals || showChords)) {
+      toolkit.loadData(withIntervals(xml, score, M, shownVoices.size ? shownVoices : null, { intervals: showIntervals, chords: showChords }));
       // Verovio drops MusicXML words' font-size. Set MEI's supported relative size
       // on the marked interval text before engraving so spacing uses the smaller labels too.
-      toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="60%"'));
+      toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="60%"').replace(/fontfam="PartituraChordNames"/g, 'fontsize="75%"'));
       stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
     }
     applyMeasureWidths();
@@ -1094,6 +1101,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     mountKeyButtons();
     liftBarreMarks(svg);
     placeIntervals(svg);
+    placeChordNames(svg);
     measureLayout();
     mountNavigationMarks();
     mountLinks();
@@ -1959,6 +1967,53 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     groups.forEach((group) => group.items.forEach(({ dir, bottom }) => {
       const scale = dir.getScreenCTM() && dir.getScreenCTM().a;
       if (scale) dir.setAttribute('transform', 'translate(0 ' + (group.goal - bottom) / scale + ') ' + (dir.getAttribute('transform') || ''));
+    }));
+  }
+
+  // Chord names go above the interval labels (or above the notes without them); the other candidates are the tooltip.
+  function placeChordNames(svg) {
+    if (!proChordNames || !chordNameDocuments.has(score)) return;
+    const origin = svg.getBoundingClientRect();
+    const marks = chordMarks(score, M, shownVoices.size ? shownVoices : null);
+    const dirs = [...svg.querySelectorAll('g.measure g.dir')].filter((node) => !isIntervalDir(node) && !isChordDir(node));
+    const used = new Set();
+    const placed = [];
+    marks.forEach((mark) => {
+      const note = svg.querySelector('[id="' + mark.id + '"]');
+      if (!note) return;
+      const x = centerX(note, origin);
+      const dir = dirs.filter((node) => !used.has(node) && squash(node.textContent) === squash(mark.names[0]))
+        .sort((a, b) => Math.abs(centerX(a, origin) - x) - Math.abs(centerX(b, origin) - x))[0];
+      if (!dir) return;
+      used.add(dir);
+      if (mark.names.length > 1) {
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        title.textContent = t.chordNamesOthers + ' ' + mark.names.slice(1).join(', ');
+        dir.prepend(title);
+      }
+      placed.push({ dir, mark });
+    });
+    // Same baseline for every name of a staff, clear of the interval labels and the notes below.
+    const rows = new Map();
+    placed.forEach(({ dir, mark }) => {
+      const box = dir.getBoundingClientRect();
+      const measure = dir.closest('g.measure');
+      const staff = [...measure.querySelectorAll(':scope > g.staff')][mark.staff] || measure.querySelector(':scope > g.staff');
+      let limit = staff.querySelector(':scope > path').getBoundingClientRect().top;
+      measure.querySelectorAll('g.note, g.chord, g.rest, g.beam, g.tuplet, g.dir').forEach((node) => {
+        if (node === dir || !measure.contains(node) || (node.closest('g.dir') && node.closest('g.dir') === dir)) return;
+        const r = node.getBoundingClientRect();
+        if (r.height && r.right > box.left - 2 && r.left < box.right + 2 && r.top >= box.top - 1 && r.top < limit) limit = r.top;
+      });
+      const key = Math.round(staff.querySelector(':scope > path').getBoundingClientRect().top);
+      const row = rows.get(key) || { goal: Infinity, items: [] };
+      row.goal = Math.min(row.goal, limit - CHORD_GAP);
+      row.items.push({ dir, bottom: box.bottom });
+      rows.set(key, row);
+    });
+    rows.forEach((row) => row.items.forEach(({ dir, bottom }) => {
+      const scale = dir.getScreenCTM() && dir.getScreenCTM().a;
+      if (scale) dir.setAttribute('transform', 'translate(0 ' + (row.goal - bottom) / scale + ') ' + (dir.getAttribute('transform') || ''));
     }));
   }
 
@@ -3248,7 +3303,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       selectNavigation(navigation, event);
       return;
     }
-    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu, .score-playback, .score-interval-toggle, .score-voice-legend')) return;
+    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu, .score-playback, .score-interval-toggle, .score-chord-names-toggle, .score-voice-legend')) return;
     const link = event.target.closest('g.tie, g.slur');
     if (link && !activeItem && linkRefs.has(link)) {
       event.preventDefault();
@@ -4409,7 +4464,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Record the gesture even when it clears a selection or revisits the same measure.
   stage.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || event.target.closest('.score-playback, .score-interval-toggle, .score-voice-legend, .score-selection-menu, .score-insert-measure')) return;
+    if (event.button !== 0 || event.target.closest('.score-playback, .score-interval-toggle, .score-chord-names-toggle, .score-voice-legend, .score-selection-menu, .score-insert-measure')) return;
     const mi = playbackMeasureAt(event);
     if (!Number.isInteger(mi) || mi < 0 || mi >= M.measures(score).length) return;
     clearPlaybackHint();
@@ -4598,6 +4653,25 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   });
   ['pointerdown', 'mousedown', 'click'].forEach((type) => intervalButton.addEventListener(type, (event) => event.stopPropagation()));
 
+  // Pro: possible chord name above each column of three or more voices (the first one fits best; the others go in the tooltip).
+  const proChordNames = Boolean(settings) && isPro();
+  const chordNameDocuments = new WeakSet();
+  const chordNamesButton = document.createElement('button');
+  chordNamesButton.id = 'scoreChordNames';
+  chordNamesButton.className = 'score-palette-item score-interval-toggle score-chord-names-toggle tooltip';
+  chordNamesButton.type = 'button';
+  chordNamesButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4l5 16 5-16"/><path stroke-width="1.7" d="M16 9a2.5 2.5 0 1 0 5 0 2.5 2.5 0 1 0-5 0M16 9c0-3 1.5-5 4.5-5.5"/></svg>';
+  chordNamesButton.dataset.tooltip = t.toolsChordNamesTooltip;
+  chordNamesButton.setAttribute('aria-label', t.toolsChordNamesTooltip);
+  chordNamesButton.setAttribute('aria-pressed', 'false');
+  chordNamesButton.addEventListener('click', () => {
+    if (chordNameDocuments.has(score)) chordNameDocuments.delete(score);
+    else if (chordMarks(score, M, shownVoices.size ? shownVoices : null).length) chordNameDocuments.add(score);
+    else return say(t.chordNamesNeedVoices);
+    render();
+  });
+  ['pointerdown', 'mousedown', 'click'].forEach((type) => chordNamesButton.addEventListener(type, (event) => event.stopPropagation()));
+
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
@@ -4610,6 +4684,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     intervalButton.remove();
     if (settings && toolOn('voices', false) && toolOn('intervals', false)) stage.appendChild(intervalButton);
     intervalButton.setAttribute('aria-pressed', String(intervalDocuments.has(score)));
+    chordNamesButton.remove();
+    if (proChordNames && toolOn('voices', false) && toolOn('intervals', false)) stage.appendChild(chordNamesButton);
+    chordNamesButton.setAttribute('aria-pressed', String(chordNameDocuments.has(score)));
     alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
@@ -4633,7 +4710,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     button.addEventListener('click', () => {
       if (shownVoices.has(n)) shownVoices.delete(n); else shownVoices.add(n);
       resetPlayback();
-      if (toolOn('intervals', false) && intervalDocuments.has(score)) render();
+      if (toolOn('intervals', false) && (intervalDocuments.has(score) || chordNameDocuments.has(score))) render();
       else applyVoices();
       updateSelectionMenu();
     });
