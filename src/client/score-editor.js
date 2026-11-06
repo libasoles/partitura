@@ -1057,7 +1057,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       toolkit.loadData(withIntervals(xml, score, M));
       // Verovio drops MusicXML words' font-size. Set MEI's supported relative size
       // on the marked interval text before engraving so spacing uses the smaller labels too.
-      toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="50%"'));
+      toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="60%"'));
       stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
     }
     applyMeasureWidths();

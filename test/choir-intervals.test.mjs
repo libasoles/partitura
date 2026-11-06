@@ -26,3 +26,16 @@ test('Voces: one mark per column is engraved, including a third staff', () => {
   assert.equal((xml.match(/PartituraIntervals/g) || []).length, 2);
   assert.match(xml, /<note id="p0-0">/);
 });
+
+test('Voces: F–B is IV; a sustained G between them gives III and II', () => {
+  const score = C.emptyScore();
+  C.setInstrument(score, 'voices');
+  score.rows[0][0] = [{ d: 'h', n: 39 }, { d: 'q', n: 41 }];
+  score.lower = { 0: [{ d: 'h', dot: 1, n: 39 }] };
+  score.lower2 = { 0: [{ d: 'h', n: 36 }, { d: 'q', n: 38 }] };
+  assert.deepEqual(choirColumns(score, 0, C).at(-1).intervals, ['III', 'II']);
+  score.lower = { 0: [{ d: 'h', n: 39 }] };
+  assert.deepEqual(choirColumns(score, 0, C).at(-1).intervals, ['IV']);
+  score.lower = {};
+  assert.deepEqual(choirColumns(score, 0, C).at(-1).intervals, ['IV']);
+});
