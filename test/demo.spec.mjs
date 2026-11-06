@@ -41,8 +41,8 @@ test('a failed demo download preserves the current score and allows retry', asyn
   await expect(page.locator('#scoreTitle')).toHaveValue('Conservar');
 });
 
-test('the published song imports its three choir staves and URL defaults', async ({ page }) => {
-  await ready(page, '/pt/?tools=voices,play,intervals&sound=mm#pro');
+test('the published song imports its three choir staves and URL defaults without #pro', async ({ page }) => {
+  await ready(page, '/pt/?tools=voices,play,intervals&sound=mm');
   await page.locator('#siteMenuToggle').click();
   await page.locator('[data-demo-url]').click();
   await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');
@@ -53,6 +53,18 @@ test('the published song imports its three choir staves and URL defaults', async
   })).toEqual({ staves: 3, instrument: 'voices', sound: 'mm', intervals: true });
   await expect(page.locator('#scoreStage g.note[id^="p"]')).not.toHaveCount(0);
 });
+
+for (const query of ['tools=voices,play', 'sound=oh']) {
+  test(`${query} enables choir import without #pro`, async ({ page }) => {
+    await ready(page, `/es/?${query}`);
+    await page.locator('#siteMenuToggle').click();
+    await page.locator('[data-demo-url]').click();
+    await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');
+    expect(await page.evaluate(() => window.ScoreModel.stavesOf(window.scoreEditor.score))).toBe(3);
+    await page.locator('#scoreSettingsToggle').click();
+    await expect(page.locator('input[name="scoreSound"][value="oh"]')).toBeVisible();
+  });
+}
 
 test('URL groups override saved tools, allow changes, and apply to new scores', async ({ page }) => {
   await page.addInitScript(() => {

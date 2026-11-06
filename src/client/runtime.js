@@ -7,8 +7,9 @@ import { isPro } from './pro.js';
 
 export async function startEditor({ defaultClef = 'treble', saveDelay = 300, ...options } = {}) {
   // The grand staff comes with the settings (instrument choice): a host that leaves them off keeps one staff.
-  // Voices (choir) is a Pro feature: it needs the settings and #pro in the URL.
-  window.ScoreModel = createScoreModel({ defaultClef, grandStaff: Boolean(options.settings), choir: Boolean(options.settings) && isPro() });
+  // Explicit choir options in shared URLs work without requiring the Pro fragment.
+  const urlChoir = options.urlDefaults?.tools?.voices || Boolean(options.urlDefaults?.sound);
+  window.ScoreModel = createScoreModel({ defaultClef, grandStaff: Boolean(options.settings), choir: Boolean(options.settings) && (isPro() || urlChoir) });
   await initStorage({ saveDelay });
   if (window.ScoreStore.stored) document.getElementById('scoreStage')?.classList.add('is-loading');
   start(options);
