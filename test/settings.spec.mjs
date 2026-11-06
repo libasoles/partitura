@@ -11,18 +11,22 @@ test('settings stay inside a short viewport and all options remain reachable by 
   await page.locator('#scoreSettingsToggle').click();
   const popup = page.locator('#scoreSettingsPopup');
   const category = (name) => popup.locator('.score-settings-category').filter({ has: page.getByRole('checkbox', { name, exact: true }) });
-  for (const [left, right] of [['Voces', 'Reproducción'], ['Reproducción', 'Intervalos']]) {
-    const a = await category(left).boundingBox();
-    const b = await category(right).boundingBox();
-    expect(a.y).toBe(b.y);
-    expect(b.x - a.x - a.width).toBeGreaterThan(0);
-    expect(b.x - a.x - a.width).toBeLessThanOrEqual(20);
-  }
-  const repeats = await category('Repetición').boundingBox();
   const grid = await popup.locator('.score-settings-tools').boundingBox();
-  expect(repeats.width).toBe(grid.width);
-  const repeatIcons = await category('Repetición').locator('.score-settings-icon').evaluateAll((icons) => icons.map((el) => el.getBoundingClientRect().top));
-  expect(new Set(repeatIcons).size).toBe(1);
+  let previousBottom = 0;
+  for (const name of ['Repetición', 'Dinámica', 'Voces', 'Reproducción', 'Intervalos']) {
+    const row = category(name);
+    const box = await row.boundingBox();
+    const label = await row.locator('label').boundingBox();
+    const icons = await row.locator('.score-settings-icons').boundingBox();
+    expect(box.width).toBe(grid.width);
+    expect(box.y).toBeGreaterThanOrEqual(previousBottom);
+    expect(icons.x).toBeGreaterThan(label.x + label.width);
+    expect(icons.x + icons.width).toBeCloseTo(box.x + box.width, 1);
+    expect(Math.abs(label.y + label.height / 2 - icons.y - icons.height / 2)).toBeLessThan(1);
+    previousBottom = box.y + box.height;
+  }
+  const repeatIcons = await category('Repetición').locator('.score-settings-icon').evaluateAll((icons) => icons.map((el) => { const box = el.getBoundingClientRect(); return box.top + box.height / 2; }));
+  expect(Math.max(...repeatIcons) - Math.min(...repeatIcons)).toBeLessThan(1);
   await expect(category('Intervalos').locator('svg path')).toHaveAttribute('d', 'm6 4 5.765 15.835a.25.25 0 00.47 0L18 4');
   await page.setViewportSize({ width: 1600, height: 360 });
   await expect.poll(async () => {

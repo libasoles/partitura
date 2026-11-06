@@ -1846,16 +1846,26 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 
 
-/* Pair related tools to keep the settings compact. */
+/* Each tool has one row, with its icons aligned to the right. */
 .score-settings-tools {
   display: grid;
-  grid-template-columns: max-content max-content minmax(max-content, 1fr);
-  gap: 0.5rem 1.25rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
 }
-.score-settings-tools > * { min-width: 0; }
-.score-settings-category[data-category="repeats"],
-.score-settings-category[data-category="dynamics"] { grid-column: 1 / -1; }
-.score-settings-category[data-category="repeats"] .score-settings-icons { flex-wrap: nowrap; }
+.score-settings-tools > .score-settings-category {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-width: 0;
+}
+.score-settings-tools .score-settings-check { flex-shrink: 0; }
+.score-settings-tools .score-settings-category .score-settings-icons {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0;
+}
 .score-settings-intervals svg { width: 24px; height: 24px; }
 
 /* Tool categories share one heading and carry no divider of their own. */
