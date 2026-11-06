@@ -1,0 +1,2 @@
+# /sitemap.xml es la URL que se prueba primero; Astro genera el índice en sitemap-index.xml.
+/sitemap.xml  /sitemap-index.xml  200
