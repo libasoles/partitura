@@ -347,10 +347,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const staffOf = M.staffOf;
   const same = M.sameRef;
   const laneOf = (ref) => M.measures(score, staffOf(ref));
-  const nodeOf = (ref) => stage.querySelector('[id="' + (staffOf(ref) ? 'l' : 'e') + ref.mi + '-' + ref.i + '"]');
+  const nodeOf = (ref) => stage.querySelector('[id="' + M.ID_PREFIX[staffOf(ref)] + ref.mi + '-' + ref.i + '"]');
   function refOfNode(node) {
-    const match = /^([el])(\d+)-(\d+)$/.exec(node.id);
-    return match ? M.refOf(match[1] === 'l' ? 1 : 0, +match[2], +match[3]) : null;
+    const match = /^([elpq])(\d+)-(\d+)$/.exec(node.id);
+    return match ? M.refOf(M.ID_PREFIX.indexOf(match[1]), +match[2], +match[3]) : null;
   }
 
   function eventAt(sel) {
@@ -729,7 +729,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     trialInserts.forEach((list, key) => { M.insertMany(trial.get(key), list); });
     if (plan.some((p) => M.measureLength(trial.get(destinationKey(p))) > M.capacity(score, p.to))) return say(t.full);
     change(() => {
-      [0, 1].filter((staff) => staff < staves).forEach((staff) => stave(staff).forEach((measure) => {
+      Array.from({ length: staves }, (_, staff) => staff).forEach((staff) => stave(staff).forEach((measure) => {
         for (let i = measure.length - 1; i >= 0; i -= 1) if (moving.has(measure[i])) measure.splice(i, 1);
       }));
       const ids = new Map();
@@ -926,6 +926,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     tuningPopup.hidePopover();
     meterPopup.hidePopover();
     clefPopup.hidePopover();
+    registerPopup.hidePopover();
     dynamicsPopup.hidePopover();
     stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
     toolbarStaffTop = Math.max(0, stage.querySelector('g.staff > path').getBoundingClientRect().top - stage.getBoundingClientRect().top);
@@ -946,6 +947,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     svg.setAttribute('aria-label', t.scoreLabel);
     mountMeterButton();
     mountClefButtons();
+    mountRegisterButtons();
     mountKeyButtons();
     liftBarreMarks(svg);
     placeIntervals(svg);
@@ -1299,9 +1301,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           if (!simple && !endsRow && target < M.measures(score).length) {
             if (clefPopup.matches(':popover-open')) clefPopup.hidePopover();
             else {
-              // Una barra es de los dos pentagramas: su mitad de arriba cambia la clave del primero y la de abajo, la del segundo.
+              // Una barra es de todos los pentagramas: cambia la clave del que esta a la altura del clic.
               const box = button.getBoundingClientRect();
-              openClefPopup({ kind: 'bar', mi, side, staff: M.stavesOf(score) > 1 && click.clientY > box.top + box.height / 2 ? 1 : 0 }, target);
+              openClefPopup({ kind: 'bar', mi, side, staff: M.stavesOf(score) > 1 ? staffAtY(layout[mi], click.clientY - stage.getBoundingClientRect().top) : 0 }, target);
             }
           }
         });
@@ -2629,7 +2631,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function eventNodes(mi, staff = 0) {
     const nodes = [];
     for (let i = 0; ; i += 1) {
-      const node = stage.querySelector('[id="' + (staff ? 'l' : 'e') + mi + '-' + i + '"]');
+      const node = stage.querySelector('[id="' + M.ID_PREFIX[staff] + mi + '-' + i + '"]');
       if (!node) break;
       nodes.push(node);
     }
@@ -3538,6 +3540,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
   });
 
+  // Nombre del pentagrama `staff` para etiquetas accesibles: el registro en Voces; arriba o abajo en el piano.
+  function staffName(staff) {
+    if (M.instrumentOf(score) === 'voices') return t.registers[M.registerOf(score, staff)];
+    return staff ? t.lowerStaff : t.upperStaff;
+  }
+
   // El mismo grabador de la partitura dibuja las muestras: posiciones de clave y armadura reales.
   function signaturePreview(button, clef, fifths, kind, meter) {
     if (!previewToolkit) previewToolkit = newToolkit();
@@ -3604,7 +3612,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     clefAnchor = origin;
     keyMeasure = measure;
     clefStaff = M.stavesOf(score) > 1 ? origin.staff || 0 : 0;
-    clefOptions.previousElementSibling.textContent = M.stavesOf(score) > 1 ? t.clef + ' · ' + (clefStaff ? t.lowerStaff : t.upperStaff) : t.clef;
+    clefOptions.previousElementSibling.textContent = M.stavesOf(score) > 1 ? t.clef + ' · ' + staffName(clefStaff) : t.clef;
     if (!clefPopup.matches(':popover-open')) {
       showSections(origin.kind === 'key' ? 'key' : origin.kind === 'clef' && M.keyAt(score, measure) !== 0 ? 'clef' : 'both');
     }
@@ -3690,6 +3698,76 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     });
   }
 
+  // ---- registros del coro (Voces) ----
+
+  const registerPopup = document.createElement('div');
+  registerPopup.id = 'scoreRegisterPopup';
+  registerPopup.className = 'score-meter-popup score-register-popup';
+  registerPopup.setAttribute('popover', 'auto');
+  registerPopup.setAttribute('role', 'dialog');
+  registerPopup.setAttribute('aria-label', t.registerTitle);
+  document.querySelector('.score-page').appendChild(registerPopup);
+  let registerStaff = 0;
+  const registerHeading = document.createElement('p');
+  registerHeading.textContent = t.registerTitle;
+  const registerList = document.createElement('div');
+  registerList.className = 'score-register-options';
+  registerList.setAttribute('role', 'group');
+  registerList.setAttribute('aria-label', t.registerTitle);
+  Object.keys(M.REGISTERS).forEach((id) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.register = id;
+    button.textContent = t.registers[id];
+    button.addEventListener('click', () => {
+      registerPopup.hidePopover();
+      change(() => M.setRegister(score, registerStaff, id));
+    });
+    registerList.appendChild(button);
+  });
+  registerPopup.append(registerHeading, registerList);
+
+  // Los nombres de los registros se escriben arriba del primer pentagrama, tras la indicacion de tempo (si la hay).
+  function mountRegisterButtons() {
+    if (!M.choir || M.instrumentOf(score) !== 'voices') return;
+    const first = stage.querySelector('g.measure');
+    const staffLine = first && first.querySelector(':scope > g.staff > path');
+    if (!staffLine) return;
+    const origin = stage.getBoundingClientRect();
+    const tempo = stage.querySelector('g.tempo');
+    const tempoBox = tempo && tempo.getBoundingClientRect();
+    const line = staffLine.getBoundingClientRect();
+    let x = tempoBox && tempoBox.width ? tempoBox.right + 16 : line.left + 4;
+    const y = tempoBox && tempoBox.height ? (tempoBox.top + tempoBox.bottom) / 2 : line.top - 14;
+    const row = document.createElement('div');
+    row.className = 'score-registers';
+    row.style.left = (x - origin.left - stage.clientLeft) + 'px';
+    row.style.top = Math.max(12, y - origin.top - stage.clientTop) + 'px';
+    for (let staff = 0; staff < M.stavesOf(score); staff += 1) {
+      const name = t.registers[M.registerOf(score, staff)];
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'score-register-trigger';
+      button.dataset.staff = staff;
+      button.textContent = name;
+      button.setAttribute('aria-label', t.registerButton.replace('{n}', staff + 1).replace('{name}', name));
+      button.setAttribute('aria-controls', registerPopup.id);
+      button.setAttribute('aria-haspopup', 'dialog');
+      button.addEventListener('click', () => {
+        if (registerPopup.matches(':popover-open')) { registerPopup.hidePopover(); return; }
+        registerStaff = staff;
+        registerList.querySelectorAll('button').forEach((option) => option.setAttribute('aria-pressed', String(option.dataset.register === M.registerOf(score, staff))));
+        registerPopup.showPopover();
+        const anchor = button.getBoundingClientRect();
+        const box = registerPopup.getBoundingClientRect();
+        registerPopup.style.left = Math.max(8, Math.min(anchor.left + anchor.width / 2 - box.width / 2, window.innerWidth - box.width - 8)) + 'px';
+        registerPopup.style.top = Math.min(anchor.bottom + 6, window.innerHeight - box.height - 8) + 'px';
+      });
+      row.appendChild(button);
+    }
+    stage.appendChild(row);
+  }
+
   // Un control de clave por pentagrama de cada renglon (y por cada cambio de clave dibujado).
   function mountClefButtons() {
     stage.querySelectorAll('g.clef').forEach((clef, i) => {
@@ -3702,7 +3780,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       button.type = 'button';
       button.className = 'score-clef-trigger';
       button.dataset.staff = staff;
-      button.setAttribute('aria-label', t.clefAndKey + ': ' + (M.stavesOf(score) > 1 ? (staff ? t.lowerStaff : t.upperStaff) + ', ' : '') + t.clefs[M.clefAt(score, mi, staff)] + ', ' + t.keys[M.keyAt(score, mi) + 7]);
+      button.setAttribute('aria-label', t.clefAndKey + ': ' + (M.stavesOf(score) > 1 ? staffName(staff) + ', ' : '') + t.clefs[M.clefAt(score, mi, staff)] + ', ' + t.keys[M.keyAt(score, mi) + 7]);
       button.setAttribute('aria-controls', clefPopup.id);
       button.setAttribute('aria-haspopup', 'dialog');
       button.setAttribute('aria-expanded', 'false');
@@ -3725,6 +3803,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     piano: '<path d="M18.5 8c-1.4 0-2.6-.8-3.2-2A6.87 6.87 0 0 0 2 9v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8.5C22 9.6 20.4 8 18.5 8"/><path d="M2 14h20"/><path d="M6 14v4"/><path d="M10 14v4"/><path d="M14 14v4"/><path d="M18 14v4"/>',
+    voices: '<path d="m11 7.601-5.994 8.19a1 1 0 0 0 .1 1.298l.817.818a1 1 0 0 0 1.314.087L15.09 12"/><path d="M16.5 21.174C15.5 20.5 14.372 20 13 20c-2.058 0-3.928 2.356-6 2-2.072-.356-2.775-3.369-1.5-4.5"/><circle cx="16" cy="7" r="5"/>',
     guitar: '<path d="m11.9 12.1 4.514-4.514"/><path d="M20.1 2.3a1 1 0 0 0-1.4 0l-1.114 1.114A2 2 0 0 0 17 4.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 17.828 7h1.344a2 2 0 0 0 1.414-.586L21.7 5.3a1 1 0 0 0 0-1.4z"/><path d="m6 16 2 2"/><path d="M8.2 9.9C8.7 8.8 9.8 8 11 8c2.8 0 5 2.2 5 5 0 1.2-.8 2.3-1.9 2.8l-.9.4A2 2 0 0 0 12 18a4 4 0 0 1-4 4c-3.3 0-6-2.7-6-6a4 4 0 0 1 4-4 2 2 0 0 0 1.8-1.2z"/><circle cx="11.5" cy="12.5" r=".5" fill="currentColor"/>',
     settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
     'square-chevrons-down': '<path d="M9 14L12 17L15 14"/><path d="M9 8L12 11L15 8"/><rect x="3" y="3" width="18" height="18" rx="2"/>',
@@ -4077,7 +4156,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const duration = M.capacity(score, mi);
       const columns = new Map();
       for (let staff = 0; staff < M.stavesOf(score); staff += 1) {
-        const measure = staff ? score.lower?.[mi] || [] : M.measures(score)[mi];
+        const measure = M.measures(score, staff)[mi] || [];
         const onsets = M.onsets(measure);
         eventNodes(mi, staff).forEach((node, i) => {
           const time = onsets[i];
@@ -4269,10 +4348,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const total = upper.length;
     for (let staff = 0; staff < M.stavesOf(score); staff++) {
       for (let mi = 0; mi < total; mi++) {
-        const measure = staff ? score.lower?.[mi] : upper[mi];
+        const measure = staff ? M.measures(score, staff)[mi] : upper[mi];
         if (!measure) continue;
         M.voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
-          const node = stage.querySelector('[id="' + (staff ? 'l' : 'e') + mi + '-' + i + '"]');
+          const node = stage.querySelector('[id="' + M.ID_PREFIX[staff] + mi + '-' + i + '"]');
           if (!node) return;
           const n = k % VOICE_COUNT + 1;
           node.dataset.voice = String(n);
@@ -4537,7 +4616,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
 
     const instrumentRow = section(t.settingsInstrument);
-    const instruments = M.INSTRUMENTS.map((id) => {
+    const instrumentIds = M.INSTRUMENTS.filter((id) => id !== 'voices' || M.choir);
+    const instruments = instrumentIds.map((id) => {
       const field = document.createElement('label');
       field.className = 'score-settings-radio is-icon';
       const radio = document.createElement('input');
@@ -4555,6 +4635,27 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       instrumentRow.appendChild(field);
       return radio;
     });
+
+    // Voces: de 2 a 4 pentagramas. Reducir solo oculta los de mas (se conservan); subir los vuelve a mostrar.
+    const partsRow = section(t.settingsParts);
+    partsRow.parentElement.hidden = true;
+    const partsSlider = document.createElement('input');
+    partsSlider.type = 'range';
+    partsSlider.className = 'score-settings-slider';
+    partsSlider.min = String(M.MIN_PARTS);
+    partsSlider.max = String(M.MAX_PARTS);
+    partsSlider.step = '1';
+    partsSlider.setAttribute('aria-label', t.settingsParts);
+    const partsValue = document.createElement('output');
+    partsValue.className = 'score-settings-tempo-value';
+    const showParts = () => { partsValue.textContent = t.partsValue.replace('{n}', partsSlider.value); partsRow.parentElement.hidden = M.instrumentOf(score) !== 'voices'; };
+    partsSlider.addEventListener('input', showParts);
+    partsSlider.addEventListener('change', () => { change(() => M.setParts(score, Number(partsSlider.value))); sync(); });
+    const partsLine = document.createElement('div');
+    partsLine.className = 'score-settings-slider-line';
+    partsLine.append(partsSlider, partsValue);
+    partsRow.classList.add('is-stacked');
+    partsRow.append(partsLine);
 
     // El tempo se arrastra en un control deslizante; la casilla de abajo ("sin indicacion") lo quita.
     const tempoRow = section(t.settingsTempo);
@@ -4695,7 +4796,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
     function sync() {
       if (patternsCheck) patternsCheck.checked = getSetting('patterns', false) === true;
-      instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === M.INSTRUMENTS[i]; });
+      instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === instrumentIds[i]; });
+      partsRow.hidden = M.instrumentOf(score) !== 'voices';
+      partsSlider.value = String(M.partsOf(score));
+      showParts();
       tempoSlider.value = String(score.tempo || 120);
       showTempo();
       tempoNone.checked = !score.tempo;

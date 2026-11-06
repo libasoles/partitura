@@ -61,26 +61,28 @@ const api = (function () {
 
     let divisions = 1;
     const flat = [];
-    const lower = {}; // segundo pentagrama (<staff>2</staff>), solo si el sitio lo tiene; si no, todo va al primero
+    const staves = M.stavesOf(score);
+    // Pentagramas de abajo (<staff>2..4</staff>), solo los que tiene el sitio; si no, todo va al primero.
+    const lowers = Array.from({ length: staves - 1 }, () => ({}));
     const barlines = {};
     const meters = {};
     const keys = {};
     const clefs = {};
-    const lowerClefs = {};
+    const lowerClefs = Array.from({ length: staves - 1 }, () => ({}));
     let meter = '4/4';
     let currentClef = M.clefOf(score);
-    let currentLowerClef = M.clefOf(score, 1);
+    const currentLowerClefs = Array.from({ length: staves - 1 }, (_, k) => M.clefOf(score, k + 1));
     let currentFifths = 0;
-    const grand = M.stavesOf(score) > 1;
+    const grand = staves > 1;
 
     children(part, 'measure').forEach((measureNode, mi) => {
       const events = [];
-      const lowerEvents = [];
+      const lowerEvents = Array.from({ length: staves - 1 }, () => []);
       let cursor = 0; // en divisiones del archivo
       let last = 0; // inicio de la ultima nota (para los acordes)
       let tuplet = 0;
       let tupletLeft = 0;
-      const voices = [new Map(), new Map()]; // una numeracion de voces por pentagrama
+      const voices = Array.from({ length: staves }, () => new Map()); // una numeracion de voces por pentagrama
 
       Array.from(measureNode.children).forEach((node) => {
         const name = node.localName;
@@ -105,12 +107,13 @@ const api = (function () {
           }
           children(node, 'clef').forEach((clef) => {
             const number = clef.getAttribute('number');
-            const lowerStaff = grand && number === '2';
+            const lowerStaff = grand && number && +number >= 2 && +number <= staves ? +number - 1 : 0;
             if (number && number !== '1' && !lowerStaff) return;
             const name2 = clefName(text(clef, 'sign'), parseInt(text(clef, 'line'), 10), parseInt(text(clef, 'clef-octave-change'), 10));
             if (lowerStaff) {
-              if (mi === 0) currentLowerClef = score.lowerClef = name2;
-              else if (name2 !== currentLowerClef) { lowerClefs[mi] = name2; currentLowerClef = name2; }
+              const k = lowerStaff - 1;
+              if (mi === 0) currentLowerClefs[k] = score[M.CLEF_KEYS[lowerStaff][0]] = name2;
+              else if (name2 !== currentLowerClefs[k]) { lowerClefs[k][mi] = name2; currentLowerClefs[k] = name2; }
             } else if (mi === 0) currentClef = score.clef = name2;
             else if (name2 !== currentClef) { clefs[mi] = name2; currentClef = name2; }
           });
@@ -181,18 +184,19 @@ const api = (function () {
             const head = child(node, 'notehead');
             if (head && head.textContent.trim() === 'x') ev.dead = true;
           }
-          const staff = grand && parseInt(text(node, 'staff'), 10) === 2 ? 1 : 0;
+          const staffNumber = parseInt(text(node, 'staff'), 10);
+          const staff = grand && staffNumber >= 2 && staffNumber <= staves ? staffNumber - 1 : 0;
           const voice = text(node, 'voice') || '1';
           if (!voices[staff].has(voice)) voices[staff].set(voice, voices[staff].size + 1);
           const v = voices[staff].get(voice);
           if (v <= M.MAX_VOICE) ev.v = v;
           ev.at = Math.round(start * M.DIVISIONS / divisions);
-          (staff ? lowerEvents : events).push(ev);
+          (staff ? lowerEvents[staff - 1] : events).push(ev);
         }
       });
       // Conservar tambien la voz unica: los <chord> importados son decisiones explicitas de notacion.
       flat.push(events);
-      if (lowerEvents.length) lower[mi] = lowerEvents;
+      lowerEvents.forEach((list, k) => { if (list.length) lowers[k][mi] = list; });
     });
 
     if (!flat.length) throw new Error('xml');
@@ -206,8 +210,8 @@ const api = (function () {
     if (Object.keys(meters).length) score.meters = meters;
     if (Object.keys(keys).length) score.keys = keys;
     if (Object.keys(clefs).length) score.clefs = clefs;
-    if (Object.keys(lowerClefs).length) score.lowerClefs = lowerClefs;
-    if (Object.keys(lower).length) score.lower = lower;
+    lowerClefs.forEach((changes, k) => { if (Object.keys(changes).length) score[M.CLEF_KEYS[k + 1][1]] = changes; });
+    lowers.forEach((lane, k) => { if (Object.keys(lane).length) score[M.LANE_KEYS[k]] = lane; });
     return M.sanitize(score);
   }
 
@@ -302,7 +306,19 @@ const api = (function () {
 
   // Dos pentagramas: si el archivo tiene dos partes (pista y canal) la mas aguda va arriba; si no, se corta en el do central.
   const MIDDLE_C = 60;
-  function splitStaves(notes) {
+  const CUTS = { 2: [60], 3: [67, 55], 4: [67, 60, 50] }; // limites entre pentagramas cuando el archivo no separa las partes
+  function splitStaves(notes, count = 2) {
+    if (count > 2) {
+      const bands = Array.from({ length: count }, () => []);
+      const groups = new Map();
+      notes.forEach((note) => groups.set(note.group, [...(groups.get(note.group) || []), note]));
+      if (groups.size >= 2 && groups.size <= count) {
+        [...groups.values()].sort((a, b) => b.reduce((sum, n) => sum + n.midi, 0) / b.length - a.reduce((sum, n) => sum + n.midi, 0) / a.length).forEach((list, k) => { bands[k] = list; });
+      } else {
+        notes.forEach((note) => bands[CUTS[count].filter((cut) => note.midi < cut).length].push(note));
+      }
+      return { bands };
+    }
     const groups = new Map();
     notes.forEach((note) => {
       const g = groups.get(note.group) || { sum: 0, count: 0 };
@@ -400,11 +416,12 @@ const api = (function () {
       });
     }
 
-    const grand = M.stavesOf(score) > 1;
-    const split = grand ? splitStaves(notes) : { upper: notes, lower: [] };
-    const upper = staffMeasures(split.upper);
-    const lowerPart = split.lower.length ? staffMeasures(split.lower) : null;
-    const total = Math.max(1, Math.ceil(Math.max(upper.cursor, lowerPart ? lowerPart.cursor : 0) / capacity));
+    const count = M.stavesOf(score);
+    const split = count > 2 ? splitStaves(notes, count) : count > 1 ? splitStaves(notes) : { upper: notes, lower: [] };
+    const bands = split.bands || [split.upper, split.lower];
+    const upper = staffMeasures(bands[0]);
+    const lowerParts = bands.slice(1).map((band) => (band.length ? staffMeasures(band) : null));
+    const total = Math.max(1, Math.ceil(Math.max(upper.cursor, ...lowerParts.map((part) => (part ? part.cursor : 0))) / capacity));
     const flat = finish(upper, total);
     score.rows = [];
     for (let i = 0; i < flat.length; i += M.PER_ROW) {
@@ -412,10 +429,11 @@ const api = (function () {
       while (row.length < M.PER_ROW) row.push([]);
       score.rows.push(row);
     }
-    if (lowerPart) {
-      score.lower = {};
-      finish(lowerPart, total).forEach((measure, mi) => { if (measure.length) score.lower[mi] = measure; });
-    }
+    lowerParts.forEach((part, k) => {
+      if (!part) return;
+      const lane = score[M.LANE_KEYS[k]] = {};
+      finish(part, total).forEach((measure, mi) => { if (measure.length) lane[mi] = measure; });
+    });
     return M.sanitize(score);
   }
 
@@ -445,8 +463,9 @@ const api = (function () {
     meta(0x51, [microseconds >> 16 & 0xff, microseconds >> 8 & 0xff, microseconds & 0xff]);
     meta(0x58, [beats, Math.log2(unit), 24, 8]);
     meta(0x59, [M.keyAt(score, 0) & 0xff, 0]);
-    // Piano de cola acustico para el piano; guitarra de cuerdas de nylon para la guitarra.
-    const program = M.instrumentOf(score) === 'piano' ? 0 : 24;
+    // Piano de cola acustico para el piano; guitarra de cuerdas de nylon para la guitarra; coro para las voces.
+    const instrument = M.instrumentOf(score);
+    const program = instrument === 'piano' ? 0 : instrument === 'voices' ? 52 : 24; // 52: coro "aah"
     for (let channel = 0; channel < M.stavesOf(score); channel += 1) track.push(0, 0xc0 | channel, program);
     let previous = 0;
     events.forEach((ev) => {

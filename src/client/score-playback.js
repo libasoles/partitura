@@ -46,7 +46,8 @@ export function createPlayer(context, vendorUrl, onEnded) {
     async prepare(score, M, selectedVoices, voiceCount = 4) {
       const seconds = 60 / (score.tempo || 120) / M.DIVISIONS;
       const notes = soundingNotes(score, M, selectedVoices, voiceCount).map((note) => ({ ...note, start: note.start * seconds, end: note.end * seconds }));
-      const instrument = M.instrumentOf(score);
+      // No hay muestras de coro: las voces suenan con el piano.
+      const instrument = M.instrumentOf(score) === 'guitar' ? 'guitar' : 'piano';
       const samples = new Map(await Promise.all([...new Set(notes.map((note) => note.midi))].map(async (midi) => {
         // The soundfont covers A0–C8. Transpose the nearest boundary sample for other pitches.
         const sample = Math.max(21, Math.min(108, midi));

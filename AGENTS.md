@@ -115,6 +115,17 @@ Solo existe con `instrumentOf(score) === 'piano'` y `createScoreModel({ grandSta
 - **Voces (coloración)**: con "Voces" activo se colorean los dos pentagramas; cada uno infiere sus voces y el número de voz da el mismo color de la leyenda 1–4 en ambos. La leyenda elige qué voces se colorean (`is-voice-on`); sin ninguna elegida no hay color, y nunca se oculta una figura. Una línea puede pasar de una mano a otra en el piano (notación entre pentagramas; en Dorico la nota conserva el color de su pentagrama de origen), pero el modelo no lo representa: mover una figura al otro pentagrama le quita la voz y se vuelve a inferir allí.
 - **Render de servidor y altura**: `renderEmptyStaff(…, { grandStaff: true })` dibuja los tres renglones con dos pentagramas, y `.score-stage[aria-busy]` reserva 53,1 rem (antes 33) para que al hidratar no haya salto de layout. `.score-palette` no cambia: su alto depende de las herramientas, no de los pentagramas. Una partitura de guitarra guardada pasa de 53 a 33 rem al cargar.
 
+### Voces (coro, función Pro)
+
+Tercer instrumento (`score.instrument === 'voices'`): 2 a 4 pentagramas en clave de sol con la misma lógica que el gran pentagrama del piano (compases, armadura, métrica, barras y dinámicas compartidos; figuras, voces y claves por pentagrama).
+
+- **Pro por URL**: solo existe si la URL tiene `#pro` (`src/client/pro.js`, `isPro()`); `runtime.js` lo pasa como `createScoreModel({ choir })`. Sin `#pro`, `setInstrument('voices')` devuelve false, no se ofrece en los ajustes y una partitura de voces guardada se ve con un pentagrama, sin perder datos. guitar-chords no lo activa.
+- **Modelo**: `score.parts` (2–4, 3 por defecto) es la cantidad visible; `M.stavesOf` la devuelve. Las figuras de los pentagramas 1, 2 y 3 están en `score.lower`, `lower2` y `lower3`; sus claves en `lowerClef/lowerClefs`, `clef2/clefs2` y `clef3/clefs3` (`LANE_KEYS` / `CLEF_KEYS`, que también usan `BY_MEASURE`, `setBarline`, mover compases y `sanitize`). Ids en el SVG: `e`, `l`, `p`, `q` + `<mi>-<i>` (`M.ID_PREFIX`).
+- **Ocultar no borra**: bajar `parts` (`M.setParts`) solo oculta pentagramas. `sanitize`, `pruneLower` y las operaciones sobre compases (insertar, quitar, dividir, mover) siguen tratando los datos ocultos, así que al subir de nuevo reaparecen alineados. Render, MusicXML, MIDI, PDF y audio recorren solo `stavesOf`, de modo que lo oculto no suena ni se exporta. Un pentagrama que se vuelve a mostrar sin datos arranca vacío.
+- **Registros**: `score.registers` (por defecto Soprano, Alto, Tenor, Bajo; `M.registerOf`) y `M.setRegister(score, staff, id)`. El registro decide la clave inicial (`M.REGISTERS`: soprano/mezzo/alto → sol, tenor → sol con 8, barítono/bajo → fa); los cambios de clave posteriores no se tocan. Los nombres se dibujan arriba, después de la indicación de tempo, no a la izquierda del pentagrama; son clicables y abren un popup para cambiarlos.
+- **Audio y MIDI**: no hay muestras de coro, así que suena con piano; el MIDI usa un canal por pentagrama visible y el programa 52. Al importar MIDI a una partitura de más de dos pentagramas se reparte por partes (pista/canal) o por rangos de altura.
+- Tests: `test/choir.test.mjs`.
+
 ### Compresión y caché
 
 `npm run build` deja junto a cada archivo de texto de `dist/` su `.br` y `.gz` (`scripts/compress.mjs`). El servidor debe enviarlos tal cual

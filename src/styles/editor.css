@@ -2475,3 +2475,51 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   cursor: pointer;
 }
 .score-interval-toggle svg { display: block; width: 18px; height: 18px; margin: auto; }
+
+/* Voces: los registros se escriben arriba del primer pentagrama, tras el tempo, y abren un popup para cambiarlos. */
+.score-registers {
+  position: absolute;
+  display: flex;
+  gap: 0.25rem;
+  transform: translateY(-50%);
+  font-family: var(--sans);
+  font-size: 0.8rem;
+  z-index: 2;
+}
+
+.score-register-trigger {
+  min-height: 44px;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.score-register-trigger:hover,
+.score-register-trigger:focus-visible {
+  color: var(--blue-france);
+}
+
+.score-register-options {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.score-register-options button {
+  min-height: 44px;
+  padding: 0.25rem 0.75rem;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.score-register-options button:hover { color: var(--blue-france); }
+.score-register-options button[aria-pressed='true'] { background: color-mix(in srgb, var(--blue-france) 12%, transparent); }
