@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Analytics from '../components/Analytics.astro';
 import { locales, pathFor, rootPath, strings, urlFor } from '../i18n';
 
 // The x-default entry. It holds no editor: it sends each visitor to the language of their browser, and for anything
@@ -43,6 +44,7 @@ const supported = locales as readonly string[];
         location.replace(paths[pick] + location.search + location.hash);
       }
     </script>
+    <Analytics />
   </head>
   <body class="score-body">
     <main class="score-page">

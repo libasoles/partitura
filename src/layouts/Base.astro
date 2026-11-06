@@ -1,6 +1,7 @@
 ---
 import '@fontsource-variable/montserrat';
 import '../styles/global.css';
+import Analytics from '../components/Analytics.astro';
 import latinFont from '@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2?url';
 import { locales, ogLocales, pathFor, rootPath, strings, termsPath, tutorialsPath, type Locale } from '../i18n';
 import { pageJsonLd } from '../lib/jsonld';
@@ -76,6 +77,7 @@ const jsonLd = pageJsonLd({
     {editor && <script is:inline set:html={`try{if(/(?:^|; )banner-closed=1/.test(document.cookie))document.documentElement.classList.add('banner-closed')}catch(e){}`} />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <Analytics />
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
   </head>
   <body class="score-body">

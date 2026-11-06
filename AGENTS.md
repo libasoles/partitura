@@ -43,6 +43,10 @@
 - Si el hosting permite reglas en el borde, lo ideal es sumar un 302 de `/` según `Accept-Language` con
   `Vary: Accept-Language` (mismo criterio que el script); el script queda como respaldo.
 
+### Analítica
+
+- Google Tag Manager (`GTM-T6WD2JMP`) lo carga `src/components/Analytics.astro`, incluido en el `<head>` de `Base.astro`, `404.astro` e `index.astro`. Toda página nueva debe usar `Base.astro` (o incluir ese componente) para quedar medida.
+
 ### Estructura
 
 - `src/pages/` — el editor (`/`, `/en/`, `/pt/`, con `EditorPage.astro`) y los tutoriales (`/tutoriales/`, `/en/tutorials/`, `/pt/tutoriais/`, con `TutorialsPage.astro`; un tema por página, definidos en `src/lib/tutorials.ts`).
