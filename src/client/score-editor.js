@@ -1004,7 +1004,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       playButton.style.top = top + 'px';
       playButton.style.left = (left + (width - playButton.offsetWidth) / 2) + 'px';
     }
-    voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 8 : 0)) + 'px';
+    voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 14 : 0)) + 'px';
     voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
     intervalButton.style.top = (top + height - intervalsHeight) + 'px';
     intervalButton.style.left = (left + (width - intervalButton.offsetWidth) / 2) + 'px';

@@ -2056,13 +2056,14 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-settings-toggle svg, .score-playback svg { display: block; margin: auto; }
 .score-playback {
   position: absolute;
-  width: 2rem;
-  height: 2rem;
-  min-width: 2rem;
-  min-height: 2rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
   padding: 0;
   cursor: pointer;
 }
+.score-playback svg { width: 1rem; height: 1rem; }
 .score-playback[aria-busy="true"] { opacity: 0.5; cursor: progress; }
 .score-playback-cursor,
 .score-playback-hint {
