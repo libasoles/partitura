@@ -1866,7 +1866,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   align-items: center;
   padding: 0;
 }
-.score-settings-intervals svg { width: 24px; height: 24px; }
+.score-settings-intervals svg { width: 18px; height: 18px; }
 
 /* Tool categories share one heading and carry no divider of their own. */
 .score-settings-section.score-settings-category { margin-top: 0.6rem; padding-top: 0; border-top: 0; }
@@ -2440,4 +2440,4 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   padding: 0;
   cursor: pointer;
 }
-.score-interval-toggle svg { display: block; margin: auto; }
+.score-interval-toggle svg { display: block; width: 18px; height: 18px; margin: auto; }
