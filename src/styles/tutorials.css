@@ -289,3 +289,5 @@ button.tutorial-voice { cursor: pointer; min-width: 2.75rem; min-height: 2.75rem
 .tutorial-body :is(em, .tutorial-term) { font-style: normal; font-weight: 600; color: var(--accent-brand, var(--accent)); }
 .tutorial-body .tutorial-voice, .tutorial-body .tutorial-voice * { font-style: normal; }
 .d-ring-open { fill: var(--paper); stroke: currentColor; stroke-width: 0.9; }
+.d-toolbtn { fill: var(--paper); stroke: var(--rule); stroke-width: 0.8; }
+.d-toolon { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: color-mix(in srgb, var(--accent) 40%, transparent); stroke-width: 0.9; }

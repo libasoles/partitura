@@ -404,6 +404,32 @@ export function dynamics(s, aria) {
   return d.html(aria);
 }
 
+// ----- the right sidebar ----------------------------------------------------------------------------------------------
+
+// The real palette glyphs of the Barre and Chord tools (score-editor.js), 30 x 32 units.
+const SIDE_TOOLS = [
+  '<text x="3" y="18" font-size="16" font-weight="700" font-family="serif">C</text><path d="M3 24h24" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2.5" fill="none"/>',
+  '<text x="15" y="21" text-anchor="middle" font-size="18" font-family="serif" font-weight="700">Am</text>',
+];
+
+/**
+ * The editor's right toolbar beside the staff, with the guitar tools (barre, chord) as buttons. Returns where each
+ * button is and `on(i, from, to)`, which lights button i (as when it is the active tool) between two moments.
+ */
+function toolSidebar(d) {
+  const x = d.w - 38;
+  const box = (i) => ({ x: x + 2, y: 5 + i * 32 });
+  const glyph = (i) => `<g transform="translate(${box(i).x + 1.5} ${box(i).y + 0.6}) scale(0.9)">${SIDE_TOOLS[i]}</g>`;
+  d.base(`<rect class="d-panel" x="${x}" y="2" width="34" height="${SIDE_TOOLS.length * 32 + 2}" rx="6"/>` +
+    SIDE_TOOLS.map((_, i) => `<rect class="d-toolbtn" x="${box(i).x}" y="${box(i).y}" width="30" height="30" rx="5"/>`).join('') +
+    `<g style="color:var(--ink)">${SIDE_TOOLS.map((_, i) => glyph(i)).join('')}</g>`);
+  return {
+    at: (i) => ({ x: box(i).x + 15, y: box(i).y + 15 }),
+    on: (i, from, to) => d.add(0, 0, `<rect class="d-toolon" x="${box(i).x}" y="${box(i).y}" width="30" height="30" rx="5"/>${glyph(i)}`,
+      [[0, { o: 0, c: 'var(--accent)' }], [from, { o: 0 }], [from + 0.25, { o: 1 }], [to, { o: 1 }], [to + 0.3, { o: 0 }]], { keep: false }),
+  };
+}
+
 // ----- guitar -------------------------------------------------------------------------------------------------------------
 
 const TAB_TOP = 94;
@@ -451,15 +477,16 @@ export function refinger(s, aria) {
 }
 
 export function barre(s, aria) {
-  const d = stage({ id: 'barre', T: 14, bottom: 68, h: 120 });
-  const t = s.scoreUiStrings;
+  const d = stage({ id: 'barre', T: 14, bottom: 68, h: 120, x1: 272 });
   const notes = phrase(d, [[q('F4'), q('A4'), q('C5'), q('A4')]], 42);
   notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  const side = toolSidebar(d);
   const xa = notes[0].x;
   const xb = notes[3].x + 12;
   const top = d.y(8) - 18;
-  d.add(60, 14, pillInner(t.barre, { size: 8 }), [[0, { o: 0 }], [0.6, { o: 0 }], [0.9, { o: 1, c: 'var(--ink-soft)' }], [1.7, { c: 'var(--ink-soft)' }], [1.9, { c: 'var(--accent)' }], [3.6, { c: 'var(--accent)' }], [3.9, { o: 0 }]], { keep: false });
-  d.click(1.7, 60, 14);
+  const tool = side.at(0);
+  side.on(0, 1.7, 3.9);
+  d.click(1.7, tool.x, tool.y);
   d.click(3.4, xa + 5, d.y(1));
   d.add(xa, top, `<text class="d-text" x="-9" y="3" text-anchor="middle" font-size="10" font-style="italic" style="font-family:var(--serif)">C</text><path class="d-bracket" d="M0 0H${xb - xa}V6"/>`,
     [[0, { o: 0 }], [3.4, { o: 0 }], [3.7, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
@@ -469,7 +496,7 @@ export function barre(s, aria) {
   d.add(xa + 6, top, `<rect class="d-field d-field--on" x="-6" y="-7" width="12" height="14" rx="2"/><text class="d-pilltext" text-anchor="middle" dominant-baseline="central" font-size="9">3</text>`,
     [[0, { o: 0 }], [7.2, { o: 0 }], [7.3, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
   d.keycap('3', 26, 6.0, 6.8, 9.8);
-  d.pointer([[0.6, d.w - 40, d.h - 24], ...visit(1.7, 60, 14), ...visit(3.4, xa + 5, d.y(1)), [5.2, d.w - 40, d.h - 24]]);
+  d.pointer([[0.6, d.w - 40, d.h - 24], ...visit(1.7, tool.x, tool.y), ...visit(3.4, xa + 5, d.y(1)), [5.2, d.w - 40, d.h - 24]]);
   return d.html(aria);
 }
 
@@ -930,25 +957,25 @@ export function reassignVoice(s, aria) {
 
 /** A staff with four quarter notes, the places where chord names go. Names sit above the staff, on a note's column. */
 function chordStage(id, T, extra = {}) {
-  const d = stage({ id, T, bottom: 72, h: 120, ...extra });
+  const d = stage({ id, T, bottom: 72, h: 120, x1: 272, ...extra });
   const notes = phrase(d, [[q('E4'), q('G4'), q('C5'), q('G4')]], 52);
   notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
-  return { d, notes, ny: d.y(8) - 13 };
+  return { d, notes, ny: d.y(8) - 13, side: toolSidebar(d) };
 }
 
 const chordName = (d, x, y, text, stops, opts = {}) => d.text(x, y, text, stops, { size: 11, weight: 700, ...opts });
 const CHORD_FIELD = (w) => `<rect class="d-field d-field--on" x="${-w / 2}" y="-8" width="${w}" height="15" rx="2.5"/>`;
 
-/** The chord tool in the palette: pressing it and placing it over a note opens the empty field for the name. */
+/** The chord tool in the right toolbar: pressing it and placing it over a note opens the empty field for the name. */
 export function chordTool(s, aria) {
-  const { d, notes, ny } = chordStage('chord-tool', 10);
-  const px = d.w - 40;
-  d.add(px, 14, pillInner('Am', { size: 8 }), [[0, { o: 1, c: 'var(--ink-soft)' }], [1.7, { c: 'var(--ink-soft)' }], [1.9, { c: 'var(--accent)' }], [d.T - 0.7, { c: 'var(--accent)' }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  const { d, notes, ny, side } = chordStage('chord-tool', 10);
+  const tool = side.at(1);
+  side.on(1, 1.7, d.T - 0.7);
   const x = notes[0].x + 5;
   d.add(x, ny, CHORD_FIELD(34), [[0, { o: 0 }], [3.4, { o: 0 }], [3.65, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
-  d.click(1.7, px, 14);
+  d.click(1.7, tool.x, tool.y);
   d.click(3.3, x, d.y(pitch('E4')));
-  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.7, px, 14), ...visit(3.3, x, d.y(pitch('E4'))), [6.4, d.w - 30, d.h - 24]]);
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.7, tool.x, tool.y), ...visit(3.3, x, d.y(pitch('E4'))), [6.4, d.w - 30, d.h - 24]]);
   return d.html(aria);
 }
 
