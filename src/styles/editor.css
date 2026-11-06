@@ -2535,3 +2535,43 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   /* Preserve the small colored circles while expanding their clickable area. */
   .score-voice-legend button::after { content: ''; position: absolute; inset: -0.75rem; }
 }
+
+/* Pro: tabs with a close button. The active tab keeps its title input; the others hold a label button. */
+.score-doc-tab.has-close {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding-right: 0.4rem;
+}
+.score-doc-tab.has-close .score-doc-tab-input { flex: 1; min-width: 0; }
+.score-doc-tab-label {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: inherit;
+}
+.score-doc-tab-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.score-doc-tab-close svg { width: 0.8rem; height: 0.8rem; }
+.score-doc-tab-close:hover,
+.score-doc-tab-close:focus-visible { background: var(--surface); color: var(--ink); }

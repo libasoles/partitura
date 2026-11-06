@@ -112,7 +112,8 @@ a { color: var(--blue-france); }
   position: absolute;
   right: 0;
   top: calc(100% + 0.3rem);
-  min-width: 13rem;
+  min-width: 17rem;
+  max-width: calc(100vw - 2rem);
   margin: 0;
   padding: 0.3rem;
   list-style: none;
@@ -145,6 +146,13 @@ a { color: var(--blue-france); }
 .menu-sublist { margin: 0; padding: 0; list-style: none; }
 .menu-sublist[hidden] { display: none; }
 .menu-sublist button { padding-left: 1.2rem; }
+.menu-separator { margin: 0.3rem 0.4rem; border: 0; border-top: 1px solid var(--rule); }
+.menu-heading { margin: 0; padding: 0.3rem 0.7rem 0.2rem; color: var(--ink-soft); font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.menu-scores[hidden] { display: none; }
+.menu-scores-list { max-height: 40vh; margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+.menu-scores-list button[aria-current] { font-weight: 600; }
+.menu-scores-list .menu-score-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-scores-list .lucide { flex: none; }
 .menu-list a:hover,
 .menu-list button:hover,
 .menu-list a:focus-visible,
