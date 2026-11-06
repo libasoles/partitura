@@ -221,11 +221,14 @@
 .tutorial-feature { margin-bottom: 2rem; }
 .tutorial-voices { --voice-1: #b5472f; --voice-2: #c8922e; }
 .tutorial-voices figcaption { font-size: 0.9rem; color: var(--ink-soft); margin-bottom: 0.75rem; }
-.tutorial-voice-controls { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+.tutorial-voices { display: flex; flex-wrap: wrap; gap: 0 0.75rem; align-items: flex-start; }
+.tutorial-voices figcaption { flex-basis: 100%; }
+.tutorial-voice-controls { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 1rem; }
+.tutorial-voice-staff { flex: 1; min-width: 0; }
 .tutorial-voice { display: inline-flex; align-items: center; justify-content: center; width: 1.5em; height: 1.5em; border: 1px solid var(--voice); border-radius: 50%; background: var(--voice); color: white; font: inherit; font-weight: 600; vertical-align: -0.15em; }
 .tutorial-voice[data-number="1"] { --voice: #b5472f; }
 .tutorial-voice[data-number="2"] { --voice: #c8922e; }
-button.tutorial-voice { cursor: pointer; min-width: 2.75rem; min-height: 2.75rem; }
+button.tutorial-voice { cursor: pointer; width: 1.6rem; height: 1.6rem; padding: 0; font-size: 0.8rem; }
 .tutorial-voice[aria-pressed="false"] { background: var(--paper); color: var(--voice); }
 .tutorial-voice:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 .tutorial-voice-staff { overflow-x: auto; }
