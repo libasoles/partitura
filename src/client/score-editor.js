@@ -3981,7 +3981,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       svg.style.width = `${box.width * size / space}px`;
       svg.style.height = `${box.height * size / space}px`;
       const frame = svg.getBoundingClientRect();
-      const rects = [...svg.querySelectorAll('g.layer, g.barLine:not([display="none"])')].map((el) => el.getBoundingClientRect());
+      const rects = [...svg.querySelectorAll('g.layer, g.tie, g.slur, g.barLine:not([display="none"])')].map((el) => el.getBoundingClientRect());
       if (!rects.length) return;
       const pad = size * 0.5;
       const left = Math.min(...rects.map((r) => r.left)) - pad, right = Math.max(...rects.map((r) => r.right)) + pad;

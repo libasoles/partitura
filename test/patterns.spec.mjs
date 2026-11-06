@@ -90,6 +90,28 @@ test('multi-measure patterns stay on one scrollable line with internal barlines'
   expect(last.x + last.width).toBeLessThanOrEqual(frame.x + frame.width);
 });
 
+test('saved patterns show both kinds of links and restore them when applied', async ({ page }) => {
+  const score = source();
+  score.rows[0][0] = [{ d: 'h', n: 37, tie: true }];
+  score.rows[0][1] = [{ d: 'q', n: 37, slur: true }, { d: 'q', n: 38 }];
+  const pattern = M.patternFrom(score, [{ mi: 0, i: 0 }, { mi: 1, i: 0 }, { mi: 1, i: 1 }]);
+  await open(page, { patterns: true, patternItems: [JSON.parse(JSON.stringify(pattern))] });
+  const preview = page.locator('.score-pattern-notes');
+  await expect(preview.locator('g.tie')).toHaveCount(1);
+  await expect(preview.locator('g.slur')).toHaveCount(1);
+  // Arcs sit outside g.layer; the crop must include their complete bounds.
+  for (const arc of await preview.locator('g.tie, g.slur').all()) {
+    const box = await arc.boundingBox();
+    const frame = await preview.locator('.score-pattern-staff').boundingBox();
+    expect(box.y).toBeGreaterThanOrEqual(frame.y);
+    expect(box.y + box.height).toBeLessThanOrEqual(frame.y + frame.height);
+  }
+  await page.locator('#scoreStage g.measure').nth(1).click({ position: { x: 30, y: 4 }, force: true });
+  await preview.click();
+  await expect(page.locator('#scoreStage g.tie')).toHaveCount(1);
+  await expect(page.locator('#scoreStage g.slur')).toHaveCount(1);
+});
+
 test('a chosen measure is saved with Shift+S and a click on a pattern writes it there', async ({ page }) => {
   await open(page, { patterns: true });
   const measure = await page.locator('#scoreStage g.measure').nth(0).boundingBox();

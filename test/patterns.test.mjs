@@ -64,3 +64,41 @@ test('a pattern spanning measures is rebuilt across them, and saved data is vali
   assert.deepEqual(M.cleanPattern(JSON.parse(JSON.stringify(pattern))), pattern);
   assert.equal(M.patternFrom(score, [M.refOf(0, 0, 0), M.refOf(1, 0, 0)]), null);
 });
+
+for (const type of ['tie', 'slur']) {
+  for (const across of [false, true]) {
+    test(`patterns preserve a ${type} ${across ? 'across measures' : 'within a measure'} through storage and transposition`, () => {
+      const score = M.emptyScore();
+      score.rows[0][0] = [{ d: across ? 'w' : 'h', n: base, [type]: true }];
+      const mi = across ? 1 : 0;
+      score.rows[0][mi].push({ d: 'h', n: base + (type === 'slur' ? 2 : 0) });
+      const refs = [{ mi: 0, i: 0 }, { mi, i: across ? 0 : 1 }];
+      const saved = JSON.stringify(score);
+      const pattern = M.patternFrom(score, refs);
+      assert.equal(pattern.events[0][type], true);
+      assert.equal(JSON.stringify(score), saved);
+      if (!across) assert.deepEqual(M.patternFromMeasure(score, 0), pattern);
+      const clean = M.cleanPattern(JSON.parse(JSON.stringify(pattern)));
+      assert.deepEqual(clean, pattern);
+      for (const flat of [false, true]) {
+        const target = M.emptyScore();
+        const created = M.applyPattern(target, clean, { mi: 2, n: base + 5, flat });
+        assert.deepEqual(M.links(target), [{ type, from: created[0], to: created[1] }]);
+        assert.match(M.toMusicXml(target), new RegExp(`<${type === 'tie' ? 'tied' : 'slur'} type="start"`));
+      }
+      for (const ref of refs) {
+        const partial = M.patternFrom(score, [ref]);
+        assert.ok(partial.events.every(ev => !ev.tie && !ev.slur));
+      }
+      if (across) assert.ok(M.patternFromMeasure(score, 0).events.every(ev => !ev.tie && !ev.slur));
+    });
+  }
+}
+
+test('pattern storage accepts only boolean links on pitched notes', () => {
+  const pattern = { events: [
+    { d: 'q', mi: 0, at: 0, dn: 0, tie: 'true', slur: 1 },
+    { d: 'q', mi: 0, at: 24, rest: true, tie: true, slur: true },
+  ] };
+  assert.ok(M.cleanPattern(pattern).events.every(ev => !ev.tie && !ev.slur));
+});

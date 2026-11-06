@@ -675,7 +675,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
   // Un patron guarda el ritmo y la relacion entre las alturas (grados diatonicos desde la primera nota), no la tonalidad
   // ni las alteraciones: `dn` es la distancia en pasos de escala a la primera nota con altura. Cada figura lleva su
   // compas (`mi`, desde el primero del patron) y su inicio (`at`) dentro de el.
-  const PATTERN_KEYS = ['dot', 'rest', 'dead', 'tp', 'tn', 'beam'];
+  const PATTERN_KEYS = ['dot', 'rest', 'dead', 'tp', 'tn', 'beam', 'tie', 'slur'];
   const MAX_PATTERN_EVENTS = 128;
 
   function patternOf(items) {
@@ -698,14 +698,22 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     if (!refs.length || refs.some((ref) => staffOf(ref) !== staffOf(refs[0]))) return null;
     const lane = measures(score, staffOf(refs[0]));
     const chosen = refs.filter((ref, k) => lane[ref.mi]?.[ref.i] && refs.findIndex((o) => sameRef(o, ref)) === k);
-    return patternOf(chosen.map((ref) => ({ ev: lane[ref.mi][ref.i], mi: ref.mi, at: onsets(lane[ref.mi])[ref.i] })));
+    // Una ligadura pertenece al patron solo cuando se guardan ambos extremos.
+    const included = links(score).filter((link) => chosen.some((ref) => sameRef(ref, link.from)) && chosen.some((ref) => sameRef(ref, link.to)));
+    return patternOf(chosen.map((ref) => {
+      const ev = { ...lane[ref.mi][ref.i] };
+      delete ev.tie;
+      delete ev.slur;
+      const link = included.find((link) => sameRef(ref, link.from));
+      if (link) ev[link.type] = true;
+      return { ev, mi: ref.mi, at: onsets(lane[ref.mi])[ref.i] };
+    }));
   }
 
   function patternFromMeasure(score, mi, staff = 0) {
     const measure = measures(score, staff)[mi];
     if (!measure) return null;
-    const starts = onsets(measure);
-    return patternOf(measure.map((ev, i) => ({ ev, mi, at: starts[i] })));
+    return patternFrom(score, measure.map((_, i) => refOf(staff, mi, i)));
   }
 
   // Lo que viene de guardado: solo figuras validas y con los campos que el modelo conoce.
@@ -720,6 +728,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
       else return null;
       if (raw.dot === true || raw.dot === 2) ev.dot = raw.dot;
       if (!ev.rest && raw.dead === true) ev.dead = true;
+      if (!ev.rest && raw.tie === true) ev.tie = true;
+      else if (!ev.rest && raw.slur === true) ev.slur = true;
       if (Number.isInteger(raw.tp) && raw.tp > 0) { ev.tp = raw.tp; if (TUPLETS[raw.tn] && raw.tn !== 3) ev.tn = raw.tn; }
       if (raw.beam === 'join' || raw.beam === 'break') ev.beam = raw.beam;
       ev.mi = raw.mi;
