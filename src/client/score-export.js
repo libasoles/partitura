@@ -188,20 +188,26 @@ export default function createExporter(editor) {
       const columns = Object.assign(Object.fromEntries(attacks.map((attack, i) =>
         [attack.key, window.ScoreFingering.toColumn(fingered[i])])), exportScore.tabs);
       const pdfWidth = 2400;
+      const margin = 20; // mm, including the title, author and page numbers.
+      const contentWidth = 210 - margin * 2;
+      const units = mm => Math.ceil(mm * pdfWidth / 210);
       const pdfToolkit = editor.newToolkit();
       pdfToolkit.setOptions({
         scale: editor.SCALE,
         pageWidth: pdfWidth,
         pageHeight: Math.round(pdfWidth * 297 / 210),
         adjustPageHeight: false,
-        breaks: exportScore.showTabs ? 'line' : 'encoded',
+        // Keep encoded system breaks, but let Verovio insert page breaks for A4.
+        breaks: 'line',
         header: 'none',
         footer: 'none',
         svgViewBox: true,
-        pageMarginLeft: 100,
-        pageMarginRight: 100,
-        pageMarginTop: exportScore.title || exportScore.author ? 230 : 150,
-        pageMarginBottom: exportScore.showTabs ? 450 : 150,
+        pageMarginLeft: units(margin),
+        pageMarginRight: units(margin),
+        pageMarginTop: units(exportScore.title || exportScore.author ? 40 : margin),
+        // Reserve space for page numbers and for TAB added below the last system.
+        // Verovio caps page margins at 500 units.
+        pageMarginBottom: exportScore.showTabs ? 500 : units(30),
         ...(exportScore.showTabs ? { spacingSystem: 48 } : {}),
         justifyVertically: false,
         minLastJustification: 0,
@@ -218,14 +224,15 @@ export default function createExporter(editor) {
           pdf.setFont('times', 'normal');
           pdf.setFontSize(11);
           pdf.setTextColor(120);
-          pdf.text(exportScore.author, 201.25, 10, { align: 'right' });
+          pdf.setFontSize(Math.min(11, 11 * contentWidth / pdf.getTextWidth(exportScore.author)));
+          pdf.text(exportScore.author, 210 - margin, margin, { align: 'right' });
           pdf.setTextColor(0);
         }
         if (page === 1 && exportScore.title) {
           pdf.setFont('times', 'bold');
           pdf.setFontSize(18);
-          pdf.setFontSize(Math.min(18, 18 * 192 / pdf.getTextWidth(exportScore.title)));
-          pdf.text(exportScore.title, 8.75, 15);
+          pdf.setFontSize(Math.min(18, 18 * contentWidth / pdf.getTextWidth(exportScore.title)));
+          pdf.text(exportScore.title, margin, margin + 8);
         }
       }
       if (totalPages > 1) {
@@ -234,7 +241,7 @@ export default function createExporter(editor) {
         pdf.setTextColor(102);
         for (let page = 1; page <= totalPages; page += 1) {
           pdf.setPage(page);
-          pdf.text(page + '-' + totalPages, 105, 290, { align: 'center' });
+          pdf.text(page + '-' + totalPages, 105, 297 - margin, { align: 'center' });
         }
       }
       pdf.save(downloadFilename(exportScore, 'pdf'));

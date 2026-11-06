@@ -40,6 +40,6 @@ for (const totalPages of [1, 3]) test(`PDF export numbers ${totalPages} pages on
   assert.equal(button.disabled, false);
   assert.equal(calls.pop(), 'saved');
   assert.deepEqual(calls, totalPages === 1 ? [] : [1, 2, 3].map(page => ({
-    page, value: `${page}-3`, x: 105, y: 290, options: { align: 'center' }, font: ['helvetica', 'normal'], size: 8,
+    page, value: `${page}-3`, x: 105, y: 277, options: { align: 'center' }, font: ['helvetica', 'normal'], size: 8,
   })));
 });
