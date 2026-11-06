@@ -1,3 +1,6 @@
+import { chordNames } from './chord-names.js';
+import { measurePitches } from './score-notes.js';
+
 // Diatonic intervals between neighbouring sounding pitches. Piano: independently on each staff. Voices (choir):
 // each staff is one line, so the intervals are taken between the staves.
 export function intervalColumns(measure, M, selectedVoices, bass = false) {
@@ -12,9 +15,12 @@ export function intervalColumns(measure, M, selectedVoices, bass = false) {
       .sort((a, b) => b.note.n - a.note.n || a.i - b.i);
     if (sounding.length < 2) return [];
     const intervals = labels(sounding, bass);
-    return [{ at, indices: measure.flatMap((_, i) => selected(i) && starts[i] === at ? [i] : []), intervals }];
+    return [withSounding({ at, indices: measure.flatMap((_, i) => selected(i) && starts[i] === at ? [i] : []), intervals }, sounding.map(({ note, i }) => ({ note, i, staff: 0 })))];
   });
 }
+
+// The notes behind a column (for chord names) travel with it without being part of its shape.
+const withSounding = (column, sounding) => Object.defineProperty(column, 'sounding', { value: sounding });
 
 // `sounding` goes from the highest note down; one label per note except the lowest, highest first.
 // Neighbouring voices: each note against the one below it. Against the bass: each note against the lowest.
@@ -59,13 +65,40 @@ export function choirColumns(score, mi, M, selectedVoices, bass = false) {
     const owner = lanes.find(({ measure, starts }) => measure.some((note, i) => !note.rest && starts[i] === at));
     if (!owner) return [];
     const intervals = labels(sounding, bass);
-    return [{ at, staff: owner.staff, indices: owner.measure.flatMap((_, i) => owner.starts[i] === at ? [i] : []), intervals }];
+    return [withSounding({ at, staff: owner.staff, indices: owner.measure.flatMap((_, i) => owner.starts[i] === at ? [i] : []), intervals }, sounding)];
   });
+}
+
+// Possible chord names of a column, from the pitches that sound in it (any staff).
+function columnChords(score, mi, M, column) {
+  const cache = new Map();
+  const pitches = (staff) => {
+    if (!cache.has(staff)) cache.set(staff, measurePitches(score, M, M.measures(score, staff)[mi] || [], mi));
+    return cache.get(staff);
+  };
+  return chordNames(column.sounding.map(({ note, i, staff }) => ({ midi: pitches(staff)[i].midi, alter: pitches(staff)[i].alter, n: note.n })));
+}
+
+// Chord names to show above each column with at least three sounding voices. `names[0]` is the one shown.
+export function chordMarks(score, M, selectedVoices) {
+  const bass = M.intervalModeOf(score) === 'bass';
+  const marks = [];
+  M.measures(score).forEach((measure, mi) => {
+    const columns = M.instrumentOf(score) === 'voices'
+      ? choirColumns(score, mi, M, selectedVoices, bass)
+      : Array.from({ length: M.stavesOf(score) }, (_, staff) => intervalColumns(staff ? score.lower?.[mi] || [] : measure, M, selectedVoices, bass)
+        .map((column) => ({ staff, indices: column.indices, at: column.at, sounding: column.sounding.map((entry) => ({ ...entry, staff })) }))).flat();
+    columns.forEach((column) => {
+      const names = columnChords(score, mi, M, column);
+      if (names.length) marks.push({ mi, at: column.at, staff: column.staff ?? 0, id: `${M.ID_PREFIX[column.staff ?? 0]}${mi}-${column.indices[0]}`, names });
+    });
+  });
+  return marks;
 }
 
 // Editor-only directions let the engraver reserve room above beams and high notes.
 // The stored score and the exported MusicXML keep their original notation.
-export function withIntervals(xml, score, M, selectedVoices) {
+export function withIntervals(xml, score, M, selectedVoices, { intervals = true, chords = false } = {}) {
   const marks = new Map();
   const bass = M.intervalModeOf(score) === 'bass';
   const upper = M.measures(score);
@@ -84,10 +117,17 @@ export function withIntervals(xml, score, M, selectedVoices) {
       });
     }
   }
+  const names = new Map(chords ? chordMarks(score, M, selectedVoices).map((mark) => [mark.id, mark]) : []);
+  const direction = (mark, text, family) => `<direction placement="above"><direction-type><words font-family="${family}" font-style="normal" justify="center">${text}</words></direction-type>${M.stavesOf(score) > 1 ? `<staff>${mark.staff + 1}</staff>` : ''}</direction>`;
   return xml.replace(/<note id="([elpq]\d+-\d+)">/g, (note, id) => {
-    const mark = marks.get(id);
-    if (!mark || mark.done) return note;
-    mark.done = true;
-    return `<direction placement="above"><direction-type><words font-family="PartituraIntervals" font-style="normal" justify="center">${mark.intervals.join('\n')}</words></direction-type>${M.stavesOf(score) > 1 ? `<staff>${mark.staff + 1}</staff>` : ''}</direction>` + note;
+    const mark = intervals ? marks.get(id) : null;
+    const chord = names.get(id);
+    let out = '';
+    if (mark && !mark.done) {
+      mark.done = true;
+      out += direction(mark, mark.intervals.join('\n'), 'PartituraIntervals');
+    }
+    if (chord) out += direction(chord, chord.names[0], 'PartituraChordNames');
+    return out + note;
   });
 }
