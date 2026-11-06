@@ -759,8 +759,10 @@ export function playbackEnable(s, aria) {
   d.add(d.w - 18, 16, `<rect class="d-pill" x="-10" y="-10" width="20" height="20" rx="5"/>${ico('settings', 13)}`, d.life(0.05));
   d.add(168, 6, `<rect class="d-panel" width="146" height="64" rx="6"/><text class="d-menutext" x="10" y="16" font-size="9" font-weight="700">${u.settingsTools}</text>`, d.life(1.7, 6.6));
   checkRow(d, 182, 38, u.toolsPlayback, 3.7, 6.6, d.life(1.7, 6.6));
-  d.add(284, 38, `<g transform="translate(-10 0)">${ico('play', 10)}</g><g transform="translate(6 0)">${ico('pause', 10)}</g>`, d.life(1.7, 6.6));
-  d.add(16, 14, `<circle class="d-pill" r="10"/>${ico('play', 11)}`, d.pop(6.9), { cls: 'd-play-button' });
+  // Ticking the box shows the tools together: the icons in the row and the play button beside the staff.
+  d.add(284, 38, `<g transform="translate(-10 0)">${ico('play', 10)}</g><g transform="translate(6 0)">${ico('pause', 10)}</g>`,
+    [[0, { o: 0 }], [3.7, { o: 0 }], [3.85, { o: 1 }], [6.6, { o: 1 }], [6.85, { o: 0 }]], { keep: false });
+  d.add(16, 14, `<circle class="d-pill" r="10"/>${ico('play', 11)}`, d.pop(3.85), { cls: 'd-play-button' });
   d.pointer([[0.5, 150, 100], ...visit(1.4, d.w - 18, 16), ...visit(3.6, 182, 38), [8.2, d.w - 40, d.h - 20]]);
   d.click(1.4, d.w - 18, 16);
   d.click(3.6, 182, 38);
@@ -823,12 +825,13 @@ export function playbackVoices(s, aria) {
   xs.forEach((x, i) => {
     const t = 4.4 + i * 1.6;
     d.note(x, pitch(top[i]), 'q', S(d.life(0.05), [[0, { c: VOICE[0] }], [t - 0.05, { c: VOICE[0] }], [t, { c: ACCENT }], [t + 0.7, { c: VOICE[0] }]]), { stemDown: false });
-    d.note(x, pitch(low[i]), 'q', S(d.life(0.05), [[0, { c: VOICE[2] }]]), { stemDown: true });
+    d.note(x, pitch(low[i]), 'q', S(d.life(0.05), [[0, { c: VOICE[1] }]]), { stemDown: true });
   });
-  [1, 3].forEach((n, i) => d.add(d.w - 54 + i * 24, 16, `<circle r="9" fill="${i === 0 ? VOICE[0] : 'none'}" stroke="${VOICE[n === 3 ? 2 : 0]}" stroke-width="1.4"/><text class="d-captext" fill="${i === 0 ? '#fff' : VOICE[2]}" text-anchor="middle" dominant-baseline="central" font-size="9">${n === 3 ? 3 : 1}</text>`, d.life(0.05)));
+  // The voice legend, as in the other voice demos: voice 1 chosen (filled), voice 2 not (white with its colour as the border).
+  [1, 2].forEach((n, i) => d.add(d.w - 22, 40 + i * 20, `<circle r="7.5" fill="${i === 0 ? VOICE[0] : '#fff'}" stroke="${VOICE[i]}" stroke-width="1.3"/><text class="d-captext" fill="${i === 0 ? '#fff' : VOICE[i]}" text-anchor="middle" dominant-baseline="central" font-size="8">${n}</text>`, d.life(0.05)));
   playhead(d, 3.6, d.firstX - 4, [[3.6, 0], [10.3, 172]]);
-  d.pointer([[0.6, 200, 104], ...visit(1.6, d.w - 54, 16), [3, 200, 104], [11.5, 200, 104]]);
-  d.click(1.6, d.w - 54, 16);
+  d.pointer([[0.6, 200, 104], ...visit(1.6, d.w - 22, 40), [3, 200, 104], [11.5, 200, 104]]);
+  d.click(1.6, d.w - 22, 40);
   return d.html(aria);
 }
 
