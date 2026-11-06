@@ -1737,7 +1737,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   // Negras por minuto; sin valor no se escribe indicacion y suena a 120.
   // Que grupos de herramientas muestra cada partitura: solo se guardan los que el usuario fijo.
-  const TOOL_GROUPS = ['repeats', 'dynamics', 'voices', 'playback', 'intervals'];
+  const TOOL_GROUPS = ['repeats', 'dynamics', 'voices', 'playback', 'intervals', 'lyrics'];
   function toolsOf(data) {
     const tools = {};
     if (data && data.tools && typeof data.tools === 'object') TOOL_GROUPS.forEach((name) => { if (typeof data.tools[name] === 'boolean') tools[name] = data.tools[name]; });

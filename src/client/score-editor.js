@@ -2077,7 +2077,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- Letra: una silaba bajo cada nota ------------------------------------------------------------------------------
   // Verovio dibuja `<lyric>` bajo el pentagrama de la nota (g.verse). El campo se apoya en esa linea y cada silaba dibujada
   // tiene un boton transparente encima: clic o doble clic la edita, Suprimir la quita. Espacio, Tab o un guion avanzan a la nota siguiente.
-  const lyricsOn = lyrics;
+  // La casilla «Letra de canto» de los ajustes (por partitura, activa por defecto) muestra u oculta la herramienta; las sílabas escritas se siguen dibujando.
+  const lyricsActive = () => lyrics && toolOn('lyrics');
   let syllabifyLoading = null;
 
   // El silabeo de el-silbador se pide recien al pegar una letra (el build lo publica en `vendor/`). Sin el, cada palabra es una silaba.
@@ -2107,7 +2108,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function startLyricDraft(mi, at, staff, edit) {
-    if (!lyricsOn || !lyricNote(mi, at, staff)) return false;
+    if (!lyricsActive() || !lyricNote(mi, at, staff)) return false;
     const old = M.lyricAt(score, mi, at, staff);
     lyricDraft = { mi, at, staff, text: edit !== undefined ? edit : old ? old.text + (old.hy ? '-' : '') : '' };
     mountLyricDraft();
@@ -2187,7 +2188,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function mountLyrics() {
-    if (!lyricsOn) return;
+    if (!lyricsActive()) return;
     const origin = stage.getBoundingClientRect();
     Object.keys(score.lyrics || {}).forEach((key) => {
       const mi = Number(key);
@@ -4624,7 +4625,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
-    const shown = { repeats: !settings || toolOn('repeats'), dynamics: !settings || toolOn('dynamics'), barre: guitar, lyrics: true };
+    const shown = { repeats: !settings || toolOn('repeats'), dynamics: !settings || toolOn('dynamics'), barre: guitar, lyrics: toolOn('lyrics') };
     barlines.querySelectorAll('[data-group]').forEach((button) => { if (button.dataset.group) button.hidden = !shown[button.dataset.group]; });
     tabToggle.hidden = !guitar;
     playButton.hidden = !settings || !toolOn('playback', false);
@@ -5052,6 +5053,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       ['voices', t.toolsVoices, () => false, false],
       ['playback', t.toolsPlayback, () => false, false],
       ['intervals', t.toolsIntervals, () => false, false],
+      ...(lyrics ? [['lyrics', t.toolsLyrics, (item) => item.kind === 'lyric']] : []),
     ];
     const toolsHeading = document.createElement('p');
     toolsHeading.className = 'score-settings-heading score-settings-title';
@@ -5137,7 +5139,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       check.addEventListener('change', () => {
         M.setTool(score, name, check.checked);
         save();
-        if (name === 'voices' || name === 'intervals') render(); else { applyTools(); applyVoices(); }
+        if (name === 'voices' || name === 'intervals' || name === 'lyrics') render(); else { applyTools(); applyVoices(); }
       });
       wrap.append(field, icons);
       toolsGrid.appendChild(wrap);
