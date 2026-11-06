@@ -217,6 +217,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   let enteringTab = -1; // index of the tab just added, animated in by renderTabs
   function renderTabs() {
+    document.getElementById('scoreClear').hidden = Boolean(score.demo);
     tabsBar.querySelectorAll('.score-doc-tab').forEach((node) => node.remove());
     const add = document.getElementById('scoreNewTab');
     const closable = proTabs && openCount() > 1;
@@ -1008,7 +1009,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     side.style.position = '';
     side.style.top = '';
     side.style.marginTop = Math.max(0, offset) + 'px';
-    side.style.setProperty('--side-offset', Math.max(0, offset) + 'px');
     alignVoiceLegend();
   }
 
@@ -5451,6 +5451,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   applyLibrary();
 
   document.getElementById('scoreClear').addEventListener('click', async (event) => {
+    if (score.demo) return;
     const button = event.currentTarget;
     const isOnly = docs.length === 1;
     const confirmed = await window.ScoreConfirm.ask({
@@ -5519,9 +5520,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     })));
   }
   function withExporter(action, onError) {
-    return async (target) => {
+    return async (...args) => {
       try {
-        return await action(await exporter(), target);
+        return await action(await exporter(), ...args);
       } catch (e) {
         exporterReady = null;
         say(onError);
@@ -5531,7 +5532,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // The host connects its own controls; their position and layout belong to the site.
   const actions = {
-    loadUrl: withExporter((tools, demo) => tools.loadUrl(demo.url, { demoId: demo.id }), t.importFailed || t.loadError),
+    loadUrl: withExporter((tools, demo, options) => tools.loadUrl(demo.url, { ...options, demoId: demo.id }), t.importFailed || t.loadError),
     restoreDemo: (id) => {
       const matches = (one) => one.demo && one.demoId === id;
       const index = matches(score) ? active : docs.findIndex(matches);

@@ -59,9 +59,6 @@
   grid-row: 1;
   align-self: start;
   margin-top: 0.5rem;
-  /* Fill the viewport below the sticky offset so the actions can sit at the bottom without overflowing it. */
-  height: calc(100vh - 6rem - 1.5rem - var(--side-offset, 0.5rem));
-  height: calc(100dvh - 6rem - 1.5rem - var(--side-offset, 0.5rem));
   background: transparent;
 }
 
@@ -71,11 +68,12 @@
 }
 
 .score-side-actions {
-  margin-top: auto;
+  position: fixed;
+  bottom: 30px;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  padding: 0.3rem;
+  padding: 0 0.3rem;
 }
 
 /* Keep every sidebar tooltip inside the viewport, including on tablets. */
@@ -99,7 +97,7 @@
 }
 
 .score-side-actions .score-download {
-  width: 100%;
+  width: 2.75rem;
   min-height: 2.75rem;
 }
 

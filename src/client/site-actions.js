@@ -3,8 +3,8 @@ import { acceptsScoreFile } from './score-file-types.js';
 import { DEMOS, demoLink } from './demos.js';
 
 export function bindSiteActions(actions) {
-  const openDemo = async (demo) => {
-    const loaded = await actions.loadUrl(demo);
+  const openDemo = async (demo, options) => {
+    const loaded = await actions.loadUrl(demo, options);
     if (loaded) history.replaceState(history.state, '', demoLink(demo, location.href));
   };
   document.querySelectorAll('[data-demo-url]').forEach((button) => {
@@ -21,7 +21,7 @@ export function bindSiteActions(actions) {
   const sharedId = document.getElementById('editor')?.dataset.demoId || new URLSearchParams(location.search).get('demo');
   const sharedDemo = DEMOS.find((demo) => demo.id === sharedId);
   if (sharedDemo) actions.ready.then(async () => {
-    if (!actions.restoreDemo(sharedDemo.id)) await openDemo(sharedDemo);
+    if (!actions.restoreDemo(sharedDemo.id)) await openDemo(sharedDemo, { silent: true });
   });
   const menuToggle = document.getElementById('siteMenuToggle');
   if (menuToggle) {
