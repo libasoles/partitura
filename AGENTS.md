@@ -131,7 +131,7 @@ No es una PWA: no hay manifest ni service worker.
 - No inferir una única voz porque dos notas coincidan en inicio y duración. Conservar la continuidad de las líneas y las voces explícitas, incluidos cruces de registro.
 - Formar un acorde de notación es una decisión explícita; no equivale a analizar las voces contrapuntísticas del acorde.
 - Recalcular voces no debe fusionarlas para hacerlas caber ni cambiar los inicios o las duraciones. Verificar homorritmia, cruces, independencia del bajo y persistencia.
-- **Duplicación vertical**: Mayús+↑/↓ duplica las figuras elegidas un paso diatónico arriba/abajo, en el mismo tiempo y pentagrama, con una voz independiente por cada voz de origen. Conserva ritmo y ligaduras internas; selecciona las copias para ajustar su altura con ↑/↓. Rechaza la operación completa si hay notas duplicadas, se exceden las alturas o las 16 voces, o cambia algún inicio. Mayús+←/→ sigue ampliando la selección y Mayús+D duplica a continuación.
+- **Duplicación vertical**: Mayús+↑/↓ duplica las figuras elegidas una tercera diatónica (dos pasos) arriba/abajo, en el mismo tiempo y pentagrama, con una voz independiente por cada voz de origen. Conserva ritmo y ligaduras internas; selecciona las copias para ajustar su altura con ↑/↓. Rechaza la operación completa si hay notas duplicadas, se exceden las alturas o las 16 voces, o cambia algún inicio. Mayús+←/→ sigue ampliando la selección y Mayús+D duplica a continuación.
 
 ## Pendiente
 

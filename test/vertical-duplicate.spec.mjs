@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 for (const staff of [0, 1]) {
-  test(`Shift+vertical arrows duplicate a melody in staff ${staff}, select copies and undo`, async ({ page }) => {
+  test(`Shift+vertical arrows duplicate a melody by a third in staff ${staff}, select copies and undo`, async ({ page }) => {
     await page.goto('/es/');
     await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
     await page.waitForFunction(() => window.scoreEditor && document.querySelector('.score-doc-tab-input'));
@@ -32,7 +32,7 @@ for (const staff of [0, 1]) {
         };
       }, staff);
       expect(state.voices).toBe(2);
-      expect(state.copies).toEqual([37, 40, 39, 38].map((n, i) => ({ n: n - staff * 12 + delta, at: i * 24 })));
+      expect(state.copies).toEqual([37, 40, 39, 38].map((n, i) => ({ n: n - staff * 12 + 2 * delta, at: i * 24 })));
       await page.keyboard.press(key);
       const pitches = await page.evaluate((staff) => {
         const measure = window.ScoreModel.measures(window.scoreEditor.score, staff)[0];
@@ -42,7 +42,7 @@ for (const staff of [0, 1]) {
           originals: measure.filter((_, i) => !selected.has(i)).map(ev => ev.n),
         };
       }, staff);
-      expect(pitches.copies).toEqual([37, 40, 39, 38].map(n => n - staff * 12 + 2 * delta));
+      expect(pitches.copies).toEqual([37, 40, 39, 38].map(n => n - staff * 12 + 3 * delta));
       expect(pitches.originals).toEqual([37, 40, 39, 38].map(n => n - staff * 12));
       await page.keyboard.press('ControlOrMeta+z');
       await page.keyboard.press('ControlOrMeta+z');

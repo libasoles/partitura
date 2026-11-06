@@ -13,7 +13,7 @@
   "scoreSeoH1": "Editor de partituras online, grátis e sem cadastro",
   "scoreAboutLead": "Arraste uma figura direto para a pauta, ou escolha a figura, clique onde a nota vai e pronto. É grátis, funciona no navegador e não pede para criar usuário nem instalar nada.",
   "scoreShortcutsH2": "Atalhos de teclado e gestos",
-  "scoreShortcutsIntro": "Aperte a tecla de uma figura para escolhê-la e clique na pauta para colocá-la. Aperte A para desmarcar a ferramenta atual. Com figuras selecionadas, Shift+D as duplica logo depois da última selecionada, seguindo pelos compassos seguintes. Shift+↑ ou Shift+↓ duplica a seleção um passo acima ou abaixo, em uma voz independente e no mesmo tempo. A cópia fica selecionada; use ↑ e ↓ para ajustar sua altura. Estas são as teclas de cada uma:",
+  "scoreShortcutsIntro": "Aperte a tecla de uma figura para escolhê-la e clique na pauta para colocá-la. Aperte A para desmarcar a ferramenta atual. Com figuras selecionadas, Shift+D as duplica logo depois da última selecionada, seguindo pelos compassos seguintes. Shift+↑ ou Shift+↓ duplica a seleção uma terça diatônica acima ou abaixo, em uma voz independente e no mesmo tempo. A cópia fica selecionada; use ↑ e ↓ para ajustar sua altura. Estas são as teclas de cada uma:",
   "scoreShortcutsLinks": "Com duas notas selecionadas, pressione <kbd>(</kbd> ou <kbd>)</kbd> para adicionar ou remover a ligadura, se as notas puderem ser ligadas. É a mesma ação do botão contextual de ligadura. O atalho reconhece o caractere: use a combinação que escreve o parêntese no seu teclado, em qualquer sistema operacional.",
   "scoreShortcutsNotes": "Notas",
   "scoreShortcutsRests": "Pausas",
@@ -469,7 +469,7 @@
         "steps": [
           "Clique numa figura para selecioná-la. Com <kbd>Shift</kbd>, <kbd>Ctrl</kbd> ou <kbd>Cmd</kbd> você soma mais. Arrastando a partir de um ponto vazio da pauta, você as cerca com um retângulo.",
           "<kbd>↑</kbd> e <kbd>↓</kbd> sobem ou descem a seleção um passo da pauta; <kbd>←</kbd> e <kbd>→</kbd> passam para a figura ao lado. Também dá para arrastar as figuras para outro lugar.",
-          "Use <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd> para ampliar a seleção às figuras vizinhas. <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> cria uma cópia em outra voz, um passo acima ou abaixo no mesmo tempo; as cópias ficam selecionadas.",
+          "Use <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd> para ampliar a seleção às figuras vizinhas. <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> cria uma cópia em outra voz, uma terça diatônica acima ou abaixo no mesmo tempo; as cópias ficam selecionadas.",
           "<kbd>Delete</kbd> ou <kbd>Backspace</kbd> apaga. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> desfaz a última alteração e <kbd>Esc</kbd> solta a seleção."
         ]
       },
@@ -477,7 +477,7 @@
         "steps": [
           "Selecione uma ou mais figuras e aperte <kbd>Shift</kbd> + <kbd>D</kbd>: elas são copiadas logo depois da última selecionada, seguindo pelos compassos seguintes.",
           "Para levá-las a outro lugar, copie com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, clique no compasso de destino e cole com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Funciona também entre partituras abertas.",
-          "Para escrever uma segunda voz, use <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd>: a cópia fica um passo acima ou abaixo, com os mesmos tempos e durações. Solte Shift e ajuste sua altura com as setas. Funciona nas duas pautas do piano.",
+          "Para escrever uma segunda voz, use <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd>: a cópia fica uma terça diatônica acima ou abaixo, com os mesmos tempos e durações. Solte Shift e ajuste sua altura com as setas. Funciona nas duas pautas do piano.",
           "Copiar, colar e duplicar mantém as ligaduras de prolongamento e de expressão quando as duas pontas estão incluídas. Para reutilizar o motivo em outras alturas ou manter apenas seu ritmo, salve-o na biblioteca de padrões com <kbd>Shift</kbd> + <kbd>S</kbd>."
         ],
         "tip": "Se você segurar <kbd>Shift</kbd> ao colar, só as figuras são coladas, sem as mudanças de clave, armadura ou compasso."
@@ -587,8 +587,8 @@
       "voices": {
         "steps": [
           "Selecione uma nota ou frase na pauta. Amplie a seleção com <kbd>Shift</kbd>+clique ou <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd>.",
-          "Pressione <kbd>Shift</kbd> + <kbd>↑</kbd> para duplicar um passo da pauta acima, ou <kbd>Shift</kbd> + <kbd>↓</kbd> para duplicar abaixo. As cópias começam nos mesmos tempos e mantêm durações, pontos, grupos irregulares e ligaduras cujas duas pontas estejam selecionadas.",
-          "As cópias ficam selecionadas. Solte <kbd>Shift</kbd> e use <kbd>↑</kbd>/<kbd>↓</kbd> para ajustar apenas sua altura. Por exemplo, duplique abaixo e desça mais uma vez para escrever uma terça diatônica sob a melodia. Você também pode selecionar e editar cada nota da nova linha.",
+          "Pressione <kbd>Shift</kbd> + <kbd>↑</kbd> para duplicar uma terça diatônica acima, ou <kbd>Shift</kbd> + <kbd>↓</kbd> para duplicar abaixo. As cópias começam nos mesmos tempos e mantêm durações, pontos, grupos irregulares e ligaduras cujas duas pontas estejam selecionadas.",
+          "As cópias ficam selecionadas. Solte <kbd>Shift</kbd> e use <kbd>↑</kbd>/<kbd>↓</kbd> para ajustar apenas sua altura. Por exemplo, duplique abaixo para escrever uma terça diatônica sob a melodia; as setas sem Shift permitem ajustar o intervalo um passo de cada vez. Você também pode selecionar e editar cada nota da nova linha.",
           "Cada voz selecionada ganha uma cópia independente na mesma pauta. Funciona nas duas pautas do piano; a cópia não passa para a outra pauta. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> desfaz a duplicação.",
           "Ative <em>Vozes</em> nos ajustes para mostrar a legenda de cores à esquerda. Escolha os números das vozes que quer colorir; as outras figuras continuam visíveis. Com <em>Reprodução</em> também ativa, você pode ouvir apenas as vozes escolhidas."
         ],

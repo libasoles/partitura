@@ -6,12 +6,12 @@ const M = createScoreModel({ grandStaff: true });
 const get = (score, ref) => M.measures(score, M.staffOf(ref))[ref.mi][ref.i];
 
 for (const delta of [1, -1]) {
-  test(`vertical duplication (${delta}) keeps a full measure in independent voices`, () => {
+  test(`duplication by a diatonic third (${delta}) keeps a full measure in independent voices`, () => {
     const score = M.emptyScore();
     score.rows[0][0] = [37, 40, 39, 38].map(n => ({ d: 'q', n }));
     const refs = M.duplicateVertical(score, [0, 1, 2, 3].map(i => ({ mi: 0, i })), delta);
     assert.equal(refs.length, 4);
-    assert.deepEqual(refs.map(r => get(score, r).n), [37, 40, 39, 38].map(n => n + delta));
+    assert.deepEqual(refs.map(r => get(score, r).n), [37, 40, 39, 38].map(n => n + 2 * delta));
     const measure = score.rows[0][0];
     assert.deepEqual(refs.map(r => M.onsets(measure)[r.i]), [0, 24, 48, 72]);
     assert.equal(M.measureLength(measure), 96);
@@ -47,14 +47,14 @@ test('copies both staves, rhythms, and internal links across measures', () => {
   assert.equal(refs.length, 5);
   const copies = refs.filter(r => r.s).map(r => get(score, r));
   assert.deepEqual(copies.map(ev => [ev.n, ev.d, ev.dot, ev.rest]),
-    [[26, 'h', undefined, undefined], [26, 'h', undefined, undefined], [28, 'q', true, undefined], [undefined, 'e', undefined, true]]);
+    [[27, 'h', undefined, undefined], [27, 'h', undefined, undefined], [29, 'q', true, undefined], [undefined, 'e', undefined, true]]);
   assert.equal(copies[0].tie, true);
   assert.equal(copies[1].slur, true);
 });
 
 test('rejects collisions, pitch limits and exhausted voices without changing the score', () => {
   for (const measure of [
-    [{ n: 40, d: 'q', at: 0 }, { n: 41, d: 'q', at: 0 }],
+    [{ n: 40, d: 'q', at: 0 }, { n: 42, d: 'q', at: 0 }],
     [{ n: M.HIGHEST, d: 'q' }],
     Array.from({ length: M.MAX_VOICE }, (_, i) => ({ n: 18 + i * 2, d: 'q', at: 0, v: i + 1 })),
   ]) {

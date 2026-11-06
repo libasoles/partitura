@@ -400,7 +400,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     };
   }
 
-  // Duplica en paralelo: una voz nueva por cada voz elegida, sin desplazar el ritmo original.
+  // Duplica a una tercera diatonica: una voz nueva por cada voz elegida, sin desplazar el ritmo original.
   function duplicateVertical(score, refs, delta) {
     if (delta !== 1 && delta !== -1) return null;
     const trial = clone(score);
@@ -435,7 +435,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
           if (!tuplets.has(ev.tp)) tuplets.set(ev.tp, ++nextTuplet);
           ev.tp = tuplets.get(ev.tp);
         }
-        if (Number.isInteger(ev.n)) ev.n += delta;
+        if (Number.isInteger(ev.n)) ev.n += 2 * delta;
         delete ev.tie;
         delete ev.slur;
         const link = included.find((l) => sameRef(l.from, ref));
