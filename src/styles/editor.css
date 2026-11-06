@@ -2631,9 +2631,12 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-settings-sounds input { flex-shrink: 0; }
 
 /* Intervalos: los dos modos de calcularlos, debajo de la casilla. */
+.score-settings-tools > .score-settings-category[data-category="intervals"] { flex-wrap: wrap; }
 .score-settings-interval-modes {
   display: flex;
-  flex-direction: column;
+  flex: 0 0 100%;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;
   padding-left: 1.6rem;
 }
 .score-settings-interval-modes .score-settings-radio input { accent-color: var(--blue-france); }
