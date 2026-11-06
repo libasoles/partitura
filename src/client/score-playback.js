@@ -1,3 +1,5 @@
+import { ARCHIVE_CHOIRS } from './choir-sounds.js';
+import { readSoundFont } from './soundfont.js';
 import { soundingNotes } from './score-notes.js';
 
 // Per-sound envelope: `attack` fades in, `release` rings past the note's end so consecutive notes overlap (legato).
@@ -21,10 +23,11 @@ export function createPlayer(context, vendorUrl, onEnded) {
 
   async function load(instrument, midi) {
     if (!instruments.has(instrument)) {
-      const request = fetch(vendorUrl(`audio/fluid-r3-v1/${instrument}.json`))
+      const archive = ARCHIVE_CHOIRS.find(({ id }) => id === instrument);
+      const request = fetch(vendorUrl(archive ? `audio/zanderjaz-v1/${archive.file}` : `audio/fluid-r3-v1/${instrument}.json`))
         .then((response) => {
           if (!response.ok) throw new Error('Sound download failed');
-          return response.json();
+          return archive ? response.arrayBuffer().then((bytes) => readSoundFont(bytes, context, archive.preset)) : response.json();
         }).catch((error) => { instruments.delete(instrument); throw error; });
       instruments.set(instrument, request);
     }
@@ -32,6 +35,7 @@ export function createPlayer(context, vendorUrl, onEnded) {
     if (!buffers.has(key)) {
       const request = (async () => {
         const samples = await instruments.get(instrument);
+        if (samples.sample) return samples.sample(midi);
         const name = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'][midi % 12] + (Math.floor(midi / 12) - 1);
         const data = samples[name];
         if (!data) throw new Error(`Missing sample: ${name}`);
@@ -56,12 +60,13 @@ export function createPlayer(context, vendorUrl, onEnded) {
       const seconds = 60 / (score.tempo || 120) / M.DIVISIONS;
       const notes = soundingNotes(score, M, selectedVoices, voiceCount).map((note) => ({ ...note, start: note.start * seconds, end: note.end * seconds }));
       const kind = M.instrumentOf(score);
-      const shape = kind === 'voices' ? CHOIR[M.soundOf(score)] : PLUCKED;
+      const shape = kind === 'voices' ? (CHOIR[M.soundOf(score)] || { file: M.soundOf(score), attack: 0.09, release: 0.14 }) : PLUCKED;
       const instrument = { guitar: 'guitar', voices: shape.file }[kind] || 'piano';
       const samples = new Map(await Promise.all([...new Set(notes.map((note) => note.midi))].map(async (midi) => {
         // The soundfont covers A0–C8. Transpose the nearest boundary sample for other pitches.
         const sample = Math.max(21, Math.min(108, midi));
-        return [midi, { buffer: await load(instrument, sample), rate: 2 ** ((midi - sample) / 12) }];
+        const loaded = await load(instrument, sample);
+        return [midi, Array.isArray(loaded) ? loaded.map((layer) => ({ ...layer, rate: layer.rate * 2 ** ((midi - sample) / 12) })) : [{ buffer: loaded, rate: 2 ** ((midi - sample) / 12) }]];
       })));
       // The editor reserves blank rows for writing; finish at the last written measure.
       const measures = M.measures(score);
@@ -80,36 +85,44 @@ export function createPlayer(context, vendorUrl, onEnded) {
       playing = true;
       for (const note of notes) {
         if (note.end <= position) continue;
-        const sample = samples.get(note.midi);
-        const offset = Math.max(0, position - note.start) * sample.rate;
-        if (offset >= sample.buffer.duration) continue;
-        const source = context.createBufferSource();
-        const gain = context.createGain();
-        source.buffer = sample.buffer;
-        source.playbackRate.value = sample.rate;
-        const start = origin + Math.max(position, note.start);
-        const end = origin + note.end;
-        const attack = Math.min(shape.attack, (end - start) / 2);
-        // Plucked sounds fade inside the note; the choir holds it and lets the release ring into the next.
-        const fadeStart = shape.within ? Math.max(start + attack, end - shape.release) : end;
-        const fadeEnd = shape.within ? end : end + shape.release;
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(1, start + attack);
-        gain.gain.setValueAtTime(1, fadeStart);
-        gain.gain.linearRampToValueAtTime(0, fadeEnd);
-        let filter;
-        if (shape.tone) {
-          filter = context.createBiquadFilter();
-          filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(shape.tone, start);
-          source.connect(filter);
-          filter.connect(gain);
-        } else source.connect(gain);
-        gain.connect(output);
-        source.start(start, offset);
-        source.stop(fadeEnd + 0.01);
-        sources.add(source);
-        source.onended = () => { sources.delete(source); source.disconnect(); filter?.disconnect(); gain.disconnect(); };
+        for (const sample of samples.get(note.midi)) {
+          let offset = Math.max(0, position - note.start) * sample.rate;
+          if (sample.loop && offset >= sample.loopEnd) offset = sample.loopStart + (offset - sample.loopStart) % (sample.loopEnd - sample.loopStart);
+          if (offset >= sample.buffer.duration) continue;
+          const source = context.createBufferSource();
+          const gain = context.createGain();
+          source.buffer = sample.buffer;
+          if (sample.loop) { source.loop = true; source.loopStart = sample.loopStart; source.loopEnd = sample.loopEnd; }
+          source.playbackRate.value = sample.rate;
+          const start = origin + Math.max(position, note.start);
+          const end = origin + note.end;
+          const attack = Math.min(shape.attack, (end - start) / 2);
+          // Plucked sounds fade inside the note; the choir holds it and lets the release ring into the next.
+          const fadeStart = shape.within ? Math.max(start + attack, end - shape.release) : end;
+          const fadeEnd = shape.within ? end : end + shape.release;
+          gain.gain.setValueAtTime(0, start);
+          gain.gain.linearRampToValueAtTime(sample.volume ?? 1, start + attack);
+          gain.gain.setValueAtTime(sample.volume ?? 1, fadeStart);
+          gain.gain.linearRampToValueAtTime(0, fadeEnd);
+          let filter;
+          if (shape.tone || sample.tone) {
+            filter = context.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(shape.tone || sample.tone, start);
+            source.connect(filter);
+            filter.connect(gain);
+          } else source.connect(gain);
+          let pan;
+          if (sample.pan) {
+            pan = context.createStereoPanner();
+            pan.pan.value = sample.pan;
+            gain.connect(pan); pan.connect(output);
+          } else gain.connect(output);
+          source.start(start, offset);
+          source.stop(fadeEnd + 0.01);
+          sources.add(source);
+          source.onended = () => { sources.delete(source); source.disconnect(); filter?.disconnect(); pan?.disconnect(); gain.disconnect(); };
+        }
       }
       timer = setTimeout(() => { silence(); position = 0; onEnded(); }, Math.max(0, origin + duration - context.currentTime) * 1000);
     },

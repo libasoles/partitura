@@ -1,3 +1,5 @@
+import { ARCHIVE_CHOIRS } from './choir-sounds.js';
+
 /* score-model.js — Modelo de la pagina /partitura: una partitura es una lista de
    renglones, un renglon una lista de compases y un compas una lista de figuras.
    Sin DOM: el navegador lo carga como script clasico y los tests lo requieren.
@@ -941,7 +943,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // Timbre del coro (por partitura): Ah por defecto, que no se guarda.
-  const CHOIR_SOUNDS = ['ah', 'oh', 'mm'];
+  const CHOIR_SOUNDS = ['ah', 'oh', 'mm', ...ARCHIVE_CHOIRS.map(({ id }) => id)];
   const soundOf = (score) => (score && CHOIR_SOUNDS.includes(score.sound) ? score.sound : CHOIR_SOUNDS[0]);
   function setSound(score, sound) {
     if (!CHOIR_SOUNDS.includes(sound)) return false;

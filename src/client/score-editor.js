@@ -1,3 +1,4 @@
+import { ARCHIVE_CHOIRS } from './choir-sounds.js';
 /* score-editor.js — Pagina /partitura: una partitura donde se arrastran notas desde la paleta.
    Verovio dibuja el MusicXML que sale de ScoreModel; aca solo viven la paleta, el arrastre y las descargas. */
 
@@ -4811,8 +4812,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     partsRow.classList.add('is-stacked');
     partsRow.append(partsLine);
 
-    // Voces: timbre del coro (Ah, Oh, sintetizado). Solo cambia el audio y el programa del MIDI.
+    // Voces: timbre del coro y colección de SoundFonts. Solo cambia el audio y el programa del MIDI.
     const soundRow = section(t.settingsSound);
+    soundRow.classList.add('score-settings-sounds');
     voicesCard.append(partsRow.parentElement, soundRow.parentElement);
     content.appendChild(voicesCard);
     const sounds = M.CHOIR_SOUNDS.map((id) => {
@@ -4822,7 +4824,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       radio.type = 'radio';
       radio.name = 'scoreSound';
       radio.value = id;
-      field.append(radio, document.createTextNode(t['sound' + id[0].toUpperCase() + id.slice(1)]));
+      field.append(radio, document.createTextNode(ARCHIVE_CHOIRS.find((sound) => sound.id === id)?.name || t['sound' + id[0].toUpperCase() + id.slice(1)]));
       radio.addEventListener('change', () => {
         if (M.soundOf(score) === id) return;
         const before = M.clone(score);

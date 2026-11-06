@@ -424,7 +424,7 @@ test('changing choir sound keeps playing at the current position while new sampl
   await expect(button).toHaveAccessibleName('Pausar');
   await page.waitForFunction(() => Number(document.querySelector('.score-playback-cursor')?.dataset.time) > 2);
   await page.locator('#scoreSettingsToggle').click();
-  await expect(page.locator('input[name="scoreSound"]')).toHaveCount(3);
+  await expect(page.locator('input[name="scoreSound"]')).toHaveCount(31);
   await expect(page.getByRole('radio', { name: 'Uh', exact: true })).toHaveValue('mm');
   const before = await page.locator('.score-playback-cursor').getAttribute('data-time');
   await page.getByRole('radio', { name: 'Oh', exact: true }).check();
