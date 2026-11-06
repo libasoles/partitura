@@ -19,11 +19,19 @@ test('interval toggle sits below voices and engraves stacked intervals on both s
   const voice = await page.locator('.score-voice-legend').boundingBox();
   const box = await button.boundingBox();
   expect(box.y).toBeGreaterThan(voice.y + voice.height);
+  await expect(button).toHaveAttribute('data-tooltip', 'Intervalos');
+  const toolbarPosition = () => page.evaluate(() => ({
+    left: parseFloat(document.querySelector('#scoreIntervals').style.top),
+    right: parseFloat(document.querySelector('.score-side').style.marginTop),
+  }));
+  const before = await toolbarPosition();
   await button.click();
   await expect(button).toHaveAttribute('aria-pressed', 'true');
+  expect(await toolbarPosition()).toEqual(before);
   const directions = page.locator('#scoreStage g.dir');
   await page.screenshot({ path: '/tmp/partitura-intervals.png', fullPage: true });
   await expect(directions).toHaveCount(3, { timeout: 5000 });
+  await expect(directions.first().locator('tspan[font-size]').first()).toHaveAttribute('font-size', '202px');
   expect(await directions.evaluateAll(nodes => nodes.map(node => node.textContent.replace(/\s/g, '')))).toEqual(['IIIVI', 'IVV', 'V']);
   const levels = await directions.first().locator('tspan.text').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top));
   expect(new Set(levels).size).toBeGreaterThan(1);

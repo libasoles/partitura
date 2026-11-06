@@ -850,6 +850,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }, extra);
   }
 
+  // Both toolbars use the unannotated staff position so interval labels cannot move them.
+  let toolbarStaffTop = 0;
   // The barlines sidebar starts level with the top line of the first staff instead of the top of the page.
   function alignBarlinesToFirstStaff() {
     const side = barlines.closest('.score-side');
@@ -860,7 +862,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     side.style.position = 'relative';
     side.style.top = 'auto';
     side.style.marginTop = '0';
-    const offset = line.getBoundingClientRect().top - glyph.getBoundingClientRect().top;
+    const offset = stage.getBoundingClientRect().top + toolbarStaffTop - glyph.getBoundingClientRect().top;
     side.style.position = '';
     side.style.top = '';
     side.style.marginTop = Math.max(0, offset) + 'px';
@@ -874,7 +876,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const line = stage.querySelector('g.staff > path');
     if (!line) return;
     const origin = stage.getBoundingClientRect();
-    const staffTop = Math.max(0, line.getBoundingClientRect().top - origin.top);
+    const staffTop = toolbarStaffTop;
     // Left of the brace (grand staff) or of the first staff line, never over it.
     const edge = (stage.querySelector('g.grpSym') || line).getBoundingClientRect().left - origin.left;
     const playbackShown = playButton.isConnected && !playButton.hidden;
@@ -920,12 +922,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     renderedWidth = width;
     toolkit.setOptions(layoutOptions(width, score.showTabs && tabSpace ? { spacingSystem: Math.min(48, 12 + tabSpace), pageMarginBottom: 60 + tabSpace } : undefined));
     const xml = M.toMusicXml(score);
-    toolkit.loadData(settings && toolOn('intervals', false) && intervalDocuments.has(score) ? withIntervals(xml, score, M) : xml);
+    toolkit.loadData(xml);
     tuningPopup.hidePopover();
     meterPopup.hidePopover();
     clefPopup.hidePopover();
     dynamicsPopup.hidePopover();
     stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
+    toolbarStaffTop = Math.max(0, stage.querySelector('g.staff > path').getBoundingClientRect().top - stage.getBoundingClientRect().top);
+    if (settings && toolOn('intervals', false) && intervalDocuments.has(score)) {
+      toolkit.loadData(withIntervals(xml, score, M));
+      // Verovio drops MusicXML words' font-size. Set MEI's supported relative size
+      // on the marked interval text before engraving so spacing uses the smaller labels too.
+      toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="50%"'));
+      stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
+    }
     applyMeasureWidths();
     // With TAB the height is set again once the tabs are measured; clearing it here would collapse and re-grow the stage on every pass.
     if (!score.showTabs) stage.style.minHeight = '';
@@ -4162,7 +4172,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   intervalButton.className = 'score-palette-item score-interval-toggle tooltip';
   intervalButton.type = 'button';
   intervalButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 4 5.765 15.835a.25.25 0 00.47 0L18 4"/></svg>';
-  intervalButton.title = t.toolsIntervals;
+  intervalButton.dataset.tooltip = t.toolsIntervals;
   intervalButton.setAttribute('aria-label', t.toolsIntervals);
   intervalButton.setAttribute('aria-pressed', 'false');
   intervalButton.addEventListener('click', () => {

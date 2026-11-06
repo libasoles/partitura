@@ -37,6 +37,6 @@ export function withIntervals(xml, score, M) {
     const mark = marks.get(id);
     if (!mark || mark.done) return note;
     mark.done = true;
-    return `<direction placement="above"><direction-type><words font-style="normal" font-size="9" justify="center">${mark.intervals.join('\n')}</words></direction-type>${M.stavesOf(score) > 1 ? `<staff>${mark.staff + 1}</staff>` : ''}</direction>` + note;
+    return `<direction placement="above"><direction-type><words font-family="PartituraIntervals" font-style="normal" justify="center">${mark.intervals.join('\n')}</words></direction-type>${M.stavesOf(score) > 1 ? `<staff>${mark.staff + 1}</staff>` : ''}</direction>` + note;
   });
 }
