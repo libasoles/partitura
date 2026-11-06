@@ -772,7 +772,12 @@
       [
         "Todos os seus dispositivos",
         "Acesse suas partituras de vários computadores e tablets (celulares não incluídos)."
-      ],
+  ,
+      [
+        "Duplicar partituras",
+        "Duplique uma partitura para testar variações sem perder a original."
+      ]
+    ],
       [
         "Arquivo",
         "Crie pastas de partituras para mantê-las organizadas."
@@ -821,7 +826,7 @@
       ],
       [
         "Suas partituras e seus dados",
-        "As partituras que você escreve ficam guardadas apenas no seu navegador (armazenamento local) e não são enviadas a nenhum servidor. Como não temos uma cópia, não podemos recuperá-las: se você limpar os dados do navegador ou trocar de dispositivo, elas se perdem. Exporte seu trabalho (PDF, MusicXML ou MIDI) para guardá-lo."
+        "As partituras que você escreve ficam guardadas apenas no seu navegador (armazenamento local) e não são enviadas a nenhum servidor. Como não temos uma cópia, não podemos recuperá-las: se você limpar os dados do navegador ou trocar de dispositivo, elas se perdem. Exporte seu trabalho (PDF, MusicXML ou MIDI) para guardá-lo. O Partitura está em fase beta: não nos responsabilizamos pela perda de dados durante esta fase, nem se você limpar o cache ou os dados do navegador."
       ],
       [
         "Propriedade intelectual",
