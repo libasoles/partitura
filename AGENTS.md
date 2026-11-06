@@ -135,6 +135,11 @@ No es una PWA: no hay manifest ni service worker.
 - **Asignación de voces**: el menú contextual ofrece «Asignar notas a voz N» únicamente para los números activos en la leyenda y si alguna figura seleccionada pertenece a otra voz. El destino se muestra con el círculo de la voz en estado activo (nombre accesible con su número). Se aplica solo a la selección (también una sola figura), conserva los tiempos y se deshace. Los números explícitos se conservan aunque haya voces intermedias vacías; no completar esas voces vacías al agregar silencios.
 - **Duplicación vertical**: Mayús+↑/↓ duplica las figuras elegidas una tercera diatónica (dos pasos) arriba/abajo, en el mismo tiempo y pentagrama, con una voz independiente por cada voz de origen. Continúa la voz vecina en esa dirección si está libre durante todas las figuras copiadas; solo inserta una nueva si está ocupada (o no existe un número válido en esa dirección), para que duplicar una frase por partes no desplace innecesariamente la voz 2 a la 3. Conserva ritmo y ligaduras internas; selecciona las copias para ajustar su altura con ↑/↓. Rechaza la operación completa si hay notas duplicadas, se exceden las alturas o las 16 voces, o cambia algún inicio. Mayús+←/→ sigue ampliando la selección y Mayús+D duplica a continuación.
 
+## Tutoriales
+
+- Al mencionar una herramienta, acompañar el texto con el icono que usa el editor (por ejemplo, el engranaje de Ajustes), alineado con la línea de texto.
+- «Qué podés hacer» destaca los diferenciales: crear partituras con + en el menú superior, ajustes, voces y menús contextuales. El guardado automático se explica en «Primeros pasos».
+
 ## Pendiente
 
 - Páginas de contenido adicionales (guías, ejemplos) para ampliar el posicionamiento.

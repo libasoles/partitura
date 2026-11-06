@@ -214,3 +214,26 @@
 
 .editor-link { display: inline-flex; align-items: center; gap: 0.5rem; }
 .editor-link img { display: block; }
+
+/* Tool references sit on the text baseline, using the editor's icon geometry. */
+.tutorial-tool-icon { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex: none; }
+.tutorial-feature { margin-bottom: 2rem; }
+.tutorial-voices { --voice-1: #b5472f; --voice-2: #c8922e; }
+.tutorial-voices figcaption { font-size: 0.9rem; color: var(--ink-soft); margin-bottom: 0.75rem; }
+.tutorial-voice-controls { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+.tutorial-voice { display: inline-flex; align-items: center; justify-content: center; width: 1.5em; height: 1.5em; border: 1px solid var(--voice); border-radius: 50%; background: var(--voice); color: white; font: inherit; font-weight: 600; vertical-align: -0.15em; }
+.tutorial-voice[data-number="1"] { --voice: #b5472f; }
+.tutorial-voice[data-number="2"] { --voice: #c8922e; }
+button.tutorial-voice { cursor: pointer; min-width: 2.75rem; min-height: 2.75rem; }
+.tutorial-voice[aria-pressed="false"] { background: var(--paper); color: var(--voice); }
+.tutorial-voice:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.tutorial-voice-staff { overflow-x: auto; }
+.tutorial-voice-staff > svg { display: block; width: 100%; min-width: 480px; height: auto; }
+.tutorial-voice-staff [data-example-voice="1"] { color: var(--voice-1); fill: var(--voice-1); }
+.tutorial-voice-staff [data-example-voice="2"] { color: var(--voice-2); fill: var(--voice-2); }
+.voice-1-off [data-example-voice="1"], .voice-2-off [data-example-voice="2"] { color: var(--ink); fill: var(--ink); }
+
+.tutorial-voice-staff g.beam:has([data-example-voice="1"]) > :is(polygon, path) { fill: var(--voice-1); stroke: var(--voice-1); }
+.tutorial-voice-staff g.beam:has([data-example-voice="2"]) > :is(polygon, path) { fill: var(--voice-2); stroke: var(--voice-2); }
+.voice-1-off g.beam:has([data-example-voice="1"]) > :is(polygon, path),
+.voice-2-off g.beam:has([data-example-voice="2"]) > :is(polygon, path) { fill: var(--ink); stroke: var(--ink); }

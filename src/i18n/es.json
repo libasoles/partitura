@@ -29,13 +29,11 @@
   "scoreTabMoveKey": "Arrastrar",
   "scoreFeaturesH2": "Qué podés hacer con el editor",
   "scoreFeatures": [
-    "<strong>Notas y silencios:</strong> desde la redonda hasta la fusa, con puntillo y alteraciones (sostenidos, bemoles y becuadros).",
-    "<strong>Compases:</strong> elegí el compás (4/4, 3/4, 6/8…) y el editor no te deja pasarte de la duración.",
-    "<strong>Clave y armadura:</strong> clave de Sol, de Fa o de Do, y cualquier armadura de Do♭ a Do♯.",
-    "<strong>Barras especiales:</strong> barra doble, barras de repetición y cejillas para guitarra.",
-    "<strong>Ajustes:</strong> piano con gran pentagrama o guitarra con tablatura, tempo en la partitura y en el MIDI, y colores para distinguir las voces.",
-    "<strong>Descarga:</strong> exportá la partitura en PDF para imprimirla o en MusicXML para abrirla en MuseScore, Finale, Sibelius o Dorico.",
-    "<strong>Guardado automático:</strong> tu partitura queda guardada en tu navegador, así que podés seguir otro día."
+    "<strong>Partituras en pestañas:</strong> creá una partitura con el signo + del menú superior y alterná entre tus borradores sin cerrar ninguno.",
+    "<strong>Ajustes:</strong> elegí piano con gran pentagrama o guitarra con tablatura, cambiá el tempo y activá las herramientas que necesitás.",
+    "<strong>Voces independientes:</strong> distinguí las líneas musicales por color. Activá o desactivá cada voz en la leyenda para seguirla sin perder de vista las demás notas.",
+    "<strong>Menús contextuales:</strong> seleccioná figuras para ver las acciones disponibles junto a ellas: ligaduras, tresillos o asignación de voces, según la selección.",
+    "<strong>Descarga:</strong> exportá en PDF para imprimir o en MusicXML para continuar en otro editor."
   ],
   "scoreHowH2": "Cómo escribir una partitura online",
   "scoreHow": [
@@ -326,7 +324,7 @@
       ],
       "features": [
         "Qué podés hacer",
-        "Notas, compases, clave, armadura, barras y descargas."
+        "Varias partituras, ajustes, voces independientes y acciones junto a las notas."
       ],
       "shortcuts": [
         "Atajos de teclado",
@@ -638,7 +636,7 @@
       ],
       "features": [
         "Qué podés hacer con el editor de partituras Partitura",
-        "Notas, silencios, compases, clave, armadura, barras, tablatura de guitarra y descargas en PDF, MusicXML y MIDI: todo lo que ofrece el editor gratis."
+        "Creá partituras en pestañas, ajustá el instrumento y el tempo, distinguí voces por color y editá con menús contextuales en el editor online Partitura."
       ],
       "shortcuts": [
         "Atajos de teclado para escribir partituras",
@@ -746,7 +744,8 @@
       ]
     },
     "related": "Tutoriales relacionados",
-    "tryItLink": "Abrir el editor de partituras Partitura"
+    "tryItLink": "Abrir el editor de partituras Partitura",
+    "startTip": "Tu partitura se guarda automáticamente en este navegador, mientras escribís. Podés volver otro día y continuar; para conservar una copia fuera del navegador, exportala desde el menú."
   },
   "tutorialsPath": "tutoriales",
   "termsPath": "terminos",

@@ -4,6 +4,8 @@
 
 import { stage, pitch, S, SP, beamGroup, pillInner, glyph } from './demo.js';
 
+import { tutorialIcon } from './tutorial-icons.js';
+
 const SEL = 'var(--note-selected)';
 const INK = 'var(--ink)';
 
@@ -168,7 +170,7 @@ export function ties(s, aria) {
   d.add(0, 0, `<path class="d-tie" d="M${a.x + 5} ${y}Q${(a.x + b.x) / 2 + 5} ${y + 9} ${b.x + 5} ${y}"/>`,
     [[0, { o: 0 }], [5.5, { o: 0 }], [5.8, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
   const px = (a.x + b.x) / 2 + 5;
-  d.add(px, d.y(8) - 12, pillInner(t.link, { size: 8 }), [[0, { o: 0 }], [2.8, { o: 0 }], [3.05, { o: 1 }], [5.6, { o: 1 }], [5.8, { o: 0 }]], { keep: false });
+  d.add(px, d.y(8) - 12, pillInner(t.link, { size: 8, icon: tutorialIcon('link') }), [[0, { o: 0 }], [2.8, { o: 0 }], [3.05, { o: 1 }], [5.6, { o: 1 }], [5.8, { o: 0 }]], { keep: false });
   d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.5, a.x + 5, d.y(a.p)), ...visit(2.4, b.x + 5, d.y(b.p)), ...visit(4.9, px, d.y(8) - 12), [6.6, d.w - 30, d.h - 24]]);
   d.click(1.5, a.x + 5, d.y(a.p));
   d.click(2.4, b.x + 5, d.y(b.p));

@@ -85,11 +85,12 @@ export function beamGroup(items, { slope = 0.5, beams = 1 } = {}) {
 }
 
 /** A rounded label centred on its origin, sized to its text. */
-export function pillInner(text, { size = 9, cls = '' } = {}) {
-  const w = Math.max(24, text.length * size * 0.62 + 14);
+export function pillInner(text, { size = 9, cls = '', icon = '' } = {}) {
+  const w = Math.max(24, text.length * size * 0.62 + 14) + (icon ? 16 : 0);
   return (
     `<rect class="d-pill ${cls}" x="${f(-w / 2)}" y="${-size - 1}" width="${f(w)}" height="${size * 2 + 2}" rx="${size + 1}"/>` +
-    `<text class="d-pilltext" text-anchor="middle" dominant-baseline="central" font-size="${size}">${text}</text>`
+    (icon ? `<g transform="translate(${f(-w / 2 + 5)} -6) scale(0.5)">${icon}</g>` : '') +
+    `<text x="${icon ? 8 : 0}" class="d-pilltext" text-anchor="middle" dominant-baseline="central" font-size="${size}">${text}</text>`
   );
 }
 

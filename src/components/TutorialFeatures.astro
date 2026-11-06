@@ -1,0 +1,50 @@
+---
+import { strings } from '../i18n';
+import { scores, ties } from '../lib/demos.js';
+import { renderEmptyStaff } from '../lib/staff.js';
+import ScoreModel from '../client/score-model.js';
+import { tutorialIcon } from '../lib/tutorial-icons.js';
+
+const s = strings('es');
+// Two consecutive measures from the supplied 6/8 example, preserving both voices and their onsets.
+const measures = [
+  [{d:'e',n:33,v:1,at:0},{d:'e',n:31,v:2,at:0},{d:'q',n:33,dot:true,v:1,at:12},{d:'q',n:31,dot:true,v:2,at:12},{d:'e',rest:true,v:1,at:48},{d:'e',n:32,v:1,at:60},{d:'e',n:30,v:2,at:60}],
+  [{d:'e',n:33,v:1,at:0},{d:'e',n:31,v:2,at:0},{d:'e',n:33,v:1,at:12},{d:'e',n:31,v:2,at:12},{d:'e',n:32,v:1,at:24},{d:'e',n:30,v:2,at:24},{d:'e',n:33,v:1,at:36},{d:'e',n:31,v:2,at:36},{d:'e',n:33,v:1,at:48},{d:'e',n:31,v:2,at:48},{d:'e',n:32,v:1,at:60},{d:'e',n:30,v:2,at:60}],
+];
+const score = {...ScoreModel.emptyScore(), instrument:'guitar', clef:'guitar', meter:'6/8', fifths:-1, rows:[measures]};
+let svg = await renderEmptyStaff(undefined, score);
+svg = svg.replace(/<g\b([^>]*\bid="e(\d+)-(\d+)"[^>]*)>/g, (_, attrs, mi, i) => `<g ${attrs} data-example-voice="${measures[+mi][+i].v}">`);
+const voiceIcons = '<span class="tutorial-voice" data-number="1" aria-hidden="true">1</span> <span class="tutorial-voice" data-number="2" aria-hidden="true">2</span>';
+const icons = [tutorialIcon('plus'), tutorialIcon('settings'), voiceIcons, '', tutorialIcon('download')];
+---
+
+{s.scoreFeatures.map((text, i) => (
+  <section class="tutorial-feature">
+    <p set:html={text.replace('<strong>', `<strong>${icons[i]} `)
+      .replace('ligaduras, tresillos', `${tutorialIcon('link')} ligaduras, ${tutorialIcon('triplet')} tresillos`)
+      .replace('asignación de voces', `${voiceIcons} asignación de voces`)} />
+    {i === 0 && <div class="tutorial-demo" set:html={scores(s, 'Crear una partitura con + y cambiar de pestaña')} />}
+    {i === 2 && (
+      <figure class="tutorial-demo tutorial-voices" data-voice-example>
+        <figcaption>Probá los círculos de la leyenda para activar y desactivar el color de cada voz.</figcaption>
+        <div class="tutorial-voice-controls" role="group" aria-label="Voces del ejemplo">
+          {[1, 2].map(v => <button type="button" class="tutorial-voice" data-number={v} aria-label={`Voz ${v}`} aria-pressed="true">{v}</button>)}
+        </div>
+        <div class="tutorial-voice-staff" role="img" aria-label="Dos compases en 6/8 con dos voces independientes" set:html={svg} />
+      </figure>
+    )}
+    {i === 3 && <div class="tutorial-demo" set:html={ties(s, 'Seleccionar notas y usar la ligadura del menú contextual')} />}
+  </section>
+))}
+
+<script>
+  document.querySelectorAll('[data-voice-example]').forEach(example => {
+    example.querySelectorAll<HTMLButtonElement>('button[data-number]').forEach(button => {
+      button.addEventListener('click', () => {
+        const on = button.getAttribute('aria-pressed') !== 'true';
+        button.setAttribute('aria-pressed', String(on));
+        example.classList.toggle(`voice-${button.dataset.number}-off`, !on);
+      });
+    });
+  });
+</script>
