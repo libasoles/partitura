@@ -74,6 +74,7 @@
   "scoreUiStrings": {
     "titleLabel": "Título de la partitura",
     "untitledScore": "Sin título {n}",
+    "closeTab": "Cerrar partitura",
     "clearTitle": "¿Borrar la partitura?",
     "clearDescription": "Se borrara todo el contenido. Los cambios no son reversibles.",
     "clearDescriptionTab": "Se borrará esta partitura por completo.",
@@ -274,6 +275,7 @@
     "editorLink": "Abrir el editor",
     "menu": "Menú",
     "menuLoad": "Cargar archivo…",
+    "menuScores": "Partituras",
     "menuExport": "Exportar",
     "menuExportXml": "MusicXML",
     "menuExportMidi": "MIDI",

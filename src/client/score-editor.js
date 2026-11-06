@@ -5,6 +5,7 @@
 // in parallel with them instead of after them.
 import { getSetting, setSetting } from './settings.js';
 import { withIntervals } from './score-intervals.js';
+import { isPro } from './pro.js';
 
 export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, patterns = false } = {}) {
 
@@ -83,8 +84,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     try {
       const data = window.ScoreStore.stored; // cargado desde IndexedDB antes de arrancar (storage.js)
       if (data && Array.isArray(data.scores) && data.scores.length) {
-        const scores = data.scores.map((one) => M.sanitize(one));
-        return { scores, active: Math.min(Math.max(data.active | 0, 0), scores.length - 1) };
+        // `closed` marks a score taken off the tab strip (Pro); it stays stored and listed in the site menu.
+        const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}));
+        const active = Math.min(Math.max(data.active | 0, 0), scores.length - 1);
+        delete scores[active].closed;
+        return { scores, active };
       }
     } catch (e) {
       // Sin datos validos se parte de la partitura de antes, o de una vacia.
@@ -141,6 +145,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   title.addEventListener('input', () => {
     score.title = title.value;
     if (tabTitle) tabTitle.value = score.title;
+    renderScoresMenu();
     save();
   });
   title.addEventListener('keydown', (event) => {
@@ -154,11 +159,57 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return one.title || t.untitledScore.replace('{n}', index + 1);
   }
 
+  // Pro: a tab can be closed without deleting its score, which the site menu keeps listing so it can be reopened.
+  const proTabs = settings && isPro();
+  const isOpen = (index) => !proTabs || !docs[index].closed;
+  const openCount = () => docs.filter((_, index) => isOpen(index)).length;
+  const scoresMenu = document.getElementById('menuScores');
+  document.getElementById('menuScoresSection')?.toggleAttribute('hidden', !proTabs);
+
+  function closeButton(index) {
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'score-doc-tab-close';
+    close.setAttribute('aria-label', t.closeTab);
+    close.innerHTML = lucide('x');
+    close.addEventListener('click', (event) => {
+      event.stopPropagation();
+      closeTab(index);
+    });
+    return close;
+  }
+
+  function renderScoresMenu() {
+    if (!proTabs || !scoresMenu) return;
+    scoresMenu.replaceChildren(...docs.map((one, index) => {
+      const item = document.createElement('li');
+      item.setAttribute('role', 'none');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('role', 'menuitem');
+      button.dataset.index = index;
+      if (index === active) button.setAttribute('aria-current', 'true');
+      const label = document.createElement('span');
+      label.className = 'menu-score-name';
+      label.textContent = tabLabel(one, index);
+      button.appendChild(label);
+      if (index === active) button.insertAdjacentHTML('beforeend', lucide('check'));
+      item.appendChild(button);
+      return item;
+    }));
+  }
+  scoresMenu?.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-index]');
+    if (button) openFromMenu(Number(button.dataset.index));
+  });
+
   let enteringTab = -1; // index of the tab just added, animated in by renderTabs
   function renderTabs() {
     tabsBar.querySelectorAll('.score-doc-tab').forEach((node) => node.remove());
     const add = document.getElementById('scoreNewTab');
+    const closable = proTabs && openCount() > 1;
     docs.forEach((one, index) => {
+      if (!isOpen(index)) return;
       if (index === active) {
         const wrap = document.createElement('div');
         wrap.className = 'score-doc-tab is-active';
@@ -173,6 +224,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         tabTitle.addEventListener('input', () => {
           score.title = tabTitle.value;
           title.value = score.title;
+          renderScoresMenu();
           save();
         });
         tabTitle.addEventListener('keydown', (event) => {
@@ -182,14 +234,30 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           }
         });
         wrap.appendChild(tabTitle);
+        if (closable) {
+          wrap.classList.add('has-close');
+          wrap.appendChild(closeButton(index));
+        }
         wrap.dataset.index = index;
         if (index === enteringTab) wrap.classList.add('is-entering');
         tabsBar.insertBefore(wrap, add);
       } else {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'score-doc-tab';
-        button.textContent = tabLabel(one, index);
+        let button;
+        if (closable) {
+          // The close button cannot nest in a button: the tab becomes a box holding the label button and the close one.
+          button = document.createElement('div');
+          button.className = 'score-doc-tab has-close';
+          const label = document.createElement('button');
+          label.type = 'button';
+          label.className = 'score-doc-tab-label';
+          label.textContent = tabLabel(one, index);
+          button.append(label, closeButton(index));
+        } else {
+          button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'score-doc-tab';
+          button.textContent = tabLabel(one, index);
+        }
         button.addEventListener('click', () => switchTo(index));
         button.dataset.index = index;
         if (index === enteringTab) button.classList.add('is-entering');
@@ -197,6 +265,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       }
     });
     enteringTab = -1;
+    renderScoresMenu();
   }
 
   // Keep document order and undo histories together, without changing the open score.
@@ -299,6 +368,40 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     switchTo(docs.length - 1);
     tabTitle.focus();
     tabTitle.select();
+  }
+
+  // Closing only takes the tab off the strip: the score stays stored, and listed in the site menu.
+  function closeTab(index) {
+    if (!proTabs || !isOpen(index) || openCount() < 2) return;
+    docs[active] = score;
+    histories[active] = history;
+    if (index === active) {
+      let next = index + 1;
+      while (next < docs.length && !isOpen(next)) next += 1;
+      if (next >= docs.length) {
+        next = index - 1;
+        while (!isOpen(next)) next -= 1;
+      }
+      docs[index].closed = true;
+      switchTo(next);
+    } else {
+      docs[index].closed = true;
+      save();
+      renderTabs();
+    }
+  }
+
+  function openFromMenu(index) {
+    if (!docs[index]) return;
+    if (docs[index].closed) {
+      delete docs[index].closed;
+      enteringTab = index;
+    }
+    if (index === active) {
+      renderTabs();
+      return;
+    }
+    switchTo(index);
   }
 
   // ---- edicion ------------------------------------------------------------
@@ -3813,6 +3916,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     minus: '<path d="M5 12h14"/>',
     'file-text': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
     'file-code': '<path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
     chevronLeft: '<path d="m15 18-6-6 6-6"/>',
     search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',
@@ -4858,7 +4962,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     } else if (confirmed) {
       docs.splice(active, 1);
       histories.splice(active, 1);
-      active = Math.max(active - 1, 0);
+      // The neighbour to land on is an open tab; with none open, a closed score comes back.
+      let landing = active - 1;
+      while (landing >= 0 && !isOpen(landing)) landing -= 1;
+      if (landing < 0) {
+        landing = active;
+        while (landing < docs.length && !isOpen(landing)) landing += 1;
+      }
+      active = landing < docs.length ? Math.max(landing, 0) : docs.length - 1;
+      delete docs[active].closed;
       score = docs[active];
       history = histories[active];
       selected = null;

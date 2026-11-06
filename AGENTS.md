@@ -127,6 +127,12 @@ Tercer instrumento (`score.instrument === 'voices'`): 2 a 4 pentagramas en clave
 - **Importar MusicXML**: con Voces disponible (`#pro`), un archivo de un solo pentagrama con 2 a 4 voces `<voice>` que tengan notas (las que solo tienen silencios no cuentan) se abre como Voces con tantos pentagramas como voces, una voz por pentagrama en el orden en que aparecen (`choirStaves`, `score-io.js`). Un pentagrama no puede mostrar dos voces al unísono (la nota repetida en el mismo tiempo se pierde en `sanitize`); varios sí. La clave del archivo se reparte con el registro que la usa (sol con 8 → Tenor). Archivos con `<staff>` 2 o más, con una sola voz o con más de 4 voces, y sitios sin `#pro` importan como antes.
 - Tests: `test/choir.test.mjs` y `test/choir-import.spec.mjs` (navegador).
 
+### Pestañas cerrables y lista de partituras (Pro)
+
+- Solo con `#pro` y `settings` (`proTabs` en `score-editor.js`). Cada pestaña (si hay más de una abierta) lleva una X: cerrar **no borra** la partitura, solo le pone `closed: true` en el registro guardado (`loadAll` lo conserva; la activa nunca está cerrada). Borrar de verdad sigue siendo el tacho.
+- El menú hamburguesa (`Base.astro`, `#menuScoresSection`, oculto sin Pro) lista al final, tras un separador, **todas** las partituras; elegir una la abre en su pestaña (o la activa si ya estaba abierta). La lista se reconstruye en `renderTabs` y al editar el título. El desplegable mide `min-width: 17rem`.
+- Con la X, las pestañas inactivas pasan de `<button>` a `div.score-doc-tab.has-close` con un botón de etiqueta y otro de cierre (no se anidan botones). Tests: `test/tab-close.spec.mjs`.
+
 ### Compresión y caché
 
 `npm run build` deja junto a cada archivo de texto de `dist/` su `.br` y `.gz` (`scripts/compress.mjs`). El servidor debe enviarlos tal cual
