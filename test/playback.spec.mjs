@@ -316,7 +316,7 @@ for (const instrument of ['piano', 'guitar']) {
   });
 }
 
-for (const [sound, file] of [[undefined, 'choir-ah'], ['oh', 'choir-oh'], ['synth', 'choir-synth']]) test(`voices (${sound || 'default'}): plays the choir samples`, async ({ page }) => {
+for (const [sound, file] of [[undefined, 'choir-ah'], ['oh', 'choir-oh'], ['na', 'choir-ah'], ['la', 'choir-ah'], ['uh', 'choir-ah'], ['mm', 'choir-oh']]) test(`voices (${sound || 'default'}): plays the choir samples`, async ({ page }) => {
   const audioRequests = [];
   page.on('request', (request) => { if (request.url().includes('/audio/')) audioRequests.push(request.url()); });
   await page.addInitScript((sound) => {

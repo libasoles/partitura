@@ -4747,8 +4747,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     });
 
     // Voces: de 2 a 4 pentagramas. Reducir solo oculta los de mas (se conservan); subir los vuelve a mostrar.
+    const voicesCard = document.createElement('div');
+    voicesCard.className = 'score-settings-card';
+    voicesCard.hidden = true;
     const partsRow = section(t.settingsParts);
-    partsRow.parentElement.hidden = true;
+    partsRow.parentElement.classList.add('is-inline');
     const partsSlider = document.createElement('input');
     partsSlider.type = 'range';
     partsSlider.className = 'score-settings-slider';
@@ -4758,7 +4761,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     partsSlider.setAttribute('aria-label', t.settingsParts);
     const partsValue = document.createElement('output');
     partsValue.className = 'score-settings-tempo-value';
-    const showParts = () => { partsValue.textContent = t.partsValue.replace('{n}', partsSlider.value); partsRow.parentElement.hidden = M.instrumentOf(score) !== 'voices'; };
+    const showParts = () => { partsValue.textContent = t.partsValue.replace('{n}', partsSlider.value); };
     partsSlider.addEventListener('input', showParts);
     partsSlider.addEventListener('change', () => { change(() => M.setParts(score, Number(partsSlider.value))); sync(); });
     const partsLine = document.createElement('div');
@@ -4769,7 +4772,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
     // Voces: timbre del coro (Ah, Oh, sintetizado). Solo cambia el audio y el programa del MIDI.
     const soundRow = section(t.settingsSound);
-    soundRow.parentElement.hidden = true;
+    voicesCard.append(partsRow.parentElement, soundRow.parentElement);
+    content.appendChild(voicesCard);
     const sounds = M.CHOIR_SOUNDS.map((id) => {
       const field = document.createElement('label');
       field.className = 'score-settings-radio';
@@ -4927,8 +4931,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     function sync() {
       if (patternsCheck) patternsCheck.checked = getSetting('patterns', false) === true;
       instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === instrumentIds[i]; });
-      partsRow.hidden = M.instrumentOf(score) !== 'voices';
-      soundRow.parentElement.hidden = M.instrumentOf(score) !== 'voices';
+      voicesCard.hidden = M.instrumentOf(score) !== 'voices';
       sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });
       partsSlider.value = String(M.partsOf(score));
       showParts();
