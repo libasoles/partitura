@@ -1,6 +1,6 @@
 /* score-tutorial.js — Markup for the "shortcuts and gestures" dropdown of the
    /partitura editor: the keys under each figure, and two looping CSS-only
-   demos (double-click a note to toggle its dot; click a special barline and
+   demos (click a note to cycle its dot; click a special barline and
    press the x to delete it). Styles live in src/site/score-editor.css
    (.score-keys*, .score-demo*). The stages are decorative (aria-hidden); the
    text carries the instructions. The glyph paths mirror GLYPHS in

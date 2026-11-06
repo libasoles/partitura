@@ -19,7 +19,7 @@
   "scoreShortcutsRests": "Silencios",
   "scoreShortcutsMarks": "Puntillo y alteraciones",
   "scoreDotTitle": "Puntillo",
-  "scoreDotBody": "Hacé doble clic sobre una nota para ponerle el puntillo; otro doble clic se lo saca.",
+  "scoreDotBody": "Hacé clic sobre una nota para ponerle el puntillo; otro clic le pone el segundo y un tercero se lo saca.",
   "scoreBarTitle": "Borrar una barra",
   "scoreBarBody": "Hacé clic en una barra simple, doble o de repetición para seleccionarla en amarillo y presioná Delete para borrarla.",
   "scoreTabEditTitle": "Editar una tablatura",
@@ -332,7 +332,7 @@
       ],
       "dots": [
         "Puntillo",
-        "Poné o sacá el puntillo con doble clic."
+        "Poné, duplicá o sacá el puntillo con clic sobre la nota."
       ],
       "delete-barline": [
         "Borrar una barra",
@@ -456,7 +456,7 @@
           "Apretá <kbd>S</kbd> para el sostenido, <kbd>B</kbd> para el bemol o <kbd>C</kbd> para el becuadro. También están en la paleta.",
           "Hacé clic sobre la nota que querés alterar: el signo aparece a su izquierda.",
           "También podés seleccionar una nota primero y después presionar <kbd>S</kbd>, <kbd>B</kbd> o <kbd>C</kbd>: la alteración se aplica directamente a la selección, sin otro clic.",
-          "Con el puntillo pasa lo mismo: apretá <kbd>P</kbd> y hacé clic sobre la nota, o hacele doble clic."
+          "Con el puntillo pasa lo mismo: apretá <kbd>P</kbd> y hacé clic sobre la nota, o simplemente hacé clic sobre la nota sin herramienta en mano: puntillo, doble puntillo, ninguno."
         ]
       },
       "select-move": {
@@ -641,7 +641,7 @@
       ],
       "dots": [
         "Puntillo: cómo poner un puntillo a una nota o silencio",
-        "Cómo poner o sacar el puntillo de una nota o silencio con doble clic en el editor de partituras online, y cómo cambia su duración."
+        "Cómo poner o sacar el puntillo de una nota o silencio con clic sobre la nota en el editor de partituras online, y cómo cambia su duración."
       ],
       "delete-barline": [
         "Cómo borrar una barra de compás en una partitura",

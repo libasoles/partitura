@@ -2869,6 +2869,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (d.group) setPicks([d.from]);
       if (d.item) activateTool(d.item);
       else if (d.from && isModifier(activeItem)) applyModifier(activeItem, d.from);
+      // Un click limpio sobre una nota (sin herramienta ni grupo) cicla el puntillo: uno, dos, ninguno.
+      else if (d.from && !activeItem && !d.group && !eventAt(d.from).rest) applyModifier({ kind: 'dot' }, d.from);
       else if (d.insert) {
         const at = aimed(event);
         const target = locate(at.clientX, at.clientY);
@@ -3187,15 +3189,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   document.addEventListener('pointerup', (event) => endMarquee(event, false));
   document.addEventListener('pointercancel', (event) => endMarquee(event, true));
-
-  stage.addEventListener('dblclick', (event) => {
-    if (event.target.closest('[data-navigation-mark]')) return;
-    const hit = eventUnder(event.clientX, event.clientY);
-    if (!hit || eventAt(hit).rest) return;
-    event.preventDefault();
-    selected = hit;
-    applyModifier({ kind: 'dot' }, hit);
-  });
 
   stage.addEventListener('keydown', (event) => {
     if (event.target !== stage) return;

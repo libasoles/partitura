@@ -19,7 +19,7 @@
   "scoreShortcutsRests": "Pausas",
   "scoreShortcutsMarks": "Ponto de aumento e alterações",
   "scoreDotTitle": "Ponto de aumento",
-  "scoreDotBody": "Clique duas vezes em uma nota para colocar o ponto de aumento; outro clique duplo o remove.",
+  "scoreDotBody": "Clique em uma nota para colocar o ponto de aumento; outro clique coloca o segundo e um terceiro o remove.",
   "scoreBarTitle": "Apagar uma barra",
   "scoreBarBody": "Clique em uma barra simples, dupla ou de repetição para selecioná-la em amarelo e pressione Delete para apagá-la.",
   "scoreTabEditTitle": "Editar uma tablatura",
@@ -336,7 +336,7 @@
       ],
       "dots": [
         "Ponto de aumento",
-        "Coloque ou tire o ponto com duplo clique."
+        "Coloque, dobre ou tire o ponto clicando na nota."
       ],
       "delete-barline": [
         "Apagar uma barra",
@@ -460,7 +460,7 @@
           "Aperte <kbd>S</kbd> para sustenido, <kbd>B</kbd> para bemol ou <kbd>C</kbd> para bequadro. Eles também estão na paleta.",
           "Clique na nota que quer alterar: o sinal aparece à esquerda dela.",
           "Você também pode selecionar uma nota primeiro e depois pressionar <kbd>S</kbd>, <kbd>B</kbd> ou <kbd>C</kbd>: a alteração é aplicada diretamente à seleção, sem outro clique.",
-          "O ponto de aumento funciona igual: aperte <kbd>P</kbd> e clique na nota, ou dê um duplo clique nela."
+          "O ponto de aumento funciona igual: aperte <kbd>P</kbd> e clique na nota, ou simplesmente clique na nota sem ferramenta na mão: ponto, ponto duplo, nenhum."
         ]
       },
       "select-move": {
@@ -645,7 +645,7 @@
       ],
       "dots": [
         "Ponto de aumento: como colocar um ponto em nota ou pausa",
-        "Como colocar ou tirar o ponto de uma nota ou pausa com duplo clique no editor de partituras online, e como ele muda a duração."
+        "Como colocar ou tirar o ponto de uma nota ou pausa clicando na nota no editor de partituras online, e como ele muda a duração."
       ],
       "delete-barline": [
         "Como apagar uma barra de compasso em uma partitura",
