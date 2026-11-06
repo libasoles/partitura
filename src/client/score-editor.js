@@ -2110,7 +2110,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function startLyricDraft(mi, at, staff, edit) {
     if (!lyricsActive() || !lyricNote(mi, at, staff)) return false;
     const old = M.lyricAt(score, mi, at, staff);
-    lyricDraft = { mi, at, staff, text: edit !== undefined ? edit : old ? old.text + (old.hy ? '-' : '') : '' };
+    lyricDraft = { mi, at, staff, text: edit !== undefined ? edit : old ? old.text : '' };
     mountLyricDraft();
     return true;
   }
@@ -2159,12 +2159,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       else if (event.key === 'Escape') { event.preventDefault(); finish(false); }
       else if (event.key === 'Tab') { event.preventDefault(); finish(true, event.shiftKey ? -1 : 1); }
       else if (event.key === ' ' && input.value.trim()) { event.preventDefault(); finish(true, 1); }
-      else if (event.key === '-' && input.value.trim() && !input.value.trim().endsWith('-')) {
-        // Un guion marca que la palabra sigue en la nota siguiente.
-        event.preventDefault();
-        input.value = input.value.trim() + '-';
-        finish(true, 1);
-      }
     });
     // Pegar una letra la reparte en silabas, una por nota, desde esta y a traves de los compases.
     input.addEventListener('paste', (event) => {
@@ -2205,7 +2199,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         button.dataset.measure = mi;
         button.dataset.at = lyric.at;
         button.dataset.staff = staff;
-        button.setAttribute('aria-label', t.lyric + ': ' + lyric.text + (lyric.hy ? '-' : ''));
+        button.setAttribute('aria-label', t.lyric + ': ' + lyric.text);
         button.style.left = box.left - origin.left - 4 + 'px';
         button.style.top = box.top - origin.top - 2 + 'px';
         button.style.width = Math.max(box.width, 12) + 8 + 'px';
