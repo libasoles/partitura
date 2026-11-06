@@ -27,6 +27,22 @@ test('voice filtering uses the legend on both staves and preserves timing, ties 
   assert.deepEqual(soundingNotes(score, M, new Set([4])), []);
 });
 
+test('choir legend filters one staff per voice, regardless of its local notation voices', () => {
+  const C = createScoreModel({ grandStaff: true, choir: true });
+  const score = C.emptyScore();
+  C.setInstrument(score, 'voices');
+  score.rows = [[[{ d: 'w', n: 35 }]]];
+  score.lower = { 0: [{ d: 'w', n: 28 }] };
+  score.lower2 = { 0: [{ d: 'w', n: 21 }] };
+  const all = soundingNotes(score, C);
+  for (let voice = 1; voice <= 3; voice++) {
+    assert.deepEqual(soundingNotes(score, C, new Set([voice])), all.filter((note) => note.channel === voice - 1));
+  }
+  assert.deepEqual(soundingNotes(score, C, new Set()), all);
+  assert.deepEqual(soundingNotes(score, C, new Set([1, 3])), all.filter((note) => note.channel !== 1));
+  assert.deepEqual(soundingNotes(score, C, new Set([4])), []);
+});
+
 test('playback timing respects rests, accidentals, simultaneous staves and tied notes', () => {
   const score = M.emptyScore();
   score.rows = [[

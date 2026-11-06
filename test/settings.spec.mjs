@@ -103,7 +103,7 @@ test('the cog is the first sidebar tool and the dialog switches instrument, temp
 
   // Back to piano: TAB and barre go away and the guitar clef becomes a plain treble clef.
   await page.locator('#scoreSettingsToggle').click();
-  await page.locator('#scoreSettingsPopup label').filter({ hasText: 'Piano' }).click();
+  await instrument.locator('label').filter({ hasText: 'Piano' }).click();
   await expect(page.locator('#scoreTabToggle')).toBeHidden();
   expect(await page.evaluate(() => window.scoreEditor.score.clef)).toBe('treble');
   await page.keyboard.press('Escape');

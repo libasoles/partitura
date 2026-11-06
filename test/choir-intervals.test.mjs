@@ -27,6 +27,21 @@ test('Voces: one mark per column is engraved, including a third staff', () => {
   assert.match(xml, /<note id="p0-0">/);
 });
 
+test('Voces: selected outer voices form a fifth instead of the two adjacent thirds', () => {
+  const score = choir();
+  score.rows[0][0] = [{ d: 'w', n: 39 }];
+  score.lower = { 0: [{ d: 'q', n: 37 }, { d: 'h', n: 38 }] };
+  score.lower2 = { 0: [{ d: 'w', n: 35 }] };
+  assert.deepEqual(choirColumns(score, 0, C, new Set([1, 2, 3]))[0].intervals, ['III', 'III']);
+  const selected = choirColumns(score, 0, C, new Set([1, 3]));
+  assert.deepEqual(selected.map((column) => column.intervals), [['V']]);
+  assert.deepEqual(choirColumns(score, 0, C, new Set([2])), []);
+  assert.deepEqual(choirColumns(score, 0, C, new Set()), []);
+  const xml = withIntervals(C.toMusicXml(score), score, C, new Set([1, 3]));
+  assert.equal((xml.match(/PartituraIntervals/g) || []).length, 1);
+  assert.match(xml, />V<\/words>/);
+});
+
 test('Voces: F–B is IV; a sustained G between them gives III and II', () => {
   const score = C.emptyScore();
   C.setInstrument(score, 'voices');

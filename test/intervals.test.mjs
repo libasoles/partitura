@@ -13,3 +13,14 @@ test('intervals include sustained notes, exclude ended notes and rests, and pres
   assert.deepEqual(columns.map(c => c.intervals), [['III', 'VI'], ['IV', 'V']]);
   assert.deepEqual(intervalColumns([{ d: 'w', n: 35, at: 0 }, { d: 'w', n: 26, at: 0 }], M)[0].intervals, ['X']);
 });
+
+test('piano intervals bridge unselected voices without changing note indices or onsets', () => {
+  const measure = [
+    { d: 'w', n: 39, at: 0, v: 1 },
+    { d: 'q', n: 37, at: 0, v: 2 }, { d: 'q', n: 38, at: 24, v: 2 },
+    { d: 'w', n: 35, at: 0, v: 3 },
+  ];
+  assert.deepEqual(intervalColumns(measure, M, new Set([1, 3])), [{ at: 0, indices: [0, 3], intervals: ['V'] }]);
+  assert.deepEqual(intervalColumns(measure, M, new Set([1])), []);
+  assert.deepEqual(intervalColumns(measure, M, new Set()), []);
+});

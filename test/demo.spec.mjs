@@ -89,6 +89,21 @@ test('a demo page loads the song and its defaults even without query parameters'
   await expect(page.locator('.welcome-banner')).toBeHidden();
 });
 
+test('the choir demo legend colours each of its three staves independently', async ({ page }) => {
+  await ready(page, '/es/demos/canto-en-la-rama/');
+  await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');
+  const legend = page.locator('.score-voice-legend button');
+  for (const [staff, prefix] of ['e', 'l', 'p'].entries()) {
+    const notes = page.locator(`#scoreStage g.note[id^="${prefix}"]`);
+    await expect(notes.first()).toHaveAttribute('data-voice', String(staff + 1));
+    await legend.nth(staff).click();
+    await expect(notes.first()).toHaveClass(/is-voice-on/);
+    expect(await page.locator('#scoreStage g.note.is-voice-on').count()).toBe(await notes.count());
+    await legend.nth(staff).click();
+    await expect(page.locator('#scoreStage g.note.is-voice-on')).toHaveCount(0);
+  }
+});
+
 test('unknown demo identifiers do not import remote files', async ({ page }) => {
   let requested = false;
   page.on('request', (request) => { if (new URL(request.url()).pathname.endsWith('.musicxml')) requested = true; });

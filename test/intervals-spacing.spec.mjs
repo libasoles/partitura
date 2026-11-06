@@ -4,7 +4,7 @@ test('interval labels keep a minimum gap above the staff and notes, and chord na
   await page.addInitScript(() => {
     localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [{
       instrument: 'guitarra', meter: '4/4', clef: 'treble', fifths: -1,
-      tools: { intervals: true },
+      tools: { intervals: true, voices: true },
       chords: { 0: [{ at: 0, name: 'Am' }, { at: 2, name: 'Dm' }] },
       rows: [[[
         { d: 'h', n: 35, at: 0 }, { d: 'h', n: 33, at: 0 },
@@ -16,6 +16,7 @@ test('interval labels keep a minimum gap above the staff and notes, and chord na
   });
   await page.goto('/es/');
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
+  for (const voice of [1, 2]) await page.locator(`.score-voice-legend button[data-voice="${voice}"]`).click();
   await page.locator('#scoreIntervals').click();
   await expect(page.locator('#scoreIntervals')).toHaveAttribute('aria-pressed', 'true');
   await page.waitForTimeout(500);

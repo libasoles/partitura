@@ -1064,8 +1064,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     dynamicsPopup.hidePopover();
     stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
     toolbarStaffTop = Math.max(0, stage.querySelector('g.staff > path').getBoundingClientRect().top - stage.getBoundingClientRect().top);
-    if (settings && toolOn('intervals', false) && intervalDocuments.has(score)) {
-      toolkit.loadData(withIntervals(xml, score, M));
+    if (settings && toolOn('voices', false) && toolOn('intervals', false) && intervalDocuments.has(score)) {
+      toolkit.loadData(withIntervals(xml, score, M, shownVoices));
       // Verovio drops MusicXML words' font-size. Set MEI's supported relative size
       // on the marked interval text before engraving so spacing uses the smaller labels too.
       toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="60%"'));
@@ -2717,7 +2717,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     hideSelectionMenu();
     const list = picks();
     if (!list.length || drag?.active) return;
-    const actions = M.selectionActions(score, list, toolOn('voices', false) ? shownVoices : []);
+    const actions = M.selectionActions(score, list, toolOn('voices', false) && M.instrumentOf(score) !== 'voices' ? shownVoices : []);
     if (!actions.length) return;
     const origin = stage.getBoundingClientRect();
     let boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
@@ -4453,7 +4453,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   intervalButton.setAttribute('aria-pressed', 'false');
   intervalButton.addEventListener('click', () => {
     if (intervalDocuments.has(score)) intervalDocuments.delete(score);
-    else if (hasIntervals(score, M)) intervalDocuments.add(score);
+    else if (hasIntervals(score, M, shownVoices)) intervalDocuments.add(score);
     else return say(t.intervalsNeedVoices);
     render();
   });
@@ -4469,7 +4469,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (playButton.hidden) clearPlaybackHint();
     if (settings) stage.appendChild(playButton);
     intervalButton.remove();
-    if (settings && toolOn('intervals', false)) stage.appendChild(intervalButton);
+    if (settings && toolOn('voices', false) && toolOn('intervals', false)) stage.appendChild(intervalButton);
     intervalButton.setAttribute('aria-pressed', String(intervalDocuments.has(score)));
     alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
@@ -4494,7 +4494,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     button.addEventListener('click', () => {
       if (shownVoices.has(n)) shownVoices.delete(n); else shownVoices.add(n);
       resetPlayback();
-      applyVoices();
+      if (toolOn('intervals', false) && intervalDocuments.has(score)) render();
+      else applyVoices();
       updateSelectionMenu();
     });
     ['pointerdown', 'mousedown', 'click'].forEach((type) => button.addEventListener(type, (event) => event.stopPropagation()));
@@ -4508,7 +4509,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.remove();
     if (!on) return;
     voiceButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(shownVoices.has(i + 1))));
-    // Cada pentagrama infiere sus voces; el numero de voz da el mismo color en ambos, asi la leyenda y el filtro valen para los dos.
+    // En coro cada pentagrama es una voz de la leyenda; en piano cada mano infiere sus propias voces.
+    const choir = M.instrumentOf(score) === 'voices';
     const upper = M.measures(score);
     const total = upper.length;
     for (let staff = 0; staff < M.stavesOf(score); staff++) {
@@ -4518,7 +4520,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         M.voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
           const node = stage.querySelector('[id="' + M.ID_PREFIX[staff] + mi + '-' + i + '"]');
           if (!node) return;
-          const n = k % VOICE_COUNT + 1;
+          const n = choir ? staff + 1 : k % VOICE_COUNT + 1;
           node.dataset.voice = String(n);
           node.classList.toggle('is-voice-on', shownVoices.has(n));
         })));
