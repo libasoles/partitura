@@ -45,7 +45,7 @@
 
 ### Analítica
 
-- Google Tag Manager (`GTM-T6WD2JMP`) lo carga `src/components/Analytics.astro`, incluido en el `<head>` de `Base.astro`, `404.astro` e `index.astro`. Toda página nueva debe usar `Base.astro` (o incluir ese componente) para quedar medida.
+- Google Analytics 4 (`G-YX99KJ1Q99`, gtag.js) lo carga `src/components/Analytics.astro`, incluido en el `<head>` de `Base.astro`, `404.astro` e `index.astro`. Toda página nueva debe usar `Base.astro` (o incluir ese componente) para quedar medida.
 
 ### Estructura
 
