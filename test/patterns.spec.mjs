@@ -15,7 +15,7 @@ async function open(page, extra = {}) {
     localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [score] }));
     localStorage.setItem('partitura.settings.v1', JSON.stringify(extra));
   }, { score: source(), extra });
-  await page.goto('/es/');
+  await page.goto('/es/#pro');
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
 }
 
@@ -23,9 +23,27 @@ test('the library is off until it is switched on in the settings', async ({ page
   await open(page);
   await expect(page.locator('.score-library')).toBeHidden();
   await page.locator('#scoreSettingsToggle').click();
-  await page.getByRole('checkbox', { name: 'Patrones' }).check();
+  await page.getByRole('checkbox', { name: 'Biblioteca de patrones', exact: true }).check();
   await expect(page.locator('.score-library')).toBeVisible();
   await expect(page.locator('.score-library-empty')).toHaveText('No hay patrones guardados');
+});
+
+test('the library is Pro only and preserves saved patterns without Pro', async ({ page }) => {
+  const pattern = M.patternFromMeasure(source(), 0);
+  await open(page, { patterns: true, patternItems: [pattern] });
+  await expect(page.locator('.score-library')).toBeVisible();
+  await page.goto('/es/');
+  await page.reload();
+  await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
+  await page.locator('#scoreSettingsToggle').click();
+  await expect(page.getByRole('checkbox', { name: 'Biblioteca de patrones', exact: true })).toHaveCount(0);
+  await expect(page.locator('.score-library')).toBeHidden();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Shift+S');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('partitura.settings.v1')).patternItems)).toEqual([pattern]);
+  await page.goto('/es/#pro');
+  await page.reload();
+  await expect(page.locator('.score-pattern')).toHaveCount(1);
 });
 
 test('Shift+S saves the selected notes as degrees and a drag writes them at the dropped pitch', async ({ page }) => {

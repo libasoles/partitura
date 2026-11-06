@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 
-async function open(page) {
-  await page.goto('/es/');
+async function open(page, url = '/es/') {
+  await page.goto(url);
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
 }
 
-for (const url of ['/es/?tools=voices,play', '/es/demos/canto-en-la-rama/']) {
+for (const url of ['/es/?tools=voices,play#pro', '/es/demos/canto-en-la-rama/#pro']) {
   test(`${url}: URL tools start the library off but keep its setting available`, async ({ page }) => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.addInitScript(() => {
@@ -29,7 +29,7 @@ for (const url of ['/es/?tools=voices,play', '/es/demos/canto-en-la-rama/']) {
 
 test('settings stay inside a short viewport and all options remain reachable by scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 1000 });
-  await open(page);
+  await open(page, '/es/#pro');
   await page.locator('#scoreSettingsToggle').click();
   const popup = page.locator('#scoreSettingsPopup');
   await expect.poll(async () => {
@@ -93,7 +93,7 @@ test('settings stay inside a short viewport and all options remain reachable by 
 });
 
 test('the drawer explains why the library needs a wider window and closes with Escape', async ({ page }) => {
-  await open(page);
+  await open(page, '/es/#pro');
   await page.locator('#scoreSettingsToggle').click();
   const popup = page.locator('#scoreSettingsPopup');
   const library = popup.getByRole('checkbox', { name: 'Biblioteca de patrones', exact: true });
