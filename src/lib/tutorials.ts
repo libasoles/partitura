@@ -1,6 +1,6 @@
 import type { Strings } from '../i18n';
 import { renderShortcutDiagram, renderShortcuts, renderDot, renderBar, renderTabEdit, renderTabMove } from './score-tutorial.js';
-import { highlightTutorialKeys } from './tutorial-keys.js';
+import { highlightTutorialKeys, highlightTutorialTerms } from './tutorial-keys.js';
 import { tutorialIcon } from './tutorial-icons.js';
 import { settingsItem } from './settings-items.js';
 import * as demos from './demos.js';
@@ -111,7 +111,7 @@ function rawTutorialBody(slug: Slug, s: Strings): string {
 const withIcons = (html: string) => html.replace(/\{\{icon:([\w-]+)\}\}/g, (_, name) => tutorialIcon(name));
 
 export function tutorialBody(slug: Slug, s: Strings): string {
-  return withIcons(highlightTutorialKeys(rawTutorialBody(slug, s)));
+  return withIcons(highlightTutorialTerms(highlightTutorialKeys(rawTutorialBody(slug, s))));
 }
 
 /** Topically close tutorials, shown below each guide with descriptive anchor text (in addition to previous/next). */

@@ -13,3 +13,12 @@ test('tutorial keys are highlighted without changing existing keycaps or SVG', (
   assert.doesNotMatch(html, /<kbd><kbd>/);
   assert.equal(highlightTutorialKeys('<h3>Delete a barline</h3>'), '<h3>Delete a barline</h3>');
 });
+
+import { highlightTutorialTerms } from '../src/lib/tutorial-keys.js';
+
+test('tuning names and formats are marked, but not inside keycaps or SVG', () => {
+  const html = highlightTutorialTerms('<p>Estándar, Drop D, Double Drop D y DADGAD. Exportá MusicXML o MIDI.</p><svg><text>Drop D</text></svg>');
+  assert.match(html, /<span class="tutorial-term">Estándar<\/span>, <span class="tutorial-term">Drop D<\/span>, <span class="tutorial-term">Double Drop D<\/span>/);
+  assert.match(html, /<span class="tutorial-term">MusicXML<\/span>/);
+  assert.ok(html.endsWith('<svg><text>Drop D</text></svg>'));
+});

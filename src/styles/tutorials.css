@@ -283,3 +283,7 @@ button.tutorial-voice { cursor: pointer; min-width: 2.75rem; min-height: 2.75rem
 .tutorial-voice[data-number="4"] { --voice: #3a5f9e; }
 .d-finger { fill: var(--paper); stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .d-playhead { stroke: var(--accent); stroke-width: 1.4; }
+
+/* Keywords: the editor's own labels (<em>) and names like tunings or file formats stand out from the prose. */
+.tutorial-body :is(em, .tutorial-term) { font-style: normal; font-weight: 600; color: var(--accent-brand, var(--accent)); }
+.tutorial-body .tutorial-voice, .tutorial-body .tutorial-voice * { font-style: normal; }

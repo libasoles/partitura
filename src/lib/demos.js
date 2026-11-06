@@ -98,6 +98,53 @@ export function accidentals(s, aria) {
   return d.html(aria);
 }
 
+
+// ----- varied rhythms (6/8, one flat), taken from the author's example measures ----------------------------------------
+
+const WIDTH = { e: 16, q: 22, h: 36 };
+
+/**
+ * Lays out a measure of mixed figures from `x`: eighths (beamed together when they share `b`), dotted quarters, halves
+ * and rests, each spaced by its length. Returns the slots and the x where the next measure starts.
+ */
+function rhythm(d, x, items, stops = d.life(0.05), scale = 1) {
+  const slots = items.map((it) => {
+    const slot = { ...it, x, p: it.name ? pitch(it.name) : null };
+    x += (WIDTH[it.d] + (it.dot ? 8 : 0)) * scale;
+    return slot;
+  });
+  const beamed = new Map();
+  slots.forEach((n) => { if (n.b !== undefined) beamed.set(n.b, [...(beamed.get(n.b) ?? []), n]); });
+  slots.forEach((n) => {
+    if (n.rest) d.rest(n.x + 4, n.d, stops);
+    else if (n.b === undefined) d.note(n.x, n.p, n.d, stops, { dot: n.dot });
+  });
+  beamed.forEach((group) => d.add(0, 0, beamGroup(group.map((n) => ({ x: n.x, y: d.y(n.p) }))).svg, stops));
+  return { slots, end: x };
+}
+
+/** Two measures in 6/8: mixed figures first, then two beamed groups of three eighths. */
+const MEASURE_A = [{ d: 'e', name: 'G4' }, { d: 'q', dot: true, name: 'G4' }, { d: 'e', rest: true }, { d: 'e', name: 'F4' }];
+const MEASURE_B = [{ d: 'e', name: 'G4', b: 0 }, { d: 'e', name: 'A4', b: 0 }, { d: 'e', name: 'F4', b: 0 }, { d: 'e', name: 'G4', b: 1 }, { d: 'e', name: 'G4', b: 1 }, { d: 'e', name: 'F4', b: 1 }];
+const MEASURE_C = [{ d: 'h', name: 'A4' }, { d: 'e', name: 'G4' }, { d: 'e', name: 'F4' }];
+
+const stage68 = (o) => stage({ key: -1, meter: [6, 8], ...o });
+
+function twoMeasures(d, first, second) {
+  const a = rhythm(d, d.firstX, first);
+  d.base(d.barline(a.end - 1));
+  return [...a.slots, ...rhythm(d, a.end + 10, second).slots];
+}
+
+/** Written pitch (guitar sounds an octave lower) to a [string, fret] pair, string 0 being the high E. */
+const OPEN = [64, 59, 55, 50, 45, 40];
+const SEMITONE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function tabOf(name) {
+  const midi = (+name.slice(-1) + 1) * 12 + SEMITONE[name[0]] - 12;
+  const string = OPEN.findIndex((open) => midi >= open && midi - open <= 5);
+  return [string, midi - OPEN[string]];
+}
+
 // ----- editing --------------------------------------------------------------------------------------------------------
 
 export function selectMove(s, aria) {
@@ -246,12 +293,8 @@ export function measures(s, aria) {
 }
 
 export function repeats(s, aria) {
-  const d = stage({ id: 'rep', T: 14 });
-  const notes = phrase(d, [
-    ['E4', 'G4', 'A4', 'G4'].map((n) => q(n)),
-    ['F4', 'E4', 'D4', 'E4'].map((n) => q(n)),
-  ], 28);
-  notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  const d = stage68({ id: 'rep', T: 14 });
+  twoMeasures(d, MEASURE_A, MEASURE_B);
   const x1 = d.x1;
   const dots = (x) => `<circle class="d-dot" cx="${x}" cy="${d.y(3)}" r="1.3"/><circle class="d-dot" cx="${x}" cy="${d.y(5)}" r="1.3"/>`;
   const startX = d.firstX - 12;
@@ -266,9 +309,8 @@ export function repeats(s, aria) {
 }
 
 export function dynamics(s, aria) {
-  const d = stage({ id: 'dyn', T: 13, bottom: 62, h: 120 });
-  const notes = phrase(d, [['E4', 'F4', 'G4', 'A4'].map((n) => q(n))], 42);
-  notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  const d = stage68({ id: 'dyn', T: 13, bottom: 62, h: 120 });
+  const { slots: notes } = rhythm(d, d.firstX + 6, [{ d: 'e', name: 'F4' }, { d: 'q', dot: true, name: 'G4' }, { d: 'e', name: 'A4' }, { d: 'q', name: 'A4' }], d.life(0.05), 2.4);
   const y0 = d.bottom + SP * 3.2;
   const xa = notes[0].x + 2;
   const xb = notes[3].x + 14;
@@ -294,12 +336,12 @@ function tabLines(d) {
 }
 
 export function tabToggle(s, aria) {
-  const d = stage({ id: 'tab', T: 13, bottom: 62, h: 146 });
-  const notes = phrase(d, [[q('G4'), q('A4'), q('B4'), q('C5')]], 40);
-  notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  const d = stage68({ id: 'tab', T: 13, bottom: 62, h: 146 });
+  const notes = twoMeasures(d, MEASURE_A, MEASURE_B).filter((n) => !n.rest);
   d.add(0, 0, tabLines(d), [[0, { o: 0 }], [3.0, { o: 0 }], [3.4, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
-  [[2, 0], [2, 2], [1, 0], [1, 1]].forEach(([string, fret], i) => {
-    d.fret(notes[i].x + 5, TAB_TOP, string, fret, d.pop(3.6 + i * 0.35), {});
+  notes.forEach((n, i) => {
+    const [string, fret] = tabOf(n.name);
+    d.fret(n.x + 5, TAB_TOP, string, fret, d.pop(3.6 + i * 0.25), {});
   });
   // The button in the palette lights up when it is on.
   const bx = d.w - 30;
