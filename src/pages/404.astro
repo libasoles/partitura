@@ -1,0 +1,43 @@
+---
+import '@fontsource-variable/montserrat';
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Pagina no encontrada</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  </head>
+  <body>
+    <main>
+      <a href="/" aria-label="Volver al inicio">
+        <img src="/favicon.svg" width="96" height="96" alt="" />
+      </a>
+      <h1>Pagina no encontrada</h1>
+    </main>
+  </body>
+</html>
+
+<style>
+  main {
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+
+  a { display: block; border-radius: 0.25rem; }
+  a:focus-visible { outline: 2px solid var(--blue-france); outline-offset: 0.5rem; }
+  img { display: block; }
+  h1 { margin: 0; font-size: clamp(1.5rem, 5vw, 2rem); font-weight: 500; }
+</style>
