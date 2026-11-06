@@ -4767,6 +4767,26 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     partsRow.classList.add('is-stacked');
     partsRow.append(partsLine);
 
+    // Voces: timbre del coro (Ah, Oh, sintetizado). Solo cambia el audio y el programa del MIDI.
+    const soundRow = section(t.settingsSound);
+    soundRow.parentElement.hidden = true;
+    const sounds = M.CHOIR_SOUNDS.map((id) => {
+      const field = document.createElement('label');
+      field.className = 'score-settings-radio';
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'scoreSound';
+      radio.value = id;
+      field.append(radio, document.createTextNode(t['sound' + id[0].toUpperCase() + id.slice(1)]));
+      radio.addEventListener('change', () => {
+        if (M.soundOf(score) === id) return;
+        change(() => M.setSound(score, id));
+        sync();
+      });
+      soundRow.appendChild(field);
+      return radio;
+    });
+
     // El tempo se arrastra en un control deslizante; la casilla de abajo ("sin indicacion") lo quita.
     const tempoRow = section(t.settingsTempo);
     const tempoSlider = document.createElement('input');
@@ -4908,6 +4928,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (patternsCheck) patternsCheck.checked = getSetting('patterns', false) === true;
       instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === instrumentIds[i]; });
       partsRow.hidden = M.instrumentOf(score) !== 'voices';
+      soundRow.parentElement.hidden = M.instrumentOf(score) !== 'voices';
+      sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });
       partsSlider.value = String(M.partsOf(score));
       showParts();
       tempoSlider.value = String(score.tempo || 120);
