@@ -62,6 +62,7 @@ const illustrations: Partial<Record<Slug, Record<number, Demo | Demo[]>>> = {
     5: demos.grandStaff, 6: settingItem('playback'), 7: settingItem('library'),
   },
   playback: { 0: demos.playbackEnable, 1: demos.playbackSetup, 2: demos.playbackPlay, 4: demos.playbackVoices },
+  files: { 1: demos.loadFile },
   copy: { 2: [demos.duplicateVoice, demos.adjustCopy] },
   voices: {
     0: demos.voicesSelect, 1: demos.duplicateVoice, 2: demos.adjustCopy, 3: [demos.thirdAbove, demos.thirdBelow],

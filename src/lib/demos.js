@@ -107,19 +107,20 @@ const WIDTH = { e: 16, q: 22, h: 36 };
  * Lays out a measure of mixed figures from `x`: eighths (beamed together when they share `b`), dotted quarters, halves
  * and rests, each spaced by its length. Returns the slots and the x where the next measure starts.
  */
-function rhythm(d, x, items, stops = d.life(0.05), scale = 1) {
+function rhythm(d, x, items, stops = d.life(0.05), scale = 1, { down = false } = {}) {
   const slots = items.map((it) => {
-    const slot = { ...it, x, p: it.name ? pitch(it.name) : null };
+    const slot = { ...it, x, p: it.p ?? (it.name ? pitch(it.name) : null) };
     x += (WIDTH[it.d] + (it.dot ? 8 : 0)) * scale;
     return slot;
   });
   const beamed = new Map();
   slots.forEach((n) => { if (n.b !== undefined) beamed.set(n.b, [...(beamed.get(n.b) ?? []), n]); });
   slots.forEach((n) => {
+    if (n.skip) return;
     if (n.rest) d.rest(n.x + 4, n.d, stops);
-    else if (n.b === undefined) d.note(n.x, n.p, n.d, stops, { dot: n.dot });
+    else if (n.b === undefined) d.note(n.x, n.p, n.d, stops, { dot: n.dot, stemDown: down });
   });
-  beamed.forEach((group) => d.add(0, 0, beamGroup(group.map((n) => ({ x: n.x, y: d.y(n.p) }))).svg, stops));
+  beamed.forEach((group) => d.add(0, 0, beamGroup(group.map((n) => ({ x: n.x, y: d.y(n.p) })), { down }).svg, stops));
   return { slots, end: x };
 }
 
@@ -417,6 +418,50 @@ export function files(s, aria) {
   d.click(3.1, menuX + 30, 76);
   d.click(5.2, subX + 30, 74);
   d.pointer([[0.6, d.w - 40, 120], ...visit(1.5, d.w - 17, 14), ...visit(3.1, menuX + 30, 76), ...visit(5.2, subX + 30, 74), [7.4, d.w - 40, 120]]);
+  return d.html(aria);
+}
+
+/** "El boyero" (Cocomarola and Miqueli), the example score: two measures of 6/8 in F with two voices. */
+const BOYERO = {
+  upper: [
+    [{ d: 'e', p: 4 }, { d: 'q', dot: true, p: 4 }, { d: 'e', rest: true }, { d: 'e', p: 3 }],
+    [4, 4, 3, 4, 4, 3].map((p, i) => ({ d: 'e', p, b: Math.floor(i / 3) })),
+  ],
+  lower: [
+    [{ d: 'e', p: 2 }, { d: 'q', dot: true, p: 2 }, { d: 'e', skip: true }, { d: 'e', p: 1 }],
+    [2, 2, 1, 2, 2, 1].map((p, i) => ({ d: 'e', p, b: Math.floor(i / 3) })),
+  ],
+};
+
+export function loadFile(s, aria) {
+  const ui = s.ui;
+  const d = stage({ id: 'load', T: 15, h: 170, bottom: 124, key: -1, meter: [6, 8] });
+  const menuX = d.w - 150;
+  const text = (x, y, value, cls = '') => `<text class="d-menutext ${cls}" x="${x}" y="${y + 3.5}" font-size="9.5">${value}</text>`;
+  d.base(`<path class="d-line" d="M0 28H${d.w}"/><path class="d-menuicon" d="M${d.w - 24} 10h14M${d.w - 24} 14h14M${d.w - 24} 18h14"/>`);
+  d.add(0, 0, `<rect class="d-panel" x="${menuX}" y="34" width="140" height="58" rx="6"/>${text(menuX + 12, 49, ui.menuLoad, 'd-menutext--hot')}${text(menuX + 12, 75, ui.menuExport)}`,
+    [[0, { o: 0 }], [1.6, { o: 0 }], [1.85, { o: 1 }], [3.6, { o: 1 }], [3.9, { o: 0 }]], { keep: false });
+  // The file picked in the system dialog.
+  d.add(70, 76, `<rect class="d-file" x="-62" y="-13" width="124" height="26" rx="6"/><text class="d-pilltext" text-anchor="middle" dominant-baseline="central" font-size="9.5">el-boyero.musicxml</text>`,
+    [[0, { o: 0, y: 8 }], [4.0, { o: 0, y: 8 }], [4.3, { o: 1, y: 0 }], [6.0, { o: 1 }], [6.3, { o: 0 }]], { keep: false });
+  // The loaded score: title and authors, then both voices.
+  const shown = d.life(6.6, 14.3);
+  d.text(d.w / 2, 50, 'El boyero', shown, { size: 12, weight: 700, font: 'var(--serif)' });
+  d.text(d.w - 10, 62, 'Cocomarola y Miqueli', shown, { size: 7.5, anchor: 'end', weight: 500 });
+  const place = (items, voice) => {
+    let x = d.firstX;
+    items.forEach((measure, m) => {
+      const r = rhythm(d, x, measure, d.pop(6.8 + m * 0.6, 14.3), 1, voice);
+      x = r.end + 10;
+    });
+  };
+  place(BOYERO.upper, {});
+  place(BOYERO.lower, { down: true });
+  d.base(d.barline(d.firstX + 78 + 9));
+  d.click(1.5, d.w - 17, 14);
+  d.click(3.1, menuX + 30, 49);
+  d.click(5.4, 70, 76);
+  d.pointer([[0.6, d.w - 40, 150], ...visit(1.5, d.w - 17, 14), ...visit(3.1, menuX + 30, 49), ...visit(5.4, 70, 76), [8, d.w - 40, 150]]);
   return d.html(aria);
 }
 

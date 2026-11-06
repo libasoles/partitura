@@ -64,22 +64,24 @@ export function restInner(d) {
  * Heads joined by one beam, in absolute px: `items` are { x, y } of each head (x = left edge, y = centre) and the
  * stems go up. The beam leans half as much as the heads do.
  */
-export function beamGroup(items, { slope = 0.5, beams = 1 } = {}) {
-  const tip = (it) => it.y - STEM_LEN * G;
+export function beamGroup(items, { slope = 0.5, beams = 1, down = false } = {}) {
+  const sign = down ? 1 : -1; // the stems go up, or down from the heads
+  const tip = (it) => it.y + sign * STEM_LEN * G;
   const first = items[0];
   const last = items[items.length - 1];
-  const sx = (it) => it.x + HEAD_W * G - (STEM * G) / 2;
+  const sx = (it) => (down ? it.x + (STEM * G) / 2 : it.x + HEAD_W * G - (STEM * G) / 2);
   const ya = tip(first);
   const yb = ya + (tip(last) - ya) * slope;
   const at = (x) => ya + ((yb - ya) * (x - sx(first))) / (sx(last) - sx(first) || 1);
   let svg = '';
   items.forEach((it) => {
     svg += glyph('E0A4', it.x, it.y);
-    svg += `<rect x="${f(sx(it) - (STEM * G) / 2)}" y="${f(at(sx(it)))}" width="${f(STEM * G)}" height="${f(it.y - at(sx(it)))}"/>`;
+    const end = at(sx(it));
+    svg += `<rect x="${f(sx(it) - (STEM * G) / 2)}" y="${f(Math.min(it.y, end))}" width="${f(STEM * G)}" height="${f(Math.abs(end - it.y))}"/>`;
   });
   const bt = SP * 0.5;
   for (let b = 0; b < beams; b += 1) {
-    const dy = b * SP * 0.75;
+    const dy = -sign * b * SP * 0.75 - (down ? bt : 0);
     svg += `<path d="M${f(sx(first) - (STEM * G) / 2)} ${f(ya + dy)}L${f(sx(last) + (STEM * G) / 2)} ${f(yb + dy)}v${f(bt)}L${f(sx(first) - (STEM * G) / 2)} ${f(ya + dy + bt)}z"/>`;
   }
   return { svg, top: Math.min(ya, yb), left: first.x, right: sx(last) };
