@@ -13,5 +13,6 @@ La URL puede fijar los grupos de herramientas activos al abrir la página:
 - `tools`: lista separada por comas. Admite `voices`, `play` (o `playback`), `intervals`, `repeats` y `dynamics`. Los grupos omitidos quedan apagados; `tools=` los apaga todos. La biblioteca de patrones queda oculta en estas URLs.
 - `sound`: identificador del timbre de coro, como `ah`, `oh` o `mm` (Uh), o uno de los identificadores adicionales ofrecidos por Ajustes. Un identificador desconocido se ignora.
 - `tools=voices` o `sound`: habilitan el instrumento Voces y la importación de las tres voces del MusicXML en tres pentagramas, sin necesidad de agregar `#pro`.
+- `banner=hide`: oculta el banner de bienvenida desde el primer render, solo en esa visita. No escribe cookies ni localStorage; al abrir una URL sin ese parámetro vuelve a mostrarse, salvo que ya se hubiera cerrado manualmente.
 
-Estas opciones se aplican a las partituras guardadas al arrancar, y a las nuevas o importadas durante esa sesión. Se pueden modificar desde Ajustes y se guardan con la partitura. Sin parámetros se conserva el comportamiento habitual.
+Las opciones de herramientas y sonido se aplican a las partituras guardadas al arrancar, y a las nuevas o importadas durante esa sesión. Se pueden modificar desde Ajustes y se guardan con la partitura. Sin parámetros se conserva el comportamiento habitual.

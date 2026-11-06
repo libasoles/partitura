@@ -75,7 +75,7 @@ const jsonLd = pageJsonLd({
         <link rel="preload" href={`/vendor/${verovioFile.replace(/\.js$/, '.wasm')}`} as="fetch" type="application/wasm" crossorigin media="(min-width: 900px)" fetchpriority="low" />
       </>
     )}
-    {editor && <script is:inline set:html={`try{if(/(?:^|; )banner-closed=1/.test(document.cookie))document.documentElement.classList.add('banner-closed')}catch(e){}`} />}
+    {editor && <script is:inline set:html={`try{if(new URLSearchParams(location.search).get('banner')==='hide'||/(?:^|; )banner-closed=1/.test(document.cookie))document.documentElement.classList.add('banner-closed')}catch(e){}`} />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <Analytics />
