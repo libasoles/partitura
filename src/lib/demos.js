@@ -2,7 +2,7 @@
    what the text says (see demo.js for the engine). Each function takes the language's strings for the few labels drawn
    inside the stage and returns the figure's HTML. */
 
-import { stage, pitch, S, SP, beamGroup, pillInner, glyph, noteInner } from './demo.js';
+import { stage, pitch, S, SP, beamGroup, pillInner, glyph, noteInner, restInner } from './demo.js';
 
 import { tutorialIcon, tutorialIconPaths } from './tutorial-icons.js';
 
@@ -47,7 +47,7 @@ function placing(d, slots, start, every, pitchY = (n) => d.y(n.p)) {
 // ----- first steps -----------------------------------------------------------------------------------------------------
 
 export function place(s, aria) {
-  const d = stage({ id: 'place', T: 13 });
+  const d = stage({ id: 'place', T: 13, h: 152, bottom: 104 });
   const notes = phrase(d, [
     [q('E4'), q('E4'), { name: 'F4', d: 'e' }, { name: 'G4', d: 'e' }, q('G4')],
     [q('G4'), q('F4'), { name: 'E4', d: 'e' }, { name: 'F4', d: 'e' }, q('D4')],
@@ -67,13 +67,16 @@ export function place(s, aria) {
     }
   });
   d.pointer(path);
+  const bar = figureBar(d);
+  [1.3, at(4) - 0.4, at(9) - 0.4].forEach((t, i) => bar.on('4', t, [at(2) - 0.4, at(7) - 0.4, 12.3][i]));
+  [at(2) - 0.4, at(7) - 0.4].forEach((t, i) => bar.on('3', t, [at(4) - 0.4, at(9) - 0.4][i]));
   d.keycap('4', 26, 0.4, [1.3, at(4) - 0.4, at(9) - 0.4], 11.2);
   d.keycap('3', 26, 0.4, [at(2) - 0.4, at(7) - 0.4], 11.2);
   return d.html(aria);
 }
 
 export function notesRests(s, aria) {
-  const d = stage({ id: 'rests', T: 12 });
+  const d = stage({ id: 'rests', T: 12, h: 152, bottom: 104 });
   const x = (i) => d.firstX + i * 30;
   const eighths = [{ x: x(0), p: pitch('G4') }, { x: x(0) + 22, p: pitch('A4') }].map((n) => ({ x: n.x, y: d.y(n.p) }));
   const group = beamGroup(eighths);
@@ -88,6 +91,10 @@ export function notesRests(s, aria) {
   d.note(half.x, half.p, 'h', d.pop(8.2), {});
   d.click(8.2, half.x + 5, d.y(half.p));
   d.pointer([[1.2, d.w - 30, d.h - 24], ...visit(2.6, eighths[0].x + 5, eighths[0].y), ...visit(3.2, eighths[1].x + 5, eighths[1].y), ...visit(5.6, x(2) + 21, d.y(4)), ...visit(8.2, half.x + 5, d.y(half.p))]);
+  const bar = figureBar(d);
+  bar.on('3', 1.3, 4.9);
+  bar.on('R', 4.9, 7.5);
+  bar.on('5', 7.5, 11.3);
   d.keycap('3', 26, 0.4, 1.3, 4.4);
   d.keycap('R', 26, 4.2, 4.9, 7.0);
   d.keycap('5', 26, 6.8, 7.5, 9.4);
@@ -105,26 +112,36 @@ const MODIFIER_TOOLS = [
 ];
 
 /**
- * The toggle tools (dot, sharp, flat, natural) as a row of buttons above the staff, so the reader sees which one a
+ * The tools as a row of buttons above the staff, so the reader sees which one a
  * shortcut turns on. `on(key, from, to)` lights the button of that key between two moments.
  */
-function modifierBar(d) {
+function toolBar(d, tools) {
   const size = 26;
-  const x = (d.w - MODIFIER_TOOLS.length * size) / 2;
+  const x = (d.w - tools.length * size) / 2;
   const box = (i) => ({ x: x + i * size, y: 6 });
   const mark = (i, key, glyphSvg) => `<g transform="translate(${box(i).x + 3} ${box(i).y + 2}) scale(0.67)">${glyphSvg}</g>` +
     `<text class="d-captext" x="${box(i).x + size - 4}" y="${box(i).y + size - 3}" text-anchor="end" font-size="6.5">${key}</text>`;
-  d.base(`<rect class="d-panel" x="${x - 4}" y="2" width="${MODIFIER_TOOLS.length * size + 8}" height="${size + 8}" rx="6"/>` +
-    MODIFIER_TOOLS.map((_, i) => `<rect class="d-toolbtn" x="${box(i).x}" y="${box(i).y}" width="${size - 2}" height="${size - 2}" rx="5"/>`).join('') +
-    `<g style="color:var(--ink)">${MODIFIER_TOOLS.map(([g, k], i) => mark(i, k, g)).join('')}</g>`);
+  d.base(`<rect class="d-panel" x="${x - 4}" y="2" width="${tools.length * size + 8}" height="${size + 8}" rx="6"/>` +
+    tools.map((_, i) => `<rect data-demo-tool="${tools[i][1]}" class="d-toolbtn" x="${box(i).x}" y="${box(i).y}" width="${size - 2}" height="${size - 2}" rx="5"/>`).join('') +
+    `<g style="color:var(--ink)">${tools.map(([g, k], i) => mark(i, k, g)).join('')}</g>`);
   return {
     on: (key, from, to) => {
-      const i = MODIFIER_TOOLS.findIndex(([, k]) => k === key);
-      d.add(0, 0, `<rect class="d-toolon" x="${box(i).x}" y="${box(i).y}" width="${size - 2}" height="${size - 2}" rx="5"/>${mark(i, key, MODIFIER_TOOLS[i][0])}`,
-        [[0, { o: 0, c: 'var(--accent)' }], [from, { o: 0 }], [from + 0.25, { o: 1 }], [to, { o: 1 }], [to + 0.3, { o: 0 }]], { keep: false });
+      const i = tools.findIndex(([, k]) => k === key);
+      d.add(0, 0, `<rect class="d-toolon" x="${box(i).x}" y="${box(i).y}" width="${size - 2}" height="${size - 2}" rx="5"/>${mark(i, key, tools[i][0])}`,
+        [[0, { o: 0, c: 'var(--accent)' }], [from, { o: 0 }], [from + 0.25, { o: 1 }], [to, { o: 1 }], [to + 0.3, { o: 0 }]], { keep: false, cls: `d-tool-active d-tool-active-${key}` });
     },
   };
 }
+
+const modifierBar = (d) => toolBar(d, MODIFIER_TOOLS);
+
+// Duration tools use the same music glyphs as the staff, with the editor's key labels.
+const FIGURE_TOOLS = [
+  ...[['e', '3'], ['q', '4'], ['h', '5']].map(([duration, key]) =>
+    [`<g transform="translate(9 26) scale(0.65)">${noteInner(2, duration)}</g>`, key]),
+  [`<g transform="translate(10 16) scale(0.65)">${restInner('q')}</g>`, 'R'],
+];
+const figureBar = (d) => toolBar(d, FIGURE_TOOLS);
 
 export function accidentals(s, aria) {
   const d = stage({ id: 'acc', T: 12, h: 146, bottom: 104 });
@@ -680,11 +697,12 @@ export function dragFigure(s, aria) {
 }
 
 export function prepend(s, aria) {
-  const d = stage({ id: 'prepend', T: 10 });
+  const d = stage({ id: 'prepend', T: 10, h: 152, bottom: 104 });
   const first = d.firstX + 42;
   const shift = [[3.9, { x: 0 }], [4.3, { x: 40 }]];
   ['G4', 'A4', 'B4'].forEach((n, i) => d.note(first + i * 40, pitch(n), 'q', S(d.life(0.05), shift)));
   d.note(first - 40, pitch('E4'), 'q', d.pop(4), { cls: 'd-prepended' });
+  figureBar(d).on('4', 1, 9.3);
   d.keycap('4', 26, 0.5, 1, 6.5);
   d.pointer([[0.5, 280, 95], ...visit(4, first - 35, d.y(0)), [6, 280, 95]]);
   d.click(4, first - 35, d.y(0));
@@ -703,15 +721,16 @@ export function fillRests(s, aria) {
 }
 
 export function fullMeasure(s, aria) {
-  const d = stage({ id: 'full-measure', T: 11, h: 158 });
+  const d = stage({ id: 'full-measure', T: 11, h: 190, bottom: 104 });
   ['E4', 'G4', 'A4', 'G4'].forEach((n, i) => d.note(d.firstX + i * 43, pitch(n), 'q', d.life(0.05)));
   const x = d.firstX + 4 * 43;
   d.note(x, pitch('F4'), 'q', d.life(2.2, 3.4), { keep: false, cls: 'd-rejected-note' });
-  d.keycap('4', 26, 0.5, 1, 3.5, { ky: 94 });
+  figureBar(d).on('4', 1, 10.3);
+  d.keycap('4', 26, 0.5, 1, 3.5, { ky: 126 });
   d.pointer([[0.5, 280, 95], ...visit(3.5, x + 5, d.y(1)), [5, 280, 95]]);
   d.click(3.5, x + 5, d.y(1));
   const message = s.scoreUiStrings.full;
-  d.add(20, 116, `<rect class="d-toast" width="280" height="30" rx="5"/><text class="d-toast-text" x="12" y="19" font-size="9">${message}</text><path d="M263 11l8 8m0-8-8 8" class="d-toast-close"/>`, d.life(3.6, 9.5), { cls: 'd-toast-example' });
+  d.add(20, 148, `<rect class="d-toast" width="280" height="30" rx="5"/><text class="d-toast-text" x="12" y="19" font-size="9">${message}</text><path d="M263 11l8 8m0-8-8 8" class="d-toast-close"/>`, d.life(3.6, 9.5), { cls: 'd-toast-example' });
   return d.html(aria);
 }
 

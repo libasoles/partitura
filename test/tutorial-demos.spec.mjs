@@ -94,3 +94,18 @@ test('key presses show a fingertip and the menu keeps dots after accidentals and
   expect(at('dots')).toBe(at('accidentals') + 1);
   expect(at('shortcuts')).toBeGreaterThan(at('playback'));
 });
+
+test('tool shortcuts light the matching palette item until the next tool is chosen', async ({ page }) => {
+  await page.goto('/es/tutoriales/notes-rests/');
+  const demo = page.locator('.tutorial-demo').first();
+  await expect(demo.locator('[data-demo-tool]')).toHaveCount(4);
+  const active = key => demo.locator(`.d-tool-active-${key}`);
+  await frame(page, 1);
+  for (const key of ['3', 'R', '5']) expect(await opacity(active(key))).toBe(0);
+  for (const [time, chosen] of [[2, '3'], [6, 'R'], [9, '5']]) {
+    await frame(page, time);
+    for (const key of ['3', 'R', '5']) expect(await opacity(active(key))).toBe(key === chosen ? 1 : 0);
+    expect(await active(chosen).evaluate(el => getComputedStyle(el).color)).not.toBe(
+      await demo.evaluate(el => getComputedStyle(el).color));
+  }
+});
