@@ -150,6 +150,8 @@
     "toolsPlayback": "Playback",
     "toolsIntervals": "Intervals",
     "toolsIntervalsTooltip": "Intervals between voices",
+    "intervalsVoices": "Between voices",
+    "intervalsBass": "Relative to the bass",
     "intervalsNeedVoices": "Intervals measure the distance between notes of two or more voices sounding together. This score has no simultaneous notes yet.",
     "play": "Play",
     "pause": "Pause",

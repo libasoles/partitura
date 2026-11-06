@@ -146,6 +146,8 @@
     "toolsPlayback": "Reproducción",
     "toolsIntervals": "Intervalos",
     "toolsIntervalsTooltip": "Intervalos entre voces",
+    "intervalsVoices": "Voces entre sí",
+    "intervalsBass": "En relación al bajo",
     "intervalsNeedVoices": "Los intervalos miden la distancia entre las notas de dos o más voces que suenan a la vez. Esta partitura todavía no tiene notas simultáneas.",
     "play": "Reproducir",
     "pause": "Pausar",
