@@ -5,6 +5,28 @@ import { soundingNotes } from '../src/client/score-notes.js';
 
 const M = createScoreModel({ grandStaff: true });
 
+test('voice filtering uses the legend on both staves and preserves timing, ties and accidentals', () => {
+  const score = M.emptyScore();
+  score.rows = [[[
+    { d: 'q', n: 35, acc: '#', v: 1, at: 0 },
+    { d: 'q', rest: true, v: 2, at: 0 },
+    { d: 'h', n: 35, v: 2, at: M.DIVISIONS, tie: true },
+    { d: 'q', n: 35, v: 2, at: 3 * M.DIVISIONS },
+  ]]];
+  score.lower = { 0: [
+    { d: 'w', n: 28, v: 1, at: 0 },
+    { d: 'q', rest: true, v: 2, at: 0 },
+    { d: 'h', n: 30, v: 2, at: M.DIVISIONS },
+  ] };
+  assert.deepEqual(soundingNotes(score, M, new Set([2])), [
+    { midi: 61, start: M.DIVISIONS, end: 4 * M.DIVISIONS, channel: 0 },
+    { midi: 52, start: M.DIVISIONS, end: 3 * M.DIVISIONS, channel: 1 },
+  ]);
+  assert.deepEqual(soundingNotes(score, M, new Set()), soundingNotes(score, M));
+  assert.deepEqual(soundingNotes(score, M, new Set([1, 2])), soundingNotes(score, M));
+  assert.deepEqual(soundingNotes(score, M, new Set([4])), []);
+});
+
 test('playback timing respects rests, accidentals, simultaneous staves and tied notes', () => {
   const score = M.emptyScore();
   score.rows = [[

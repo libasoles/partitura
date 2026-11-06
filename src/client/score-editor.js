@@ -3966,7 +3966,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
       if (request !== playbackRequest) return;
       player ||= createPlayer(audioContext, vendorUrl, resetPlayback);
-      const track = playbackTrack || await player.prepare(score, M);
+      const track = playbackTrack || await player.prepare(score, M, toolOn('voices', false) ? shownVoices : null, VOICE_COUNT);
       if (request !== playbackRequest) return;
       playbackTrack = track;
       playbackState = 'playing';
@@ -4012,6 +4012,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     button.setAttribute('aria-pressed', 'false');
     button.addEventListener('click', () => {
       if (shownVoices.has(n)) shownVoices.delete(n); else shownVoices.add(n);
+      resetPlayback();
       applyVoices();
     });
     ['pointerdown', 'mousedown', 'click'].forEach((type) => button.addEventListener(type, (event) => event.stopPropagation()));

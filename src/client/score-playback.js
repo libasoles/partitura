@@ -43,9 +43,9 @@ export function createPlayer(context, vendorUrl, onEnded) {
 
   return {
     get position() { return playing ? Math.max(position, context.currentTime - origin) : position; },
-    async prepare(score, M) {
+    async prepare(score, M, selectedVoices, voiceCount = 4) {
       const seconds = 60 / (score.tempo || 120) / M.DIVISIONS;
-      const notes = soundingNotes(score, M).map((note) => ({ ...note, start: note.start * seconds, end: note.end * seconds }));
+      const notes = soundingNotes(score, M, selectedVoices, voiceCount).map((note) => ({ ...note, start: note.start * seconds, end: note.end * seconds }));
       const instrument = M.instrumentOf(score);
       const samples = new Map(await Promise.all([...new Set(notes.map((note) => note.midi))].map(async (midi) => {
         // The soundfont covers A0–C8. Transpose the nearest boundary sample for other pitches.
