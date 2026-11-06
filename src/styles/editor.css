@@ -2558,6 +2558,16 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   color: var(--blue-france);
 }
 
+.score-register-trigger.is-empty {
+  color: transparent;
+  min-width: 44px;
+}
+
+.score-register-trigger.is-empty:hover,
+.score-register-trigger.is-empty:focus-visible {
+  color: var(--muted, var(--ink));
+}
+
 .score-register-options {
   display: grid;
   gap: 0.25rem;

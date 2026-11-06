@@ -146,7 +146,7 @@
     "soundMm": "Uh",
     "registerTitle": "Register",
     "registerButton": "Register of voice {n}: {name}. Change",
-    "registers": {"soprano":"Soprano","mezzo":"Mezzo-soprano","alto":"Alto","tenor":"Tenor","baritone":"Baritone","bass":"Bass"},
+    "registers": {"soprano":"Soprano","mezzo":"Mezzo-soprano","alto":"Alto","tenor":"Tenor","baritone":"Baritone","bass":"Bass","none":"None"},
     "voiceStaff": "Voice {n}",
     "settingsTempo": "Tempo",
     "tempoNone": "None",

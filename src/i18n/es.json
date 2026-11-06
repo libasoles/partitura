@@ -142,7 +142,7 @@
     "soundMm": "Uh",
     "registerTitle": "Registro",
     "registerButton": "Registro de la voz {n}: {name}. Cambiar",
-    "registers": {"soprano":"Soprano","mezzo":"Mezzosoprano","alto":"Contralto","tenor":"Tenor","baritone":"Barítono","bass":"Bajo"},
+    "registers": {"soprano":"Soprano","mezzo":"Mezzosoprano","alto":"Contralto","tenor":"Tenor","baritone":"Barítono","bass":"Bajo","none":"Sin"},
     "voiceStaff": "Voz {n}",
     "settingsTempo": "Tempo",
     "tempoNone": "Sin indicación",

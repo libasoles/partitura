@@ -4007,7 +4007,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Nombre del pentagrama `staff` para etiquetas accesibles: el registro en Voces; arriba o abajo en el piano.
   function staffName(staff) {
-    if (M.instrumentOf(score) === 'voices') return t.registers[M.registerOf(score, staff)];
+    if (M.instrumentOf(score) === 'voices') return registerLabel(staff);
     return staff ? t.lowerStaff : t.upperStaff;
   }
 
@@ -4179,7 +4179,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   registerList.className = 'score-register-options';
   registerList.setAttribute('role', 'group');
   registerList.setAttribute('aria-label', t.registerTitle);
-  Object.keys(M.REGISTERS).forEach((id) => {
+  [...Object.keys(M.REGISTERS), M.NO_REGISTER].forEach((id) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.register = id;
@@ -4191,6 +4191,24 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     registerList.appendChild(button);
   });
   registerPopup.append(registerHeading, registerList);
+
+  // Nombre del registro; con "Sin" el pentagrama solo se identifica por su numero de voz.
+  function registerLabel(staff) {
+    const register = M.registerOf(score, staff);
+    return register === M.NO_REGISTER ? t.voiceStaff.replace('{n}', staff + 1) : t.registers[register];
+  }
+
+  // El popup sigue a su boton: se reposiciona al hacer scroll o cambiar el tamano.
+  let registerAnchor = null;
+  function placeRegisterPopup() {
+    if (!registerAnchor || !registerAnchor.isConnected || !registerPopup.matches(':popover-open')) return;
+    const anchor = registerAnchor.getBoundingClientRect();
+    const box = registerPopup.getBoundingClientRect();
+    registerPopup.style.left = Math.max(8, Math.min(anchor.left + anchor.width / 2 - box.width / 2, window.innerWidth - box.width - 8)) + 'px';
+    registerPopup.style.top = Math.max(8, Math.min(anchor.bottom + 6, window.innerHeight - box.height - 8)) + 'px';
+  }
+  window.addEventListener('scroll', placeRegisterPopup, { passive: true, capture: true });
+  window.addEventListener('resize', placeRegisterPopup);
 
   // Cada registro se escribe sobre su propio pentagrama, a la distancia que Verovio deja a la indicacion de tempo (si la hay, el primero va tras ella).
   function mountRegisterButtons() {
@@ -4210,10 +4228,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     for (let staff = 0; staff < Math.min(M.stavesOf(score), staves.length); staff += 1) {
       const top = lines[staff][0].getBoundingClientRect().top;
       const y = staff === 0 && hasTempo ? (tempoBox.top + tempoBox.bottom) / 2 : top - space * 2.6;
-      const name = t.registers[M.registerOf(score, staff)];
+      const name = registerLabel(staff);
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'score-register-trigger';
+      if (M.registerOf(score, staff) === M.NO_REGISTER) button.classList.add('is-empty');
       button.dataset.staff = staff;
       button.style.left = (x - origin.left - stage.clientLeft) + 'px';
       button.style.top = Math.max(12, y - origin.top - stage.clientTop) + 'px';
@@ -4225,11 +4244,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         if (registerPopup.matches(':popover-open')) { registerPopup.hidePopover(); return; }
         registerStaff = staff;
         registerList.querySelectorAll('button').forEach((option) => option.setAttribute('aria-pressed', String(option.dataset.register === M.registerOf(score, staff))));
+        registerAnchor = button;
         registerPopup.showPopover();
-        const anchor = button.getBoundingClientRect();
-        const box = registerPopup.getBoundingClientRect();
-        registerPopup.style.left = Math.max(8, Math.min(anchor.left + anchor.width / 2 - box.width / 2, window.innerWidth - box.width - 8)) + 'px';
-        registerPopup.style.top = Math.min(anchor.bottom + 6, window.innerHeight - box.height - 8) + 'px';
+        placeRegisterPopup();
       });
       stage.appendChild(button);
     }
