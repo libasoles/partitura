@@ -214,7 +214,7 @@ for (const staff of ['e', 'l']) {
   });
 }
 
-test('neutral clicks preview the exact playback position, fade out, and keep it after resizing', async ({ page }) => {
+test('neutral clicks keep the cursor at the exact playback position after waiting and resizing', async ({ page }) => {
   await open(page, 'piano', {
     rows: [[[{ d: 'q', n: 35 }, { d: 'q', n: 37 }, { d: 'h', n: 38 }]]],
     tools: { playback: true }, tempo: 60,
@@ -230,11 +230,11 @@ test('neutral clicks preview the exact playback position, fade out, and keep it 
   await page.mouse.click(x, staff.y - 15);
   await expect(hint).toHaveCount(1);
   expect((await hint.boundingBox()).x + 1).toBeCloseTo(x, 0);
-  await hint.evaluate((node) => { node.getAnimations()[0].pause(); node.getAnimations()[0].currentTime = 700; });
-  expect(await hint.evaluate((node) => Number(getComputedStyle(node).opacity))).toBeLessThan(0.5);
-  await hint.evaluate((node) => node.getAnimations()[0].finish());
-  await expect(hint).toHaveCount(0);
+  await page.waitForTimeout(1100);
+  await expect(hint).toBeVisible();
+  expect(await hint.evaluate((node) => Number(getComputedStyle(node).opacity))).toBeCloseTo(0.8);
   await page.setViewportSize({ width: 1300, height: 1000 });
+  await expect(hint).toBeVisible();
   await page.locator('#scorePlayback').click();
   const cursor = page.locator('.score-playback-cursor');
   await expect(cursor).toHaveCount(1);

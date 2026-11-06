@@ -908,7 +908,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   window.addEventListener('resize', scheduleLeftToolbarAlignment);
 
   function render() {
-    clearPlaybackHint();
     if (playbackState !== 'idle' && (playbackDocument !== score || playbackSnapshot !== JSON.stringify(score))) resetPlayback();
     if (!toolkit) return;
     const width = stage.clientWidth;
@@ -950,6 +949,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       drawPlaybackCursor();
     }
     markSelected();
+    drawPlaybackHint();
     updateHoverGhost();
     removeRow.hidden = score.rows.length <= M.MIN_ROWS;
   }
@@ -3897,7 +3897,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const playbackCursor = document.createElement('span');
   playbackCursor.className = 'score-playback-cursor';
   playbackCursor.setAttribute('aria-hidden', 'true');
-  let playbackHint = null, playbackHintAnimation = null;
+  let playbackHint = null, playbackHintPosition = null;
 
   function selectedPlaybackMeasure() {
     const measures = [
@@ -3968,39 +3968,38 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function clearPlaybackHint() {
-    playbackHintAnimation?.cancel();
-    playbackHintAnimation = null;
     playbackHint?.remove();
     playbackHint = null;
+    playbackHintPosition = null;
     playbackCursor.hidden = false;
   }
 
+  function drawPlaybackHint() {
+    if (!playbackHint || !playbackHintPosition) return;
+    const { mi, ratio } = playbackHintPosition;
+    const bounds = layout[mi];
+    if (!bounds || playbackHintPosition.document !== score) { clearPlaybackHint(); return; }
+    const x = bounds.left + (bounds.right - bounds.left) * ratio;
+    playbackHint.style.transform = `translate(${x - 1}px, ${bounds.top - 8}px)`;
+    playbackHint.style.height = (bounds.bottom - bounds.top + 16) + 'px';
+    playbackCursor.hidden = true;
+    stage.appendChild(playbackHint);
+  }
+
   function showPlaybackHint(event) {
-    if (playButton.hidden || event.button !== 0) return;
+    if (playButton.hidden || event.button !== 0 || playbackState === 'playing') return;
     const mi = playbackMeasureAt(event);
     if (!layout[mi]) return;
     rememberPlaybackMeasure(mi, playbackPositionAt(event, mi));
     clearPlaybackHint();
-    const origin = stage.getBoundingClientRect();
+    const x = event.clientX - stage.getBoundingClientRect().left;
     const bounds = layout[mi];
-    const hint = document.createElement('span');
-    hint.className = 'score-playback-hint';
-    hint.setAttribute('aria-hidden', 'true');
-    hint.dataset.measure = String(mi);
-    hint.style.transform = `translate(${event.clientX - origin.left - 1}px, ${bounds.top - 8}px)`;
-    hint.style.height = (bounds.bottom - bounds.top + 16) + 'px';
-    playbackHint = hint;
-    playbackCursor.hidden = true;
-    stage.appendChild(hint);
-    playbackHintAnimation = hint.animate([
-      { opacity: 0.8, offset: 0 },
-      { opacity: 0.8, offset: 0.35 },
-      { opacity: 0 },
-    ], { duration: 900, easing: 'ease-out', fill: 'forwards' });
-    playbackHintAnimation.onfinish = () => {
-      if (playbackState !== 'playing') playbackCursor.remove();
-      clearPlaybackHint();
-    };
+    playbackHintPosition = { document: score, mi, ratio: (x - bounds.left) / (bounds.right - bounds.left) };
+    playbackHint = document.createElement('span');
+    playbackHint.className = 'score-playback-hint';
+    playbackHint.setAttribute('aria-hidden', 'true');
+    playbackHint.dataset.measure = String(mi);
+    drawPlaybackHint();
   }
 
   // Record the gesture even when it clears a selection or revisits the same measure.
@@ -4008,6 +4007,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (event.button !== 0 || event.target.closest('.score-playback, .score-voice-legend, .score-selection-menu, .score-insert-measure')) return;
     const mi = playbackMeasureAt(event);
     if (!Number.isInteger(mi) || mi < 0 || mi >= M.measures(score).length) return;
+    clearPlaybackHint();
     const at = playbackPositionAt(event, mi);
     rememberPlaybackMeasure(mi, at);
     // A new gesture during pause chooses a fresh start, including in the same measure.
@@ -4156,6 +4156,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     barlines.querySelectorAll('[data-group]').forEach((button) => { if (button.dataset.group) button.hidden = !shown[button.dataset.group]; });
     tabToggle.hidden = !guitar;
     playButton.hidden = !settings || !toolOn('playback', false);
+    if (playButton.hidden) clearPlaybackHint();
     if (settings) stage.appendChild(playButton);
     alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
