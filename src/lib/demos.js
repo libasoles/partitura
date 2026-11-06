@@ -80,8 +80,41 @@ export function notesRests(s, aria) {
   return d.html(aria);
 }
 
+// ----- the top toolbar of modifiers --------------------------------------------------------------------------------------
+
+// The real palette glyphs of the dot and accidental tools (score-editor.js), 30 x 32 units, with their shortcut.
+const MODIFIER_TOOLS = [
+  ['<circle cx="15" cy="15" r="3.2"/>', 'P'],
+  ['<path d="M11 6v20M18 4v20M7.5 12.5l14-3.5M7.5 21l14-3.5" stroke="currentColor" stroke-width="1.8" fill="none"/>', 'S'],
+  ['<path d="M10 4v22c4-2 8-5 8-8.5 0-2.5-2-3.5-4-3.5-1.5 0-3 .8-4 2" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/>', 'B'],
+  ['<path d="M10 5v16l10-3.5M20 27V11L10 14.5" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linejoin="round"/>', 'C'],
+];
+
+/**
+ * The toggle tools (dot, sharp, flat, natural) as a row of buttons above the staff, so the reader sees which one a
+ * shortcut turns on. `on(key, from, to)` lights the button of that key between two moments.
+ */
+function modifierBar(d) {
+  const size = 26;
+  const x = (d.w - MODIFIER_TOOLS.length * size) / 2;
+  const box = (i) => ({ x: x + i * size, y: 6 });
+  const mark = (i, key, glyphSvg) => `<g transform="translate(${box(i).x + 3} ${box(i).y + 2}) scale(0.67)">${glyphSvg}</g>` +
+    `<text class="d-captext" x="${box(i).x + size - 4}" y="${box(i).y + size - 3}" text-anchor="end" font-size="6.5">${key}</text>`;
+  d.base(`<rect class="d-panel" x="${x - 4}" y="2" width="${MODIFIER_TOOLS.length * size + 8}" height="${size + 8}" rx="6"/>` +
+    MODIFIER_TOOLS.map((_, i) => `<rect class="d-toolbtn" x="${box(i).x}" y="${box(i).y}" width="${size - 2}" height="${size - 2}" rx="5"/>`).join('') +
+    `<g style="color:var(--ink)">${MODIFIER_TOOLS.map(([g, k], i) => mark(i, k, g)).join('')}</g>`);
+  return {
+    on: (key, from, to) => {
+      const i = MODIFIER_TOOLS.findIndex(([, k]) => k === key);
+      d.add(0, 0, `<rect class="d-toolon" x="${box(i).x}" y="${box(i).y}" width="${size - 2}" height="${size - 2}" rx="5"/>${mark(i, key, MODIFIER_TOOLS[i][0])}`,
+        [[0, { o: 0, c: 'var(--accent)' }], [from, { o: 0 }], [from + 0.25, { o: 1 }], [to, { o: 1 }], [to + 0.3, { o: 0 }]], { keep: false });
+    },
+  };
+}
+
 export function accidentals(s, aria) {
-  const d = stage({ id: 'acc', T: 12 });
+  const d = stage({ id: 'acc', T: 12, h: 146, bottom: 104 });
+  const bar = modifierBar(d);
   const notes = phrase(d, [[q('F4'), q('B4'), q('F4'), q('A4')]], 36);
   notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
   const marks = [['#', 'S', 0], ['b', 'B', 1], ['n', 'C', 2]];
@@ -90,6 +123,7 @@ export function accidentals(s, aria) {
     const n = notes[i];
     const t = 2.4 + k * 3;
     d.keycap(key, 26, t - 1.9, t - 1.2, t + 0.9);
+    bar.on(key, t - 1.2, t + 0.9);
     path.push(...visit(t, n.x + 5, d.y(n.p)));
     d.click(t, n.x + 5, d.y(n.p));
     d.add(n.x, d.y(n.p), glyph({ '#': 'E262', b: 'E260', n: 'E261' }[acc], -SP * 1.25, 0), d.pop(t), {});
@@ -664,15 +698,19 @@ export function fullMeasure(s, aria) {
 }
 
 export function selectedAccidental(s, aria) {
-  const d = stage({ id: 'selected-accidental', T: 12 });
+  const d = stage({ id: 'selected-accidental', T: 12, h: 146, bottom: 104 });
+  const bar = modifierBar(d);
   const x = d.firstX + 65;
   const p = pitch('F4');
   d.note(x, p, 'q', S(d.life(0.05), [[1.4, { c: INK }], [1.5, { c: SEL }]]));
-  d.pointer([[0.5, 280, 95], ...visit(1.5, x + 5, d.y(p)), [2.5, 280, 95]]);
+  d.pointer([[0.5, d.w - 40, d.h - 24], ...visit(1.5, x + 5, d.y(p)), [2.5, d.w - 40, d.h - 24]]);
   d.click(1.5, x + 5, d.y(p));
   d.keycap('S', 26, 2.5, 3.4, 5.2);
   d.keycap('B', 26, 5.4, 6.2, 8.1);
   d.keycap('C', 26, 8.3, 9.1, 10.4);
+  bar.on('S', 3.4, 5.4);
+  bar.on('B', 6.2, 8.3);
+  bar.on('C', 9.1, 10.8);
   [['E262', 3.5, 6.2], ['E260', 6.3, 9.1], ['E261', 9.2, 11.3]].forEach(([mark, from, to], i) =>
     d.add(x - SP * 1.25, d.y(p), glyph(mark, 0, 0), S(d.life(from, to, 0.05), [[0, { c: SEL }]]), { keep: i === 2 }));
   return d.html(aria);
