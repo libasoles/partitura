@@ -45,8 +45,12 @@ test('the reported bass becomes a separate line, beams independently and support
   ];
   await seed(page, measure);
   await expect(page.locator('#scoreStage g.chord')).toHaveCount(3);
-  await select(page, [1, 3]);
-  await page.getByRole('button', { name: 'Recalcular voces del compás', exact: true }).click();
+  await page.locator('#scoreSettingsToggle').click();
+  await page.getByRole('checkbox', { name: 'Voces', exact: true }).check();
+  await page.keyboard.press('Escape');
+  await page.locator('.score-voice-legend button[data-voice="2"]').click();
+  await select(page, [1, 3, 5, 7]);
+  await page.getByRole('button', { name: 'Asignar notas a voz 2', exact: true }).click();
   await expect(page.locator('#scoreStage g.chord')).toHaveCount(0);
   expect(await page.evaluate(() => window.scoreEditor.score.rows[0][0].map(ev => ev.v))).toEqual([1, 2, 1, 2, 1, 2, 1, 2]);
   await expect(page.locator('[data-action="beam"]')).toHaveCount(0);
@@ -62,6 +66,45 @@ test('the reported bass becomes a separate line, beams independently and support
   await page.keyboard.press('ControlOrMeta+z');
   await expect(page.locator('#scoreStage g.chord')).toHaveCount(3);
   expect(await page.evaluate(() => window.scoreEditor.score.rows[0][0])).toEqual(measure);
+});
+
+test('voice destinations follow the active legend, work for one note and survive undo and reload', async ({ page }, testInfo) => {
+  await seed(page, [{ n: 35, d: 'q', at: 0, v: 1 }]);
+  await page.locator('#scoreSettingsToggle').click();
+  await page.getByRole('checkbox', { name: 'Voces', exact: true }).check();
+  await page.keyboard.press('Escape');
+  await select(page, [0]);
+  const options = page.locator('[data-action^="assignVoice"]');
+  await expect(options).toHaveCount(0);
+  await page.locator('.score-voice-legend button[data-voice="1"]').click();
+  await expect(options).toHaveCount(0);
+  await page.locator('.score-voice-legend button[data-voice="2"]').click();
+  await expect(options).toHaveCount(1);
+  await expect(options).toHaveText('Asignar notas a voz 2');
+  const swatch = options.locator('.score-voice-swatch[data-voice="2"]');
+  await expect(swatch).toBeVisible();
+  const activeColor = await page.locator('.score-voice-legend button[data-voice="2"]').evaluate(el => getComputedStyle(el).backgroundColor);
+  await expect(swatch).toHaveCSS('background-color', activeColor);
+  await expect(swatch).toHaveCSS('border-radius', '50%');
+  await expect(options.locator('svg')).toHaveCount(0);
+  await page.locator('.score-voice-legend button[data-voice="4"]').click();
+  await expect(options).toHaveCount(2);
+  await page.screenshot({ path: testInfo.outputPath('voice-assignment-menu.png') });
+  await page.locator('.score-voice-legend button[data-voice="2"]').click();
+  await expect(options).toHaveCount(1);
+  await expect(options).toHaveText('Asignar notas a voz 4');
+  await options.click();
+  await expect(page.locator('[id="e0-0"]')).toHaveAttribute('data-voice', '4');
+  await expect(page.locator('[id="e0-0"]')).toHaveClass(/is-selected/);
+  await expect(page.locator('[data-action="assignVoice4"]')).toHaveCount(0);
+  await page.keyboard.press('ControlOrMeta+z');
+  expect(await page.evaluate(() => window.scoreEditor.score.rows[0][0][0].v)).toBe(1);
+  await select(page, [0]);
+  await page.getByRole('button', { name: 'Asignar notas a voz 4', exact: true }).click();
+  const measure = await page.evaluate(() => window.scoreEditor.score.rows[0][0]);
+  await expectPersisted(page, measure);
+  await page.reload();
+  await expect(page.locator('[id="e0-0"]')).toHaveAttribute('data-voice', '4');
 });
 
 test('explicit chord grouping can be undone and survives reload', async ({ page }) => {

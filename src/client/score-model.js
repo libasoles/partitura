@@ -245,8 +245,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
         lists.forEach((list) => { if (list !== keep) list.forEach((i) => { lane[i] = k + 1; }); });
       });
     }
-    // Sin carriles vacios: las voces se numeran en orden, saltando las que no tienen figuras.
-    const used = [...new Set(lane)].sort((a, b) => a - b);
+    // Conservar la identidad explicita aunque una voz intermedia no tenga figuras.
+    const used = Array.from({ length: Math.max(...lane) + 1 }, (_, k) => k);
     const lanes = used.map(() => ({ end: 0, groups: [] }));
     measure.map((ev, i) => i).sort((a, b) => hint[a] - hint[b] || a - b).forEach((i) => {
       const voice = lanes[used.indexOf(lane[i])];
@@ -1679,6 +1679,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     const { lanes } = arrange(measure);
     const additions = [];
     for (const [k, lane] of lanes.entries()) {
+      if (measure.length && !lane.groups.length) continue;
       let at = lane.end, left = capacity(score, mi) - at;
       if (left < 0) return false;
       while (left > 0) {
@@ -2393,8 +2394,40 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     return onsets(trial).every((at, i) => at === starts[i]) ? r : null;
   }
 
+  // Asignacion explicita: probar toda la seleccion antes de tocar el documento.
+  function voiceAssignment(score, sel, target) {
+    if (!Number.isInteger(target) || target < 1 || target > MAX_VOICE || !sel.length) return null;
+    const groups = new Map();
+    for (const ref of sel) {
+      const staff = staffOf(ref), measure = measures(score, staff)[ref.mi];
+      if (!measure?.[ref.i]) return null;
+      const key = staff + ':' + ref.mi;
+      if (!groups.has(key)) groups.set(key, { measure, trial: clone(measure), indices: new Set(), mi: ref.mi });
+      groups.get(key).indices.add(ref.i);
+    }
+    let changed = false;
+    for (const item of groups.values()) {
+      const { measure, trial, indices, mi } = item;
+      const starts = onsets(measure);
+      settleVoices(trial);
+      const originalVoices = trial.map(ev => ev.v);
+      trial.forEach((ev, i) => { ev.at = starts[i]; });
+      indices.forEach((i) => { changed ||= trial[i].v !== target; trial[i].v = target; });
+      // No superponer figuras de duracion distinta ni silencios en la misma voz.
+      for (let i = 0; i < trial.length; i++) for (let j = i + 1; j < trial.length; j++) {
+        if (trial[i].v !== target || trial[j].v !== target) continue;
+        if (starts[i] >= starts[j] + length(trial[j]) || starts[j] >= starts[i] + length(trial[i])) continue;
+        if (starts[i] !== starts[j] || length(trial[i]) !== length(trial[j]) || trial[i].rest || trial[j].rest) return null;
+      }
+      settle(trial);
+      if (measureLength(trial) > capacity(score, mi) || trial.some((ev, i) =>
+        ev.v !== (indices.has(i) ? target : originalVoices[i]) || ev.at !== starts[i])) return null;
+    }
+    return changed ? [...groups.values()] : null;
+  }
+
   // Acciones disponibles para una seleccion de figuras [{ mi, i }], en el orden en que se ofrecen.
-  function selectionActions(score, sel) {
+  function selectionActions(score, sel, activeVoices = []) {
     const actions = [];
     const group = tripletRun(score, sel);
     if (group) actions.push(tupletAction(group.groups.length));
@@ -2406,8 +2439,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     if (beams && beams.joins.some((j) => !j)) actions.push('beam');
     if (beams && beams.joins.some((j) => j)) actions.push('unbeam');
     if (chordSelection(score, sel)) actions.push('joinChord');
-    const voice = voiceSelection(score, sel);
-    if (voice && mergeVoices(clone(voice.measure), capacity(score, voice.mi))) actions.push('revoice');
+    [...new Set(activeVoices)].sort((a, b) => a - b).forEach((voice) => {
+      if (voiceAssignment(score, sel, voice)) actions.push('assignVoice' + voice);
+    });
     return actions;
   }
 
@@ -2417,11 +2451,13 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
 
   // Aplica una de las acciones de `selectionActions`; false si no corresponde o no entra.
   function applySelection(score, sel, action) {
-    if (!selectionActions(score, sel).includes(action)) return false;
-    if (action === 'revoice') {
-      const r = voiceSelection(score, sel);
-      return mergeVoices(r.measure, capacity(score, r.mi));
+    if (/^assignVoice\d+$/.test(action)) {
+      const plan = voiceAssignment(score, sel, Number(action.slice(11)));
+      if (!plan) return false;
+      plan.forEach(({ measure, trial }) => trial.forEach((ev, i) => { measure[i].v = ev.v; measure[i].at = ev.at; }));
+      return true;
     }
+    if (!selectionActions(score, sel).includes(action)) return false;
     if (action === 'joinChord') {
       const r = chordSelection(score, sel);
       settleVoices(r.measure);
@@ -2742,8 +2778,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
 
   // Una linea por voz con las figuras de cada compas separadas por comas y los compases por " | ".
   function voicesText(score) {
-    const bars = measures(score).map((measure) => ({ measure, lanes: voices(measure).filter((voice) => voice.groups.length) }));
-    while (bars.length && !bars[bars.length - 1].lanes.length) bars.pop(); // sin los compases vacios del final
+    const bars = measures(score).map((measure) => ({ measure, lanes: voices(measure) }));
+    while (bars.length && !bars[bars.length - 1].measure.length) bars.pop(); // sin los compases vacios del final
     const count = Math.max(0, ...bars.map((bar) => bar.lanes.length));
     return Array.from({ length: count }, (_, k) => 'voz ' + (k + 1) + ': ' + bars.map(({ measure, lanes }) => (
       lanes[k] ? voiceFigures(measure, lanes[k], score).join(', ') : '-'

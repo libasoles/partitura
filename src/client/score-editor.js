@@ -821,7 +821,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function applyAction(action) {
     const list = picks();
     const result = change(() => M.applySelection(score, list, action));
-    if (!result) say(action === 'revoice' ? t.voicesUnavailable : t.full);
+    if (!result) say(action.startsWith('assignVoice') ? t.voicesUnavailable : t.full);
     else say('');
     stage.focus({ preventScroll: true });
   }
@@ -2521,7 +2521,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     hideSelectionMenu();
     const list = picks();
     if (!list.length || drag?.active) return;
-    const actions = M.selectionActions(score, list);
+    const actions = M.selectionActions(score, list, toolOn('voices', false) ? shownVoices : []);
     if (!actions.length) return;
     const origin = stage.getBoundingClientRect();
     let boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
@@ -2540,8 +2540,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       button.type = 'button';
       button.className = 'score-selection-action';
       button.dataset.action = action;
-      button.innerHTML = lucide(ACTION_ICONS[action]) + '<span></span>';
-      button.lastChild.textContent = t[action];
+      const voice = action.startsWith('assignVoice') ? Number(action.slice(11)) : null;
+      if (voice) {
+        button.setAttribute('aria-label', t.assignVoice.replace('{n}', voice));
+        const [before, after] = t.assignVoice.split('{n}');
+        const icon = document.createElement('span');
+        icon.className = 'score-voice-swatch';
+        icon.dataset.voice = String(voice);
+        icon.textContent = String(voice);
+        icon.setAttribute('aria-hidden', 'true');
+        button.append(document.createTextNode(before), icon, document.createTextNode(after));
+      } else {
+        button.innerHTML = lucide(ACTION_ICONS[action]) + '<span></span>';
+        button.lastChild.textContent = t[action];
+      }
       button.addEventListener('click', () => applyAction(action));
       menu.appendChild(button);
     });
@@ -2902,7 +2914,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       selectNavigation(navigation, event);
       return;
     }
-    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu, .score-playback')) return;
+    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu, .score-playback, .score-voice-legend')) return;
     const link = event.target.closest('g.tie, g.slur');
     if (link && !activeItem && linkRefs.has(link)) {
       event.preventDefault();
@@ -3684,7 +3696,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
   };
 
-  const ACTION_ICONS = { triplet: 'triplet', untriplet: 'untriplet', link: 'link', unlink: 'unlink', beam: 'beam', unbeam: 'unbeam', joinChord: 'link', revoice: 'unbeam' };
+  const ACTION_ICONS = { triplet: 'triplet', untriplet: 'untriplet', link: 'link', unlink: 'unlink', beam: 'beam', unbeam: 'unbeam', joinChord: 'link' };
   // Los demas grupos (2, 4 a 9 figuras) son el icono del tresillo con su numero.
   for (let n = 2; n <= 9; n += 1) {
     if (n === 3) continue;
@@ -4047,6 +4059,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (shownVoices.has(n)) shownVoices.delete(n); else shownVoices.add(n);
       resetPlayback();
       applyVoices();
+      updateSelectionMenu();
     });
     ['pointerdown', 'mousedown', 'click'].forEach((type) => button.addEventListener(type, (event) => event.stopPropagation()));
     voiceButtons.push(button);

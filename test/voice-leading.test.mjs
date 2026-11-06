@@ -64,8 +64,7 @@ test('recalculating the reported measure restores the bass without changing musi
   const measure = score.rows[0][0];
   const refs = [{ mi: 0, i: 1 }, { mi: 0, i: 3 }];
   const original = structuredClone(measure);
-  assert.ok(M.selectionActions(score, refs).includes('revoice'));
-  assert.equal(M.applySelection(score, refs, 'revoice'), true);
+  assert.equal(M.mergeVoices(measure, M.capacity(score, 0)), true);
   assert.deepEqual(measure.map(ev => ev.v), [1, 2, 1, 2, 1, 2, 1, 2]);
   assert.deepEqual(measure.map(({ v, ...ev }) => ev), original.map(({ v, ...ev }) => ev));
   // Voice assignment must not silently bridge the missing eighth at time 12.
