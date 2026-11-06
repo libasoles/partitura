@@ -3748,7 +3748,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const x = hasTempo ? tempoBox.right + 16 : firstLine.left + 4;
     for (let staff = 0; staff < Math.min(M.stavesOf(score), staves.length); staff += 1) {
       const top = lines[staff][0].getBoundingClientRect().top;
-      const y = staff === 0 && hasTempo ? (tempoBox.top + tempoBox.bottom) / 2 : top - space * 3.4;
+      const y = staff === 0 && hasTempo ? (tempoBox.top + tempoBox.bottom) / 2 : top - space * 2.8;
       const name = t.registers[M.registerOf(score, staff)];
       const button = document.createElement('button');
       button.type = 'button';
