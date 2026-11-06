@@ -354,11 +354,16 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     return insertMany(measure, [[ev, at]])[0];
   }
 
+  function linksInSelection(score, refs) {
+    return links(score).filter((link) => refs.some((ref) => sameRef(ref, link.from)) && refs.some((ref) => sameRef(ref, link.to)));
+  }
+
   // Un fragmento conserva los compases intermedios y solo las figuras elegidas. `measures` son las del pentagrama de
   // arriba, o las del de abajo si solo se eligieron esas (`staff: 1`); si se eligieron de ambos, las de abajo van en `lower`.
   function copySelection(score, refs, columns = score.tabs || {}) {
     const chosen = refs.filter((r) => measures(score, staffOf(r))[r.mi]?.[r.i]);
     if (!chosen.length) return null;
+    const included = linksInSelection(score, chosen);
     const first = Math.min(...chosen.map((r) => r.mi));
     const last = Math.max(...chosen.map((r) => r.mi));
     const positions = new Map();
@@ -370,7 +375,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
       all.forEach((measure, mi) => measure.forEach((ev, i) => {
         if (!chosen.some((r) => staffOf(r) === staff && r.mi === mi && r.i === i)) return;
         if (!staff) positions.set(ev, { mi: mi - first, i: fragment[mi - first].length });
-        fragment[mi - first].push(clone(ev));
+        const copied = clone(ev);
+        delete copied.tie;
+        delete copied.slur;
+        const link = included.find((link) => sameRef(link.from, refOf(staff, mi, i)));
+        if (link) copied[link.type] = true;
+        fragment[mi - first].push(copied);
         pitches[mi - first].push(contexts[mi][i]);
       }));
       return { staff, fragment, pitches };
@@ -699,7 +709,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     const lane = measures(score, staffOf(refs[0]));
     const chosen = refs.filter((ref, k) => lane[ref.mi]?.[ref.i] && refs.findIndex((o) => sameRef(o, ref)) === k);
     // Una ligadura pertenece al patron solo cuando se guardan ambos extremos.
-    const included = links(score).filter((link) => chosen.some((ref) => sameRef(ref, link.from)) && chosen.some((ref) => sameRef(ref, link.to)));
+    const included = linksInSelection(score, chosen);
     return patternOf(chosen.map((ref) => {
       const ev = { ...lane[ref.mi][ref.i] };
       delete ev.tie;
