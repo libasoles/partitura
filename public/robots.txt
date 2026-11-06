@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://partitura.com.ar/sitemap-index.xml
