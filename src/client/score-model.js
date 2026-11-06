@@ -65,6 +65,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // Coro (Voces): registro de cada pentagrama; el registro decide la clave.
   const REGISTERS = { soprano: 'treble', mezzo: 'treble', alto: 'treble', tenor: 'guitar', baritone: 'bass', bass: 'bass' };
   const DEFAULT_REGISTERS = ['soprano', 'alto', 'tenor', 'bass'];
+  // "Sin": el pentagrama no muestra nombre de registro; la clave queda como esta.
+  const NO_REGISTER = 'none';
+  const validRegister = (register) => register === NO_REGISTER || Object.hasOwn(REGISTERS, register);
   const MIN_PARTS = 2;
   const MAX_PARTS = 4;
   const DEFAULT_PARTS = 3;
@@ -940,7 +943,13 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // Registro del pentagrama `staff` del coro: el guardado, o el que le toca por orden (S, A, T, B).
   function registerOf(score, staff) {
     const saved = score && Array.isArray(score.registers) ? score.registers[staff] : undefined;
-    return Object.hasOwn(REGISTERS, saved) ? saved : DEFAULT_REGISTERS[staff] || 'bass';
+    return validRegister(saved) ? saved : DEFAULT_REGISTERS[staff] || 'bass';
+  }
+
+  // Clave que corresponde al registro del pentagrama; sin registro, la del que le tocaba por orden.
+  function registerClef(score, staff) {
+    const register = registerOf(score, staff);
+    return REGISTERS[register === NO_REGISTER ? DEFAULT_REGISTERS[staff] || 'bass' : register];
   }
 
   // Timbre del coro (por partitura): Ah por defecto, que no se guarda.
@@ -961,8 +970,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   // El registro fija la clave inicial del pentagrama (los cambios de clave posteriores no se tocan).
   function setRegister(score, staff, register) {
-    if (!Number.isInteger(staff) || staff < 0 || staff >= MAX_PARTS || !Object.hasOwn(REGISTERS, register)) return false;
+    if (!Number.isInteger(staff) || staff < 0 || staff >= MAX_PARTS || !validRegister(register)) return false;
     score.registers = Array.from({ length: MAX_PARTS }, (_, k) => (k === staff ? register : registerOf(score, k)));
+    if (register === NO_REGISTER) return true;
     return setClef(score, 0, REGISTERS[register], staff);
   }
 
@@ -1773,7 +1783,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const saved = score && score[CLEF_KEYS[staff][0]];
     if (Object.hasOwn(CLEFS, saved)) return saved;
     if (!staff) return defaultClef;
-    return score && score.instrument === 'voices' ? REGISTERS[registerOf(score, staff)] : LOWER_CLEF;
+    return score && score.instrument === 'voices' ? registerClef(score, staff) : LOWER_CLEF;
   }
 
   const INSTRUMENTS = ['piano', 'guitar', 'voices'];
@@ -1794,7 +1804,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     score.instrument = instrument;
     if (instrument === 'voices') {
       delete score.showTabs;
-      for (let staff = 0; staff < MAX_PARTS; staff += 1) setClef(score, 0, REGISTERS[registerOf(score, staff)], staff);
+      for (let staff = 0; staff < MAX_PARTS; staff += 1) setClef(score, 0, registerClef(score, staff), staff);
     } else if (instrument === 'guitar') setClef(score, 0, 'guitar');
     else {
       if (before === 'voices') setClef(score, 0, 'treble'), setClef(score, 0, LOWER_CLEF, 1);
@@ -2307,7 +2317,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isFinite(width) && width > 0 && width <= 1) measureWidths[index] = width;
     });
     const tabs = sanitizeTabs(data.tabs, rows.reduce((sum, row) => sum + row.length, 0));
-    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, data.intervalMode === 'bass' ? { intervalMode: 'bass' } : {}, Array.isArray(data.registers) && data.registers.some((r) => Object.hasOwn(REGISTERS, r)) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (Object.hasOwn(REGISTERS, data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(chords).length ? { chords } : {}, Object.keys(lyrics).length ? { lyrics } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
+    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, data.intervalMode === 'bass' ? { intervalMode: 'bass' } : {}, Array.isArray(data.registers) && data.registers.some(validRegister) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (validRegister(data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(chords).length ? { chords } : {}, Object.keys(lyrics).length ? { lyrics } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
   }
 
   // Rellena huecos con silencios ocultos: el final del compas y el espacio entre figuras sueltas.
@@ -3079,7 +3089,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
-    CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, setParts, setRegister, REGISTERS, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
+    CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
