@@ -1779,13 +1779,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!chordLib) loadChords();
   }
 
-  function updateChordZone(event) {
-    const over = event && event.target;
-    const free = event && chordsOn && guitarOn() && !activeItem && !drag && !chordMove && !measureDrag && !shiftMeasures && !marquee
-      && !(over && over.closest && over.closest('button, input, .score-selection-menu, .score-hairpin-ui, .score-barre-span'));
-    showChordZone(free ? chordZoneAt(event.clientX, event.clientY) : null);
-  }
-
   function startChordDraft(mi, at, edit) {
     if (M.chordAt(score, mi, at) && edit === undefined) { openChord(mi, at); return; }
     chordDraft = { mi, at, text: edit || '' };
@@ -2744,12 +2737,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (event.pointerType !== 'mouse') return;
     hoverPoint = { clientX: event.clientX, clientY: event.clientY };
     updateHoverGhost();
-    updateChordZone(event);
   });
   stage.addEventListener('pointerleave', () => {
     hoverPoint = null;
     clearHoverGhost();
-    updateChordZone(null);
   });
   window.addEventListener('blur', () => {
     hoverPoint = null;
@@ -2877,18 +2868,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       markSelected();
       stage.focus({ preventScroll: true });
       return;
-    }
-    // Sin herramienta, la zona sobre el pentagrama abre el campo para escribir un acorde.
-    if (chordsOn && guitarOn() && !activeItem && event.button === 0 && event.pointerType === 'mouse') {
-      const zone = chordZoneAt(event.clientX, event.clientY);
-      if (zone) {
-        event.preventDefault();
-        event.stopPropagation();
-        setPicks([]);
-        startChordDraft(zone.mi, zone.at);
-        showChordZone(null);
-        return;
-      }
     }
     // Las cabezas graves pueden quedar dentro de TAB: la partitura recibe
     // el gesto antes de que el componente enfoque y redibuje su celda.
