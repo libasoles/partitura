@@ -988,7 +988,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     const positions = new Map(order.map((old, mi) => [old, mi]));
     // Una ligadura entre compases del segundo pentagrama tampoco sobrevive si dejan de ser vecinos.
     Object.entries(score.lower || {}).forEach(([mi, measure]) => {
-      if (positions.get(+mi + 1) !== positions.get(+mi) + 1) measure.forEach((ev) => { delete ev.tie; delete ev.slur; });
+      if (positions.get(+mi + 1) !== positions.get(+mi) + 1) edge(measure, 'last').forEach((i) => { delete measure[i].tie; delete measure[i].slur; });
     });
     ['navigation', 'barlines', 'barres', 'hairpins', 'chords', 'measureDurations', 'measureWidths', 'lower'].forEach((name) => {
       if (!score[name]) return;
@@ -1009,7 +1009,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
       return [positions.get(+mi) + ':' + at, value];
     }));
     all.forEach((measure, mi) => {
-      if (positions.get(mi + 1) !== positions.get(mi) + 1) measure.forEach((ev) => { delete ev.tie; delete ev.slur; });
+      if (positions.get(mi + 1) !== positions.get(mi) + 1) edge(measure, 'last').forEach((i) => { delete measure[i].tie; delete measure[i].slur; });
     });
     let offset = 0;
     score.rows = counts.map((count) => { const row = order.slice(offset, offset + count).map((mi) => all[mi]); offset += count; return row; });
@@ -2183,7 +2183,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     return measure.map((ev, i) => i).filter((i) => starts[i] === at && !measure[i].rest);
   }
 
-  // Ligaduras validas: una nota de la ultima columna de un compas con la primera del siguiente.
+  // Ligaduras entre notas consecutivas de una voz o entre las columnas de dos compases vecinos.
   // Con la misma altura es una ligadura de prolongacion (`tie`); con otra, de expresion (`slur`).
   const refOf = (staff, mi, i) => (staff ? { s: staff, mi, i } : { mi, i });
   const sameRef = (a, b) => staffOf(a) === staffOf(b) && a.mi === b.mi && a.i === b.i;
@@ -2193,13 +2193,19 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     for (let staff = 0; staff < stavesOf(score); staff += 1) {
       const all = measures(score, staff);
       all.forEach((measure, mi) => {
-        if (mi + 1 >= all.length) return;
         const last = edge(measure, 'last');
-        const next = edge(all[mi + 1], 'first');
+        const next = edge(all[mi + 1] || [], 'first');
+        const following = new Map();
+        voices(measure).forEach((voice) => voice.groups.slice(0, -1).forEach((group, k) => {
+          const right = voice.groups[k + 1];
+          if (tidy(group.at + group.size) === tidy(right.at)) group.indices.forEach((i) => following.set(i, right.indices));
+        }));
         measure.forEach((ev, i) => {
-          if (ev.rest || !(ev.tie || ev.slur) || !last.includes(i)) return;
-          const j = ev.tie ? next.find((k) => all[mi + 1][k].n === ev.n) : next[0];
-          if (j !== undefined) result.push({ type: ev.tie ? 'tie' : 'slur', from: refOf(staff, mi, i), to: refOf(staff, mi + 1, j) });
+          if (ev.rest || !(ev.tie || ev.slur)) return;
+          const targetMi = following.has(i) ? mi : mi + 1;
+          const candidates = following.get(i) || (last.includes(i) ? next : []);
+          const j = candidates.find((k) => !all[targetMi][k].rest && (!ev.tie || all[targetMi][k].n === ev.n));
+          if (j !== undefined) result.push({ type: ev.tie ? 'tie' : 'slur', from: refOf(staff, mi, i), to: refOf(staff, targetMi, j) });
         });
       });
     }
@@ -2239,16 +2245,25 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     return r.groups.every((g) => g.indices.every((i) => tupletSize(r.measure[i]) === size)) ? Object.assign(r, { size }) : null;
   }
 
-  // Dos notas, una al final de un compas y otra al comienzo del siguiente.
+  // Dos notas consecutivas de una voz, o en los extremos de compases vecinos.
   function linkPair(score, sel) {
     if (!sel.length) return null;
     const staff = staffOf(sel[0]);
     const all = measures(score, staff);
     const notes = sel.filter((s, k) => staffOf(s) === staff && all[s.mi] && all[s.mi][s.i] && sel.findIndex((o) => sameRef(o, s)) === k);
     if (notes.length !== 2 || sel.some((s) => staffOf(s) !== staff)) return null;
-    const [from, to] = notes.sort((a, b) => a.mi - b.mi);
-    if (to.mi !== from.mi + 1 || all[from.mi][from.i].rest || all[to.mi][to.i].rest) return null;
-    if (!edge(all[from.mi], 'last').includes(from.i) || !edge(all[to.mi], 'first').includes(to.i)) return null;
+    const [from, to] = notes.sort((a, b) => a.mi - b.mi || onsets(all[a.mi])[a.i] - onsets(all[b.mi])[b.i]);
+    if (all[from.mi][from.i].rest || all[to.mi][to.i].rest) return null;
+    if (to.mi === from.mi) {
+      const r = run(score, notes);
+      if (!r || r.groups.length !== 2) return null;
+      const ev = all[from.mi][from.i];
+      const target = r.groups[1].indices.find((i) => !r.measure[i].rest && (ev.n !== r.measure[to.i].n || r.measure[i].n === ev.n));
+      if (target !== to.i) return null;
+    } else {
+      if (to.mi !== from.mi + 1) return null;
+      if (!edge(all[from.mi], 'last').includes(from.i) || !edge(all[to.mi], 'first').includes(to.i)) return null;
+    }
     const existing = links(score).some((l) => sameRef(l.from, from));
     return { from, to, existing, staff };
   }
