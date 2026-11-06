@@ -49,7 +49,7 @@ test('playback tool is kept when saving/sanitizing a score', () => {
   assert.equal(M.sanitize(score).tools.playback, true);
 });
 
-test('original choir sounds have twice the gain; piano/guitar keep their plucked envelope in Voices', async () => {
+test('choir and plucked sounds have twice the gain in Voices and as direct instruments', async () => {
   const { createPlayer } = await import('../src/client/score-playback.js');
   const C = createScoreModel({ grandStaff: true, choir: true });
   const score = C.emptyScore();
@@ -76,8 +76,17 @@ test('original choir sounds have twice the gain; piano/guitar keep their plucked
       peaks.length = 0;
       player.play(track);
       player.stop();
-      assert.deepEqual(peaks, [id === 'guitar' || id === 'piano' ? 1 : 2]);
+      assert.deepEqual(peaks, [2]);
       assert.equal(Boolean(track.shape.within), id === 'guitar' || id === 'piano');
+    }
+    for (const id of ['guitar', 'piano']) {
+      C.setInstrument(score, id);
+      const track = await player.prepare(score, C);
+      peaks.length = 0;
+      player.play(track);
+      player.stop();
+      assert.deepEqual(peaks, [2]);
+      assert.equal(track.shape.within, true);
     }
     assert.ok(files.some((url) => url.endsWith('/guitar.json')));
     assert.ok(files.some((url) => url.endsWith('/piano.json')));

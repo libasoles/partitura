@@ -3,7 +3,7 @@ import { readSoundFont } from './soundfont.js';
 import { soundingNotes } from './score-notes.js';
 
 // Per-sound envelope: `attack` fades in, `release` rings past the note's end so consecutive notes overlap (legato).
-const PLUCKED = { attack: 0.005, release: 0.03, within: true };
+const PLUCKED = { volume: 2, attack: 0.005, release: 0.03, within: true };
 const CHOIR = {
   guitar: { ...PLUCKED, file: 'guitar' },
   piano: { ...PLUCKED, file: 'piano' },
@@ -11,6 +11,7 @@ const CHOIR = {
   oh: { file: 'choir-oh', volume: 2, attack: 0.09, release: 0.14 },
   // Uh keeps the saved `mm` ID and uses a closed-mouth hum from the Oh samples.
   mm: { file: 'choir-oh', volume: 2, attack: 0.1, release: 0.16, tone: 550 },
+  'zj-phil-s-voice-solo': { file: 'zj-phil-s-voice-solo', volume: 0.5, attack: 0.09, release: 0.14 },
 };
 
 // This module and the instrument samples are requested only by the play gesture.
