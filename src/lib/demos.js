@@ -547,25 +547,38 @@ export function loadFile(s, aria) {
 
 export function scores(s, aria) {
   const d = stage({ id: 'docs', T: 14, bottom: 96, h: 128, staff: false });
-  const name = (n) => s.scoreUiStrings.untitledScore.replace('{n}', n);
-  const tabX = [8, 98];
-  const tab = (x, n, stops) => d.add(x, 14, `<rect class="d-doctab" x="0" y="-10" width="82" height="20" rx="5"/><text class="d-pilltext" x="41" text-anchor="middle" dominant-baseline="central" font-size="8.5">${name(n)}</text>`, stops);
-  tab(tabX[0], 1, d.life(0.05));
+  const name = (n) => `${s.scoreH1} ${n}`;
+  const W = 74; // tab width
+  const x0 = 8;
+  const tabX = [x0, x0 + W + 3];
+  const baseline = 30;
+  // The real tab strip: a thin rule, plain grey tabs, and the active one drawn as a white page open at the bottom
+  // with its top-right corner rounded.
+  d.base(`<path d="M${x0} ${baseline}H${d.w - x0}" stroke="var(--rule)" stroke-width="1" fill="none"/>`);
+  const label = (n, active) => `<text class="d-text" x="${W / 2}" y="19" text-anchor="middle" font-size="${active ? 9.6 : 9}" font-weight="${active ? 700 : 400}" style="fill:${active ? 'var(--ink)' : 'var(--ink-soft)'}">${name(n)}</text>`;
+  const frame = `<path d="M0 ${baseline + 0.5}V8H${W - 9}a9 9 0 0 1 9 9V${baseline + 0.5}" fill="var(--paper)" stroke="var(--rule)" stroke-width="1"/><path d="M1 ${baseline}H${W - 1}" stroke="var(--paper)" stroke-width="2"/>`;
+  const state = (x, n, active, stops, opts) => d.add(x, 0, (active ? frame : '') + label(n, active), stops, opts);
+  const fade = (...spans) => {
+    const stops = [[0, { o: 0 }]];
+    spans.forEach(([on, off]) => stops.push([on, { o: 0 }], [on + 0.2, { o: 1 }], [off, { o: 1 }], [off + 0.2, { o: 0 }]));
+    return stops;
+  };
+  const END = d.T - 0.7;
+  state(tabX[0], 1, true, fade([0, 3.5], [7.1, END]));
+  state(tabX[0], 1, false, fade([3.5, 7.1]), { keep: false });
   // The second score opens at 3.4 and the plus button moves over to make room.
-  tab(tabX[1], 2, d.pop(3.4));
-  d.add(tabX[0] + 94, 14, '<circle class="d-plus" r="8"/><path class="d-plusmark" d="M-3.5 0H3.5M0 -3.5V3.5"/>', S(d.life(0.05), [[3.2, { x: 0 }], [3.5, { x: 90 }]]));
-  // The active tab carries an underline.
-  const underline = (x, stops, opts) => d.add(x, 25, '<rect class="d-active" width="82" height="2" rx="1"/>', stops, opts);
-  underline(tabX[0], [[0, { o: 0 }], [0.3, { o: 1 }], [3.6, { o: 1 }], [3.9, { o: 0 }], [7.0, { o: 0 }], [7.3, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
-  underline(tabX[1], [[0, { o: 0 }], [3.5, { o: 0 }], [3.8, { o: 1 }], [6.8, { o: 1 }], [7.1, { o: 0 }]], { keep: false });
+  state(tabX[1], 2, true, fade([3.5, 6.9]), { keep: false });
+  state(tabX[1], 2, false, S(d.pop(3.4), [[6.9, { o: 1 }]]));
+  d.add(tabX[0] + W + 16, 19, ico('plus', 13), S(d.life(0.05), [[3.2, { x: 0 }], [3.5, { x: W + 3 }]]), { cls: 'd-newtab' });
   // Each score has its own staff: the first one has notes, the new one starts empty.
   d.base(d.lines(18, d.x1 - 12, d.bottom - 4 * SP));
   ['E4', 'G4', 'A4', 'G4'].forEach((n, i) => {
     d.note(48 + i * 36, pitch(n), 'q', [[0, { o: 0 }], [0.2, { o: 1 }], [3.4, { o: 1 }], [3.7, { o: 0 }], [7.1, { o: 0 }], [7.4, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
   });
-  d.click(3.0, tabX[0] + 94, 14);
-  d.click(6.9, tabX[0] + 41, 14);
-  d.pointer([[0.6, d.w - 40, d.h - 20], ...visit(3.0, tabX[0] + 94, 14), [4.8, tabX[1] + 41, 50], ...visit(6.9, tabX[0] + 41, 14), [9.0, d.w - 40, d.h - 20]]);
+  const plusX = tabX[0] + W + 16;
+  d.click(3.0, plusX, 19);
+  d.click(6.9, tabX[0] + W / 2, 19);
+  d.pointer([[0.6, d.w - 40, d.h - 20], ...visit(3.0, plusX, 19), [4.8, tabX[1] + W / 2, 60], ...visit(6.9, tabX[0] + W / 2, 19), [9.0, d.w - 40, d.h - 20]]);
   return d.html(aria);
 }
 

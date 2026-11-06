@@ -7,11 +7,11 @@ import * as demos from './demos.js';
 
 /** The sidebar: every tutorial, grouped. The order here is the reading order of "previous" and "next". */
 export const categories = [
-  { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'accidentals', 'dots', 'settings', 'playback', 'shortcuts'] },
-  { id: 'editing', slugs: ['select-move', 'copy', 'voices', 'patterns', 'tuplets', 'ties'] },
+  { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'settings', 'playback', 'shortcuts', 'faq'] },
+  { id: 'editing', slugs: ['accidentals', 'dots', 'select-move', 'copy', 'voices', 'patterns', 'tuplets', 'ties'] },
   { id: 'structure', slugs: ['signatures', 'measures', 'delete-barline', 'repeats', 'dynamics'] },
   { id: 'guitar', slugs: ['tab-toggle', 'edit-tab', 'move-tab', 'chords', 'barre'] },
-  { id: 'files', slugs: ['files', 'scores', 'faq'] },
+  { id: 'files', slugs: ['files', 'scores'] },
 ] as const;
 
 export type Category = (typeof categories)[number]['id'];
