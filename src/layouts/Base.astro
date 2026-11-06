@@ -91,7 +91,6 @@ const jsonLd = pageJsonLd({
         </button>
         <ul id="siteMenuList" class="menu-list" role="menu" hidden>
           <li role="none"><a role="menuitem" href={tutorialsPath(locale)}><svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>{s.ui.navTutorials}</a></li>
-          <li role="none"><a role="menuitem" href={proPath(locale)} data-pro-menu><svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>{s.ui.navPro}</a></li>
           {editor && (
             <>
               <li role="none"><button role="menuitem" type="button" id="menuLoad"><svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>{s.ui.menuLoad}</button></li>
@@ -105,6 +104,7 @@ const jsonLd = pageJsonLd({
               </li>
             </>
           )}
+          <li role="none"><a role="menuitem" href={proPath(locale)} data-pro-menu><svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>{s.ui.navPro}</a></li>
         </ul>
         {editor && <input id="menuFile" type="file" accept=".musicxml,.xml,.mid,.midi,audio/midi,application/xml,text/xml" hidden />}
       </div>}
