@@ -2,54 +2,22 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/1911e1be-e278-4bb7-9eb3-ece8b8bb9d25/deploy-status)](https://app.netlify.com/projects/editordepartituras/deploys)
 
-Editor de partituras online, gratis y sin registro. Una página en blanco donde escribir notas, silencios, compases,
-clave y armadura, con tablatura de guitarra, y descargar el resultado en PDF o MusicXML.
+**Editor de partituras online, gratis y sin registro.** Escribí notas, silencios, compases, clave y armadura directo en el pentagrama, sin instalar nada, y descargá tu partitura en PDF o MusicXML.
 
-Disponible en español, inglés y portugués, y renderizado en el servidor para que todo el contenido sea indexable.
+👉 **[partitura.com.ar](https://partitura.com.ar)** · [Probar la demo «Canto en la rama»](https://partitura.com.ar/es/demos/canto-en-la-rama/?tools=voices,play,intervals&sound=uh&banner=hide)
 
-![Editor de partituras con notas en el pentagrama](docs/editor.png)
+![Canto en la rama, de Aca Seca Trío, con voces en color, intervalos, repeticiones y dinámicas](docs/editor.png)
 
-![Editor con tablatura de guitarra bajo cada pentagrama](docs/tablatura.png)
+![Panel de Ajustes con instrumento, sonidos, tempo y herramientas](docs/ajustes.png)
 
 ## Características
 
-- **Notas y silencios** de redonda a fusa, con puntillo y alteraciones (sostenido, bemol, becuadro).
-- **Compases** (4/4, 3/4, 6/8…) con control de duración: no deja pasarse del compás.
-- **Clave y armadura**: Sol, Fa o Do, y cualquier armadura de Do♭ a Do♯.
-- **Barras especiales**: doble, de repetición y cejillas para guitarra.
-- **Tablatura de guitarra** editable: cambiar el traste, mover una celda de cuerda o de tiempo, y recolocar la digitación sin alterar el sonido.
-- **Atajos de teclado** para cada figura, duplicar selección y más.
-- **Varias partituras en pestañas** con guardado automático en el navegador (IndexedDB).
-- **Exportación** a PDF para imprimir y a MusicXML para abrir en MuseScore, Finale, Sibelius o Dorico.
-- **Tutoriales** por tema, en tres idiomas.
-
-## Stack
-
-[Astro](https://astro.build) (salida estática) · [Verovio](https://www.verovio.org) (engraving, WebAssembly) ·
-jsPDF (PDF) · React + Radix UI (toasts y diálogos).
-
-## Empezar
-
-Requiere Node >= 22.12 (ver `.nvmrc`).
-
-```sh
-npm install
-npm run dev
-```
-
-```sh
-npm run build   # sitio estático en dist/; SITE_URL=https://ejemplo.com para el dominio de canonical, hreflang y sitemap
-npm test        # después del build: verifica el HTML generado
-npm run check   # astro check (tipos)
-```
-
-Las pruebas de navegador generan el sitio estático y lo verifican con Chromium de Playwright y un perfil aislado:
-
-```sh
-npx playwright install chromium   # una vez por equipo
-npm run test:browser              # inicia su propio servidor de prueba
-```
-
-## Reutilizar el editor
-
-El editor también se consume durante el build de guitar-chords, desde una revisión fija de este repositorio. Ver [la integración y actualización de la dependencia](docs/shared-editor.md).
+- **Escribí como pensás:** arrastrá una figura al pentagrama o elegila y hacé clic donde va. Redondas a fusas, puntillos, alteraciones y atajos de teclado para todo.
+- **Piano, guitarra o coro:** gran pentagrama para piano, tablatura editable para guitarra y hasta cuatro voces para coro.
+- **Mirá cómo suena:** reproducí tu partitura con sonidos de piano, guitarra o coro, con una barra que sigue la música y arranca donde hagas clic.
+- **Voces en color:** distinguí cada línea musical, escuchala por separado y mirá los intervalos entre voces.
+- **Repeticiones y dinámicas:** barras de repetición, D.C., D.S., segno, casas 1. y 2., reguladores.
+- **Acordes de guitarra** con su digitación sobre el pentagrama.
+- **Todas tus partituras a mano:** pestañas para alternar entre borradores, con guardado automático en tu navegador.
+- **Llevate tu trabajo:** exportá a PDF para imprimir, o a MusicXML y MIDI para seguir en MuseScore, Finale, Sibelius o Dorico. También podés importarlos arrastrando el archivo.
+- **Aprendé con tutoriales** paso a paso, en español, inglés y portugués.
