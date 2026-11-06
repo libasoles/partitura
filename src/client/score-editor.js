@@ -799,9 +799,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     });
   }
 
-  function shiftSelected(delta) {
+  function shiftSelected(delta, duplicate = false) {
     const list = picks().filter((p) => eventAt(p));
     if (!list.length) return;
+    if (duplicate) {
+      const trial = M.clone(score);
+      const created = M.duplicateVertical(trial, list, delta);
+      if (!created?.length) { say(t.verticalDuplicateUnavailable); return; }
+      change(() => {
+        Object.assign(score, trial);
+        selected = created[created.length - 1];
+        group = created.length > 1 ? created : [];
+      });
+      say('');
+      return;
+    }
     // Un silencio sin altura propia esta en el centro del pentagrama.
     change(() => { list.forEach((p) => { const ev = eventAt(p); ev.n = M.clampPitch((Number.isInteger(ev.n) ? ev.n : M.bottomLine(score, p.mi, staffOf(p)) + 4) + delta); }); });
   }
@@ -3156,8 +3168,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   stage.addEventListener('keydown', (event) => {
     if (event.target !== stage) return;
     if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); removeSelected(); }
-    else if (event.key === 'ArrowUp') { event.preventDefault(); shiftSelected(1); }
-    else if (event.key === 'ArrowDown') { event.preventDefault(); shiftSelected(-1); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); if (!event.shiftKey || !event.repeat) shiftSelected(1, event.shiftKey); }
+    else if (event.key === 'ArrowDown') { event.preventDefault(); if (!event.shiftKey || !event.repeat) shiftSelected(-1, event.shiftKey); }
     else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault();
       stepSelection(event.key === 'ArrowRight' ? 1 : -1, event.shiftKey);

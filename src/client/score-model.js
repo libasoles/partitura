@@ -400,6 +400,62 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
     };
   }
 
+  // Duplica en paralelo: una voz nueva por cada voz elegida, sin desplazar el ritmo original.
+  function duplicateVertical(score, refs, delta) {
+    if (delta !== 1 && delta !== -1) return null;
+    const trial = clone(score);
+    const chosen = refs.filter((r, i) => measures(trial, staffOf(r))[r.mi]?.[r.i] &&
+      refs.findIndex((other) => sameRef(r, other)) === i);
+    if (!chosen.some((r) => !measures(trial, staffOf(r))[r.mi][r.i].rest)) return null;
+    const included = linksInSelection(trial, chosen);
+    const created = [];
+    const groups = new Map();
+    chosen.forEach((ref) => {
+      const key = staffOf(ref) + ':' + ref.mi;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(ref);
+    });
+    for (const group of groups.values()) {
+      const { mi } = group[0], staff = staffOf(group[0]);
+      const measure = measures(trial, staff)[mi];
+      const original = measure.slice();
+      const starts = onsets(measure);
+      settleVoices(measure);
+      const sourceVoices = [...new Set(group.map((r) => measure[r.i].v))].sort((a, b) => a - b);
+      if (voices(measure).length + sourceVoices.length > MAX_VOICE) return null;
+      const oldVoice = (v) => v + sourceVoices.filter((s) => delta > 0 ? s <= v : s < v).length;
+      const newVoice = (v) => oldVoice(v) - delta;
+      let nextTuplet = Math.max(0, ...measure.map((ev) => ev.tp || 0));
+      const tuplets = new Map();
+      const inserts = group.map((ref) => {
+        const source = measure[ref.i];
+        const ev = { ...source }; // Figura nueva, con identidad propia para las digitaciones.
+        ev.v = newVoice(source.v);
+        if (ev.tp) {
+          if (!tuplets.has(ev.tp)) tuplets.set(ev.tp, ++nextTuplet);
+          ev.tp = tuplets.get(ev.tp);
+        }
+        if (Number.isInteger(ev.n)) ev.n += delta;
+        delete ev.tie;
+        delete ev.slur;
+        const link = included.find((l) => sameRef(l.from, ref));
+        if (link) ev[link.type] = true;
+        return [ev, starts[ref.i]];
+      });
+      if (inserts.some(([ev, at]) => !ev.rest && (ev.n < LOWEST || ev.n > HIGHEST ||
+        original.some((o, i) => !o.rest && starts[i] === at && o.n === ev.n && o.acc === ev.acc)))) return null;
+      measure.forEach((ev, i) => { ev.at = starts[i]; ev.v = oldVoice(ev.v); });
+      insertMany(measure, inserts);
+      const after = onsets(measure);
+      if (measureLength(measure) > capacity(trial, mi) ||
+        original.some((ev, i) => after[measure.indexOf(ev)] !== starts[i]) ||
+        inserts.some(([ev, at]) => after[measure.indexOf(ev)] !== at)) return null;
+      inserts.forEach(([ev]) => created.push(refOf(staff, mi, measure.indexOf(ev))));
+    }
+    Object.assign(score, trial);
+    return created;
+  }
+
   // Duplica las figuras elegidas justo despues de la ultima de ellas, conservando su ritmo relativo. Lo que no entra
   // en el compas sigue en los siguientes (se agregan los que falten; una figura partida queda ligada) y convive con
   // lo que ya hay: misma altura y duracion se ignora, misma altura y otra duracion actualiza la duracion.
@@ -2689,7 +2745,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false } 
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     stavesOf, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
