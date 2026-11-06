@@ -785,6 +785,10 @@
       [
         "Duplicar partituras",
         "Duplicá una partitura para probar variantes sin perder la original."
+      ],
+      [
+        "Separación de voces en múltiples pentagramas",
+        "Separá cada voz en su propio pentagrama."
       ]
     ],
     "plansTitle": "Elegí tu plan",

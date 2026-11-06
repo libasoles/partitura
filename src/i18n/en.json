@@ -788,6 +788,10 @@
       [
         "Duplicate scores",
         "Duplicate a score to try variations without losing the original."
+      ],
+      [
+        "Voice separation across multiple staves",
+        "Split each voice onto its own staff."
       ]
     ],
     "plansTitle": "Choose your plan",
