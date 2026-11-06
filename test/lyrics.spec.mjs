@@ -81,3 +81,15 @@ test('lyrics are a Pro feature: no tool without #pro in the URL', async ({ page 
   await open(page, '');
   await expect(page.locator('[data-tool="lyric"]')).toHaveCount(0);
 });
+
+test("the \"Letra de canto\" setting shows or hides the lyric tool", async ({ page }) => {
+  await open(page);
+  await expect(page.locator('[data-tool="lyric"]')).toBeVisible();
+  await page.locator('#scoreSettingsToggle').click();
+  const check = page.locator('#scoreSettingsPopup').getByRole('checkbox', { name: 'Letra de canto', exact: true });
+  await expect(check).toBeChecked();
+  await check.uncheck();
+  await expect(page.locator('[data-tool="lyric"]')).toBeHidden();
+  await check.check();
+  await expect(page.locator('[data-tool="lyric"]')).toBeVisible();
+});

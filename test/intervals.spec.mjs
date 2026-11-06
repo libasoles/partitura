@@ -86,7 +86,7 @@ test('choir intervals follow the selected staves and depend on the Voices tool',
   await legend.nth(0).click();
   await expect(directions).toHaveText(['V']);
   await page.locator('#scoreSettingsToggle').click();
-  await page.getByRole('checkbox', { name: 'Voces', exact: true }).uncheck();
+  await page.getByRole('checkbox', { name: 'Identificador de voces', exact: true }).uncheck();
   await expect(page.locator('#scoreIntervals')).toHaveCount(0);
   await expect(directions).toHaveCount(0);
 });

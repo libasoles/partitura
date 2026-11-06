@@ -13,7 +13,7 @@ test('settings stay inside a short viewport and all options remain reachable by 
   const category = (name) => popup.locator('.score-settings-category').filter({ has: page.getByRole('checkbox', { name, exact: true }) });
   const grid = await popup.locator('.score-settings-tools').boundingBox();
   let previousBottom = 0;
-  for (const name of ['Repetición', 'Dinámica', 'Voces', 'Reproducción', 'Intervalos']) {
+  for (const name of ['Repetición', 'Dinámica', 'Identificador de voces', 'Reproducción', 'Intervalos']) {
     const row = category(name);
     const box = await row.boundingBox();
     const label = await row.locator('label').boundingBox();
@@ -115,7 +115,7 @@ test('Voces is off by default; turning it on colours each voice and shows a 1-4 
   await expect(page.locator('.score-voice-legend')).toHaveCount(0);
   await page.locator('#scoreSettingsToggle').click();
   const popup = page.locator('#scoreSettingsPopup');
-  const voices = popup.getByRole('checkbox', { name: 'Voces' });
+  const voices = popup.getByRole('checkbox', { name: 'Identificador de voces' });
   await expect(voices).not.toBeChecked();
   await expect(popup.locator('.score-voice-swatch')).toHaveCount(4);
   await voices.check();
