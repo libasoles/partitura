@@ -149,6 +149,7 @@ function renderShortcuts(strings) {
   const marks = MARKS.map(function (m) { return keyCell(m[1], String(keys[m[0]] || '').toUpperCase()); });
   return (
     '<p class="score-tutorial__intro">' + s('scoreShortcutsIntro') + '</p>' +
+    '<p>' + s('scoreShortcutsLinks') + '</p>' +
     '<div class="score-keys">' +
     keyGroup(s('scoreShortcutsNotes'), notes) +
     keyGroup(s('scoreShortcutsRests'), rests) +

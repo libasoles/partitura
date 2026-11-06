@@ -14,6 +14,7 @@
   "scoreAboutLead": "Arraste uma figura direto para a pauta, ou escolha a figura, clique onde a nota vai e pronto. É grátis, funciona no navegador e não pede para criar usuário nem instalar nada.",
   "scoreShortcutsH2": "Atalhos de teclado e gestos",
   "scoreShortcutsIntro": "Aperte a tecla de uma figura para escolhê-la e clique na pauta para colocá-la. Aperte A para desmarcar a ferramenta atual. Com figuras selecionadas, Shift+D as duplica logo depois da última selecionada, seguindo pelos compassos seguintes. Estas são as teclas de cada uma:",
+  "scoreShortcutsLinks": "Com duas notas selecionadas, pressione <kbd>(</kbd> ou <kbd>)</kbd> para adicionar ou remover a ligadura, se as notas puderem ser ligadas. É a mesma ação do botão contextual de ligadura. O atalho reconhece o caractere: use a combinação que escreve o parêntese no seu teclado, em qualquer sistema operacional.",
   "scoreShortcutsNotes": "Notas",
   "scoreShortcutsRests": "Pausas",
   "scoreShortcutsMarks": "Ponto de aumento e alterações",

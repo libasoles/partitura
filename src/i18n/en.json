@@ -14,6 +14,7 @@
   "scoreAboutLead": "Write your score straight onto the staff: pick a note value, click where the note goes, done. It is free, runs in your browser and needs no account or install.",
   "scoreShortcutsH2": "Keyboard shortcuts and gestures",
   "scoreShortcutsIntro": "Press a figure’s key to pick it, then click on the staff to place it. Press A to deselect the current tool. With figures selected, Shift+D duplicates them right after the last selected one, carrying on into the following measures. These are the keys:",
+  "scoreShortcutsLinks": "With two notes selected, press <kbd>(</kbd> or <kbd>)</kbd> to add or remove a tie or slur, if the notes can be linked. This is the same action as the contextual tie button. The shortcut follows the character: use whichever combination types the parenthesis on your keyboard, on any operating system.",
   "scoreShortcutsNotes": "Notes",
   "scoreShortcutsRests": "Rests",
   "scoreShortcutsMarks": "Dot and accidentals",
