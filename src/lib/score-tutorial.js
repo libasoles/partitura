@@ -89,26 +89,12 @@ function dotDemo(s) {
   return demo('score-demo--dot', svg, s('scoreDotTitle'), s('scoreDotBody'));
 }
 
-function barDemo(s) {
-  const svg =
-    staff(150) +
-    '<path class="score-demo__bar" d="M0 5.5V43.5M148 5.5V43.5" stroke="currentColor" stroke-width="1.6"/>' +
-    '<path class="score-demo__bar score-demo__bar--a" d="M73 5.5V43.5" stroke="currentColor" stroke-width="1.6"/>' +
-    '<path class="score-demo__bar score-demo__bar--b" d="M77.5 5.5V43.5" stroke="currentColor" stroke-width="1.6"/>' +
-    '<g class="score-demo__delete" transform="translate(110 -3)">' +
-    '<rect x="-22" y="-8" width="44" height="16" rx="3" fill="var(--paper)" stroke="var(--rule)" stroke-width=".8"/>' +
-    '<text text-anchor="middle" dominant-baseline="central" font-size="10" fill="currentColor">Delete</text></g>' +
-    '<circle class="score-demo__ring score-demo__ring--e" cx="73" cy="25" r="7"/>' +
-    '<g class="score-demo__pointer score-demo__pointer--bar" transform="translate(73 25)">' + CURSOR + '</g>';
-  return demo('score-demo--bar', svg, s('scoreBarTitle'), s('scoreBarBody'));
-}
-
 // The two ways to change a tab under the staff: type a new fret into a cell, or drag a cell elsewhere.
 function tabEditDemo(s) {
   const note = tabTutorial.note;
   return tabTutorial.demo({
     cls: 'tab-demo--edit',
-    captionFirst: true,
+    bare: true,
     notes: [
       note(0, 3, 5),
       note(1, 1, 2, 'tab-demo__note--before'),
@@ -125,7 +111,7 @@ function tabMoveDemo(s) {
   const note = tabTutorial.note;
   return tabTutorial.demo({
     cls: 'tab-demo--drag',
-    captionFirst: true,
+    bare: true,
     notes: [note(0, 3, 5), note(1, 1, 2, 'tab-demo__note--dragged'), '<span class="tab-demo__cursor"></span>'],
     keys: [tabTutorial.key(s('scoreTabMoveKey'), 'tab-demo__key--drag')],
     title: s('scoreTabMoveTitle'),
@@ -162,8 +148,7 @@ function renderShortcuts(strings) {
 }
 
 const renderDot = function (strings) { return list([dotDemo(s_of(strings))]); };
-const renderBar = function (strings) { return list([barDemo(s_of(strings))]); };
-const renderTabEdit = function (strings) { return list([tabEditDemo(s_of(strings))]); };
-const renderTabMove = function (strings) { return list([tabMoveDemo(s_of(strings))]); };
+const renderTabEdit = function (strings) { return tabEditDemo(s_of(strings)); };
+const renderTabMove = function (strings) { return tabMoveDemo(s_of(strings)); };
 
-export { renderShortcutDiagram, renderShortcuts, renderDot, renderBar, renderTabEdit, renderTabMove };
+export { renderShortcutDiagram, renderShortcuts, renderDot, renderTabEdit, renderTabMove };

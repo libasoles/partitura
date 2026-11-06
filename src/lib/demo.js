@@ -210,22 +210,25 @@ export function stage(o) {
     d.add(0, 0, CURSOR, stops, { keep: false, cls: 'd-pointer' });
   };
 
-  /** A key cap shown from `show` to `hide` and pressed (lit) at `press`. */
+  /** A key cap shown from `show` to `hide` and pressed (lit) at `press` (one time or a list of them). */
   d.keycap = (label, kx, show, press, hide, { ky = h - 14, cap = false } = {}) => {
     const width = Math.max(16, label.length * 6.4 + 10);
     const inner =
       `<rect class="d-cap" x="${f(-width / 2)}" y="-8" width="${f(width)}" height="16" rx="3.5"/>` +
       `<text class="d-captext" text-anchor="middle" dominant-baseline="central" font-size="${cap ? 8 : 9}">${label}</text>`;
-    d.add(kx, ky, inner, [
-      [0, { o: 0, c: 'var(--ink-soft)', y: 0 }], [show, { o: 0 }], [show + 0.2, { o: 1 }],
-      [press, { c: 'var(--ink-soft)', y: 0 }], [press + 0.08, { c: 'var(--accent)', y: 1.2 }], [press + 0.5, { c: 'var(--accent)', y: 1.2 }], [press + 0.62, { c: 'var(--ink-soft)', y: 0 }],
-      [hide, { o: 1 }], [hide + 0.25, { o: 0 }],
-    ], { keep: false });
+    const presses = [].concat(press);
+    const stops = [[0, { o: 0, c: 'var(--ink-soft)', y: 0 }], [show, { o: 0 }], [show + 0.2, { o: 1 }]];
+    presses.forEach((at) => stops.push(
+      [at, { c: 'var(--ink-soft)', y: 0 }], [at + 0.08, { c: 'var(--accent)', y: 1.2 }], [at + 0.5, { c: 'var(--accent)', y: 1.2 }], [at + 0.62, { c: 'var(--ink-soft)', y: 0 }],
+    ));
+    stops.push([hide, { o: 1 }], [hide + 0.25, { o: 0 }]);
+    d.add(kx, ky, inner, stops, { keep: false });
     // A fingertip taps the cap at the moment it lights up: the Lucide pointer, its tip on the key.
-    d.add(kx + 1, ky + 1, `<g transform="scale(0.6) translate(-9 -3)" class="d-finger-icon"><g class="d-finger" fill="var(--paper)">${tutorialIconPaths('pointer')}</g></g>`, [
-      [0, { o: 0, y: 5 }], [press - 0.25, { o: 0, y: 5 }], [press - 0.05, { o: 1, y: 0 }], [press + 0.1, { o: 1, y: 1.5 }],
-      [press + 0.5, { o: 1, y: 0 }], [press + 0.75, { o: 0, y: 5 }],
-    ], { keep: false, cls: 'd-finger-actor' });
+    const tap = [[0, { o: 0, y: 5 }]];
+    presses.forEach((at) => tap.push(
+      [at - 0.25, { o: 0, y: 5 }], [at - 0.05, { o: 1, y: 0 }], [at + 0.1, { o: 1, y: 1.5 }], [at + 0.5, { o: 1, y: 0 }], [at + 0.75, { o: 0, y: 5 }],
+    ));
+    d.add(kx + 1, ky + 1, `<g transform="scale(0.6) translate(-9 -3)" class="d-finger-icon"><g class="d-finger" fill="var(--paper)">${tutorialIconPaths('pointer')}</g></g>`, tap, { keep: false, cls: 'd-finger-actor' });
   };
 
   d.html = (label) => {

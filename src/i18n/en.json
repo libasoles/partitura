@@ -23,7 +23,7 @@
   "scoreBarTitle": "Delete a barline",
   "scoreBarBody": "Click a single, double or repeat barline to highlight it in yellow, then press Delete to remove it.",
   "scoreTabEditTitle": "Edit a tab",
-  "scoreTabEditBody": "Click a number in the tab and type the new fret; your fingering is saved and the staff does not change. Changing tuning recalculates all frets and replaces manual fingerings while preserving the staff notes. Tuning is saved with this score, and you can undo the change with Ctrl/Cmd+Z.",
+  "scoreTabEditBody": "Click a number in the tab and type the new fret; your fingering is saved and the staff does not change.",
   "scoreTabMoveTitle": "Move a tab cell",
   "scoreTabMoveBody": "Drag a number to another string or another beat and drop it wherever you want.",
   "scoreTabMoveKey": "Drag",
@@ -347,8 +347,8 @@
         "Change a note’s fret without touching the staff."
       ],
       "move-tab": [
-        "Move a tab cell",
-        "Drag a number to another string or beat."
+        "Move a number and change its string",
+        "Drag a number or use Shift+↑/↓ to play the same sound on another string."
       ],
       "faq": [
         "Frequently asked questions",
@@ -397,10 +397,6 @@
       "tab-toggle": [
         "Show the tablature",
         "A tab under every system, with the fingering already worked out."
-      ],
-      "refinger": [
-        "Move a note to another string",
-        "Play the same sound on a different string."
       ],
       "barre": [
         "Barre chords",
@@ -542,14 +538,6 @@
         ],
         "tip": "The next two guides explain how to change a number or move it to another string."
       },
-      "refinger": {
-        "steps": [
-          "In the tablature, click the number of the note you want to move.",
-          "Press <kbd>Shift</kbd> + <kbd>↑</kbd> to move it to the string above or <kbd>Shift</kbd> + <kbd>↓</kbd> for the string below. The fret adjusts itself so it sounds the same.",
-          "Changing tuning recalculates all frets and replaces manual fingerings while preserving the staff notes. Tuning is saved with this score, and you can undo the change with Ctrl/Cmd+Z."
-        ],
-        "tip": "Only the fingering changes: the note on the staff and the sound stay the same."
-      },
       "barre": {
         "steps": [
           "In the palette pick <em>Barre</em> and click the note where it starts (or anywhere in the measure to cover it from the beginning).",
@@ -633,6 +621,14 @@
           "To delete several names together, drag a selection rectangle around them and press <kbd>Delete</kbd> or <kbd>Backspace</kbd>. Undo changes with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>."
         ],
         "tip": "Chord names appear above the staff and in PDF exports. The diagram is a reference: writing a chord name does not add its notes to the staff or make them sound during playback."
+      },
+      "move-tab": {
+        "steps": [
+          "Drag a number in the tablature to another string or beat and drop it wherever you want.",
+          "To play the same sound on another string, click the number of the note you want to change.",
+          "Press <kbd>Shift</kbd> + <kbd>↓</kbd> (or <kbd>↑</kbd>): the editor looks for the next fingering of that note on the following strings and adjusts the fret so it sounds the same. Press again to move on to the next string, as long as the fret stays within the maximum."
+        ],
+        "tip": "Only the fingering changes: the note on the staff and the sound stay the same."
       }
     },
     "seo": {
@@ -661,8 +657,8 @@
         "Change the fret of a note in the guitar tab without touching the staff, in the free Partitura score editor."
       ],
       "move-tab": [
-        "Move a guitar tab number to another string or beat",
-        "Drag a fret number to another string or beat in the tablature and see the staff update, in the online score editor."
+        "Move a guitar tab number and change the string of a note",
+        "Drag a fret number to another string or beat and use Shift+↑/↓ to play the same sound on another string, in the online score editor."
       ],
       "faq": [
         "Partitura FAQ: free use, download formats and guitar",
@@ -711,10 +707,6 @@
       "tab-toggle": [
         "Show guitar tablature under the staff automatically",
         "Turn on a tab under every system, with the fingering already worked out, in the free online score editor."
-      ],
-      "refinger": [
-        "Play a note on another guitar string in the tab",
-        "Change a note's string in the tablature to play the same sound elsewhere on the fretboard."
       ],
       "barre": [
         "How to mark barre chords in guitar tablature",

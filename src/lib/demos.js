@@ -388,20 +388,22 @@ export function tabToggle(s, aria) {
   return d.html(aria);
 }
 
+/** Shift+↓ on a selected tab number looks for the next fingering of that pitch on the strings below, one press at a time. */
 export function refinger(s, aria) {
   const d = stage({ id: 'refing', T: 13, bottom: 62, h: 160 });
   const notes = phrase(d, [[q('D4'), q('G4')]], 56);
   notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
   d.base(tabLines(d));
-  const x = notes[0].x + 5;
-  // D3 can be played on the fifth string (fret 5) or, with the same sound, on the open fourth string.
-  d.fret(x, TAB_TOP, 4, 5, S(d.life(0.05, 4.4), [[2.2, { c: INK }], [2.3, { c: SEL }]]), { keep: false });
-  d.fret(x, TAB_TOP, 3, 0, S(d.pop(4.4), [[4.3, { c: SEL }]]), {});
-  d.fret(notes[1].x + 5, TAB_TOP, 2, 0, d.life(0.05), {});
-  d.click(2.2, x, TAB_TOP + 4 * 7);
-  d.pointer([[0.8, d.w - 30, d.h - 24], ...visit(2.2, x + 2, TAB_TOP + 4 * 7), [4.0, d.w - 30, d.h - 24]]);
-  d.keycap('Shift', d.w - 60, 3.2, 3.9, 8.4);
-  d.keycap('↑', d.w - 24, 3.2, 3.9, 8.4);
+  d.fret(notes[0].x + 5, TAB_TOP, 3, 0, d.life(0.05), {});
+  const x = notes[1].x + 5;
+  // The same G on the open third string, then the fifth fret of the fourth, then the tenth of the fifth.
+  d.fret(x, TAB_TOP, 2, 0, S(d.life(0.05, 4.0), [[2.2, { c: INK }], [2.3, { c: SEL }]]), { keep: false });
+  d.fret(x, TAB_TOP, 3, 5, S(d.pop(4.0, 5.8), [[0, { c: SEL }]]), { keep: false });
+  d.fret(x, TAB_TOP, 4, 10, S(d.pop(5.8), [[0, { c: SEL }]]), {});
+  d.click(2.2, x, TAB_TOP + 2 * 7 + 3);
+  d.pointer([[0.8, d.w - 30, d.h - 24], ...visit(2.2, x + 2, TAB_TOP + 2 * 7 + 3), [3.6, d.w - 30, d.h - 24]]);
+  d.keycap('Shift', d.w - 60, 3.0, [3.9, 5.7], 8.4);
+  d.keycap('↓', d.w - 24, 3.0, [3.9, 5.7], 8.4);
   return d.html(aria);
 }
 
@@ -821,5 +823,104 @@ export function reassignVoice(s, aria) {
   d.pointer([[0.5, 280, 112], ...visit(1.3, wx + 5, wy), ...visit(4.3, wx + 10, wy + 21), [7.5, 280, 112]]);
   d.click(1.3, wx + 5, wy);
   d.click(4.3, wx + 10, wy + 21);
+  return d.html(aria);
+}
+
+// ----- chords ------------------------------------------------------------------------------------------------------------
+
+/** A staff with four quarter notes, the places where chord names go. Names sit above the staff, on a note's column. */
+function chordStage(id, T, extra = {}) {
+  const d = stage({ id, T, bottom: 72, h: 120, ...extra });
+  const notes = phrase(d, [[q('E4'), q('G4'), q('C5'), q('G4')]], 52);
+  notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  return { d, notes, ny: d.y(8) - 13 };
+}
+
+const chordName = (d, x, y, text, stops, opts = {}) => d.text(x, y, text, stops, { size: 11, weight: 700, ...opts });
+const CHORD_FIELD = (w) => `<rect class="d-field d-field--on" x="${-w / 2}" y="-8" width="${w}" height="15" rx="2.5"/>`;
+
+/** The chord tool in the palette: pressing it and placing it over a note opens the empty field for the name. */
+export function chordTool(s, aria) {
+  const { d, notes, ny } = chordStage('chord-tool', 10);
+  const px = d.w - 40;
+  d.add(px, 14, pillInner('Am', { size: 8 }), [[0, { o: 1, c: 'var(--ink-soft)' }], [1.7, { c: 'var(--ink-soft)' }], [1.9, { c: 'var(--accent)' }], [d.T - 0.7, { c: 'var(--accent)' }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  const x = notes[0].x + 5;
+  d.add(x, ny, CHORD_FIELD(34), [[0, { o: 0 }], [3.4, { o: 0 }], [3.65, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  d.click(1.7, px, 14);
+  d.click(3.3, x, d.y(pitch('E4')));
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.7, px, 14), ...visit(3.3, x, d.y(pitch('E4'))), [6.4, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+/** Typing the name and pressing Enter leaves it written in bold over the note. */
+export function chordType(s, aria) {
+  const { d, notes, ny } = chordStage('chord-type', 11);
+  const x = notes[0].x + 5;
+  d.add(x, ny, CHORD_FIELD(34), [[0, { o: 0 }], [0.5, { o: 0 }], [0.75, { o: 1 }], [4.0, { o: 1 }], [4.2, { o: 0 }]], { keep: false });
+  chordName(d, x, ny + 4, 'A', [[0, { o: 0 }], [1.2, { o: 0 }], [1.3, { o: 1 }], [2.2, { o: 1 }], [2.3, { o: 0 }]], { keep: false });
+  chordName(d, x, ny + 4, 'Am', [[0, { o: 0 }], [2.2, { o: 0 }], [2.3, { o: 1 }], [4.0, { o: 1 }], [4.2, { o: 0 }]], { keep: false });
+  chordName(d, x, ny + 4, 'Am', d.pop(4.1));
+  d.keycap('Enter', 40, 2.6, 3.7, 7.4);
+  return d.html(aria);
+}
+
+/** A small fretboard diagram: strings low to high, `dots` as [string, fret] and open strings as circles above. */
+function chordDiagram(dots, open) {
+  const gap = 8;
+  const row = 9;
+  let svg = '';
+  for (let i = 0; i < 6; i += 1) svg += `<path class="d-line" d="M${i * gap} 0V${row * 4}"/>`;
+  for (let i = 0; i <= 4; i += 1) svg += `<path class="d-line" d="M0 ${i * row}H${5 * gap}"${i === 0 ? ' style="stroke-width:2"' : ''}/>`;
+  open.forEach((i) => { svg += `<circle class="d-ring-open" cx="${i * gap}" cy="-5" r="2.3"/>`; });
+  dots.forEach(([i, fret]) => { svg += `<circle cx="${i * gap}" cy="${(fret - 0.5) * row}" r="3"/>`; });
+  return svg;
+}
+
+/** Clicking a written name opens its panel: the name, the fingering diagram and the variants. */
+export function chordPopup(s, aria) {
+  const { d, notes, ny } = chordStage('chord-pop', 11, { h: 196 });
+  const x = notes[0].x + 5;
+  chordName(d, x, ny + 4, 'Am', d.life(0.05));
+  const left = x - 18;
+  const top = d.bottom + 30;
+  d.add(left, top,
+    `<rect class="d-panel" width="150" height="82" rx="6"/>` +
+    `<text class="d-menutext" x="10" y="17" font-size="11" font-weight="700">Am</text>` +
+    `<g transform="translate(14 40)">${chordDiagram([[2, 2], [3, 2], [4, 1]], [1, 5])}</g>` +
+    `<rect class="d-field" x="76" y="30" width="62" height="14" rx="3"/><text class="d-menutext" x="84" y="40" font-size="8">1 / 3</text>` +
+    `<rect class="d-field" x="76" y="50" width="62" height="14" rx="3"/><text class="d-menutext" x="84" y="60" font-size="8">Am7</text>`,
+    [[0, { o: 0 }], [2.0, { o: 0, y: 4 }], [2.3, { o: 1, y: 0 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  d.click(1.6, x, ny);
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.6, x, ny), [5.0, d.w - 30, d.h - 40]]);
+  return d.html(aria);
+}
+
+/** Dragging a name to another beat: the underlined column marks where it will land. */
+export function chordMove(s, aria) {
+  const { d, notes, ny } = chordStage('chord-move', 11);
+  const from = notes[0].x + 5;
+  const to = notes[2].x + 5;
+  chordName(d, from, ny + 4, 'Am', d.life(0.05, 3.4), { keep: false });
+  d.add(to, ny + 8, '<path d="M-14 0H14" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>',
+    [[0, { o: 0 }], [3.0, { o: 0 }], [3.2, { o: 1 }], [4.1, { o: 1 }], [4.2, { o: 0 }]], { keep: false });
+  chordName(d, from, ny + 4, 'Am', [[0, { o: 0 }], [2.0, { o: 0, x: 0 }], [2.1, { o: 0.5 }], [3.9, { o: 0.5, x: to - from }], [4.0, { o: 0 }]], { keep: false });
+  chordName(d, to, ny + 4, 'Am', d.pop(4.0));
+  d.click(2.0, from, ny);
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(2.0, from, ny), [3.9, to, ny], [4.4, to, ny], [6.0, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+/** A marquee around several names and Delete: they all go, the notes stay. */
+export function chordDelete(s, aria) {
+  const { d, notes, ny } = chordStage('chord-del', 11);
+  const names = ['Am', 'F', 'C'];
+  const idx = [0, 1, 3];
+  idx.forEach((n, i) => chordName(d, notes[n].x + 5, ny + 4, names[i], d.life(0.05, 4.4), { keep: false }));
+  const from = { x: notes[0].x - 12, y: ny - 12 };
+  const to = { x: notes[3].x + 22, y: ny + 12 };
+  d.add(from.x, from.y, `<rect class="d-marquee" width="${to.x - from.x}" height="${to.y - from.y}"/>`,
+    [[0, { o: 0, sx: 0.02, sy: 0.02 }], [1.2, { o: 0, sx: 0.02, sy: 0.02 }], [1.3, { o: 1 }], [2.6, { o: 1, sx: 1, sy: 1 }], [4.2, { o: 1 }], [4.5, { o: 0 }]], { keep: false });
+  d.pointer([[0.6, d.w - 30, d.h - 24], [1.2, from.x, from.y], [2.6, to.x, to.y], [4.0, d.w - 30, d.h - 24]]);
+  d.keycap('Delete', 40, 2.8, 3.8, 7.4);
   return d.html(aria);
 }

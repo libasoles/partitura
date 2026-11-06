@@ -284,3 +284,4 @@ button.tutorial-voice { cursor: pointer; min-width: 2.75rem; min-height: 2.75rem
 .tutorial-voice[data-number="4"] { --voice: #3a5f9e; }
 .d-finger { fill: var(--paper); stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .d-playhead { stroke: var(--accent); stroke-width: 1.4; }
+.d-ring-open { fill: var(--paper); stroke: currentColor; stroke-width: 0.9; }
