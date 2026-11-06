@@ -199,6 +199,7 @@
 .d-field { fill: var(--paper); stroke: var(--ink-soft); stroke-width: 0.8; }
 .d-field--on { stroke: var(--accent); stroke-width: 1.2; }
 .d-panel { fill: var(--paper); stroke: var(--rule); stroke-width: 1; filter: drop-shadow(0 2px 5px rgb(0 0 0 / 0.14)); }
+.d-rowhot { fill: color-mix(in srgb, var(--accent) 16%, transparent); }
 .d-menutext { fill: var(--ink); font-family: var(--sans); }
 .d-menutext--hot { fill: var(--accent); font-weight: 700; }
 .d-menuicon { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
@@ -287,3 +288,4 @@ button.tutorial-voice { cursor: pointer; min-width: 2.75rem; min-height: 2.75rem
 /* Keywords: the editor's own labels (<em>) and names like tunings or file formats stand out from the prose. */
 .tutorial-body :is(em, .tutorial-term) { font-style: normal; font-weight: 600; color: var(--accent-brand, var(--accent)); }
 .tutorial-body .tutorial-voice, .tutorial-body .tutorial-voice * { font-style: normal; }
+.d-ring-open { fill: var(--paper); stroke: currentColor; stroke-width: 0.9; }

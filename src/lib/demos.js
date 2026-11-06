@@ -190,26 +190,34 @@ export function copy(s, aria) {
   return d.html(aria);
 }
 
-export function tuplets(s, aria) {
-  const d = stage({ id: 'trip', T: 13 });
+/** A run of `count` beamed figures that the tuplet menu groups: marquee, menu entry, then the bracket with its number. */
+function tupletDemo(s, aria, count) {
+  const d = stage({ id: `trip${count}`, T: 13 });
   const t = s.scoreUiStrings;
-  const xs = [d.firstX + 20, d.firstX + 44, d.firstX + 68];
-  const heads = ['E4', 'F4', 'G4'].map((n, i) => ({ x: xs[i], y: d.y(pitch(n)) }));
-  const group = beamGroup(heads);
+  const gap = count <= 3 ? 24 : count <= 5 ? 20 : 17;
+  const names = ['E4', 'F4', 'G4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4'].slice(0, count);
+  const xs = names.map((_, i) => d.firstX + 20 + i * gap);
+  const last = xs[count - 1];
+  const heads = names.map((n, i) => ({ x: xs[i], y: d.y(pitch(n)) }));
+  const group = beamGroup(heads, { beams: count > 3 ? 2 : 1 });
   d.add(0, 0, group.svg, S(d.life(0.05), [[2.7, { c: INK }], [2.9, { c: SEL }], [5.6, { c: SEL }], [5.8, { c: INK }]]));
-  const mid = (xs[0] + xs[2]) / 2 + 5;
-  d.add(mid, group.top - 26, pillInner(t.triplet, { size: 8 }), [[0, { o: 0, y: 4 }], [3.1, { o: 0, y: 4 }], [3.35, { o: 1, y: 0 }], [5.4, { o: 1, y: 0 }], [5.6, { o: 0 }]], { keep: false });
+  const mid = (xs[0] + last) / 2 + 5;
+  d.add(mid, group.top - 26, pillInner(count === 3 ? t.triplet : t[`tuplet${count}`], { size: 8 }), [[0, { o: 0, y: 4 }], [3.1, { o: 0, y: 4 }], [3.35, { o: 1, y: 0 }], [5.4, { o: 1, y: 0 }], [5.6, { o: 0 }]], { keep: false });
   d.add(0, group.top - 7,
-    `<path class="d-bracket" d="M${xs[0] + 1} 3V0H${xs[2] + 10}V3"/><text class="d-text" x="${(xs[0] + xs[2]) / 2 + 5}" y="-3" text-anchor="middle" font-size="9" font-style="italic" font-weight="600">3</text>`,
+    `<path class="d-bracket" d="M${xs[0] + 1} 3V0H${last + 10}V3"/><text class="d-text" x="${mid}" y="-3" text-anchor="middle" font-size="9" font-style="italic" font-weight="600">${count}</text>`,
     [[0, { o: 0 }], [5.7, { o: 0 }], [6.0, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
   const from = { x: xs[0] - 8, y: d.y(5) };
-  const to = { x: xs[2] + 18, y: d.y(-1.5) };
+  const to = { x: last + 18, y: d.y(-1.5) };
   d.add(from.x, from.y, `<rect class="d-marquee" width="${to.x - from.x}" height="${to.y - from.y}"/>`,
     [[0, { o: 0, sx: 0.02, sy: 0.02 }], [1.3, { o: 0, sx: 0.02, sy: 0.02 }], [1.4, { o: 1 }], [2.7, { o: 1, sx: 1, sy: 1 }], [3.0, { o: 0 }]], { keep: false });
   d.pointer([[0.6, d.w - 30, d.h - 24], [1.3, from.x, from.y], [2.7, to.x, to.y], ...visit(4.6, mid, group.top - 26), [6.4, d.w - 30, d.h - 24]]);
   d.click(4.6, mid, group.top - 26);
   return d.html(aria);
 }
+
+export const tuplets = (s, aria) => tupletDemo(s, aria, 3);
+export const quintuplet = (s, aria) => tupletDemo(s, aria, 5);
+export const septuplet = (s, aria) => tupletDemo(s, aria, 7);
 
 export function ties(s, aria) {
   const d = stage({ id: 'tie', T: 13 });
@@ -234,10 +242,27 @@ export function ties(s, aria) {
   return d.html(aria);
 }
 
+/** Clicking a tie's arc selects it; Delete removes the tie and leaves both notes. */
+export function tieDelete(s, aria) {
+  const d = stage({ id: 'tie-del', T: 10 });
+  const notes = phrase(d, [[q('G4'), q('G4'), q('A4'), q('B4')]], 40);
+  notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  const [a, b] = notes;
+  const y = d.y(a.p) + SP * 0.9;
+  const px = (a.x + b.x) / 2 + 5;
+  const arc = y + 4.5;
+  d.add(0, 0, `<path class="d-tie" d="M${a.x + 5} ${y}Q${px} ${y + 9} ${b.x + 5} ${y}"/>`,
+    [[0, { o: 0, c: INK }], [0.05, { o: 0 }], [0.3, { o: 1 }], [1.9, { c: INK }], [2.1, { c: SEL }], [4.1, { c: SEL }], [4.3, { o: 0 }]], { keep: false });
+  d.click(1.9, px, arc);
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.9, px, arc), [4.6, d.w - 30, d.h - 24]]);
+  d.keycap('Delete', 40, 2.6, 3.6, 6.4);
+  return d.html(aria);
+}
+
 // ----- measures and signatures ----------------------------------------------------------------------------------
 
 export function signatures(s, aria) {
-  const d = stage({ id: 'sig', T: 14, staff: false });
+  const d = stage({ id: 'sig', T: 14, staff: false, h: 152, bottom: 88 });
   const t = s.scoreUiStrings;
   d.base(d.lines(d.x0, d.x1) + d.barline(d.x0) + d.barline(d.x1));
   const clefX = d.x0 + 4;
@@ -253,17 +278,31 @@ export function signatures(s, aria) {
   d.add(d.meterX, 0, d.meterAt(0, [4, 4]), S(shown(0, 3.0), slide));
   d.add(d.meterX, 0, d.meterAt(0, [3, 4]), S(shown(3.0), slide), { keep: false });
   d.add(d.keyX, 0, d.keyAt(0, 2, 2), [[0, { o: 0 }], [9.2, { o: 0, s: 0.6 }], [9.45, { o: 1, s: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  // Each click opens the editor's popup under the staff; the pointer picks one of its options and the popup closes.
+  const rowH = 14;
+  const popupY = d.bottom + 10;
   const targets = [
-    [1.5, d.meterX + 5, t.meter, 3.0],
-    [4.4, clefX + 8, t.clef, 6.0],
-    [7.6, d.keyX + 6, t.keySignature, 9.2],
+    [1.5, d.meterX + 5, ['4/4', '3/4', '6/8'], 1, 62, 3.0],
+    [4.4, clefX + 8, [t.clefs.treble, t.clefs.bass, t.clefs.alto], 1, 104, 6.0],
+    [7.6, d.keyX + 6, [t.keys[7], t.keys[8], t.keys[9]], 2, 138, 9.2],
   ];
-  const path = [[0.6, d.w - 30, d.h - 24]];
-  targets.forEach(([at, x, text, change]) => {
-    path.push(...visit(at, x, d.y(4)));
+  const rest = [d.w - 30, d.h - 32];
+  const path = [[0.6, ...rest]];
+  targets.forEach(([at, x, options, pick, width, change]) => {
+    const left = Math.max(4, x - 20);
+    const pickAt = at + 1.1;
+    const optionY = popupY + 3 + pick * rowH + rowH / 2;
+    path.push(...visit(at, x, d.y(4)), ...visit(pickAt, left + 24, optionY));
     d.click(at, x, d.y(4));
-    d.add(x, d.y(9) - 14, pillInner(text, { size: 8 }), [[0, { o: 0 }], [at + 0.2, { o: 0 }], [at + 0.45, { o: 1 }], [change + 0.1, { o: 1 }], [change + 0.35, { o: 0 }]], { keep: false });
+    d.click(pickAt, left + 24, optionY);
+    d.add(left, popupY,
+      `<rect class="d-panel" width="${width}" height="${options.length * rowH + 6}" rx="5"/>` +
+      options.map((o, i) => `<text class="d-menutext" x="8" y="${3 + i * rowH + rowH / 2 + 3}" font-size="8.5">${o}</text>`).join(''),
+      [[0, { o: 0 }], [at + 0.2, { o: 0 }], [at + 0.45, { o: 1 }], [change + 0.1, { o: 1 }], [change + 0.35, { o: 0 }]], { keep: false });
+    d.add(left, popupY + 3 + pick * rowH, `<rect class="d-rowhot" x="3" width="${width - 6}" height="${rowH}" rx="3"/>`,
+      [[0, { o: 0 }], [pickAt, { o: 0 }], [pickAt + 0.15, { o: 1 }], [change + 0.1, { o: 1 }], [change + 0.35, { o: 0 }]], { keep: false });
   });
+  path.push([13.0, ...rest]);
   d.pointer(path);
   return d.html(aria);
 }
@@ -290,6 +329,45 @@ export function measures(s, aria) {
   d.click(1.4, first + 20, d.y(2));
   d.click(3.9, barA, d.y(8) - 13);
   d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.4, first + 20, d.y(2)), ...visit(3.9, barA, d.y(8) - 13), [6.2, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+/** Selecting a measure and pressing Delete removes it; the next one closes the gap. */
+export function measureDelete(s, aria) {
+  const d = stage({ id: 'meas-del', T: 11 });
+  const first = d.firstX;
+  const width = 76;
+  const at = (m) => first + m * width;
+  const names = [['E4', 'G4'], ['A4', 'F4'], ['G4', 'E4']];
+  names.forEach((pair, m) => pair.forEach((name, i) => {
+    const x = at(m) + (m ? 14 : 0) + i * 38;
+    const stops = m === 1 ? d.life(0.05, 4.2) : m === 2 ? S(d.life(0.05), [[4.3, { x: 0 }], [5.0, { x: -width }]]) : d.life(0.05);
+    d.note(x, pitch(name), 'h', stops);
+  }));
+  d.base(d.barline(at(1)));
+  d.add(at(2), 0, d.barline(0), d.life(0.05, 4.2));
+  d.add(at(1), d.y(8) - 4, `<rect class="d-tint" width="${width}" height="${SP * 4 + 8}"/>`,
+    [[0, { o: 0 }], [1.6, { o: 0 }], [1.85, { o: 1 }], [4.0, { o: 1 }], [4.3, { o: 0 }]], { keep: false });
+  d.click(1.6, at(1) + 40, d.y(2));
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.6, at(1) + 40, d.y(2)), [4.6, d.w - 30, d.h - 24]]);
+  d.keycap('Delete', 40, 2.4, 3.4, 6.6);
+  return d.html(aria);
+}
+
+/** Clicking a barline selects it (yellow); Delete removes it and the two measures become one. */
+export function barlineDelete(s, aria) {
+  const d = stage({ id: 'bar-del', T: 10 });
+  const gap = 26;
+  const names = ['E4', 'G4', 'A4', 'G4', 'F4', 'E4', 'D4', 'E4'];
+  const xs = names.map((_, i) => d.firstX + i * gap + (i >= 4 ? 10 : 0));
+  names.forEach((n, i) => d.note(xs[i], pitch(n), 'q', d.life(0.05)));
+  const bx = xs[3] + gap / 2 + 5;
+  d.add(bx, 0, d.barline(0), [[0, { o: 0 }], [0.05, { o: 0 }], [0.3, { o: 1 }], [4.1, { o: 1 }], [4.3, { o: 0 }]], { keep: false });
+  d.add(bx - 3, d.y(8) - 2, `<rect class="d-tint" width="6" height="${SP * 4 + 4}"/>`,
+    [[0, { o: 0 }], [1.9, { o: 0 }], [2.1, { o: 1 }], [4.0, { o: 1 }], [4.3, { o: 0 }]], { keep: false });
+  d.click(1.9, bx, d.y(4));
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.9, bx, d.y(4)), [4.6, d.w - 30, d.h - 24]]);
+  d.keycap('Delete', 40, 2.4, 3.4, 6.4);
   return d.html(aria);
 }
 
@@ -353,20 +431,22 @@ export function tabToggle(s, aria) {
   return d.html(aria);
 }
 
+/** Shift+↓ on a selected tab number looks for the next fingering of that pitch on the strings below, one press at a time. */
 export function refinger(s, aria) {
   const d = stage({ id: 'refing', T: 13, bottom: 62, h: 160 });
   const notes = phrase(d, [[q('D4'), q('G4')]], 56);
   notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
   d.base(tabLines(d));
-  const x = notes[0].x + 5;
-  // D3 can be played on the fifth string (fret 5) or, with the same sound, on the open fourth string.
-  d.fret(x, TAB_TOP, 4, 5, S(d.life(0.05, 4.4), [[2.2, { c: INK }], [2.3, { c: SEL }]]), { keep: false });
-  d.fret(x, TAB_TOP, 3, 0, S(d.pop(4.4), [[4.3, { c: SEL }]]), {});
-  d.fret(notes[1].x + 5, TAB_TOP, 2, 0, d.life(0.05), {});
-  d.click(2.2, x, TAB_TOP + 4 * 7);
-  d.pointer([[0.8, d.w - 30, d.h - 24], ...visit(2.2, x + 2, TAB_TOP + 4 * 7), [4.0, d.w - 30, d.h - 24]]);
-  d.keycap('Shift', d.w - 60, 3.2, 3.9, 8.4);
-  d.keycap('↑', d.w - 24, 3.2, 3.9, 8.4);
+  d.fret(notes[0].x + 5, TAB_TOP, 3, 0, d.life(0.05), {});
+  const x = notes[1].x + 5;
+  // The same G on the open third string, then the fifth fret of the fourth, then the tenth of the fifth.
+  d.fret(x, TAB_TOP, 2, 0, S(d.life(0.05, 4.0), [[2.2, { c: INK }], [2.3, { c: SEL }]]), { keep: false });
+  d.fret(x, TAB_TOP, 3, 5, S(d.pop(4.0, 5.8), [[0, { c: SEL }]]), { keep: false });
+  d.fret(x, TAB_TOP, 4, 10, S(d.pop(5.8), [[0, { c: SEL }]]), {});
+  d.click(2.2, x, TAB_TOP + 2 * 7 + 3);
+  d.pointer([[0.8, d.w - 30, d.h - 24], ...visit(2.2, x + 2, TAB_TOP + 2 * 7 + 3), [3.6, d.w - 30, d.h - 24]]);
+  d.keycap('Shift', d.w - 60, 3.0, [3.9, 5.7], 8.4);
+  d.keycap('↓', d.w - 24, 3.0, [3.9, 5.7], 8.4);
   return d.html(aria);
 }
 
@@ -830,5 +910,104 @@ export function reassignVoice(s, aria) {
   d.pointer([[0.5, 280, 112], ...visit(1.3, wx + 5, wy), ...visit(4.3, wx + 10, wy + 21), [7.5, 280, 112]]);
   d.click(1.3, wx + 5, wy);
   d.click(4.3, wx + 10, wy + 21);
+  return d.html(aria);
+}
+
+// ----- chords ------------------------------------------------------------------------------------------------------------
+
+/** A staff with four quarter notes, the places where chord names go. Names sit above the staff, on a note's column. */
+function chordStage(id, T, extra = {}) {
+  const d = stage({ id, T, bottom: 72, h: 120, ...extra });
+  const notes = phrase(d, [[q('E4'), q('G4'), q('C5'), q('G4')]], 52);
+  notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  return { d, notes, ny: d.y(8) - 13 };
+}
+
+const chordName = (d, x, y, text, stops, opts = {}) => d.text(x, y, text, stops, { size: 11, weight: 700, ...opts });
+const CHORD_FIELD = (w) => `<rect class="d-field d-field--on" x="${-w / 2}" y="-8" width="${w}" height="15" rx="2.5"/>`;
+
+/** The chord tool in the palette: pressing it and placing it over a note opens the empty field for the name. */
+export function chordTool(s, aria) {
+  const { d, notes, ny } = chordStage('chord-tool', 10);
+  const px = d.w - 40;
+  d.add(px, 14, pillInner('Am', { size: 8 }), [[0, { o: 1, c: 'var(--ink-soft)' }], [1.7, { c: 'var(--ink-soft)' }], [1.9, { c: 'var(--accent)' }], [d.T - 0.7, { c: 'var(--accent)' }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  const x = notes[0].x + 5;
+  d.add(x, ny, CHORD_FIELD(34), [[0, { o: 0 }], [3.4, { o: 0 }], [3.65, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  d.click(1.7, px, 14);
+  d.click(3.3, x, d.y(pitch('E4')));
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.7, px, 14), ...visit(3.3, x, d.y(pitch('E4'))), [6.4, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+/** Typing the name and pressing Enter leaves it written in bold over the note. */
+export function chordType(s, aria) {
+  const { d, notes, ny } = chordStage('chord-type', 11);
+  const x = notes[0].x + 5;
+  d.add(x, ny, CHORD_FIELD(34), [[0, { o: 0 }], [0.5, { o: 0 }], [0.75, { o: 1 }], [4.0, { o: 1 }], [4.2, { o: 0 }]], { keep: false });
+  chordName(d, x, ny + 4, 'A', [[0, { o: 0 }], [1.2, { o: 0 }], [1.3, { o: 1 }], [2.2, { o: 1 }], [2.3, { o: 0 }]], { keep: false });
+  chordName(d, x, ny + 4, 'Am', [[0, { o: 0 }], [2.2, { o: 0 }], [2.3, { o: 1 }], [4.0, { o: 1 }], [4.2, { o: 0 }]], { keep: false });
+  chordName(d, x, ny + 4, 'Am', d.pop(4.1));
+  d.keycap('Enter', 40, 2.6, 3.7, 7.4);
+  return d.html(aria);
+}
+
+/** A small fretboard diagram: strings low to high, `dots` as [string, fret] and open strings as circles above. */
+function chordDiagram(dots, open) {
+  const gap = 8;
+  const row = 9;
+  let svg = '';
+  for (let i = 0; i < 6; i += 1) svg += `<path class="d-line" d="M${i * gap} 0V${row * 4}"/>`;
+  for (let i = 0; i <= 4; i += 1) svg += `<path class="d-line" d="M0 ${i * row}H${5 * gap}"${i === 0 ? ' style="stroke-width:2"' : ''}/>`;
+  open.forEach((i) => { svg += `<circle class="d-ring-open" cx="${i * gap}" cy="-5" r="2.3"/>`; });
+  dots.forEach(([i, fret]) => { svg += `<circle cx="${i * gap}" cy="${(fret - 0.5) * row}" r="3"/>`; });
+  return svg;
+}
+
+/** Clicking a written name opens its panel: the name, the fingering diagram and the variants. */
+export function chordPopup(s, aria) {
+  const { d, notes, ny } = chordStage('chord-pop', 11, { h: 196 });
+  const x = notes[0].x + 5;
+  chordName(d, x, ny + 4, 'Am', d.life(0.05));
+  const left = x - 18;
+  const top = d.bottom + 30;
+  d.add(left, top,
+    `<rect class="d-panel" width="150" height="82" rx="6"/>` +
+    `<text class="d-menutext" x="10" y="17" font-size="11" font-weight="700">Am</text>` +
+    `<g transform="translate(14 40)">${chordDiagram([[2, 2], [3, 2], [4, 1]], [1, 5])}</g>` +
+    `<rect class="d-field" x="76" y="30" width="62" height="14" rx="3"/><text class="d-menutext" x="84" y="40" font-size="8">1 / 3</text>` +
+    `<rect class="d-field" x="76" y="50" width="62" height="14" rx="3"/><text class="d-menutext" x="84" y="60" font-size="8">Am7</text>`,
+    [[0, { o: 0 }], [2.0, { o: 0, y: 4 }], [2.3, { o: 1, y: 0 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  d.click(1.6, x, ny);
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.6, x, ny), [5.0, d.w - 30, d.h - 40]]);
+  return d.html(aria);
+}
+
+/** Dragging a name to another beat: the underlined column marks where it will land. */
+export function chordMove(s, aria) {
+  const { d, notes, ny } = chordStage('chord-move', 11);
+  const from = notes[0].x + 5;
+  const to = notes[2].x + 5;
+  chordName(d, from, ny + 4, 'Am', d.life(0.05, 3.4), { keep: false });
+  d.add(to, ny + 8, '<path d="M-14 0H14" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>',
+    [[0, { o: 0 }], [3.0, { o: 0 }], [3.2, { o: 1 }], [4.1, { o: 1 }], [4.2, { o: 0 }]], { keep: false });
+  chordName(d, from, ny + 4, 'Am', [[0, { o: 0 }], [2.0, { o: 0, x: 0 }], [2.1, { o: 0.5 }], [3.9, { o: 0.5, x: to - from }], [4.0, { o: 0 }]], { keep: false });
+  chordName(d, to, ny + 4, 'Am', d.pop(4.0));
+  d.click(2.0, from, ny);
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(2.0, from, ny), [3.9, to, ny], [4.4, to, ny], [6.0, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+/** A marquee around several names and Delete: they all go, the notes stay. */
+export function chordDelete(s, aria) {
+  const { d, notes, ny } = chordStage('chord-del', 11);
+  const names = ['Am', 'F', 'C'];
+  const idx = [0, 1, 3];
+  idx.forEach((n, i) => chordName(d, notes[n].x + 5, ny + 4, names[i], d.life(0.05, 4.4), { keep: false }));
+  const from = { x: notes[0].x - 12, y: ny - 12 };
+  const to = { x: notes[3].x + 22, y: ny + 12 };
+  d.add(from.x, from.y, `<rect class="d-marquee" width="${to.x - from.x}" height="${to.y - from.y}"/>`,
+    [[0, { o: 0, sx: 0.02, sy: 0.02 }], [1.2, { o: 0, sx: 0.02, sy: 0.02 }], [1.3, { o: 1 }], [2.6, { o: 1, sx: 1, sy: 1 }], [4.2, { o: 1 }], [4.5, { o: 0 }]], { keep: false });
+  d.pointer([[0.6, d.w - 30, d.h - 24], [1.2, from.x, from.y], [2.6, to.x, to.y], [4.0, d.w - 30, d.h - 24]]);
+  d.keycap('Delete', 40, 2.8, 3.8, 7.4);
   return d.html(aria);
 }

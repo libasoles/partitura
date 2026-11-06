@@ -22,3 +22,7 @@ test('tuning names and formats are marked, but not inside keycaps or SVG', () =>
   assert.match(html, /<span class="tutorial-term">MusicXML<\/span>/);
   assert.ok(html.endsWith('<svg><text>Drop D</text></svg>'));
 });
+
+test('meters such as 4/4 or 6/8 are not split into keycaps', () => {
+  assert.equal(highlightTutorialKeys('<p>compás (4/4, 3/4, 6/8…)</p>'), '<p>compás (4/4, 3/4, 6/8…)</p>');
+});

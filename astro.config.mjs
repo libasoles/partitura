@@ -30,6 +30,8 @@ export default defineConfig({
   // Every page is rendered to HTML at build time and served as static files: the fastest response and the full
   // content in the markup crawlers read. Only the editor itself runs in the browser.
   output: 'static',
+  // refinger se unió a move-tab: la URL vieja sigue llevando a la guía.
+  redirects: Object.fromEntries(locales.map((l) => [tutorialsPath(l, 'refinger'), tutorialsPath(l, 'move-tab')])),
   trailingSlash: 'always',
   compressHTML: true,
   // The whole CSS is ~30 KB: inlined, nothing blocks the first render waiting for a stylesheet.

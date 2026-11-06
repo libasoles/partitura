@@ -23,7 +23,7 @@
   "scoreBarTitle": "Apagar uma barra",
   "scoreBarBody": "Clique em uma barra simples, dupla ou de repetição para selecioná-la em amarelo e pressione Delete para apagá-la.",
   "scoreTabEditTitle": "Editar uma tablatura",
-  "scoreTabEditBody": "Clique em um número da tablatura e escreva o novo traste; sua digitação é salva e a pauta não muda. Mudar a afinação recalcula todos os trastes e substitui as digitações manuais, preservando as notas da pauta. A afinação é salva com esta partitura e você pode desfazer a mudança com Ctrl/Cmd+Z.",
+  "scoreTabEditBody": "Clique em um número da tablatura e escreva o novo traste; sua digitação é salva e a pauta não muda.",
   "scoreTabMoveTitle": "Mover uma célula da tablatura",
   "scoreTabMoveBody": "Arraste um número para outra corda ou outro tempo e solte onde quiser.",
   "scoreTabMoveKey": "Arrastar",
@@ -347,8 +347,8 @@
         "Mude a casa de uma nota sem mexer na pauta."
       ],
       "move-tab": [
-        "Mover uma célula da tablatura",
-        "Arraste um número para outra corda ou tempo."
+        "Mover um número e mudar de corda",
+        "Arraste um número ou use Shift+↑/↓ para tocar o mesmo som em outra corda."
       ],
       "faq": [
         "Perguntas frequentes",
@@ -397,10 +397,6 @@
       "tab-toggle": [
         "Mostrar a tablatura",
         "Uma tablatura sob cada pauta, com a digitação já resolvida."
-      ],
-      "refinger": [
-        "Mudar a corda de uma nota",
-        "Toque o mesmo som em outra corda."
       ],
       "barre": [
         "Pestanas",
@@ -514,7 +510,8 @@
           "Clique num espaço vazio do compasso para selecioná-lo: nas bordas aparecem dois botões <strong>+</strong> para inserir um compasso antes ou depois.",
           "No fim de cada pauta, os botões <strong>+</strong> e <strong>−</strong> adicionam ou tiram um compasso. Para adicionar outra pauta, use o botão abaixo da partitura.",
           "Segure <kbd>Shift</kbd> e arraste um compasso para levá-lo a outro lugar.",
-          "Arraste uma barra de compasso para os lados para alargar ou estreitar um compasso."
+          "Arraste uma barra de compasso para os lados para alargar ou estreitar um compasso.",
+          "Para excluir um compasso, clique num espaço vazio dele para selecioná-lo e pressione <kbd>Delete</kbd>: os seguintes ocupam o lugar dele."
         ]
       },
       "repeats": {
@@ -540,14 +537,6 @@
           "A pauta não muda quando você mexe na tablatura. Aperte o botão de novo para escondê-la."
         ],
         "tip": "Os dois guias seguintes explicam como mudar um número ou levá-lo a outra corda."
-      },
-      "refinger": {
-        "steps": [
-          "Na tablatura, clique no número da nota que quer mover.",
-          "Aperte <kbd>Shift</kbd> + <kbd>↑</kbd> para passá-la à corda de cima ou <kbd>Shift</kbd> + <kbd>↓</kbd> para a de baixo. A casa se ajusta sozinha para soar igual.",
-          "Mudar a afinação recalcula todos os trastes e substitui as digitações manuais, preservando as notas da pauta. A afinação é salva com esta partitura e você pode desfazer a mudança com Ctrl/Cmd+Z."
-        ],
-        "tip": "Só a digitação muda: a nota da pauta e o som continuam iguais."
       },
       "barre": {
         "steps": [
@@ -632,6 +621,14 @@
           "Para apagar vários nomes juntos, arraste um retângulo de seleção que os inclua e pressione <kbd>Delete</kbd> ou <kbd>Backspace</kbd>. Desfaça as alterações com <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>."
         ],
         "tip": "Os nomes aparecem sobre a pauta e no PDF exportado. O diagrama serve de consulta: escrever o nome de um acorde não adiciona suas notas à pauta nem faz com que soem na reprodução."
+      },
+      "move-tab": {
+        "steps": [
+          "Arraste um número da tablatura para outra corda ou outro tempo e solte onde quiser.",
+          "Para tocar o mesmo som em outra corda, clique no número da nota que quer mudar.",
+          "Aperte <kbd>Shift</kbd> + <kbd>↓</kbd> (ou <kbd>↑</kbd>): o editor procura a próxima digitação dessa nota nas cordas seguintes e ajusta a casa para soar igual. Se apertar de novo, passa para a corda seguinte, desde que a casa não passe do máximo."
+        ],
+        "tip": "Só a digitação muda: a nota da pauta e o som continuam iguais."
       }
     },
     "seo": {
@@ -660,8 +657,8 @@
         "Mude a casa de uma nota na tablatura sem mexer na pauta, no editor de partituras grátis Partitura."
       ],
       "move-tab": [
-        "Mover um número da tablatura para outra corda ou tempo",
-        "Arraste um número de casa para outra corda ou tempo da tablatura e veja a pauta se atualizar."
+        "Mover um número da tablatura e mudar a corda de uma nota",
+        "Arraste um número de casa para outra corda ou tempo e use Shift+↑/↓ para tocar o mesmo som em outra corda, no editor de partituras online."
       ],
       "faq": [
         "Perguntas frequentes do Partitura: grátis, downloads e violão",
@@ -710,10 +707,6 @@
       "tab-toggle": [
         "Mostrar a tablatura de violão sob a pauta",
         "Ative uma tablatura sob cada pauta, com a digitação já resolvida, no editor de partituras online grátis."
-      ],
-      "refinger": [
-        "Tocar uma nota em outra corda do violão na tablatura",
-        "Mude a corda de uma nota na tablatura para tocar o mesmo som em outra parte do braço."
       ],
       "barre": [
         "Como marcar pestanas em uma tablatura de violão",

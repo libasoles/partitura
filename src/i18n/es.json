@@ -23,7 +23,7 @@
   "scoreBarTitle": "Borrar una barra",
   "scoreBarBody": "Hacé clic en una barra simple, doble o de repetición para seleccionarla en amarillo y presioná Delete para borrarla.",
   "scoreTabEditTitle": "Editar una tablatura",
-  "scoreTabEditBody": "Hacé clic sobre un número de la tablatura y escribí el traste nuevo; tu digitación se guarda y el pentagrama no cambia. Al cambiar la afinación, se recalculan todos los trastes y se reemplazan las digitaciones manuales, sin cambiar las notas del pentagrama. La afinación se guarda con esta partitura y podés deshacer el cambio con Ctrl/Cmd+Z.",
+  "scoreTabEditBody": "Hacé clic sobre un número de la tablatura y escribí el traste nuevo; tu digitación se guarda y el pentagrama no cambia.",
   "scoreTabMoveTitle": "Mover una celda de la tablatura",
   "scoreTabMoveBody": "Arrastrá un número a otra cuerda o a otro tiempo y soltalo donde quieras.",
   "scoreTabMoveKey": "Arrastrar",
@@ -343,8 +343,8 @@
         "Cambiá el traste de una nota sin tocar el pentagrama."
       ],
       "move-tab": [
-        "Mover una celda de la tablatura",
-        "Arrastrá un número a otra cuerda o tiempo."
+        "Mover un número y cambiar de cuerda",
+        "Arrastrá un número o usá Mayús+↑/↓ para tocar el mismo sonido en otra cuerda."
       ],
       "faq": [
         "Preguntas frecuentes",
@@ -393,10 +393,6 @@
       "tab-toggle": [
         "Mostrar la tablatura",
         "Una tablatura bajo cada renglón, con la digitación ya resuelta."
-      ],
-      "refinger": [
-        "Cambiar la cuerda de una nota",
-        "Tocá el mismo sonido en otra cuerda."
       ],
       "barre": [
         "Cejillas",
@@ -510,7 +506,8 @@
           "Hacé clic en un espacio vacío de un compás para seleccionarlo: en sus bordes aparecen dos botones <strong>+</strong> para insertar un compás antes o después.",
           "Al final de cada renglón, los botones <strong>+</strong> y <strong>−</strong> agregan o quitan un compás. Para agregar otro renglón usá el botón de debajo de la partitura.",
           "Mantené <kbd>Mayús</kbd> y arrastrá un compás para llevarlo a otro lugar.",
-          "Arrastrá una barra de compás hacia los lados para ensanchar un compás o achicarlo."
+          "Arrastrá una barra de compás hacia los lados para ensanchar un compás o achicarlo.",
+          "Para eliminar un compás, seleccionalo con un clic en un espacio vacío y presioná <kbd>Delete</kbd>: los siguientes ocupan su lugar."
         ]
       },
       "repeats": {
@@ -536,14 +533,6 @@
           "El pentagrama no cambia cuando tocás la tablatura. Volvé a apretar el botón para ocultarla."
         ],
         "tip": "Las dos guías siguientes explican cómo cambiar un número o llevarlo a otra cuerda."
-      },
-      "refinger": {
-        "steps": [
-          "En la tablatura, hacé clic en el número de la nota que querés mover.",
-          "Apretá <kbd>Mayús</kbd> + <kbd>↑</kbd> para pasarla a la cuerda de arriba o <kbd>Mayús</kbd> + <kbd>↓</kbd> para la de abajo. El traste se ajusta solo para que suene igual.",
-          "Al cambiar la afinación, se recalculan todos los trastes y se reemplazan las digitaciones manuales, sin cambiar las notas del pentagrama. La afinación se guarda con esta partitura y podés deshacer el cambio con Ctrl/Cmd+Z."
-        ],
-        "tip": "Solo cambia la digitación: la nota del pentagrama y el sonido siguen igual."
       },
       "barre": {
         "steps": [
@@ -628,6 +617,14 @@
           "Para borrar varios nombres juntos, arrastrá un rectángulo de selección que los abarque y presioná <kbd>Delete</kbd> o <kbd>Retroceso</kbd>. Los cambios se pueden deshacer con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>."
         ],
         "tip": "Los nombres se imprimen sobre el pentagrama y salen también en PDF. El diagrama sirve de consulta: escribir un nombre de acorde no agrega sus notas al pentagrama ni hace que suenen en la reproducción."
+      },
+      "move-tab": {
+        "steps": [
+          "Arrastrá un número de la tablatura a otra cuerda o a otro tiempo y soltalo donde quieras.",
+          "Para tocar el mismo sonido en otra cuerda, hacé clic en el número de la nota que querés cambiar.",
+          "Apretá <kbd>Mayús</kbd> + <kbd>↓</kbd> (o <kbd>↑</kbd>): el editor busca la próxima digitación de esa nota en las cuerdas siguientes y ajusta el traste para que suene igual. Si volvés a apretar, pasa a la cuerda que sigue, siempre que el traste no supere el máximo."
+        ],
+        "tip": "Solo cambia la digitación: la nota del pentagrama y el sonido siguen igual."
       }
     },
     "seo": {
@@ -656,8 +653,8 @@
         "Cambiá el traste de una nota en la tablatura sin tocar el pentagrama, en el editor de partituras gratis Partitura."
       ],
       "move-tab": [
-        "Mover un número de la tablatura a otra cuerda o tiempo",
-        "Arrastrá un número de traste a otra cuerda o tiempo de la tablatura y mirá cómo se actualiza el pentagrama."
+        "Mover un número de la tablatura y cambiar la cuerda de una nota",
+        "Arrastrá un número de traste a otra cuerda o tiempo y usá Mayús+↑/↓ para tocar el mismo sonido en otra cuerda, en el editor de partituras online."
       ],
       "faq": [
         "Preguntas frecuentes de Partitura: gratis, descargas y guitarra",
@@ -706,10 +703,6 @@
       "tab-toggle": [
         "Mostrar la tablatura de guitarra bajo el pentagrama",
         "Activá una tablatura bajo cada renglón, con la digitación ya resuelta, en el editor de partituras online gratis."
-      ],
-      "refinger": [
-        "Tocar una nota en otra cuerda de la guitarra en la tablatura",
-        "Cambiá la cuerda de una nota en la tablatura para tocar el mismo sonido en otra parte del mástil."
       ],
       "barre": [
         "Cómo marcar cejillas en una tablatura de guitarra",

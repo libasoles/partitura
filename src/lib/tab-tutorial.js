@@ -29,8 +29,15 @@ function stage(notes, labeled) {
   );
 }
 
-// `captionFirst` puts the title and description above the animation (Partitura).
+// `captionFirst` puts the title and description above the animation (Partitura); `bare` draws only the animation,
+// for pages whose text already says what it shows.
 function demo(opts) {
+  if (opts.bare) {
+    return (
+      '<figure class="tab-demo ' + opts.cls + '">' + stage(opts.notes, opts.labeled) +
+      '<div class="tab-demo__keys" aria-hidden="true">' + opts.keys.join('<span class="tab-demo__plus">+</span>') + '</div></figure>'
+    );
+  }
   const caption = '<figcaption><h3>' + opts.title + '</h3><p>' + opts.body + '</p></figcaption>';
   const media =
     stage(opts.notes, opts.labeled) +

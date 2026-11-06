@@ -1,5 +1,5 @@
 import type { Strings } from '../i18n';
-import { renderShortcutDiagram, renderShortcuts, renderDot, renderBar, renderTabEdit, renderTabMove } from './score-tutorial.js';
+import { renderShortcutDiagram, renderShortcuts, renderDot, renderTabEdit, renderTabMove } from './score-tutorial.js';
 import { highlightTutorialKeys, highlightTutorialTerms } from './tutorial-keys.js';
 import { tutorialIcon } from './tutorial-icons.js';
 import { settingsItem } from './settings-items.js';
@@ -10,7 +10,7 @@ export const categories = [
   { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'accidentals', 'dots', 'settings', 'playback', 'shortcuts'] },
   { id: 'editing', slugs: ['select-move', 'copy', 'voices', 'patterns', 'tuplets', 'ties'] },
   { id: 'structure', slugs: ['signatures', 'measures', 'delete-barline', 'repeats', 'dynamics'] },
-  { id: 'guitar', slugs: ['tab-toggle', 'edit-tab', 'move-tab', 'refinger', 'chords', 'barre'] },
+  { id: 'guitar', slugs: ['tab-toggle', 'edit-tab', 'move-tab', 'chords', 'barre'] },
   { id: 'files', slugs: ['files', 'scores', 'faq'] },
 ] as const;
 
@@ -41,7 +41,6 @@ const animated: Partial<Record<Slug, Demo>> = {
   repeats: demos.repeats,
   dynamics: demos.dynamics,
   'tab-toggle': demos.tabToggle,
-  refinger: demos.refinger,
   barre: demos.barre,
   files: demos.files,
   scores: demos.scores,
@@ -68,6 +67,11 @@ const illustrations: Partial<Record<Slug, Record<number, Demo | Demo[]>>> = {
     0: demos.voicesSelect, 1: demos.duplicateVoice, 2: demos.adjustCopy, 3: [demos.thirdAbove, demos.thirdBelow],
     4: demos.undoDuplicate, 5: demos.voicesLegend, 7: demos.reassignVoice,
   },
+  tuplets: { 1: demos.quintuplet, 2: demos.septuplet },
+  ties: { 3: demos.tieDelete },
+  measures: { 4: demos.measureDelete },
+  'move-tab': { 0: (s) => renderTabMove(s), 2: demos.refinger },
+  chords: { 0: demos.chordTool, 1: demos.chordType, 2: demos.chordPopup, 4: demos.chordMove, 5: demos.chordDelete },
 };
 
 function guide(slug: Slug, s: Strings): string {
@@ -99,9 +103,8 @@ function rawTutorialBody(slug: Slug, s: Strings): string {
         (drawings[i] ? demo(drawings[i]!, s, text) : '')).join('');
     }
     case 'dots': return `<p>${s.scoreDotBody}</p>${renderDot(s)}`;
-    case 'delete-barline': return `<p>${s.scoreBarBody}</p>${renderBar(s)}`;
+    case 'delete-barline': return `<p>${s.scoreBarBody}</p>${demo(demos.barlineDelete, s, s.scoreBarBody)}`;
     case 'edit-tab': return `<p>${s.scoreTabEditBody}</p>${renderTabEdit(s)}`;
-    case 'move-tab': return `<p>${s.scoreTabMoveBody}</p>${renderTabMove(s)}`;
     case 'faq':
       return `<dl class="faq">${s.scoreFaq.map(([q, a]) => `<div><dt><h2>${q}</h2></dt><dd>${a}</dd></div>`).join('')}</dl>`;
     default: return guide(slug, s);
@@ -136,12 +139,11 @@ export const related: Record<Slug, Slug[]> = {
   'delete-barline': ['measures', 'repeats', 'signatures'],
   repeats: ['measures', 'dynamics', 'delete-barline'],
   dynamics: ['repeats', 'notes-rests', 'signatures'],
-  'tab-toggle': ['settings', 'edit-tab', 'refinger'],
-  'edit-tab': ['move-tab', 'tab-toggle', 'refinger'],
-  'move-tab': ['edit-tab', 'refinger', 'barre'],
-  refinger: ['move-tab', 'edit-tab', 'barre'],
-  chords: ['tab-toggle', 'refinger', 'barre'],
-  barre: ['tab-toggle', 'refinger', 'edit-tab'],
+  'tab-toggle': ['settings', 'edit-tab', 'move-tab'],
+  'edit-tab': ['move-tab', 'tab-toggle', 'chords'],
+  'move-tab': ['edit-tab', 'tab-toggle', 'barre'],
+  chords: ['tab-toggle', 'move-tab', 'barre'],
+  barre: ['tab-toggle', 'move-tab', 'edit-tab'],
   files: ['scores', 'faq', 'start'],
   scores: ['files', 'faq', 'start'],
   faq: ['start', 'features', 'files'],
