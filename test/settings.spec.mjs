@@ -5,6 +5,28 @@ async function open(page) {
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
 }
 
+for (const url of ['/es/?tools=voices,play', '/es/demos/canto-en-la-rama/']) {
+  test(`${url}: URL tools start the library off but keep its setting available`, async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.addInitScript(() => {
+      localStorage.setItem('partitura.settings.v1', JSON.stringify({ patterns: true }));
+    });
+    await page.goto(url);
+    await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
+    await expect(page.locator('.score-library')).toBeHidden();
+    await page.locator('#scoreSettingsToggle').click();
+    const library = page.getByRole('checkbox', { name: 'Biblioteca de patrones', exact: true });
+    await expect(library).toHaveCount(1, { timeout: 1000 });
+    await expect(library).toBeEnabled();
+    await expect(library).not.toBeChecked();
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('partitura.settings.v1')).patterns)).toBe(true);
+    await library.check();
+    await expect(page.locator('.score-library')).toBeVisible();
+    await library.uncheck();
+    await expect(page.locator('.score-library')).toBeHidden();
+  });
+}
+
 test('settings stay inside a short viewport and all options remain reachable by scrolling', async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 1000 });
   await open(page);

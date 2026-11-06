@@ -4805,7 +4805,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Un patron es ritmo y grados de la escala (ver `M.patternFrom`), no notas: sirve en cualquier tonalidad. La biblioteca
   // es del usuario y no de una partitura, asi que vive con las opciones y no viaja en el documento.
   const LIBRARY_LIMIT = 60;
-  const patternsOn = () => patternsAvailable() && getSetting('patterns', false) === true;
+  // URL tools only override the initial state; the library remains available in settings.
+  let libraryEnabled = !urlDefaults.tools && getSetting('patterns', false) === true;
+  const patternsOn = () => patternsAvailable() && libraryEnabled;
   // Una columna mas a la izquierda solo cabe sin quitarle ancho a la partitura en pantallas anchas; en tablet no se ofrece.
   const patternsAvailable = () => patterns && settings && LIBRARY_PAGE.matches;
   let library = [];
@@ -5261,7 +5263,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const hint = document.createElement('p');
       hint.className = 'score-settings-hint';
       hint.textContent = t.libraryHint;
-      patternsCheck.addEventListener('change', () => { setSetting('patterns', patternsCheck.checked); applyLibrary(); });
+      patternsCheck.addEventListener('change', () => {
+        libraryEnabled = patternsCheck.checked;
+        setSetting('patterns', libraryEnabled);
+        applyLibrary();
+      });
       const syncLibrary = () => {
         patternsCheck.disabled = !LIBRARY_PAGE.matches;
         hint.textContent = LIBRARY_PAGE.matches ? t.libraryHint : t.libraryWideScreen;
@@ -5290,7 +5296,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
 
     function sync() {
-      if (patternsCheck) patternsCheck.checked = getSetting('patterns', false) === true;
+      if (patternsCheck) patternsCheck.checked = libraryEnabled;
       instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === instrumentIds[i]; });
       voicesCard.hidden = M.instrumentOf(score) !== 'voices';
       sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });

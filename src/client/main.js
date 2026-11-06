@@ -9,7 +9,7 @@ async function start() {
   const { readUrlDefaults } = await import('./url-defaults.js');
   const demo = document.getElementById('editor')?.dataset.demoId;
   const urlDefaults = readUrlDefaults(demo ? '?tools=voices,play,intervals&sound=uh' : location.search);
-  await startEditor({ bindActions: bindSiteActions, settings: true, chords: true, lyrics: true, patterns: !urlDefaults.tools, urlDefaults });
+  await startEditor({ bindActions: bindSiteActions, settings: true, chords: true, lyrics: true, patterns: true, urlDefaults });
 }
 
 if (desktop.matches) start();
