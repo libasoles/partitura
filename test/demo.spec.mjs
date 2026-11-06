@@ -187,7 +187,7 @@ test('URL groups override saved tools, allow changes, and apply to new scores', 
   await page.locator('#scoreSettingsToggle').click();
   const popup = page.locator('#scoreSettingsPopup');
   await expect(popup.locator('[data-category="playback"] input')).toBeChecked();
-  await expect(popup.locator('[data-category="intervals"] input')).not.toBeChecked();
+  await expect(popup.locator('[data-category="intervals"] input[type="checkbox"]')).not.toBeChecked();
   await popup.locator('[data-category="dynamics"] input').check();
   await page.keyboard.press('Escape');
   await expect(page.locator('[data-hairpin="cresc"]')).toBeVisible();
