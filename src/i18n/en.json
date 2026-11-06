@@ -131,7 +131,7 @@
     "instrumentGuitar": "Guitar",
     "instrumentVoices": "Voices",
     "settingsParts": "Number of voices",
-    "partsValue": "{n} voices",
+    "partsValue": "{n}",
     "settingsSound": "Choir sound",
     "soundAh": "Ah",
     "soundOh": "Oh",

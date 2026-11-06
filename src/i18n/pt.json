@@ -131,7 +131,7 @@
     "instrumentGuitar": "Violão",
     "instrumentVoices": "Vozes",
     "settingsParts": "Quantidade de vozes",
-    "partsValue": "{n} vozes",
+    "partsValue": "{n}",
     "settingsSound": "Som do coro",
     "soundAh": "Ah",
     "soundOh": "Oh",

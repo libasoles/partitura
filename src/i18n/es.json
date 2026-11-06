@@ -127,7 +127,7 @@
     "instrumentGuitar": "Guitarra",
     "instrumentVoices": "Voces",
     "settingsParts": "Cantidad de voces",
-    "partsValue": "{n} voces",
+    "partsValue": "{n}",
     "settingsSound": "Sonido del coro",
     "soundAh": "Ah",
     "soundOh": "Oh",

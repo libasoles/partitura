@@ -2575,3 +2575,18 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-doc-tab-close svg { width: 0.8rem; height: 0.8rem; }
 .score-doc-tab-close:hover,
 .score-doc-tab-close:focus-visible { background: var(--surface); color: var(--ink); }
+
+/* Voices: number of parts and choir sound share one dashed card. */
+.score-settings-card {
+  margin-top: 1.1rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--rule);
+  border-radius: 0.6rem;
+}
+.score-settings-card > .score-settings-section { margin: 0; padding: 0; border: 0; }
+.score-settings-card > .score-settings-section + .score-settings-section { margin-top: 0.9rem; }
+.score-settings-section.is-inline { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.score-settings-section.is-inline .score-settings-title { margin: 0; }
+.score-settings-section.is-inline .score-settings-row { flex: 0 0 auto; }
+.score-settings-section.is-inline .score-settings-slider-line { width: 7.5rem; }
+.score-settings-section.is-inline .score-settings-tempo-value { min-width: 1ch; text-align: right; }
