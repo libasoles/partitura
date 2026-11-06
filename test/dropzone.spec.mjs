@@ -29,7 +29,16 @@ for (const locale of ['es', 'en', 'pt']) {
       document.body.dispatchEvent(event);
     });
     await expect(zone).toHaveClass(/is-accepted/);
-    const rejected = await drag(page, [{ name: 'photo.png', type: 'image/png', bytes: [1] }]);
+    // .musicxml usually has no registered MIME type: an OS drag reports it empty and must not look rejected.
+    await page.evaluate(() => {
+      const event = new Event('dragenter', { bubbles: true, cancelable: true });
+      Object.defineProperty(event, 'dataTransfer', {
+        value: { types: ['Files'], files: [], items: [{ kind: 'file', type: '' }] },
+      });
+      document.body.dispatchEvent(event);
+    });
+    await expect(zone).toHaveClass(/is-accepted/);
+    const rejected =await drag(page, [{ name: 'photo.png', type: 'image/png', bytes: [1] }]);
     await page.locator('body').dispatchEvent('dragenter', { dataTransfer: rejected });
     await expect(zone).toBeVisible();
     await expect(zone).not.toHaveClass(/is-accepted/);
