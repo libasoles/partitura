@@ -9,5 +9,7 @@ export function isMidiFile(file) {
 export function acceptsScoreFile(file) {
   // During an OS drag the browser often exposes only the MIME type, until drop.
   if (file.name) return /\.(musicxml|xml|mid|midi)$/i.test(file.name);
-  return [...midiTypes, ...xmlTypes].includes(file.type?.toLowerCase());
+  // Many systems register no MIME type for .musicxml: an empty one is unknown, so the extension decides on drop.
+  const type = file.type?.toLowerCase();
+  return !type || [...midiTypes, ...xmlTypes].includes(type);
 }
