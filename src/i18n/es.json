@@ -769,12 +769,7 @@
       [
         "Todos tus dispositivos",
         "Datos guardados en la nube. Accedé a tus partituras desde múltiples navegadores, computadoras y tablets (no incluye celulares)."
-  ,
-      [
-        "Duplicar partituras",
-        "Duplicá una partitura para probar variantes sin perder la original."
-      ]
-    ],
+      ],
       [
         "Archivo",
         "Creá carpetas de partituras para mantenerlas organizadas."
@@ -786,6 +781,10 @@
       [
         "Compartir",
         "Compartí canciones públicamente con un enlace."
+      ],
+      [
+        "Duplicar partituras",
+        "Duplicá una partitura para probar variantes sin perder la original."
       ]
     ],
     "plansTitle": "Elegí tu plan",
