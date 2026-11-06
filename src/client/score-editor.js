@@ -4518,11 +4518,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       ['dynamics', t.toolsDynamics, (item) => item.kind === 'hairpin'],
       ['voices', t.toolsVoices, () => false, false],
       ['playback', t.toolsPlayback, () => false, false],
+      ['intervals', t.toolsIntervals, () => false, false],
     ];
     const toolsHeading = document.createElement('p');
     toolsHeading.className = 'score-settings-heading score-settings-title';
     toolsHeading.textContent = t.settingsTools;
     popup.appendChild(toolsHeading);
+    const toolsGrid = document.createElement('div');
+    toolsGrid.className = 'score-settings-tools';
+    popup.appendChild(toolsGrid);
     const checks = categories.map(([name, label, belongs, fallback = true]) => {
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section score-settings-category';
@@ -4561,13 +4565,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           icons.appendChild(icon);
         }
       }
+      if (name === 'intervals') {
+        const icon = document.createElement('span');
+        icon.className = 'score-settings-icon score-settings-intervals';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = 'V';
+        icons.appendChild(icon);
+      }
       check.addEventListener('change', () => {
         M.setTool(score, name, check.checked);
         save();
         if (name === 'voices') render(); else { applyTools(); applyVoices(); }
       });
       wrap.append(field, icons);
-      popup.appendChild(wrap);
+      toolsGrid.appendChild(wrap);
       return [name, check, fallback];
     });
 
@@ -4618,16 +4629,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
 
     popup.addEventListener('toggle', (event) => cog.setAttribute('aria-expanded', String(event.newState === 'open')));
+    function positionSettings() {
+      if (!popup.matches(':popover-open')) return;
+      // Se abre a la izquierda del engranaje, que esta pegado al borde derecho.
+      const anchor = cog.getBoundingClientRect();
+      const box = popup.getBoundingClientRect();
+      popup.style.left = Math.max(8, Math.min(anchor.left - box.width - 12, window.innerWidth - box.width - 8)) + 'px';
+      popup.style.top = Math.max(8, Math.min(anchor.top, window.innerHeight - box.height - 8)) + 'px';
+    }
+    window.addEventListener('resize', positionSettings);
     cog.addEventListener('click', () => {
       if (popup.matches(':popover-open')) { popup.hidePopover(); return; }
       sync();
       popup.showPopover();
       fitIcons();
-      // Se abre a la izquierda del engranaje, que esta pegado al borde derecho.
-      const anchor = cog.getBoundingClientRect();
-      const box = popup.getBoundingClientRect();
-      popup.style.left = Math.max(8, anchor.left - box.width - 12) + 'px';
-      popup.style.top = Math.max(8, Math.min(anchor.top, window.innerHeight - box.height - 8)) + 'px';
+      positionSettings();
       (popup.querySelector('input:checked') || popup.querySelector('input')).focus({ preventScroll: true });
     });
     document.querySelector('.score-page').appendChild(popup);

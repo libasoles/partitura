@@ -136,6 +136,7 @@
     "toolsDynamics": "Dynamics",
     "toolsVoices": "Voices",
     "toolsPlayback": "Playback",
+    "toolsIntervals": "Intervals",
     "play": "Play",
     "pause": "Pause",
     "playbackLoading": "Loading sounds…",

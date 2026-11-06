@@ -1810,9 +1810,12 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   box-sizing: border-box;
   width: min(34rem, calc(100vw - 2rem));
   max-height: calc(100vh - 1rem);
+  max-height: calc(100dvh - 1rem);
   margin: 0;
   padding: 1.1rem 1.25rem 1.25rem;
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   color: var(--ink);
   background: var(--paper);
   border: 1px solid var(--rule);
@@ -1836,7 +1839,16 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 
 
-/* The two tool categories sit under one "Tools" title, so they carry no divider of their own. */
+/* Pair related tools to keep the settings compact. */
+.score-settings-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 1rem;
+}
+.score-settings-tools > * { min-width: 0; }
+.score-settings-intervals { font-size: 1.75rem; font-weight: 600; }
+
+/* Tool categories share one heading and carry no divider of their own. */
 .score-settings-section.score-settings-category { margin-top: 0.6rem; padding-top: 0; border-top: 0; }
 
 /* Section titles (Instrument, Tempo, Tools) outrank the labels of their options. */

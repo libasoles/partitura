@@ -5,6 +5,36 @@ async function open(page) {
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
 }
 
+test('settings stay inside a short viewport and all options remain reachable by scrolling', async ({ page }) => {
+  await open(page);
+  await page.locator('#scoreSettingsToggle').click();
+  const popup = page.locator('#scoreSettingsPopup');
+  const category = (name) => popup.locator('.score-settings-category').filter({ has: page.getByRole('checkbox', { name, exact: true }) });
+  for (const [left, right] of [['Repetición', 'Dinámica'], ['Voces', 'Reproducción']]) {
+    const a = await category(left).boundingBox();
+    const b = await category(right).boundingBox();
+    expect(a.y).toBe(b.y);
+    expect(a.x + a.width).toBeLessThan(b.x);
+  }
+  await expect(category('Intervalos').locator('.score-settings-icon')).toHaveText('V');
+  await page.setViewportSize({ width: 1100, height: 360 });
+  await expect.poll(async () => {
+    const box = await popup.boundingBox();
+    return box.y >= 8 && box.y + box.height <= 352;
+  }).toBe(true);
+  expect(await popup.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  await popup.hover();
+  await page.mouse.wheel(0, 1000);
+  await expect.poll(() => popup.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  const intervals = popup.getByRole('checkbox', { name: 'Intervalos', exact: true });
+  await intervals.check();
+  await page.evaluate(() => window.ScoreStore.flush());
+  await page.reload();
+  await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
+  await page.locator('#scoreSettingsToggle').click();
+  await expect(intervals).toBeChecked();
+});
+
 test('the cog is the first sidebar tool and the dialog switches instrument, tempo and tool groups', async ({ page }) => {
   await open(page);
   const cog = page.locator('#scoreSettingsToggle');
