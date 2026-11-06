@@ -854,16 +854,24 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     alignVoiceLegend();
   }
 
-  // The voices toolbar sits level with the top line of the first staff and never takes width from the sheet: on wide screens it
+  // Playback and voices sit to the left of the first staff and never take width from the sheet: on wide screens the toolbar
   // goes in the page margin outside the stage; on narrow ones, in the staff's own left margin (left of the clef or brace).
   function alignVoiceLegend() {
     const line = stage.querySelector('g.staff > path');
-    if (!line || !voiceLegend.isConnected) return;
+    if (!line) return;
     const origin = stage.getBoundingClientRect();
-    voiceLegend.style.top = Math.max(0, line.getBoundingClientRect().top - origin.top) + 'px';
+    const top = Math.max(0, line.getBoundingClientRect().top - origin.top);
     // Left of the brace (grand staff) or of the first staff line, never over it.
     const edge = (stage.querySelector('g.grpSym') || line).getBoundingClientRect().left - origin.left;
-    voiceLegend.style.left = (WIDE_PAGE.matches ? -(voiceLegend.offsetWidth + 16) : Math.max(0, edge - voiceLegend.offsetWidth - 6)) + 'px';
+    const playbackShown = playButton.isConnected && !playButton.hidden;
+    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0);
+    const left = WIDE_PAGE.matches ? -(width + 16) : Math.max(0, edge - width - 6);
+    if (playbackShown) {
+      playButton.style.top = top + 'px';
+      playButton.style.left = (left + (width - playButton.offsetWidth) / 2) + 'px';
+    }
+    voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 8 : 0)) + 'px';
+    voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
   }
 
   function render() {
@@ -903,6 +911,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     document.getElementById('scoreTabToggle')?.setAttribute('aria-pressed', String(!!score.showTabs));
     applyTools();
     applyVoices();
+    if (playbackState === 'playing' || playbackState === 'paused') {
+      measurePlayback();
+      drawPlaybackCursor();
+    }
     markSelected();
     updateHoverGhost();
     removeRow.hidden = score.rows.length <= M.MIN_ROWS;
@@ -2857,7 +2869,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       selectNavigation(navigation, event);
       return;
     }
-    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu')) return;
+    if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu, .score-playback')) return;
     const link = event.target.closest('g.tie, g.slur');
     if (link && !activeItem && linkRefs.has(link)) {
       event.preventDefault();
@@ -3829,11 +3841,83 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   let player = null, audioContext = null, playbackState = 'idle', playbackRequest = 0, playbackTrack = null;
   let playbackDocument = null, playbackSnapshot = null;
+  let playbackSelectionMeasure = null;
+  let playbackFrame = null, playbackLayout = [];
+  const playbackCursor = document.createElement('span');
+  playbackCursor.className = 'score-playback-cursor';
+  playbackCursor.setAttribute('aria-hidden', 'true');
+
+  function selectedPlaybackMeasure() {
+    const measures = [
+      ...picks().map((ref) => ref.mi),
+      ...selectedChords.map((ref) => ref.mi),
+      ...(selectedLink?.refs || []).map((ref) => ref.mi),
+      ...(selectedBeam?.refs || []).map((ref) => ref.mi),
+      ...selectedNavigation.map((ref) => ref.first),
+      ...[...stage.querySelectorAll('.score-barline-trigger[aria-pressed="true"]')].map((node) => Number(node.dataset.measure)),
+    ];
+    if (selectedMeasure !== null) measures.push(selectedMeasure);
+    if (selectedHairpin) measures.push(selectedHairpin.mi);
+    return measures.length ? Math.min(...measures) : null;
+  }
+
+  function measurePlayback() {
+    const origin = stage.getBoundingClientRect();
+    let start = 0;
+    playbackLayout = layout.map((bounds, mi) => {
+      const duration = M.capacity(score, mi);
+      const columns = new Map();
+      for (let staff = 0; staff < M.stavesOf(score); staff += 1) {
+        const measure = staff ? score.lower?.[mi] || [] : M.measures(score)[mi];
+        const onsets = M.onsets(measure);
+        eventNodes(mi, staff).forEach((node, i) => {
+          const time = onsets[i];
+          const column = columns.get(time) || [];
+          column.push(centerX(node, origin));
+          columns.set(time, column);
+        });
+      }
+      if (!columns.has(0)) columns.set(0, [bounds.start]);
+      columns.set(duration, [bounds.right]);
+      const anchors = [...columns].map(([time, xs]) => ({ time, x: xs.reduce((a, b) => a + b, 0) / xs.length })).sort((a, b) => a.time - b.time);
+      const entry = { start, end: start + duration, bounds, anchors };
+      start += duration;
+      return entry;
+    });
+  }
+
+  function drawPlaybackCursor() {
+    if (!player || !playbackTrack) return;
+    const time = player.position * (score.tempo || 120) * M.DIVISIONS / 60;
+    const mi = playbackLayout.findIndex((measure) => time < measure.end);
+    const measure = playbackLayout[mi];
+    if (!measure) return;
+    const local = Math.max(0, time - measure.start);
+    const { bounds, anchors } = measure;
+    let x = anchors[anchors.length - 1].x;
+    for (let i = 1; i < anchors.length; i += 1) {
+      const a = anchors[i - 1], b = anchors[i];
+      if (local <= b.time) { x = a.x + (b.x - a.x) * (local - a.time) / (b.time - a.time); break; }
+    }
+    playbackCursor.style.transform = `translate(${x}px, ${bounds.top - 8}px)`;
+    playbackCursor.style.height = (bounds.bottom - bounds.top + 16) + 'px';
+    playbackCursor.dataset.measure = String(mi);
+    playbackCursor.dataset.time = String(time);
+    if (!playbackCursor.isConnected) stage.appendChild(playbackCursor);
+  }
+
+  function animatePlayback() {
+    cancelAnimationFrame(playbackFrame);
+    drawPlaybackCursor();
+    if (playbackState === 'playing') playbackFrame = requestAnimationFrame(animatePlayback);
+  }
+
   const playButton = document.createElement('button');
   playButton.id = 'scorePlayback';
   playButton.type = 'button';
   playButton.className = 'score-palette-item score-playback tooltip';
   playButton.hidden = true;
+  ['pointerdown', 'mousedown', 'click', 'dblclick'].forEach((type) => playButton.addEventListener(type, (event) => event.stopPropagation()));
   function syncPlayback() {
     const active = playbackState === 'playing';
     const loading = playbackState === 'loading';
@@ -3846,23 +3930,31 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     playButton.disabled = loading;
   }
   function resetPlayback() {
+    cancelAnimationFrame(playbackFrame);
+    playbackCursor.remove();
+    playbackLayout = [];
     playbackRequest += 1;
     player?.stop();
     playbackTrack = null;
     playbackDocument = null;
     playbackSnapshot = null;
+    playbackSelectionMeasure = null;
     playbackState = 'idle';
     syncPlayback();
   }
   syncPlayback();
-  if (settings) barlines.prepend(playButton);
   playButton.addEventListener('click', async () => {
     if (playbackState === 'playing') {
       player.pause();
       playbackState = 'paused';
+      animatePlayback();
       syncPlayback();
       return;
     }
+    const fromMeasure = selectedPlaybackMeasure();
+    const restart = playbackState !== 'paused' || (fromMeasure !== null && fromMeasure !== playbackSelectionMeasure);
+    const from = restart ? measureOffset(0, fromMeasure || 0) * 60 / (score.tempo || 120) / M.DIVISIONS : undefined;
+    if (restart) playbackSelectionMeasure = fromMeasure;
     const request = ++playbackRequest;
     playbackDocument = score;
     playbackSnapshot = JSON.stringify(score);
@@ -3873,12 +3965,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
       const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
       if (request !== playbackRequest) return;
-      player ||= createPlayer(audioContext, vendorUrl, () => { playbackState = 'idle'; playbackTrack = null; syncPlayback(); });
+      player ||= createPlayer(audioContext, vendorUrl, resetPlayback);
       const track = playbackTrack || await player.prepare(score, M);
       if (request !== playbackRequest) return;
       playbackTrack = track;
       playbackState = 'playing';
-      player.play(track);
+      player.play(track, from);
+      if (playbackState === 'playing') { measurePlayback(); animatePlayback(); }
       syncPlayback();
     } catch (error) {
       if (request !== playbackRequest) return;
@@ -3896,6 +3989,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     barlines.querySelectorAll('[data-group]').forEach((button) => { if (button.dataset.group) button.hidden = !shown[button.dataset.group]; });
     tabToggle.hidden = !guitar;
     playButton.hidden = !settings || !toolOn('playback', false);
+    if (settings) stage.appendChild(playButton);
+    alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
   }
@@ -4287,10 +4382,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         });
       }
       if (name === 'playback') {
-        const icon = document.createElement('span');
-        icon.className = 'score-settings-icon';
-        icon.innerHTML = lucide('play');
-        icons.appendChild(icon);
+        for (const name of ['play', 'pause']) {
+          const icon = document.createElement('span');
+          icon.className = 'score-settings-icon';
+          icon.setAttribute('role', 'img');
+          icon.setAttribute('aria-label', t[name]);
+          icon.innerHTML = lucide(name);
+          icons.appendChild(icon);
+        }
       }
       check.addEventListener('change', () => {
         M.setTool(score, name, check.checked);

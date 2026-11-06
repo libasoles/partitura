@@ -42,6 +42,7 @@ export function createPlayer(context, vendorUrl, onEnded) {
   }
 
   return {
+    get position() { return playing ? Math.max(position, context.currentTime - origin) : position; },
     async prepare(score, M) {
       const seconds = 60 / (score.tempo || 120) / M.DIVISIONS;
       const notes = soundingNotes(score, M).map((note) => ({ ...note, start: note.start * seconds, end: note.end * seconds }));
@@ -60,8 +61,9 @@ export function createPlayer(context, vendorUrl, onEnded) {
       const duration = measures.slice(0, last + 1).reduce((sum, _, mi) => sum + M.capacity(score, mi) * seconds, 0);
       return { notes, samples, duration };
     },
-    play({ notes, samples, duration }) {
+    play({ notes, samples, duration }, from) {
       silence();
+      if (from !== undefined) position = Math.max(0, Math.min(duration, from));
       if (!notes.length) { position = 0; onEnded(); return; }
       origin = context.currentTime + 0.03 - position;
       playing = true;
@@ -90,7 +92,7 @@ export function createPlayer(context, vendorUrl, onEnded) {
       timer = setTimeout(() => { silence(); position = 0; onEnded(); }, Math.max(0, origin + duration - context.currentTime) * 1000);
     },
     pause() {
-      if (playing) position = Math.max(0, context.currentTime - origin);
+      if (playing) position = Math.max(position, context.currentTime - origin);
       silence();
     },
     stop() { silence(); position = 0; },
