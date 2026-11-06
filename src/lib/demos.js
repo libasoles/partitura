@@ -49,12 +49,26 @@ function placing(d, slots, start, every, pitchY = (n) => d.y(n.p)) {
 export function place(s, aria) {
   const d = stage({ id: 'place', T: 13 });
   const notes = phrase(d, [
-    ['E4', 'E4', 'F4', 'G4'].map((n) => q(n)),
-    [q('G4'), q('F4'), ...['E4', 'F4', 'E4', 'D4'].map((name) => ({ name, d: 'e' }))],
+    [q('E4'), q('E4'), { name: 'F4', d: 'e' }, { name: 'G4', d: 'e' }, q('G4')],
+    [q('G4'), q('F4'), { name: 'E4', d: 'e' }, { name: 'F4', d: 'e' }, q('D4')],
   ], 22);
-  placing(d, notes, 2.2, 0.85);
-  d.keycap('4', 26, 0.4, 1.3, 6.2);
-  d.keycap('3', 26, 6.2, 6.8, 11.2);
+  const at = (i) => 2.2 + i * 0.85;
+  const path = [[1.3, d.w - 30, d.h - 24]];
+  notes.forEach((n, i) => {
+    path.push(...visit(at(i), n.x + 5, d.y(n.p)));
+    d.click(at(i), n.x + 5, d.y(n.p));
+    if (n.d === 'q') d.note(n.x, n.p, n.d, d.pop(at(i)), n);
+    else if (i % 5 === 2) {
+      // The first eighth has a flag until the second click completes the beam.
+      d.note(n.x, n.p, 'e', d.life(at(i), at(i + 1), 0.01), { keep: false });
+    } else {
+      const pair = notes.slice(i - 1, i + 1).map((note) => ({ x: note.x, y: d.y(note.p) }));
+      d.add(0, 0, beamGroup(pair).svg, d.life(at(i), undefined, 0.01));
+    }
+  });
+  d.pointer(path);
+  d.keycap('4', 26, 0.4, [1.3, at(4) - 0.4, at(9) - 0.4], 11.2);
+  d.keycap('3', 26, 0.4, [at(2) - 0.4, at(7) - 0.4], 11.2);
   return d.html(aria);
 }
 
@@ -297,7 +311,6 @@ export function tieDelete(s, aria) {
 
 export function signatures(s, aria) {
   const d = stage({ id: 'sig', T: 14, staff: false, h: 152, bottom: 88 });
-  const t = s.scoreUiStrings;
   d.base(d.lines(d.x0, d.x1) + d.barline(d.x0) + d.barline(d.x1));
   const clefX = d.x0 + 4;
   // Visible from `from` (0 = from the start) until `to` (default: the end of the loop).
@@ -313,27 +326,32 @@ export function signatures(s, aria) {
   d.add(d.meterX, 0, d.meterAt(0, [3, 4]), S(shown(3.0), slide), { keep: false });
   d.add(d.keyX, 0, d.keyAt(0, 2, 2), [[0, { o: 0 }], [9.2, { o: 0, s: 0.6 }], [9.45, { o: 1, s: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
   // Each click opens the editor's popup under the staff; the pointer picks one of its options and the popup closes.
-  const rowH = 14;
+  const cellW = 36;
+  const cellH = 44;
   const popupY = d.bottom + 10;
+  // Reuse the score's music glyphs, as the editor's signature galleries do.
+  const preview = (svg, viewBox) => `<svg x="6" y="3" width="24" height="${cellH}" viewBox="${viewBox}">${svg}</svg>`;
   const targets = [
-    [1.5, d.meterX + 5, ['4/4', '3/4', '6/8'], 1, 62, 3.0],
-    [4.4, clefX + 8, [t.clefs.treble, t.clefs.bass, t.clefs.alto], 1, 104, 6.0],
-    [7.6, d.keyX + 6, [t.keys[7], t.keys[8], t.keys[9]], 2, 138, 9.2],
+    [1.5, d.meterX + 5, [[4, 4], [3, 4], [6, 8]].map((meter) => preview(d.meterAt(0, meter), '-4 44 32 52')), 1, 3.0],
+    [4.4, clefX + 8, ['G', 'F', 'C'].map((clef) => preview(d.lines(-4, 36) + d.clefAt(0, clef), '-4 22 44 88')), 1, 6.0],
+    [7.6, d.keyX + 6, [0, 1, 2].map((key) => preview(key ? d.keyAt(0, key, 2) : d.lines(-4, 24), '-4 44 32 52')), 2, 9.2],
   ];
   const rest = [d.w - 30, d.h - 32];
   const path = [[0.6, ...rest]];
-  targets.forEach(([at, x, options, pick, width, change]) => {
+  targets.forEach(([at, x, options, pick, change]) => {
     const left = Math.max(4, x - 20);
+    const width = options.length * cellW + 6;
     const pickAt = at + 1.1;
-    const optionY = popupY + 3 + pick * rowH + rowH / 2;
-    path.push(...visit(at, x, d.y(4)), ...visit(pickAt, left + 24, optionY));
+    const optionX = left + 3 + pick * cellW + cellW / 2;
+    const optionY = popupY + 3 + cellH / 2;
+    path.push(...visit(at, x, d.y(4)), ...visit(pickAt, optionX, optionY));
     d.click(at, x, d.y(4));
-    d.click(pickAt, left + 24, optionY);
+    d.click(pickAt, optionX, optionY);
     d.add(left, popupY,
-      `<rect class="d-panel" width="${width}" height="${options.length * rowH + 6}" rx="5"/>` +
-      options.map((o, i) => `<text class="d-menutext" x="8" y="${3 + i * rowH + rowH / 2 + 3}" font-size="8.5">${o}</text>`).join(''),
+      `<rect class="d-panel" width="${width}" height="${cellH + 6}" rx="5"/>` +
+      options.map((o, i) => `<g transform="translate(${3 + i * cellW} 0)">${o}</g>`).join(''),
       [[0, { o: 0 }], [at + 0.2, { o: 0 }], [at + 0.45, { o: 1 }], [change + 0.1, { o: 1 }], [change + 0.35, { o: 0 }]], { keep: false });
-    d.add(left, popupY + 3 + pick * rowH, `<rect class="d-rowhot" x="3" width="${width - 6}" height="${rowH}" rx="3"/>`,
+    d.add(left + 3 + pick * cellW, popupY + 3, `<rect class="d-rowhot" width="${cellW}" height="${cellH}" rx="3"/>`,
       [[0, { o: 0 }], [pickAt, { o: 0 }], [pickAt + 0.15, { o: 1 }], [change + 0.1, { o: 1 }], [change + 0.35, { o: 0 }]], { keep: false });
   });
   path.push([13.0, ...rest]);
