@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import M from '../src/client/score-model.js';
 
+test.use({ viewport: { width: 1920, height: 1080 } });
+
 // do-sol-mi-re en corcheas en el primer compas; el resto vacio.
 function source() {
   const score = M.emptyScore();
@@ -34,7 +36,7 @@ test('Shift+S saves the selected notes as degrees and a drag writes them at the 
   const first = await page.locator('[id="e0-0"] .notehead').boundingBox();
   await page.keyboard.press('Shift+S');
   await expect(page.locator('.score-pattern')).toHaveCount(1);
-  await expect(page.locator('.score-pattern-degrees')).toHaveText('I V III II');
+  await expect(page.locator('.score-pattern-notes g.note')).toHaveCount(4);
   // Saved once: the same selection again does not add a duplicate.
   await page.keyboard.press('Shift+S');
   await expect(page.locator('.score-pattern')).toHaveCount(1);
@@ -61,6 +63,31 @@ test('Shift+S saves the selected notes as degrees and a drag writes them at the 
   const flat = await page.evaluate(() => window.scoreEditor.score.rows[0][2].map((ev) => ev.n));
   expect(flat).toHaveLength(4);
   expect(new Set(flat).size).toBe(1);
+});
+
+test('multi-measure patterns stay on one scrollable line with internal barlines', async ({ page }) => {
+  const score = source();
+  score.rows[0][0] = [{ d: 'h', n: 37 }, { d: 'e', n: 37 }, { d: 'e', n: 36 }];
+  score.rows[0][1] = [{ d: 'e', n: 35 }, { d: 'e', n: 35 }, { d: 'q', rest: true }, { d: 'e', rest: true }, { d: 'e', n: 34 }];
+  const refs = [0, 1].flatMap(mi => score.rows[0][mi].map((_, i) => ({ mi, i })));
+  const pattern = M.patternFrom(score, refs);
+  await open(page, { patterns: true, patternItems: [pattern] });
+  const preview = page.locator('.score-pattern-notes');
+  await expect(preview.locator('g.system')).toHaveCount(1);
+  await expect(preview.locator('g.measure')).toHaveCount(2);
+  await expect(preview.locator('g.note')).toHaveCount(6);
+  await expect(preview.locator('g.rest')).toHaveCount(2);
+  await expect(preview.locator('g.barLine:not([display="none"])')).toHaveCount(1);
+  const scroll = page.locator('.score-pattern-scroll');
+  expect(await scroll.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
+  const rhythmBefore = await page.locator('.score-pattern-rhythm').boundingBox();
+  await scroll.evaluate(el => { el.scrollLeft = el.scrollWidth; });
+  expect(await scroll.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.locator('.score-pattern-rhythm').boundingBox()).toEqual(rhythmBefore);
+  const last = await preview.locator('g.note').last().boundingBox();
+  const frame = await scroll.boundingBox();
+  expect(last.x).toBeGreaterThanOrEqual(frame.x);
+  expect(last.x + last.width).toBeLessThanOrEqual(frame.x + frame.width);
 });
 
 test('a chosen measure is saved with Shift+S and a click on a pattern writes it there', async ({ page }) => {

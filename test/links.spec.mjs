@@ -75,3 +75,56 @@ test('parentheses follow the character, ignore repeats and reject invalid select
   await dispatch({ key: ')', code: 'Digit0', shiftKey: true });
   await expect(page.locator('#scoreStage g.slur')).toHaveCount(0);
 });
+
+for (const type of ['tie', 'slur']) {
+  for (const staff of [0, 1]) {
+    for (const placement of ['within measure', 'across rows']) {
+      test(`click selects and deletes only a ${type} on staff ${staff} ${placement}`, async ({ page }) => {
+        const score = { ...M.emptyScore(), instrument: 'piano', tools: { voices: true } };
+        const first = { d: placement === 'within measure' ? 'h' : 'w', n: staff ? 23 : 37, [type]: true };
+        const second = { d: first.d, n: first.n + (type === 'slur' ? 1 : 0) };
+        const from = placement === 'within measure' ? 0 : score.rows[0].length - 1;
+        const to = placement === 'within measure' ? 0 : from + 1;
+        const lane = M.measures(score, staff);
+        lane[from].push(first);
+        lane[to].push(second);
+        await page.addInitScript(score => {
+          localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [score] }));
+        }, score);
+        await page.goto('/es/');
+        const links = page.locator(`#scoreStage g.${type}`);
+        await expect(links.first()).toBeVisible();
+        await page.keyboard.press('Escape');
+        const notes = page.locator('#scoreStage g.note');
+        await expect(notes).toHaveCount(2);
+        const clickArc = async () => {
+          const arc = placement === 'across rows' ? links.last() : links.first();
+          await arc.scrollIntoViewIfNeeded();
+          const point = await arc.locator('path:not(.score-link-hit)').evaluate(path => {
+            const p = path.getPointAtLength(path.getTotalLength() / 4);
+            const screen = new DOMPoint(p.x, p.y).matrixTransform(path.getScreenCTM());
+            return { x: screen.x, y: screen.y };
+          });
+          await page.mouse.click(point.x, point.y);
+        };
+        await clickArc();
+        for (const arc of await links.all()) await expect(arc).toHaveClass(/is-selected/);
+        await expect(page.locator('#scoreStage g.note.is-selected')).toHaveCount(0);
+        await expect(page.locator('#scoreStage .is-bar-selected')).toHaveCount(0);
+        await expect(links.first().locator('path:not(.score-link-hit)')).toHaveCSS('fill', 'rgb(246, 200, 95)');
+        await page.keyboard.press('Escape');
+        await expect(page.locator(`#scoreStage g.${type}.is-selected`)).toHaveCount(0);
+        await clickArc();
+        await page.keyboard.press('Delete');
+        await expect(links).toHaveCount(0);
+        await expect(notes).toHaveCount(2);
+        await page.keyboard.press('ControlOrMeta+z');
+        await expect(links.first()).toBeVisible();
+        await clickArc();
+        await page.keyboard.press('Backspace');
+        await expect(links).toHaveCount(0);
+        await expect(notes).toHaveCount(2);
+      });
+    }
+  }
+}

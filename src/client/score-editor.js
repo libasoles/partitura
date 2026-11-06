@@ -56,6 +56,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   let selectedHairpin = null; // { mi, at }: el regulador elegido (empieza en el compas `mi`, en el tiempo `at`)
   let selected = null; // { mi, i }: la figura principal
   let group = []; // con dos o mas figuras elegidas, todas (incluida la principal)
+  let selectedLink = null; // { node, refs }: ligadura elegida sin seleccionar sus notas
+  const linkRefs = new WeakMap();
   let selectedBeam = null; // { node, refs }: barrado elegido sin seleccionar sus notas
   let drag = null;
   let activeItem = null;
@@ -303,6 +305,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function change(mutate, tabRefs = M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs)) {
     clearBarSelection();
     selectedBeam = null;
+    selectedLink = null;
     // `measures(score, 1)` abre compases vacios del segundo pentagrama para poder editarlos; la copia para deshacer no los lleva.
     const before = M.clone(score);
     M.pruneLower(before);
@@ -371,6 +374,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     selectedNavigation = [];
     selectedHairpin = null;
     selectedBeam = null;
+    selectedLink = null;
     if (list.length) clearBarSelection();
     selected = list.length ? list[list.length - 1] : null;
     group = list.length > 1 ? list : [];
@@ -520,7 +524,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   let lastNoteD = 'q'; // duracion con la que se coloca una nota muerta nueva
 
   function activateTool(item) {
-    if (selectedNavigation.length || selectedBeam || selectedHairpin) { selectedNavigation = []; selectedBeam = null; selectedHairpin = null; markSelected(); }
+    if (selectedNavigation.length || selectedBeam || selectedLink || selectedHairpin) { selectedNavigation = []; selectedBeam = null; selectedLink = null; selectedHairpin = null; markSelected(); }
     if (activeItem === item) { deactivateTool(); return; }
     activeItem = item;
     stage.classList.add('has-tool');
@@ -776,6 +780,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       });
       return;
     }
+    if (selectedLink) {
+      const refs = selectedLink.refs;
+      change(() => M.applySelection(score, refs, 'unlink'));
+      return;
+    }
     if (selectedBeam) {
       const refs = selectedBeam.refs;
       change(() => M.applySelection(score, refs, 'unbeam'));
@@ -883,6 +892,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     liftBarreMarks(svg);
     measureLayout();
     mountNavigationMarks();
+    mountLinks();
     mountBarlineButtons();
     markMeasureBars();
     mountRowTools();
@@ -2392,6 +2402,29 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     });
   }
 
+  // Verovio conserva startid: se usa para encontrar la ligadura del modelo,
+  // incluso cuando su arco se dibuja en varios renglones.
+  function mountLinks() {
+    const links = M.links(score);
+    stage.querySelectorAll('g.tie, g.slur').forEach((node) => {
+      let startid = '';
+      const id = node.id || [...node.classList].find((name) => name.startsWith('id-'))?.slice(3);
+      if (!id) return;
+      try { startid = String(toolkit.getElementAttr(id).startid || '').replace(/^#/, ''); } catch { return; }
+      const start = stage.querySelector('[id="' + startid + '"]');
+      const ref = start && refOfNode(start);
+      const link = ref && links.find((link) => same(link.from, ref) && node.classList.contains(link.type));
+      if (!link) return;
+      linkRefs.set(node, [link.from, link.to]);
+      node.querySelectorAll('path').forEach((path) => {
+        const hit = path.cloneNode(false);
+        hit.removeAttribute('id');
+        hit.setAttribute('class', 'score-link-hit');
+        node.prepend(hit);
+      });
+    });
+  }
+
   function selectNavigation(node, event) {
     const pick = { first: Number(node.dataset.navigationFirst), last: Number(node.dataset.navigationLast), mark: node.dataset.navigationMark };
     const previous = event.shiftKey || event.ctrlKey || event.metaKey ? selectedNavigation.slice() : [];
@@ -2417,6 +2450,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       Array.from({ length: pick.last - pick.first + 1 }, (_, i) => score.navigation?.[pick.first + i]?.[pick.mark]).some(Boolean));
     stage.querySelectorAll('[data-navigation-mark]').forEach((node) => {
       if (selectedNavigation.some((pick) => pick.first === Number(node.dataset.navigationFirst) && pick.mark === node.dataset.navigationMark)) node.classList.add('is-selected');
+    });
+    if (selectedLink && !selectedLink.node.isConnected) selectedLink = null;
+    stage.querySelectorAll('g.tie, g.slur').forEach((node) => {
+      const refs = linkRefs.get(node);
+      if (selectedLink && refs && same(refs[0], selectedLink.refs[0])) node.classList.add('is-selected');
     });
     if (selectedBeam && !selectedBeam.node.isConnected) selectedBeam = null;
     if (selectedHairpin && !M.findHairpin(score, selectedHairpin.mi, selectedHairpin.at)) selectedHairpin = null;
@@ -2828,6 +2866,17 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       return;
     }
     if (event.target.closest('.score-meter-trigger, .score-clef-trigger, .score-key-trigger, .score-barline-trigger, .score-insert-measure, .score-barre-field, .score-barre-span, .score-chord-trigger, .score-chord-draft, .score-hairpin-ui, .score-selection-menu')) return;
+    const link = event.target.closest('g.tie, g.slur');
+    if (link && !activeItem && linkRefs.has(link)) {
+      event.preventDefault();
+      event.stopPropagation();
+      setPicks([]);
+      clearBarSelection();
+      selectedLink = { node: link, refs: linkRefs.get(link) };
+      markSelected();
+      stage.focus({ preventScroll: true });
+      return;
+    }
     // Sin herramienta, la zona sobre el pentagrama abre el campo para escribir un acorde.
     if (chordsOn && guitarOn() && !activeItem && event.button === 0 && event.pointerType === 'mouse') {
       const zone = chordZoneAt(event.clientX, event.clientY);
@@ -3106,7 +3155,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   document.addEventListener('pointerdown', (event) => {
     if (!(event.target instanceof Element)) return;
     // Los campos del titulo y el autor tambien quedan fuera de la seleccion musical.
-    if ((picks().length || selectedNavigation.length || selectedBeam || selectedHairpin) && !event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-side-actions, .score-doc-tab, .score-library, [popover]')) setPicks([]);
+    if ((picks().length || selectedNavigation.length || selectedBeam || selectedLink || selectedHairpin) && !event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-side-actions, .score-doc-tab, .score-library, [popover]')) setPicks([]);
     if (!activeItem) return;
     if (event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-side-actions, .score-doc-tab, [popover], button, a, input, select, textarea')) return;
     deactivateTool();
@@ -3906,8 +3955,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const sample = { meter: score.meter, clef: 'treble', fifths: 0, instrument: 'guitar', rows: [[[]]] };
     if (!toolkit) return wrap; // Verovio aun no cargo: se vuelve a dibujar al terminar
     if (!M.applyPattern(sample, pattern, { mi: 0, at: pattern.first, n: M.bottomLine(sample, 0, 0) + 4, flat })) return wrap;
+    // applyPattern agrega renglones completos; la miniatura solo necesita los compases del patron, en una linea.
+    const span = Math.max(...pattern.events.map((ev) => ev.mi)) + 1;
+    sample.rows = [M.measures(sample).slice(0, span)];
     if (!previewToolkit) previewToolkit = newToolkit();
-    previewToolkit.setOptions(layoutOptions(900, { minLastJustification: 1, pageMarginLeft: 10, pageMarginRight: 10, pageMarginTop: 10, pageMarginBottom: 10 }));
+    previewToolkit.setOptions(layoutOptions(900, { breaks: 'none', minLastJustification: 1, pageMarginLeft: 10, pageMarginRight: 10, pageMarginTop: 10, pageMarginBottom: 10 }));
     previewToolkit.loadData(M.toMusicXml(sample));
     const svg = document.importNode(new DOMParser().parseFromString(previewToolkit.renderToSVG(1), 'image/svg+xml').documentElement, true);
     svg.setAttribute('aria-hidden', 'true');
@@ -3920,13 +3972,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const lines = [...svg.querySelectorAll('g.staff > path')].slice(0, 2).map((line) => line.getBoundingClientRect());
       if (lines.length < 2) return;
       const space = (lines[1].top - lines[0].top) * box.width / svg.getBoundingClientRect().width;
-      svg.querySelectorAll('g.staff > path, g.clef, g.keySig, g.meterSig, g.barLine').forEach((el) => el.setAttribute('display', 'none'));
+      svg.querySelectorAll('g.staff > path, g.clef, g.keySig, g.meterSig, g.mNum').forEach((el) => el.setAttribute('display', 'none'));
+      // Solo las divisiones internas: no hace falta encerrar el patron entre barras exteriores.
+      const measures = [...svg.querySelectorAll('g.measure')];
+      measures.at(-1)?.querySelectorAll('g.barLine').forEach((el) => el.setAttribute('display', 'none'));
       // El viewBox no se toca (los svg anidados de Verovio escalan con el): se ajusta el tamano del svg a `size` pixeles
       // por espacio del pentagrama y el recorte al contenido lo hace el contenedor, con margenes negativos.
       svg.style.width = `${box.width * size / space}px`;
       svg.style.height = `${box.height * size / space}px`;
       const frame = svg.getBoundingClientRect();
-      const rects = [...svg.querySelectorAll('g.layer')].map((layer) => layer.getBoundingClientRect());
+      const rects = [...svg.querySelectorAll('g.layer, g.barLine:not([display="none"])')].map((el) => el.getBoundingClientRect());
       if (!rects.length) return;
       const pad = size * 0.5;
       const left = Math.min(...rects.map((r) => r.left)) - pad, right = Math.max(...rects.map((r) => r.right)) + pad;
@@ -3962,6 +4017,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       };
       const notes = section(false, t.patternRelative);
       notes.appendChild(patternStaff(pattern, { space: 0.5 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) }));
+      const scroll = document.createElement('div');
+      scroll.className = 'score-pattern-scroll';
+      scroll.appendChild(notes);
       const rhythm = section(true, t.patternRhythm);
       rhythm.innerHTML = lucide('square-chevrons-down');
       const remove = document.createElement('button');
@@ -3979,7 +4037,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         item.addEventListener('transitionend', done, { once: true });
         setTimeout(done, 400);
       });
-      item.append(remove, notes, rhythm);
+      item.append(remove, scroll, rhythm);
       libraryList.appendChild(item);
       if (notes.firstChild?.fit) notes.firstChild.fit();
     });

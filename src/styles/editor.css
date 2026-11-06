@@ -844,6 +844,16 @@
   stroke: var(--brand-yellow);
 }
 
+/* Un area transparente sigue el arco para poder elegir las ligaduras finas. */
+.score-stage .score-link-hit {
+  fill: none !important;
+  stroke: transparent !important;
+  stroke-width: 12px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: stroke;
+  filter: none;
+}
+
 .score-marker {
   position: absolute;
   inset: 0;
@@ -2274,7 +2284,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 
 /* ----- Pattern library: in the page's left margin, shown from the settings ----- */
 /* Vive en el margen izquierdo, entre el borde de la ventana y la partitura: no la mueve ni le quita ancho. Su ancho es el del margen
-   (con tope) y los patrones se recortan a el. Desde 1560px el margen alcanza para ~11rem; con menos no se ofrece (el JS tambien
+   (con tope) y los patrones tienen scroll horizontal. Desde 1560px el margen alcanza para ~11rem; con menos no se ofrece (el JS tambien
    oculta la opcion en los ajustes). */
 .score-library { display: none; }
 @media (min-width: 1560px) {
@@ -2302,7 +2312,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   display: grid;
   min-width: 0;
   position: relative;
-  grid-template-columns: minmax(0, max-content) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: stretch;
   transition: opacity 0.3s ease-out;
 }
@@ -2318,7 +2328,10 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   touch-action: none;
 }
 .score-pattern button:hover { color: var(--accent); }
+.score-pattern-scroll { min-width: 0; overflow-x: auto; overflow-y: hidden; }
 .score-pattern-notes {
+  display: block;
+  width: max-content;
   overflow: hidden;
   padding: 0.3rem 0.5rem;
   text-align: left;
@@ -2327,7 +2340,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-pattern-staff { display: flex; align-items: center; overflow: hidden; }
 .score-pattern-staff svg { flex: none; }
 .score-pattern-rhythm {
-  grid-column: 3;
+  grid-column: 2;
   display: flex;
   align-items: center;
   gap: 0.05rem;
