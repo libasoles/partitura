@@ -185,7 +185,7 @@ export function copy(s, aria) {
   d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.5, notes[0].x + 5, d.y(notes[0].p)), ...visit(2.4, notes[1].x + 5, d.y(notes[1].p)), [3.4, d.w - 30, d.h - 24]]);
   d.click(1.5, notes[0].x + 5, d.y(notes[0].p));
   d.click(2.4, notes[1].x + 5, d.y(notes[1].p));
-  d.keycap('Shift', 30, 3.0, 3.6, 8.2, { ky: d.h - 14 });
+  d.keycap('Shift', 30, 3.0, 3.6, 8.2, { ky: d.h - 14, hold: 1.8 });
   d.keycap('D', 60, 3.0, 4.9, 8.2);
   return d.html(aria);
 }
@@ -698,7 +698,7 @@ export function adjustCopy(s, aria) {
 
 function voiceCopy(s, aria, adjust) {
   const d = stage({ id: adjust ? 'adjust-copy' : 'duplicate-voice', T: 13 });
-  const notes = ['E4', 'G4', 'A4'];
+  const notes = ['E4', 'G4'];
   notes.forEach((name, i) => {
     const x = d.firstX + 30 + i * 55;
     const p = pitch(name);
@@ -710,7 +710,7 @@ function voiceCopy(s, aria, adjust) {
     d.keycap('↑', 26, 2.7, 4, 5.7);
     d.keycap('↓', 26, 6.2, 7.5, 9.5);
   } else {
-    d.keycap('Shift', 30, 2, 3.5, 6);
+    d.keycap('Shift', 30, 2, 3.0, 6, { hold: 1.2 });
     d.keycap('↑', 70, 2, 3.5, 6);
   }
   return d.html(aria);
@@ -883,7 +883,7 @@ function thirds(s, aria, id, names, steps) {
     });
   });
   steps.forEach(({ dir, show, hide }) => {
-    d.keycap('Shift', 30, show - 1.6, show - 0.4, show + 1.4);
+    d.keycap('Shift', 30, show - 1.6, show - 0.9, show + 1.4, { hold: 1.5 });
     d.keycap(dir > 0 ? '↑' : '↓', 70, show - 1.6, show - 0.4, show + 1.4);
   });
   return d.html(aria);
@@ -899,7 +899,7 @@ export function thirdBelow(s, aria) {
 
 export function undoDuplicate(s, aria) {
   const d = stage({ id: 'undo-duplicate', T: 13 });
-  ['E4', 'G4', 'A4'].forEach((name, i) => {
+  ['E4', 'G4'].forEach((name, i) => {
     const x = d.firstX + 30 + i * 55;
     const p = pitch(name);
     d.note(x, p, 'q', d.life(0.05), { stemDown: true });
