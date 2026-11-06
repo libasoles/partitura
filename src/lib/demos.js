@@ -479,19 +479,21 @@ export function dynamics(s, aria) {
 const SIDE_TOOLS = [
   '<text x="3" y="18" font-size="16" font-weight="700" font-family="serif">C</text><path d="M3 24h24" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 2.5" fill="none"/>',
   '<text x="15" y="21" text-anchor="middle" font-size="18" font-family="serif" font-weight="700">Am</text>',
+  '<g transform="translate(3 4)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></g>',
 ];
 
 /**
  * The editor's right toolbar beside the staff, with the guitar tools (barre, chord) as buttons. Returns where each
  * button is and `on(i, from, to)`, which lights button i (as when it is the active tool) between two moments.
  */
-function toolSidebar(d) {
+function toolSidebar(d, which = [0, 1]) {
+  const tools = which.map((i) => SIDE_TOOLS[i]);
   const x = d.w - 38;
   const box = (i) => ({ x: x + 2, y: 5 + i * 32 });
-  const glyph = (i) => `<g transform="translate(${box(i).x + 1.5} ${box(i).y + 0.6}) scale(0.9)">${SIDE_TOOLS[i]}</g>`;
-  d.base(`<rect class="d-panel" x="${x}" y="2" width="34" height="${SIDE_TOOLS.length * 32 + 2}" rx="6"/>` +
-    SIDE_TOOLS.map((_, i) => `<rect class="d-toolbtn" x="${box(i).x}" y="${box(i).y}" width="30" height="30" rx="5"/>`).join('') +
-    `<g style="color:var(--ink)">${SIDE_TOOLS.map((_, i) => glyph(i)).join('')}</g>`);
+  const glyph = (i) => `<g transform="translate(${box(i).x + 1.5} ${box(i).y + 0.6}) scale(0.9)">${tools[i]}</g>`;
+  d.base(`<rect class="d-panel" x="${x}" y="2" width="34" height="${tools.length * 32 + 2}" rx="6"/>` +
+    tools.map((_, i) => `<rect class="d-toolbtn" x="${box(i).x}" y="${box(i).y}" width="30" height="30" rx="5"/>`).join('') +
+    `<g style="color:var(--ink)">${tools.map((_, i) => glyph(i)).join('')}</g>`);
   return {
     at: (i) => ({ x: box(i).x + 15, y: box(i).y + 15 }),
     on: (i, from, to) => d.add(0, 0, `<rect class="d-toolon" x="${box(i).x}" y="${box(i).y}" width="30" height="30" rx="5"/>${glyph(i)}`,
@@ -1130,3 +1132,146 @@ export function chordDelete(s, aria) {
   d.keycap('Delete', 40, 2.8, 3.8, 7.4);
   return d.html(aria);
 }
+
+// ----- lyrics ------------------------------------------------------------------------------------------------------------
+
+/** A staff with quarter notes, each a column that can take a syllable. Syllables sit on the line `ly`, under the staff. */
+function lyricStage(id, T, { n = 4, gap = 52, side = false, h = 118, bottom = 60, names, paint, ...extra } = {}) {
+  const d = stage({ id, T, bottom, h, ...(side ? { x1: 272 } : {}), ...extra });
+  const pitches = names || ['E4', 'G4', 'C5', 'G4', 'E4', 'G4'];
+  const notes = phrase(d, [pitches.slice(0, n).map((name) => q(name))], gap);
+  notes.forEach((p, i) => d.note(p.x, p.p, 'q', paint ? paint(i, d) : d.life(0.05)));
+  return { d, notes, ly: bottom + 28, cx: (i) => notes[i].x + 5 };
+}
+
+const lyricText = (d, x, y, text, stops, opts = {}) => d.text(x, y, text, stops, { size: 10, weight: 500, font: 'Georgia, serif', ...opts });
+
+/** The field where a syllable is typed, centred on its note. */
+const lyricField = (text, w = 30) =>
+  `<rect class="d-field d-field--on" x="${-w / 2}" y="-8" width="${w}" height="15" rx="2.5"/>` +
+  (text ? `<text class="d-text" y="3.5" text-anchor="middle" font-size="10" style="font-family:Georgia,serif">${text}</text>` : '<path d="M0 -4V4" stroke="var(--accent)" stroke-width="1"/>');
+
+/** A transient actor visible from `a` to `b`. */
+const between = (a, b) => [[0, { o: 0 }], [a, { o: 0 }], [a + 0.2, { o: 1 }], [b, { o: 1 }], [b + 0.15, { o: 0 }]];
+
+/** The lyric tool (letter T, in the right toolbar): pressing it and placing it over a note opens the empty field. */
+export function lyricTool(s, aria) {
+  const { d, notes, ly, cx } = lyricStage('lyric-tool', 10, { side: true });
+  const side = toolSidebar(d, [2]);
+  const tool = side.at(0);
+  side.on(0, 1.7, d.T - 0.7);
+  const x = cx(0);
+  d.add(x, ly - 3, lyricField(''), between(3.45, d.T - 0.7), { keep: false });
+  d.click(1.7, tool.x, tool.y);
+  d.click(3.3, x, d.y(notes[0].p));
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.7, tool.x, tool.y), ...visit(3.3, x, d.y(notes[0].p)), [6.4, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+/** Typing one syllable and pressing Space: it is saved and the field jumps to the next note. Enter saves and closes. */
+export function lyricType(s, aria) {
+  const { d, cx, ly } = lyricStage('lyric-type', 13);
+  const words = [['Can', 0.8, 3.4], ['to', 3.3, 6.0], ['de', 5.9, 9.0]];
+  words.forEach(([text, from, to], i) => {
+    d.add(cx(i), ly - 3, lyricField(text), between(from, to), { keep: false });
+    lyricText(d, cx(i), ly, text, d.pop(to - 0.1));
+  });
+  d.keycap('Space', 40, 0, [3.2, 5.8], 0);
+  d.keycap('Enter', 40, 0, 8.8, 0);
+  return d.html(aria);
+}
+
+/** A hyphen typed inside a syllable stays in the text: two syllables sung on one note. */
+export function lyricHyphen(s, aria) {
+  const { d, cx, ly } = lyricStage('lyric-hyphen', 10);
+  lyricText(d, cx(0), ly, 'Can', d.life(0.05));
+  d.add(cx(1), ly - 3, lyricField('en-', 36), between(0.8, 2.3), { keep: false });
+  d.add(cx(1), ly - 3, lyricField('en-a', 36), between(2.2, 4.0), { keep: false });
+  lyricText(d, cx(1), ly, 'en-a', d.pop(3.9));
+  lyricText(d, cx(2), ly, 'to', d.pop(3.9));
+  d.keycap('-', 40, 0, 2.0, 0);
+  d.keycap('Enter', 40, 0, 3.7, 0);
+  return d.html(aria);
+}
+
+/** Pasting text (several lines, extra spaces) spreads it, one syllable per note, from the note with the field. */
+export function lyricPaste(s, aria) {
+  const { d, cx, ly } = lyricStage('lyric-paste', 13, { n: 6, gap: 40, bottom: 88, h: 150 });
+  d.add(12, 4,
+    '<rect class="d-panel" width="132" height="40" rx="5"/><text class="d-menutext" x="8" y="16" font-size="9">Yo soy  boyero</text><text class="d-menutext" x="8" y="31" font-size="9">No tengo pesares</text>',
+    [[0, { o: 0 }], [0.3, { o: 1 }], [2.9, { o: 1 }], [3.2, { o: 0 }]], { keep: false });
+  d.add(cx(0), ly - 3, lyricField(''), between(1.2, 3.2), { keep: false });
+  ['Yo', 'soy', 'bo', 'ye', 'ro', 'No'].forEach((text, i) => lyricText(d, cx(i), ly, text, d.pop(3.3 + i * 0.4)));
+  d.keycap('Ctrl', 30, 0, 2.6, 0, { hold: 0.8 });
+  d.keycap('V', 60, 0, 2.7, 0);
+  return d.html(aria);
+}
+
+/** A tied note takes no syllable: clicking it with the tool does nothing. */
+export function lyricTies(s, aria) {
+  const { d, notes, ly, cx } = lyricStage('lyric-ties', 12, { names: ['G4', 'G4', 'A4', 'B4'] });
+  const a = notes[0];
+  const b = notes[1];
+  const y = d.y(a.p) + SP * 0.9;
+  d.base(`<path class="d-tie" d="M${a.x + 5} ${y}Q${(a.x + b.x) / 2 + 5} ${y + 9} ${b.x + 5} ${y}"/>`);
+  lyricText(d, cx(0), ly, 'Can', d.life(0.05));
+  lyricText(d, cx(2), ly, 'to', d.life(0.05));
+  d.text(cx(1), ly, '✕', [[0, { o: 0, c: '#c0392b' }], [2.4, { o: 0 }], [2.6, { o: 1 }], [4.6, { o: 1 }], [4.9, { o: 0 }]], { size: 12, weight: 700, keep: false });
+  d.click(2.4, cx(1), d.y(b.p));
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(2.4, cx(1), d.y(b.p)), [6.0, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+/** Dragging a syllable to another free note: the underline marks the destination. */
+export function lyricMove(s, aria) {
+  const { d, cx, ly } = lyricStage('lyric-move', 12, { n: 6, gap: 40 });
+  ['Yo', 'soy'].forEach((text, i) => lyricText(d, cx(i), ly, text, d.life(0.05)));
+  const from = cx(2);
+  const to = cx(4);
+  lyricText(d, from, ly, 'bo', d.life(0.05, 3.4), { keep: false });
+  lyricText(d, from, ly, 'bo', [[0, { o: 0 }], [2.0, { o: 0, x: 0 }], [2.1, { o: 0.5 }], [3.9, { o: 0.5, x: to - from }], [4.0, { o: 0 }]], { keep: false });
+  d.add(to, ly + 6, '<path d="M-14 0H14" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>', between(3.0, 4.0), { keep: false });
+  lyricText(d, to, ly, 'bo', d.pop(4.0));
+  d.click(2.0, from, ly);
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(2.0, from, ly), [3.9, to, ly], [4.4, to, ly], [6.0, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+/**
+ * Two selected notes and "Merge syllables" in their menu: the first syllable takes both texts, joined with a hyphen, and
+ * the following ones move one place left. `count` selected notes close `count - 1` places.
+ */
+function lyricMergeDemo(s, aria, id, count) {
+  const gap = 40;
+  const words = ['Can', 'to', 'a', 'la', 'lu', 'na'];
+  const { d, notes, ly, cx } = lyricStage(id, 15, {
+    n: 6,
+    gap,
+    paint: (i, stg) => (i < count
+      ? S(stg.life(0.05), [[0, { c: INK }], [3.2, { c: INK }], [3.4, { c: SEL }], [5.8, { c: SEL }], [6.0, { c: INK }]])
+      : stg.life(0.05)),
+  });
+  const label = s.scoreUiStrings.mergeLyrics;
+  const merged = words.slice(0, count).join('-');
+  // Before: every syllable on its own note, until the menu action is clicked.
+  words.forEach((text, i) => lyricText(d, cx(i), ly, text, d.life(0.05, 5.5), { keep: false }));
+  // After: the merged syllable, and the rest glide left to fill the places that were freed.
+  lyricText(d, cx(0), ly, merged, d.pop(5.6));
+  words.slice(count).forEach((text, k) => {
+    const to = k + 1;
+    const shift = (count - 1) * gap;
+    lyricText(d, cx(to), ly, text, [[0, { o: 0, x: shift }], [0.1, { o: 0, x: shift }], [5.5, { o: 0, x: shift }], [5.6, { o: 1, x: shift }], [6.0, { o: 1, x: 0 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
+  });
+  const from = { x: notes[0].x - 10, y: d.y(7) };
+  const end = { x: notes[count - 1].x + 22, y: d.y(-2) };
+  d.add(from.x, from.y, `<rect class="d-marquee" width="${end.x - from.x}" height="${end.y - from.y}"/>`,
+    [[0, { o: 0, sx: 0.02, sy: 0.02 }], [1.4, { o: 0, sx: 0.02, sy: 0.02 }], [1.5, { o: 1 }], [3.2, { o: 1, sx: 1, sy: 1 }], [3.6, { o: 0 }]], { keep: false });
+  const menu = { x: cx(0) + 26, y: d.y(8) - 14 };
+  d.add(menu.x, menu.y, pillInner(label, { size: 8, icon: tutorialIcon('merge') }), between(3.6, 5.7), { keep: false });
+  d.click(5.1, menu.x, menu.y);
+  d.pointer([[0.6, d.w - 30, d.h - 24], [1.4, from.x, from.y], [3.2, end.x, end.y], ...visit(5.1, menu.x, menu.y), [7.4, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+export const lyricMerge = (s, aria) => lyricMergeDemo(s, aria, 'lyric-merge', 2);
+export const lyricMergeThree = (s, aria) => lyricMergeDemo(s, aria, 'lyric-merge3', 3);
