@@ -2,6 +2,16 @@
 import { acceptsScoreFile } from './score-file-types.js';
 
 export function bindSiteActions(actions) {
+  document.querySelectorAll('[data-demo-url]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      try {
+        await actions.loadUrl(button.dataset.demoUrl);
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
   const menuToggle = document.getElementById('siteMenuToggle');
   if (menuToggle) {
     ['pointerenter', 'focus', 'click'].forEach((type) => menuToggle.addEventListener(type, actions.warm, { once: true }));

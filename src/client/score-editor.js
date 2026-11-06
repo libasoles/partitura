@@ -7,8 +7,9 @@ import { ARCHIVE_CHOIRS } from './choir-sounds.js';
 import { getSetting, setSetting } from './settings.js';
 import { hasIntervals, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
+import { applyUrlDefaults } from './url-defaults.js';
 
-export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, patterns = false } = {}) {
+export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, patterns = false, urlDefaults = {} } = {}) {
 
   const M = window.ScoreModel;
   const STORAGE_KEY = 'scoreEditor.v2';
@@ -31,6 +32,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const tabsBar = document.getElementById('scoreTabs');
   const stored = loadAll();
   const docs = stored.scores; // una partitura por pestana
+  docs.forEach((one) => applyUrlDefaults(one, urlDefaults, M));
   const histories = docs.map(() => []);
   let active = stored.active;
   let score = docs[active];
@@ -367,7 +369,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function newTab() {
     docs[active] = score;
     histories[active] = history;
-    docs.push(Object.assign(M.emptyScore(), { title: defaultTitle }));
+    docs.push(applyUrlDefaults(Object.assign(M.emptyScore(), { title: defaultTitle }), urlDefaults, M));
     histories.push([]);
     enteringTab = docs.length - 1;
     switchTo(docs.length - 1);
@@ -5031,7 +5033,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       change(() => {
         selected = null;
         group = [];
-        score = Object.assign(M.emptyScore(), { title: defaultTitle });
+        score = applyUrlDefaults(Object.assign(M.emptyScore(), { title: defaultTitle }), urlDefaults, M);
       });
       renderTabs();
     } else if (confirmed) {
@@ -5065,6 +5067,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Una partitura cargada se abre en una pestana nueva, sin tocar la actual.
   function openScore(loaded) {
+    applyUrlDefaults(loaded, urlDefaults, M);
     docs[active] = score;
     histories[active] = history;
     docs.push(loaded);
@@ -5093,6 +5096,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // The host connects its own controls; their position and layout belong to the site.
   bindActions({
+    loadUrl: withExporter((tools, url) => tools.loadUrl(url), t.importFailed || t.loadError),
     loadFile: withExporter((tools, file) => file && tools.loadFile(file), t.importFailed || t.loadError),
     exportMusicXml: withExporter((tools) => tools.exportMusicXml(), t.loadError),
     exportMidi: withExporter((tools) => tools.exportMidi(), t.loadError),

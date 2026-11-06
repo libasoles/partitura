@@ -46,6 +46,14 @@ export default function createExporter(editor) {
     }
   }
 
+  // Demos use the same import path as local files, including title and new-tab handling.
+  async function loadUrl(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`Score download failed: ${response.status}`);
+    const name = decodeURIComponent(new URL(url, location.href).pathname.split('/').pop());
+    await loadFile(new File([await response.blob()], name, { type: 'application/vnd.recordare.musicxml+xml' }));
+  }
+
   // Verovio numera el primer compas de cada renglon; en una partitura de uso personal sobran.
   function withoutMeasureNumbers(markup) {
     const doc = new DOMParser().parseFromString(markup, 'image/svg+xml');
@@ -228,5 +236,5 @@ export default function createExporter(editor) {
     }
   }
 
-  return { exportMusicXml, exportMidi, loadFile, exportPdf };
+  return { exportMusicXml, exportMidi, loadFile, loadUrl, exportPdf };
 }

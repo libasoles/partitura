@@ -6,7 +6,9 @@ const desktop = window.matchMedia('(min-width: 900px)');
 async function start() {
   const { startEditor } = await import('./runtime.js');
   const { bindSiteActions } = await import('./site-actions.js');
-  await startEditor({ bindActions: bindSiteActions, settings: true, chords: true, patterns: true });
+  const { readUrlDefaults } = await import('./url-defaults.js');
+  const urlDefaults = readUrlDefaults(location.search);
+  await startEditor({ bindActions: bindSiteActions, settings: true, chords: true, patterns: !urlDefaults.tools, urlDefaults });
 }
 
 if (desktop.matches) start();
