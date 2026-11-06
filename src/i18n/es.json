@@ -165,6 +165,7 @@
     "playbackError": "No se pudo reproducir la partitura. Inténtalo de nuevo.",
     "libraryPatterns": "Biblioteca de patrones",
     "libraryHint": "Mayús+S guarda la selección o el compás elegido.",
+    "libraryWideScreen": "Disponible en ventanas de al menos 1560 px de ancho. Ampliá la ventana o reducí el zoom del navegador.",
     "patternsTitle": "Patrones",
     "patternsEmpty": "No hay patrones guardados",
     "patternNothing": "Elegí notas o un compás para guardar un patrón (Mayús+S).",

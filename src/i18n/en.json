@@ -169,6 +169,7 @@
     "playbackError": "Could not play the score. Please try again.",
     "libraryPatterns": "Pattern library",
     "libraryHint": "Shift+S saves the selection or the chosen measure.",
+    "libraryWideScreen": "Available in windows at least 1560 px wide. Widen the window or zoom out in your browser.",
     "patternsTitle": "Patterns",
     "patternsEmpty": "No saved patterns",
     "patternNothing": "Select notes or a measure to save a pattern (Shift+S).",

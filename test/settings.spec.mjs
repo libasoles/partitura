@@ -10,13 +10,17 @@ test('settings stay inside a short viewport and all options remain reachable by 
   await open(page);
   await page.locator('#scoreSettingsToggle').click();
   const popup = page.locator('#scoreSettingsPopup');
+  await expect.poll(async () => {
+    const box = await popup.boundingBox();
+    return Math.abs(box.x + box.width - 1600);
+  }).toBeLessThan(0.1);
   const category = (name) => popup.locator('.score-settings-category').filter({ has: page.getByRole('checkbox', { name, exact: true }) });
   const grid = await popup.locator('.score-settings-tools').boundingBox();
   let previousBottom = 0;
   for (const name of ['Repetición', 'Dinámica', 'Identificador de voces', 'Reproducción', 'Intervalos']) {
     const row = category(name);
     const box = await row.boundingBox();
-    const label = await row.locator('label').boundingBox();
+    const label = await row.locator(':scope > .score-settings-check').boundingBox();
     const icons = await row.locator('.score-settings-icons').boundingBox();
     expect(box.width).toBe(grid.width);
     expect(box.y).toBeGreaterThanOrEqual(previousBottom);
@@ -31,7 +35,7 @@ test('settings stay inside a short viewport and all options remain reachable by 
   await page.setViewportSize({ width: 1600, height: 360 });
   await expect.poll(async () => {
     const box = await popup.boundingBox();
-    return box.y >= 8 && box.y + box.height <= 352;
+    return box.y === 0 && box.y + box.height === 360 && box.x + box.width === 1600;
   }).toBe(true);
   const content = popup.locator('.score-settings-content');
   expect(await content.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
@@ -46,12 +50,39 @@ test('settings stay inside a short viewport and all options remain reachable by 
   await library.check();
   await expect(page.locator('.score-library')).toBeVisible();
   const intervals = popup.getByRole('checkbox', { name: 'Intervalos', exact: true });
+  const modes = popup.getByRole('radiogroup', { name: 'Intervalos', exact: true });
+  await expect(modes).toBeHidden();
+  await intervals.check();
+  await expect(modes).toBeVisible();
+  const labelBox = await category('Intervalos').locator(':scope > .score-settings-check').boundingBox();
+  const modesBox = await modes.boundingBox();
+  expect(modesBox.y).toBeGreaterThanOrEqual(labelBox.y + labelBox.height);
+  await intervals.uncheck();
+  await expect(modes).toBeHidden();
   await intervals.check();
   await page.evaluate(() => window.ScoreStore.flush());
   await page.reload();
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
   await page.locator('#scoreSettingsToggle').click();
   await expect(intervals).toBeChecked();
+  await popup.getByRole('button', { name: 'Cerrar ajustes' }).click();
+  await expect(popup).not.toBeVisible();
+  await expect(page.locator('#scoreSettingsToggle')).toBeFocused();
+});
+
+test('the drawer explains why the library needs a wider window and closes with Escape', async ({ page }) => {
+  await open(page);
+  await page.locator('#scoreSettingsToggle').click();
+  const popup = page.locator('#scoreSettingsPopup');
+  const library = popup.getByRole('checkbox', { name: 'Biblioteca de patrones', exact: true });
+  await library.scrollIntoViewIfNeeded();
+  await expect(library).toBeVisible();
+  await expect(library).toBeDisabled();
+  await expect(popup.getByText(/Disponible en ventanas de al menos 1560/)).toBeVisible();
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await expect(library).toBeEnabled();
+  await page.keyboard.press('Escape');
+  await expect(popup).not.toBeVisible();
 });
 
 test('the cog is the first sidebar tool and the dialog switches instrument, tempo and tool groups', async ({ page }) => {

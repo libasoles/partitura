@@ -4271,6 +4271,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     svg.setAttribute('height', tall ? '56' : rest ? '56' : '32');
     if (tall) svg.classList.add('score-note-glyph');
     if (rest && ['f', 's', 'e'].includes(item.d)) svg.classList.add('score-small-rest-glyph');
+    if (item.kind === 'lyric') svg.classList.add('score-lyric-glyph');
     svg.setAttribute('fill', 'currentColor');
     svg.setAttribute('aria-hidden', 'true');
     svg.innerHTML = GLYPHS[glyphKey(item)];
@@ -5019,7 +5020,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     title.className = 'score-settings-heading-main';
     title.innerHTML = `${lucide('settings')}<span></span>`;
     title.lastChild.textContent = t.settings;
-    content.appendChild(title);
+    const header = document.createElement('div');
+    header.className = 'score-settings-header';
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'score-settings-close';
+    close.setAttribute('aria-label', t.settingsClose);
+    close.textContent = '×';
+    close.addEventListener('click', () => { popup.hidePopover(); cog.focus({ preventScroll: true }); });
+    header.append(title, close);
+    popup.prepend(header);
 
     // Cada ajuste es una seccion: su nombre y, debajo, sus opciones en horizontal.
     function section(label, tag = 'p') {
@@ -5201,6 +5211,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-letter-v preview-icon"><path d="m6 4 5.765 15.835a.25.25 0 00.47 0L18 4"/></svg>';
         icons.appendChild(icon);
       }
+      wrap.append(field, icons);
       // Intervalos: respecto de las voces vecinas (por defecto) o del bajo; viaja con la partitura y se deshace.
       if (name === 'intervals') {
         const modes = document.createElement('div');
@@ -5233,7 +5244,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         save();
         if (name === 'voices' || name === 'intervals' || name === 'lyrics') render(); else { applyTools(); applyVoices(); }
       });
-      wrap.append(field, icons);
       toolsGrid.appendChild(wrap);
       return [name, check, fallback];
     });
@@ -5252,8 +5262,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       hint.className = 'score-settings-hint';
       hint.textContent = t.libraryHint;
       patternsCheck.addEventListener('change', () => { setSetting('patterns', patternsCheck.checked); applyLibrary(); });
-      wrap.hidden = !LIBRARY_PAGE.matches;
-      LIBRARY_PAGE.addEventListener('change', () => { wrap.hidden = !LIBRARY_PAGE.matches; applyLibrary(); });
+      const syncLibrary = () => {
+        patternsCheck.disabled = !LIBRARY_PAGE.matches;
+        hint.textContent = LIBRARY_PAGE.matches ? t.libraryHint : t.libraryWideScreen;
+      };
+      syncLibrary();
+      LIBRARY_PAGE.addEventListener('change', () => { syncLibrary(); applyLibrary(); });
       wrap.append(field, hint);
       content.appendChild(wrap);
     }
@@ -5290,22 +5304,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
 
     popup.addEventListener('toggle', (event) => cog.setAttribute('aria-expanded', String(event.newState === 'open')));
-    function positionSettings() {
-      if (!popup.matches(':popover-open')) return;
-      // Se abre a la izquierda del engranaje, que esta pegado al borde derecho.
-      popup.style.setProperty('--settings-height', Math.max(0, window.innerHeight - 16) + 'px');
-      const anchor = cog.getBoundingClientRect();
-      const box = popup.getBoundingClientRect();
-      popup.style.left = Math.max(8, Math.min(anchor.left - box.width - 12, window.innerWidth - box.width - 8)) + 'px';
-      popup.style.top = Math.max(8, Math.min(anchor.top, window.innerHeight - box.height - 8)) + 'px';
-    }
-    window.addEventListener('resize', positionSettings);
     cog.addEventListener('click', () => {
       if (popup.matches(':popover-open')) { popup.hidePopover(); return; }
       sync();
       popup.showPopover();
       fitIcons();
-      positionSettings();
       (popup.querySelector('input:checked') || popup.querySelector('input')).focus({ preventScroll: true });
     });
     document.querySelector('.score-page').appendChild(popup);

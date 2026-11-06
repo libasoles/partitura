@@ -1849,28 +1849,42 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-tuning-popup button span { text-align: right; white-space: nowrap; }
 .score-tuning-popup button[aria-pressed="true"] { color: var(--blue-france); }
 
-/* ----- Settings: instrument, tempo and which tool groups the sidebar shows (anchored to the cog) ----- */
+/* ----- Settings drawer ----- */
 .score-settings-popup {
   position: fixed;
-  inset: auto;
+  inset: 0 0 0 auto;
   box-sizing: border-box;
-  width: min(34rem, calc(100vw - 2rem));
-  max-height: calc(100vh - 1rem);
-  max-height: calc(100dvh - 1rem);
+  width: min(34rem, 100vw);
+  height: 100dvh;
+  max-height: 100dvh;
   margin: 0;
   padding: 0;
   overflow: hidden;
   color: var(--ink);
   background: var(--paper);
   border: 1px solid var(--rule);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgb(0 0 0 / 12%);
+  border-radius: 0;
+  box-shadow: -4px 0 20px rgb(0 0 0 / 12%);
   font-family: var(--sans);
+  translate: 100% 0;
+  transition: translate 220ms ease, display 220ms allow-discrete, overlay 220ms allow-discrete;
 }
+.score-settings-popup:popover-open { display: flex; flex-direction: column; translate: 0 0; }
+@starting-style {
+  .score-settings-popup:popover-open { translate: 100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-settings-popup { transition: none; }
+}
+.score-settings-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.25rem; border-bottom: 1px solid var(--rule); }
+.score-settings-header h2 { margin: 0; }
+.score-settings-close { display: grid; place-items: center; flex-shrink: 0; width: 2.5rem; height: 2.5rem; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--ink); font-size: 1.8rem; cursor: pointer; }
+.score-settings-close:hover { background: var(--rule); }
 
 .score-settings-content {
   box-sizing: border-box;
-  max-height: calc(var(--settings-height, 100dvh - 1rem) - 2px);
+  flex: 1;
+  min-height: 0;
   padding: 1.1rem 1.25rem 1.25rem;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1878,7 +1892,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 
 .score-settings-popup h2 {
-  margin: 0 0 1rem;
+  margin: 0;
   font-size: 1.05rem;
 }
 
@@ -2415,7 +2429,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 /* ----- Pattern library: in the page's left margin, shown from the settings ----- */
 /* Vive en el margen izquierdo, entre el borde de la ventana y la partitura: no la mueve ni le quita ancho. Su ancho es el del margen
    (con tope) y los patrones tienen scroll horizontal. Desde 1560px el margen alcanza para ~11rem; con menos no se ofrece (el JS tambien
-   oculta la opcion en los ajustes). */
+   deshabilita la opcion en los ajustes). */
 .score-library { display: none; }
 @media (min-width: 1560px) {
   .score-page.has-library .score-main { grid-column: 1; grid-row: 1; }
@@ -2649,3 +2663,6 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   padding-left: 1.6rem;
 }
 .score-settings-interval-modes .score-settings-radio input { accent-color: var(--blue-france); }
+.score-settings-category:has(> .score-settings-check input:not(:checked)) > .score-settings-interval-modes { display: none; }
+
+.score-lyric-glyph { scale: 0.9; }
