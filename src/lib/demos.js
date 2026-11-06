@@ -616,8 +616,8 @@ export function dragFigure(s, aria) {
   const from = { x: 24, y: 24 };
   const to = { x: d.firstX + 60, y: d.y(pitch('G4')) };
   d.base('<rect class="d-panel" x="8" y="5" width="32" height="38" rx="5"/>');
-  d.add(from.x - 5, from.y + 8, noteInner(2, 'q'), d.life(0.05));
-  d.add(from.x - 5, from.y + 8, noteInner(2, 'q'), [
+  d.add(from.x - 5, from.y + 8, `<g transform="scale(0.6)">${noteInner(2, 'q')}</g>`, d.life(0.05));
+  d.add(from.x - 5, from.y + 8, `<g transform="scale(0.7)">${noteInner(2, 'q')}</g>`, [
     [0, { o: 0 }], [2, { o: 0, x: 0, y: 0 }], [2.1, { o: 0.45 }],
     [4.8, { x: to.x - from.x, y: to.y - from.y - 8, o: 0.45 }], [4.81, { o: 0 }],
   ], { keep: false, cls: 'd-drag-ghost' });

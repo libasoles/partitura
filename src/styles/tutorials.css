@@ -264,15 +264,15 @@ button.tutorial-voice { cursor: pointer; width: 1.6rem; height: 1.6rem; padding:
 /* The settings popup's own controls, redrawn beside each step that explains them (src/lib/settings-items.js). */
 .tutorial-setting {
   display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.9rem;
-  max-width: 22rem; margin: 0.8rem 0 1.2rem; padding: 0.75rem 0.9rem;
-  border: 1px solid var(--rule); border-radius: 0.6rem; background: var(--paper);
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.08); color: var(--ink); font-size: 0.92rem;
+  max-width: 22rem; margin: 0.8rem 0 1.2rem; padding: 0;
+  color: var(--ink); font-size: 0.92rem;
 }
 .tutorial-setting p { margin: 0; color: inherit; }
 .ts-title { flex-basis: 100%; font-weight: 600; font-size: 0.82rem; }
 .ts-row { display: flex; gap: 1.2rem; }
 .ts-check, .ts-radio { display: inline-flex; align-items: center; gap: 0.45rem; }
 .ts-check { flex: 0 0 auto; }
+.ts-line { display: flex; align-items: center; justify-content: space-between; gap: 0.9rem; flex-basis: 100%; }
 .ts-check input, .ts-radio input { margin: 0; accent-color: var(--accent-brand, var(--accent)); opacity: 1; }
 .ts-radio.is-on { font-weight: 600; color: var(--accent-brand, var(--accent)); }
 .ts-icons, .ts-cog { display: inline-flex; align-items: center; gap: 0.35rem; }

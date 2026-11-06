@@ -5,7 +5,7 @@ import { tutorialIcon } from './tutorial-icons.js';
 
 const swatches = (list = [1, 2, 3, 4]) => list.map((n) => `<span class="tutorial-voice" data-number="${n}" aria-hidden="true">${n}</span>`).join('');
 const check = (label, { on = false, extra = '' } = {}) =>
-  `<label class="ts-check"><input type="checkbox" disabled${on ? ' checked' : ''}> <span>${label}</span></label>${extra ? `<span class="ts-icons">${extra}</span>` : ''}`;
+  `<div class="ts-line"><label class="ts-check"><input type="checkbox" disabled${on ? ' checked' : ''}> <span>${label}</span></label>${extra ? `<span class="ts-icons">${extra}</span>` : ''}</div>`;
 const radio = (icon, label, on) =>
   `<label class="ts-radio${on ? ' is-on' : ''}"><input type="radio" disabled${on ? ' checked' : ''}> ${tutorialIcon(icon)}<span>${label}</span></label>`;
 
