@@ -199,6 +199,7 @@
 .d-field { fill: var(--paper); stroke: var(--ink-soft); stroke-width: 0.8; }
 .d-field--on { stroke: var(--accent); stroke-width: 1.2; }
 .d-panel { fill: var(--paper); stroke: var(--rule); stroke-width: 1; filter: drop-shadow(0 2px 5px rgb(0 0 0 / 0.14)); }
+.d-rowhot { fill: color-mix(in srgb, var(--accent) 16%, transparent); }
 .d-menutext { fill: var(--ink); font-family: var(--sans); }
 .d-menutext--hot { fill: var(--accent); font-weight: 700; }
 .d-menuicon { stroke: var(--ink-soft); stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }

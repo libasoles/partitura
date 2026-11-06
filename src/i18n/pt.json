@@ -514,7 +514,8 @@
           "Clique num espaço vazio do compasso para selecioná-lo: nas bordas aparecem dois botões <strong>+</strong> para inserir um compasso antes ou depois.",
           "No fim de cada pauta, os botões <strong>+</strong> e <strong>−</strong> adicionam ou tiram um compasso. Para adicionar outra pauta, use o botão abaixo da partitura.",
           "Segure <kbd>Shift</kbd> e arraste um compasso para levá-lo a outro lugar.",
-          "Arraste uma barra de compasso para os lados para alargar ou estreitar um compasso."
+          "Arraste uma barra de compasso para os lados para alargar ou estreitar um compasso.",
+          "Para excluir um compasso, clique num espaço vazio dele para selecioná-lo e pressione <kbd>Delete</kbd>: os seguintes ocupam o lugar dele."
         ]
       },
       "repeats": {

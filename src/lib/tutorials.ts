@@ -1,5 +1,5 @@
 import type { Strings } from '../i18n';
-import { renderShortcutDiagram, renderShortcuts, renderDot, renderBar, renderTabEdit, renderTabMove } from './score-tutorial.js';
+import { renderShortcutDiagram, renderShortcuts, renderDot, renderTabEdit, renderTabMove } from './score-tutorial.js';
 import { highlightTutorialKeys } from './tutorial-keys.js';
 import { tutorialIcon } from './tutorial-icons.js';
 import { settingsItem } from './settings-items.js';
@@ -67,6 +67,9 @@ const illustrations: Partial<Record<Slug, Record<number, Demo | Demo[]>>> = {
     0: demos.voicesSelect, 1: demos.duplicateVoice, 2: demos.adjustCopy, 3: [demos.thirdAbove, demos.thirdBelow],
     4: demos.undoDuplicate, 5: demos.voicesLegend, 7: demos.reassignVoice,
   },
+  tuplets: { 1: demos.quintuplet, 2: demos.septuplet },
+  ties: { 3: demos.tieDelete },
+  measures: { 4: demos.measureDelete },
 };
 
 function guide(slug: Slug, s: Strings): string {
@@ -98,7 +101,7 @@ function rawTutorialBody(slug: Slug, s: Strings): string {
         (drawings[i] ? demo(drawings[i]!, s, text) : '')).join('');
     }
     case 'dots': return `<p>${s.scoreDotBody}</p>${renderDot(s)}`;
-    case 'delete-barline': return `<p>${s.scoreBarBody}</p>${renderBar(s)}`;
+    case 'delete-barline': return `<p>${s.scoreBarBody}</p>${demo(demos.barlineDelete, s, s.scoreBarBody)}`;
     case 'edit-tab': return `<p>${s.scoreTabEditBody}</p>${renderTabEdit(s)}`;
     case 'move-tab': return `<p>${s.scoreTabMoveBody}</p>${renderTabMove(s)}`;
     case 'faq':

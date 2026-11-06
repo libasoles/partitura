@@ -514,7 +514,8 @@
           "Click an empty part of a measure to select it: two <strong>+</strong> buttons appear at its edges to insert a measure before or after.",
           "At the end of each system, the <strong>+</strong> and <strong>−</strong> buttons add or remove a measure. To add another system use the button under the score.",
           "Hold <kbd>Shift</kbd> and drag a measure to move it elsewhere.",
-          "Drag a barline sideways to make a measure wider or narrower."
+          "Drag a barline sideways to make a measure wider or narrower.",
+          "To delete a measure, click an empty part of it to select it and press <kbd>Delete</kbd>: the following measures move up to fill the gap."
         ]
       },
       "repeats": {

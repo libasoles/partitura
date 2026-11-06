@@ -13,3 +13,7 @@ test('tutorial keys are highlighted without changing existing keycaps or SVG', (
   assert.doesNotMatch(html, /<kbd><kbd>/);
   assert.equal(highlightTutorialKeys('<h3>Delete a barline</h3>'), '<h3>Delete a barline</h3>');
 });
+
+test('meters such as 4/4 or 6/8 are not split into keycaps', () => {
+  assert.equal(highlightTutorialKeys('<p>compás (4/4, 3/4, 6/8…)</p>'), '<p>compás (4/4, 3/4, 6/8…)</p>');
+});

@@ -510,7 +510,8 @@
           "Hacé clic en un espacio vacío de un compás para seleccionarlo: en sus bordes aparecen dos botones <strong>+</strong> para insertar un compás antes o después.",
           "Al final de cada renglón, los botones <strong>+</strong> y <strong>−</strong> agregan o quitan un compás. Para agregar otro renglón usá el botón de debajo de la partitura.",
           "Mantené <kbd>Mayús</kbd> y arrastrá un compás para llevarlo a otro lugar.",
-          "Arrastrá una barra de compás hacia los lados para ensanchar un compás o achicarlo."
+          "Arrastrá una barra de compás hacia los lados para ensanchar un compás o achicarlo.",
+          "Para eliminar un compás, seleccionalo con un clic en un espacio vacío y presioná <kbd>Delete</kbd>: los siguientes ocupan su lugar."
         ]
       },
       "repeats": {

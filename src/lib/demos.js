@@ -142,26 +142,34 @@ export function copy(s, aria) {
   return d.html(aria);
 }
 
-export function tuplets(s, aria) {
-  const d = stage({ id: 'trip', T: 13 });
+/** A run of `count` beamed figures that the tuplet menu groups: marquee, menu entry, then the bracket with its number. */
+function tupletDemo(s, aria, count) {
+  const d = stage({ id: `trip${count}`, T: 13 });
   const t = s.scoreUiStrings;
-  const xs = [d.firstX + 20, d.firstX + 44, d.firstX + 68];
-  const heads = ['E4', 'F4', 'G4'].map((n, i) => ({ x: xs[i], y: d.y(pitch(n)) }));
-  const group = beamGroup(heads);
+  const gap = count <= 3 ? 24 : count <= 5 ? 20 : 17;
+  const names = ['E4', 'F4', 'G4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4'].slice(0, count);
+  const xs = names.map((_, i) => d.firstX + 20 + i * gap);
+  const last = xs[count - 1];
+  const heads = names.map((n, i) => ({ x: xs[i], y: d.y(pitch(n)) }));
+  const group = beamGroup(heads, { beams: count > 3 ? 2 : 1 });
   d.add(0, 0, group.svg, S(d.life(0.05), [[2.7, { c: INK }], [2.9, { c: SEL }], [5.6, { c: SEL }], [5.8, { c: INK }]]));
-  const mid = (xs[0] + xs[2]) / 2 + 5;
-  d.add(mid, group.top - 26, pillInner(t.triplet, { size: 8 }), [[0, { o: 0, y: 4 }], [3.1, { o: 0, y: 4 }], [3.35, { o: 1, y: 0 }], [5.4, { o: 1, y: 0 }], [5.6, { o: 0 }]], { keep: false });
+  const mid = (xs[0] + last) / 2 + 5;
+  d.add(mid, group.top - 26, pillInner(count === 3 ? t.triplet : t[`tuplet${count}`], { size: 8 }), [[0, { o: 0, y: 4 }], [3.1, { o: 0, y: 4 }], [3.35, { o: 1, y: 0 }], [5.4, { o: 1, y: 0 }], [5.6, { o: 0 }]], { keep: false });
   d.add(0, group.top - 7,
-    `<path class="d-bracket" d="M${xs[0] + 1} 3V0H${xs[2] + 10}V3"/><text class="d-text" x="${(xs[0] + xs[2]) / 2 + 5}" y="-3" text-anchor="middle" font-size="9" font-style="italic" font-weight="600">3</text>`,
+    `<path class="d-bracket" d="M${xs[0] + 1} 3V0H${last + 10}V3"/><text class="d-text" x="${mid}" y="-3" text-anchor="middle" font-size="9" font-style="italic" font-weight="600">${count}</text>`,
     [[0, { o: 0 }], [5.7, { o: 0 }], [6.0, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
   const from = { x: xs[0] - 8, y: d.y(5) };
-  const to = { x: xs[2] + 18, y: d.y(-1.5) };
+  const to = { x: last + 18, y: d.y(-1.5) };
   d.add(from.x, from.y, `<rect class="d-marquee" width="${to.x - from.x}" height="${to.y - from.y}"/>`,
     [[0, { o: 0, sx: 0.02, sy: 0.02 }], [1.3, { o: 0, sx: 0.02, sy: 0.02 }], [1.4, { o: 1 }], [2.7, { o: 1, sx: 1, sy: 1 }], [3.0, { o: 0 }]], { keep: false });
   d.pointer([[0.6, d.w - 30, d.h - 24], [1.3, from.x, from.y], [2.7, to.x, to.y], ...visit(4.6, mid, group.top - 26), [6.4, d.w - 30, d.h - 24]]);
   d.click(4.6, mid, group.top - 26);
   return d.html(aria);
 }
+
+export const tuplets = (s, aria) => tupletDemo(s, aria, 3);
+export const quintuplet = (s, aria) => tupletDemo(s, aria, 5);
+export const septuplet = (s, aria) => tupletDemo(s, aria, 7);
 
 export function ties(s, aria) {
   const d = stage({ id: 'tie', T: 13 });
@@ -186,10 +194,27 @@ export function ties(s, aria) {
   return d.html(aria);
 }
 
+/** Clicking a tie's arc selects it; Delete removes the tie and leaves both notes. */
+export function tieDelete(s, aria) {
+  const d = stage({ id: 'tie-del', T: 10 });
+  const notes = phrase(d, [[q('G4'), q('G4'), q('A4'), q('B4')]], 40);
+  notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  const [a, b] = notes;
+  const y = d.y(a.p) + SP * 0.9;
+  const px = (a.x + b.x) / 2 + 5;
+  const arc = y + 4.5;
+  d.add(0, 0, `<path class="d-tie" d="M${a.x + 5} ${y}Q${px} ${y + 9} ${b.x + 5} ${y}"/>`,
+    [[0, { o: 0, c: INK }], [0.05, { o: 0 }], [0.3, { o: 1 }], [1.9, { c: INK }], [2.1, { c: SEL }], [4.1, { c: SEL }], [4.3, { o: 0 }]], { keep: false });
+  d.click(1.9, px, arc);
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.9, px, arc), [4.6, d.w - 30, d.h - 24]]);
+  d.keycap('Delete', 40, 2.6, 3.6, 6.4);
+  return d.html(aria);
+}
+
 // ----- measures and signatures ----------------------------------------------------------------------------------
 
 export function signatures(s, aria) {
-  const d = stage({ id: 'sig', T: 14, staff: false });
+  const d = stage({ id: 'sig', T: 14, staff: false, h: 152, bottom: 88 });
   const t = s.scoreUiStrings;
   d.base(d.lines(d.x0, d.x1) + d.barline(d.x0) + d.barline(d.x1));
   const clefX = d.x0 + 4;
@@ -205,17 +230,31 @@ export function signatures(s, aria) {
   d.add(d.meterX, 0, d.meterAt(0, [4, 4]), S(shown(0, 3.0), slide));
   d.add(d.meterX, 0, d.meterAt(0, [3, 4]), S(shown(3.0), slide), { keep: false });
   d.add(d.keyX, 0, d.keyAt(0, 2, 2), [[0, { o: 0 }], [9.2, { o: 0, s: 0.6 }], [9.45, { o: 1, s: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  // Each click opens the editor's popup under the staff; the pointer picks one of its options and the popup closes.
+  const rowH = 14;
+  const popupY = d.bottom + 10;
   const targets = [
-    [1.5, d.meterX + 5, t.meter, 3.0],
-    [4.4, clefX + 8, t.clef, 6.0],
-    [7.6, d.keyX + 6, t.keySignature, 9.2],
+    [1.5, d.meterX + 5, ['4/4', '3/4', '6/8'], 1, 62, 3.0],
+    [4.4, clefX + 8, [t.clefs.treble, t.clefs.bass, t.clefs.alto], 1, 104, 6.0],
+    [7.6, d.keyX + 6, [t.keys[7], t.keys[8], t.keys[9]], 2, 138, 9.2],
   ];
-  const path = [[0.6, d.w - 30, d.h - 24]];
-  targets.forEach(([at, x, text, change]) => {
-    path.push(...visit(at, x, d.y(4)));
+  const rest = [d.w - 30, d.h - 32];
+  const path = [[0.6, ...rest]];
+  targets.forEach(([at, x, options, pick, width, change]) => {
+    const left = Math.max(4, x - 20);
+    const pickAt = at + 1.1;
+    const optionY = popupY + 3 + pick * rowH + rowH / 2;
+    path.push(...visit(at, x, d.y(4)), ...visit(pickAt, left + 24, optionY));
     d.click(at, x, d.y(4));
-    d.add(x, d.y(9) - 14, pillInner(text, { size: 8 }), [[0, { o: 0 }], [at + 0.2, { o: 0 }], [at + 0.45, { o: 1 }], [change + 0.1, { o: 1 }], [change + 0.35, { o: 0 }]], { keep: false });
+    d.click(pickAt, left + 24, optionY);
+    d.add(left, popupY,
+      `<rect class="d-panel" width="${width}" height="${options.length * rowH + 6}" rx="5"/>` +
+      options.map((o, i) => `<text class="d-menutext" x="8" y="${3 + i * rowH + rowH / 2 + 3}" font-size="8.5">${o}</text>`).join(''),
+      [[0, { o: 0 }], [at + 0.2, { o: 0 }], [at + 0.45, { o: 1 }], [change + 0.1, { o: 1 }], [change + 0.35, { o: 0 }]], { keep: false });
+    d.add(left, popupY + 3 + pick * rowH, `<rect class="d-rowhot" x="3" width="${width - 6}" height="${rowH}" rx="3"/>`,
+      [[0, { o: 0 }], [pickAt, { o: 0 }], [pickAt + 0.15, { o: 1 }], [change + 0.1, { o: 1 }], [change + 0.35, { o: 0 }]], { keep: false });
   });
+  path.push([13.0, ...rest]);
   d.pointer(path);
   return d.html(aria);
 }
@@ -242,6 +281,45 @@ export function measures(s, aria) {
   d.click(1.4, first + 20, d.y(2));
   d.click(3.9, barA, d.y(8) - 13);
   d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.4, first + 20, d.y(2)), ...visit(3.9, barA, d.y(8) - 13), [6.2, d.w - 30, d.h - 24]]);
+  return d.html(aria);
+}
+
+/** Selecting a measure and pressing Delete removes it; the next one closes the gap. */
+export function measureDelete(s, aria) {
+  const d = stage({ id: 'meas-del', T: 11 });
+  const first = d.firstX;
+  const width = 76;
+  const at = (m) => first + m * width;
+  const names = [['E4', 'G4'], ['A4', 'F4'], ['G4', 'E4']];
+  names.forEach((pair, m) => pair.forEach((name, i) => {
+    const x = at(m) + (m ? 14 : 0) + i * 38;
+    const stops = m === 1 ? d.life(0.05, 4.2) : m === 2 ? S(d.life(0.05), [[4.3, { x: 0 }], [5.0, { x: -width }]]) : d.life(0.05);
+    d.note(x, pitch(name), 'h', stops);
+  }));
+  d.base(d.barline(at(1)));
+  d.add(at(2), 0, d.barline(0), d.life(0.05, 4.2));
+  d.add(at(1), d.y(8) - 4, `<rect class="d-tint" width="${width}" height="${SP * 4 + 8}"/>`,
+    [[0, { o: 0 }], [1.6, { o: 0 }], [1.85, { o: 1 }], [4.0, { o: 1 }], [4.3, { o: 0 }]], { keep: false });
+  d.click(1.6, at(1) + 40, d.y(2));
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.6, at(1) + 40, d.y(2)), [4.6, d.w - 30, d.h - 24]]);
+  d.keycap('Delete', 40, 2.4, 3.4, 6.6);
+  return d.html(aria);
+}
+
+/** Clicking a barline selects it (yellow); Delete removes it and the two measures become one. */
+export function barlineDelete(s, aria) {
+  const d = stage({ id: 'bar-del', T: 10 });
+  const gap = 26;
+  const names = ['E4', 'G4', 'A4', 'G4', 'F4', 'E4', 'D4', 'E4'];
+  const xs = names.map((_, i) => d.firstX + i * gap + (i >= 4 ? 10 : 0));
+  names.forEach((n, i) => d.note(xs[i], pitch(n), 'q', d.life(0.05)));
+  const bx = xs[3] + gap / 2 + 5;
+  d.add(bx, 0, d.barline(0), [[0, { o: 0 }], [0.05, { o: 0 }], [0.3, { o: 1 }], [4.1, { o: 1 }], [4.3, { o: 0 }]], { keep: false });
+  d.add(bx - 3, d.y(8) - 2, `<rect class="d-tint" width="6" height="${SP * 4 + 4}"/>`,
+    [[0, { o: 0 }], [1.9, { o: 0 }], [2.1, { o: 1 }], [4.0, { o: 1 }], [4.3, { o: 0 }]], { keep: false });
+  d.click(1.9, bx, d.y(4));
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.9, bx, d.y(4)), [4.6, d.w - 30, d.h - 24]]);
+  d.keycap('Delete', 40, 2.4, 3.4, 6.4);
   return d.html(aria);
 }
 
