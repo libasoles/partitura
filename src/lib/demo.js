@@ -212,28 +212,43 @@ export function stage(o) {
     d.add(0, 0, CURSOR, stops, { keep: false, cls: 'd-pointer' });
   };
 
-  /** A key cap shown from `show` to `hide` and pressed (lit) at `press` (one time or a list of them). */
+  /**
+   * A key cap, visible for the whole loop so the reader knows every key of the gesture beforehand, and lit (pressed)
+   * at `press` (one time or a list of them). `show` and `hide` are kept for the call sites but no longer used. The caps
+   * of one row (same `ky`) are laid out left to right from the first `kx`; a key named again only adds its presses.
+   */
+  const caps = [];
   d.keycap = (label, kx, show, press, hide, { ky = h - 14, cap = false } = {}) => {
-    const width = Math.max(16, label.length * 6.4 + 10);
-    const inner =
-      `<rect class="d-cap" x="${f(-width / 2)}" y="-8" width="${f(width)}" height="16" rx="3.5"/>` +
-      `<text class="d-captext" text-anchor="middle" dominant-baseline="central" font-size="${cap ? 8 : 9}">${label}</text>`;
-    const presses = [].concat(press);
-    const stops = [[0, { o: 0, c: 'var(--ink-soft)', y: 0 }], [show, { o: 0 }], [show + 0.2, { o: 1 }]];
-    presses.forEach((at) => stops.push(
-      [at, { c: 'var(--ink-soft)', y: 0 }], [at + 0.08, { c: 'var(--accent)', y: 1.2 }], [at + 0.5, { c: 'var(--accent)', y: 1.2 }], [at + 0.62, { c: 'var(--ink-soft)', y: 0 }],
-    ));
-    stops.push([hide, { o: 1 }], [hide + 0.25, { o: 0 }]);
-    d.add(kx, ky, inner, stops, { keep: false });
-    // A fingertip taps the cap at the moment it lights up: the Lucide pointer, its tip on the key.
-    const tap = [[0, { o: 0, y: 5 }]];
-    presses.forEach((at) => tap.push(
-      [at - 0.25, { o: 0, y: 5 }], [at - 0.05, { o: 1, y: 0 }], [at + 0.1, { o: 1, y: 1.5 }], [at + 0.5, { o: 1, y: 0 }], [at + 0.75, { o: 0, y: 5 }],
-    ));
-    d.add(kx + 1, ky + 1, `<g transform="scale(0.6) translate(-9 -3)" class="d-finger-icon"><g class="d-finger" fill="var(--paper)">${tutorialIconPaths('pointer')}</g></g>`, tap, { keep: false, cls: 'd-finger-actor' });
+    const known = caps.find((c) => c.label === label && c.ky === ky);
+    if (known) known.presses.push(...[].concat(press));
+    else caps.push({ label, kx, ky, cap, presses: [].concat(press) });
+  };
+
+  const flushCaps = () => {
+    const next = {};
+    caps.splice(0).forEach(({ label, kx, ky, cap, presses }) => {
+      const width = Math.max(16, label.length * 6.4 + 10);
+      const x = next[ky] === undefined ? kx : next[ky] + width / 2;
+      next[ky] = x + width / 2 + 5;
+      const inner =
+        `<rect class="d-cap" x="${f(-width / 2)}" y="-8" width="${f(width)}" height="16" rx="3.5"/>` +
+        `<text class="d-captext" text-anchor="middle" dominant-baseline="central" font-size="${cap ? 8 : 9}">${label}</text>`;
+      const stops = [[0, { o: 1, c: 'var(--ink-soft)', y: 0 }]];
+      presses.sort((m, n) => m - n).forEach((at) => stops.push(
+        [at, { c: 'var(--ink-soft)', y: 0 }], [at + 0.08, { c: 'var(--accent)', y: 1.2 }], [at + 0.5, { c: 'var(--accent)', y: 1.2 }], [at + 0.62, { c: 'var(--ink-soft)', y: 0 }],
+      ));
+      d.add(x, ky, inner, stops);
+      // A fingertip taps the cap at the moment it lights up: the Lucide pointer, its tip on the key.
+      const tap = [[0, { o: 0, y: 5 }]];
+      presses.forEach((at) => tap.push(
+        [at - 0.25, { o: 0, y: 5 }], [at - 0.05, { o: 1, y: 0 }], [at + 0.1, { o: 1, y: 1.5 }], [at + 0.5, { o: 1, y: 0 }], [at + 0.75, { o: 0, y: 5 }],
+      ));
+      d.add(x + 1, ky + 1, `<g transform="scale(0.6) translate(-9 -3)" class="d-finger-icon"><g class="d-finger" fill="var(--paper)">${tutorialIconPaths('pointer')}</g></g>`, tap, { keep: false, cls: 'd-finger-actor' });
+    });
   };
 
   d.html = (label) => {
+    flushCaps();
     return (
       `<figure class="demo">` +
       `<svg class="demo__stage" viewBox="0 0 ${w} ${h}" role="img" aria-label="${label.replace(/"/g, '&quot;')}" fill="currentColor">` +
