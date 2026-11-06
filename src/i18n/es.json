@@ -466,7 +466,7 @@
       "ties": {
         "steps": [
           "Seleccioná dos notas seguidas con <kbd>Mayús</kbd>+clic. En el menú que aparece sobre ellas elegí <em>Ligadura</em>: si suenan igual se dibuja una ligadura de prolongación y, si no, una de expresión.",
-          "Para quitarla, seleccioná las mismas notas y elegí <em>Quitar ligadura</em>.",
+          "Para quitarla, seleccioná las mismas notas y elegí <em>Quitar ligadura</em>. También podés presionar <kbd>(</kbd> o <kbd>)</kbd> para agregar o quitar la ligadura entre las notas seleccionadas, si se pueden ligar.",
           "Las barras funcionan igual: seleccioná figuras seguidas y elegí <em>Barrar</em> para unirlas o <em>Separar</em> para cortar la barra. Si no tocás nada, el editor las agrupa solo según el compás."
         ]
       },

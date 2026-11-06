@@ -3144,6 +3144,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       return;
     }
     if (!event.metaKey && !event.ctrlKey && !event.altKey && !meterPopup.matches(':popover-open') && !clefPopup.matches(':popover-open') && !dynamicsPopup.matches(':popover-open') && !tuningPopup.matches(':popover-open')) {
+      // El caracter, no la tecla fisica: los parentesis cambian de lugar segun el teclado.
+      if (event.key === '(' || event.key === ')') {
+        const action = M.selectionActions(score, picks()).find((action) => action === 'link' || action === 'unlink');
+        if (action) {
+          event.preventDefault();
+          if (!event.repeat) applyAction(action);
+        }
+        return;
+      }
       if (event.key.toLowerCase() === 'a') {
         event.preventDefault();
         deactivateTool();

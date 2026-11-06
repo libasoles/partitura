@@ -466,7 +466,7 @@
       "ties": {
         "steps": [
           "Select two consecutive notes with <kbd>Shift</kbd>+click. In the menu over them choose <em>Tie</em>: if they sound the same a tie is drawn, otherwise a slur.",
-          "To remove it, select the same notes and choose <em>Remove tie</em>.",
+          "To remove it, select the same notes and choose <em>Remove tie</em>. You can also press <kbd>(</kbd> or <kbd>)</kbd> to toggle the tie or slur between the selected notes, if they can be linked.",
           "Beams work the same way: select consecutive figures and choose <em>Beam</em> to join them or <em>Unbeam</em> to split the beam. If you do nothing, the editor groups them by the meter."
         ]
       },

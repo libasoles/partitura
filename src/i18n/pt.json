@@ -466,7 +466,7 @@
       "ties": {
         "steps": [
           "Selecione duas notas seguidas com <kbd>Shift</kbd>+clique. No menu que aparece sobre elas, escolha <em>Ligadura</em>: se soam iguais, desenha-se uma ligadura de prolongamento; se não, uma de expressão.",
-          "Para tirar, selecione as mesmas notas e escolha <em>Remover ligadura</em>.",
+          "Para tirar, selecione as mesmas notas e escolha <em>Remover ligadura</em>. Você também pode pressionar <kbd>(</kbd> ou <kbd>)</kbd> para adicionar ou remover a ligadura entre as notas selecionadas, se elas puderem ser ligadas.",
           "As barras funcionam igual: selecione figuras seguidas e escolha <em>Barrar</em> para uni-las ou <em>Separar</em> para cortar a barra. Se você não mexer, o editor as agrupa sozinho conforme o compasso."
         ]
       },
