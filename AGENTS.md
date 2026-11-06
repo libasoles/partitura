@@ -47,6 +47,8 @@
 
 - Google Analytics 4 (`G-YX99KJ1Q99`, gtag.js) lo carga `src/components/Analytics.astro`, incluido en el `<head>` de `Base.astro`, `404.astro` e `index.astro`. Toda página nueva debe usar `Base.astro` (o incluir ese componente) para quedar medida.
 
+- **Embudo Pro** (`src/components/ProPage.astro`, `/es/pro/`, `/en/pro/`, `/pt/pro/`): eventos GA4 `pro_menu_click` (enlace del menú, en `Base.astro`) → `pro_page_view` → `pro_plan_click` (`plan`: monthly | yearly, `value` en ARS) → `pro_waitlist_shown`. El botón de plan no cobra: muestra el aviso de que la función aún no está disponible. Precios y textos en `src/i18n/*.json` (`pro`).
+
 ### Estructura
 
 - `src/pages/` — el editor (`/`, `/en/`, `/pt/`, con `EditorPage.astro`) y los tutoriales (`/tutoriales/`, `/en/tutorials/`, `/pt/tutoriais/`, con `TutorialsPage.astro`; un tema por página, definidos en `src/lib/tutorials.ts`).

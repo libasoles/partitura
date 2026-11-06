@@ -110,3 +110,17 @@ for (const [locale, dir] of Object.entries(tutorialDirs)) {
     assert.ok(faqGraph[2].mainEntity.mainEntity.length > 0);
   });
 }
+
+const proDirs = { es: 'pro', en: 'pro', pt: 'pro' };
+for (const [locale, dir] of Object.entries(proDirs)) {
+  test(`${locale}: the Pro page lists the plans, tracks the funnel and is linked from the menu`, () => {
+    const html = readFileSync(new URL(`../dist/${locale}/${dir}/index.html`, import.meta.url), 'utf8');
+    assert.equal(html.match(/<h1[ >]/g)?.length, 1);
+    assert.equal(html.match(/data-plan="(monthly|yearly)"/g)?.length, 2);
+    assert.match(html, /2000/);
+    assert.match(html, /16000/);
+    assert.match(html, /pro_plan_click/);
+    assert.match(html, /data-pro-thanks/);
+    assert.match(html, new RegExp(`href="/${locale}/pro/" data-pro-menu`), 'the menu links to it');
+  });
+}

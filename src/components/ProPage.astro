@@ -1,0 +1,82 @@
+---
+import Base from '../layouts/Base.astro';
+import { locales, pathFor, proPath, strings, type Locale } from '../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const s = strings(locale);
+const t = s.pro;
+const paths = Object.fromEntries(locales.map((l) => [l, proPath(l)])) as Record<Locale, string>;
+// Prices in ARS; the numbers are sent to Analytics as the event value.
+const plans = [
+  { id: 'monthly', name: t.monthly, price: t.monthlyPrice, period: t.monthlyPeriod, value: 2000 },
+  { id: 'yearly', name: t.yearly, price: t.yearlyPrice, period: t.yearlyPeriod, value: 16000 },
+];
+---
+
+<Base locale={locale} title={t.metaTitle} description={t.metaDescription} paths={paths}>
+  <main class="legal pro" data-pro>
+    <h1>{t.h1}</h1>
+    <p class="pro-lead">{t.lead}</p>
+
+    <section>
+      <h2>{t.featuresTitle}</h2>
+      <ul class="pro-features">
+        {t.features.map(([name, body]) => (
+          <li>
+            <strong>{name}</strong>
+            <span>{body}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section data-pro-plans>
+      <h2>{t.plansTitle}</h2>
+      <div class="pro-plans">
+        {plans.map((plan) => (
+          <div class="pro-plan">
+            <h3>{plan.name}</h3>
+            <p class="pro-price"><span>{plan.price}</span> {plan.period}</p>
+            <button type="button" class="pro-choose" data-plan={plan.id} data-value={plan.value}>{t.choose}</button>
+          </div>
+        ))}
+      </div>
+      <p class="legal-updated">{t.currency}</p>
+    </section>
+
+    <section class="pro-thanks" data-pro-thanks role="status" aria-live="polite" tabindex="-1" hidden>
+      <h2>{t.thanksTitle}</h2>
+      <p>{t.thanksBody}</p>
+    </section>
+
+    <p><a href={pathFor(locale)}>← {t.back}</a></p>
+  </main>
+
+  <script is:inline>
+    (function () {
+      var root = document.querySelector('[data-pro]');
+      if (!root) return;
+      function track(name, params) {
+        try { if (window.gtag) gtag('event', name, params); } catch (e) {}
+      }
+      // Funnel: pro_menu_click (menu) → pro_page_view (this page) → pro_plan_click (a plan button) → pro_waitlist_shown (the notice).
+      track('pro_page_view');
+      var plans = root.querySelector('[data-pro-plans]');
+      var thanks = root.querySelector('[data-pro-thanks]');
+      root.addEventListener('click', function (event) {
+        var btn = event.target.closest('.pro-choose');
+        if (!btn) return;
+        var plan = btn.getAttribute('data-plan');
+        track('pro_plan_click', { plan: plan, value: Number(btn.getAttribute('data-value')), currency: 'ARS' });
+        plans.hidden = true;
+        thanks.hidden = false;
+        thanks.focus();
+        track('pro_waitlist_shown', { plan: plan });
+      });
+    })();
+  </script>
+</Base>

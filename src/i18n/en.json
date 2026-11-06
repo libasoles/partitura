@@ -265,6 +265,7 @@
     "languageName": "English",
     "noscript": "The editor needs JavaScript to draw and edit the score. The rest of the page works without it.",
     "navTutorials": "Tutorials",
+    "navPro": "Pro",
     "editorLink": "Open the editor",
     "menu": "Menu",
     "menuLoad": "Load file…",
@@ -760,6 +761,44 @@
     ]
   },
   "tutorialsPath": "tutorials",
+  "proPath": "pro",
+  "pro": {
+    "metaTitle": "Pro plan · Partitura",
+    "metaDescription": "The Partitura Pro plan: your scores on every device, archiving, song lyrics and public links. Monthly ARS 2000 or yearly ARS 16000.",
+    "h1": "Partitura Pro",
+    "lead": "Everything you use today stays free. Pro adds what you need to take your scores further.",
+    "featuresTitle": "What's included",
+    "features": [
+      [
+        "All your devices",
+        "Access your scores from multiple devices."
+      ],
+      [
+        "Archive",
+        "Archive scores to keep them organized."
+      ],
+      [
+        "Song lyrics",
+        "Add a line of lyrics below the melody."
+      ],
+      [
+        "Sharing",
+        "Share songs publicly with a link."
+      ]
+    ],
+    "plansTitle": "Choose your plan",
+    "monthly": "Monthly plan",
+    "monthlyPrice": "ARS 2000",
+    "monthlyPeriod": "per month",
+    "yearly": "Yearly plan",
+    "yearlyPrice": "ARS 16000",
+    "yearlyPeriod": "per year",
+    "currency": "Prices in Argentine pesos (ARS).",
+    "choose": "Choose plan",
+    "thanksTitle": "Thanks for your interest!",
+    "thanksBody": "We're working on these features, but they aren't available yet. You haven't been charged anything and there's nothing else you need to do. Meanwhile, the editor is still free.",
+    "back": "Back to the editor"
+  },
   "termsPath": "terms",
   "terms": {
     "metaTitle": "Terms and conditions · Partitura",

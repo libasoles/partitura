@@ -34,6 +34,11 @@ export function termsPath(locale: Locale): string {
   return `${pathFor(locale)}${strings(locale).termsPath}/`;
 }
 
+/** The Pro plan page: /es/pro/, /en/pro/, /pt/pro/. */
+export function proPath(locale: Locale): string {
+  return `${pathFor(locale)}${strings(locale).proPath}/`;
+}
+
 /** The tutorials section: /tutoriales/, /en/tutorials/, /pt/tutoriais/ (plus a slug for one tutorial). */
 export function tutorialsPath(locale: Locale, slug?: string): string {
   const base = `${pathFor(locale)}${strings(locale).tutorialsPath}/`;

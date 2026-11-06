@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
-import { locales, pathFor, rootPath, termsPath, tutorialsPath } from './src/i18n/index.ts';
+import { locales, pathFor, proPath, rootPath, termsPath, tutorialsPath } from './src/i18n/index.ts';
 import { slugs } from './src/lib/tutorials.ts';
 import { chordsFileName, chordSearchFileName } from './scripts/lib/chords-data.mjs';
 
@@ -15,6 +15,7 @@ const groups = [
   Object.fromEntries(locales.map((l) => [l, pathFor(l)])),
   Object.fromEntries(locales.map((l) => [l, tutorialsPath(l)])),
   Object.fromEntries(locales.map((l) => [l, termsPath(l)])),
+  Object.fromEntries(locales.map((l) => [l, proPath(l)])),
   ...slugs.map((slug) => Object.fromEntries(locales.map((l) => [l, tutorialsPath(l, slug)]))),
 ];
 const alternates = new Map();

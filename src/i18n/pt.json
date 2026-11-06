@@ -265,6 +265,7 @@
     "languageName": "Português",
     "noscript": "O editor precisa de JavaScript para desenhar e editar a partitura. O resto da página funciona sem ele.",
     "navTutorials": "Tutoriais",
+    "navPro": "Pro",
     "editorLink": "Abrir o editor",
     "menu": "Menu",
     "menuLoad": "Carregar arquivo…",
@@ -760,6 +761,44 @@
     ]
   },
   "tutorialsPath": "tutoriais",
+  "proPath": "pro",
+  "pro": {
+    "metaTitle": "Plano Pro · Partitura",
+    "metaDescription": "O plano Pro do Partitura: suas partituras em todos os dispositivos, arquivo, letras de músicas e links públicos. Mensal ARS 2000 ou anual ARS 16000.",
+    "h1": "Partitura Pro",
+    "lead": "Tudo o que você já usa continua grátis. O Pro soma o que você precisa para levar suas partituras mais longe.",
+    "featuresTitle": "O que inclui",
+    "features": [
+      [
+        "Todos os seus dispositivos",
+        "Acesse suas partituras de vários dispositivos."
+      ],
+      [
+        "Arquivo",
+        "Arquive partituras para mantê-las organizadas."
+      ],
+      [
+        "Letra de músicas",
+        "Adicione uma linha de letra abaixo da melodia."
+      ],
+      [
+        "Compartilhar",
+        "Compartilhe músicas publicamente com um link."
+      ]
+    ],
+    "plansTitle": "Escolha seu plano",
+    "monthly": "Plano mensal",
+    "monthlyPrice": "ARS 2000",
+    "monthlyPeriod": "por mês",
+    "yearly": "Plano anual",
+    "yearlyPrice": "ARS 16000",
+    "yearlyPeriod": "por ano",
+    "currency": "Preços em pesos argentinos (ARS).",
+    "choose": "Escolher plano",
+    "thanksTitle": "Obrigado pelo seu interesse!",
+    "thanksBody": "Estamos trabalhando nessas funcionalidades, mas elas ainda não estão disponíveis. Nada foi cobrado e você não precisa fazer mais nada. Enquanto isso, o editor continua grátis.",
+    "back": "Voltar ao editor"
+  },
   "termsPath": "termos",
   "terms": {
     "metaTitle": "Termos e condições · Partitura",
