@@ -772,12 +772,7 @@
       [
         "All your devices",
         "Access your scores from multiple computers and tablets (phones not included)."
-  ,
-      [
-        "Duplicate scores",
-        "Duplicate a score to try variations without losing the original."
-      ]
-    ],
+      ],
       [
         "Archive",
         "Create score folders to keep them organized."
@@ -789,6 +784,10 @@
       [
         "Sharing",
         "Share songs publicly with a link."
+      ],
+      [
+        "Duplicate scores",
+        "Duplicate a score to try variations without losing the original."
       ]
     ],
     "plansTitle": "Choose your plan",
