@@ -23,7 +23,7 @@ test('the cog is the first sidebar tool and the dialog switches instrument, temp
   await expect(instrument.getByRole('radio', { name: 'Piano' })).toBeChecked();
 
   // Guitar: TAB and barre appear and the clef becomes treble 8.
-  await instrument.getByRole('radio', { name: 'Guitarra' }).check();
+  await instrument.locator('label').filter({ hasText: 'Guitarra' }).click();
   await expect(page.locator('#scoreTabToggle')).toBeVisible();
   await expect(page.locator('[data-tool="barre"]')).toBeVisible();
   expect(await page.evaluate(() => window.scoreEditor.score.clef)).toBe('guitar');
@@ -47,13 +47,14 @@ test('the cog is the first sidebar tool and the dialog switches instrument, temp
   await popup.getByRole('checkbox', { name: 'Repetición' }).uncheck();
   await expect(page.locator('[data-barline="start"]')).toBeHidden();
   await expect(page.locator('[data-navigation="segno"]')).toBeHidden();
+  await page.evaluate(() => window.ScoreStore.flush());
   await page.reload();
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
   await expect(page.locator('[data-hairpin="cresc"]')).toBeHidden();
 
   // Back to piano: TAB and barre go away and the guitar clef becomes a plain treble clef.
   await page.locator('#scoreSettingsToggle').click();
-  await page.locator('#scoreSettingsPopup').getByRole('radio', { name: 'Piano' }).check();
+  await page.locator('#scoreSettingsPopup label').filter({ hasText: 'Piano' }).click();
   await expect(page.locator('#scoreTabToggle')).toBeHidden();
   expect(await page.evaluate(() => window.scoreEditor.score.clef)).toBe('treble');
   await page.keyboard.press('Escape');

@@ -867,6 +867,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function render() {
+    if (playbackState !== 'idle' && (playbackDocument !== score || playbackSnapshot !== JSON.stringify(score))) resetPlayback();
     if (!toolkit) return;
     const width = stage.clientWidth;
     if (!width) return;
@@ -3630,6 +3631,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- paleta -------------------------------------------------------------
 
   const ICONS = {
+    play: '<polygon points="6 3 20 12 6 21 6 3"/>',
+    pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
     piano: '<path d="M18.5 8c-1.4 0-2.6-.8-3.2-2A6.87 6.87 0 0 0 2 9v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8.5C22 9.6 20.4 8 18.5 8"/><path d="M2 14h20"/><path d="M6 14v4"/><path d="M10 14v4"/><path d="M14 14v4"/><path d="M18 14v4"/>',
     guitar: '<path d="m11.9 12.1 4.514-4.514"/><path d="M20.1 2.3a1 1 0 0 0-1.4 0l-1.114 1.114A2 2 0 0 0 17 4.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 17.828 7h1.344a2 2 0 0 0 1.414-.586L21.7 5.3a1 1 0 0 0 0-1.4z"/><path d="m6 16 2 2"/><path d="M8.2 9.9C8.7 8.8 9.8 8 11 8c2.8 0 5 2.2 5 5 0 1.2-.8 2.3-1.9 2.8l-.9.4A2 2 0 0 0 12 18a4 4 0 0 1-4 4c-3.3 0-6-2.7-6-6a4 4 0 0 1 4-4 2 2 0 0 0 1.8-1.2z"/><circle cx="11.5" cy="12.5" r=".5" fill="currentColor"/>',
@@ -3845,12 +3848,76 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Los grupos de herramientas son de cada partitura; sin elegir, repeticion y dinamica se ven y las voces no.
   const toolOn = (name, fallback = true) => !settings || (score.tools && name in score.tools ? score.tools[name] : fallback);
 
+  let player = null, audioContext = null, playbackState = 'idle', playbackRequest = 0, playbackTrack = null;
+  let playbackDocument = null, playbackSnapshot = null;
+  const playButton = document.createElement('button');
+  playButton.id = 'scorePlayback';
+  playButton.type = 'button';
+  playButton.className = 'score-palette-item score-playback tooltip';
+  playButton.hidden = true;
+  function syncPlayback() {
+    const active = playbackState === 'playing';
+    const loading = playbackState === 'loading';
+    playButton.innerHTML = lucide(active ? 'pause' : 'play');
+    const label = loading ? t.playbackLoading : active ? t.pause : t.play;
+    playButton.setAttribute('aria-label', label);
+    playButton.dataset.tooltip = label;
+    playButton.setAttribute('aria-pressed', String(active));
+    playButton.setAttribute('aria-busy', String(loading));
+    playButton.disabled = loading;
+  }
+  function resetPlayback() {
+    playbackRequest += 1;
+    player?.stop();
+    playbackTrack = null;
+    playbackDocument = null;
+    playbackSnapshot = null;
+    playbackState = 'idle';
+    syncPlayback();
+  }
+  syncPlayback();
+  if (settings) barlines.prepend(playButton);
+  playButton.addEventListener('click', async () => {
+    if (playbackState === 'playing') {
+      player.pause();
+      playbackState = 'paused';
+      syncPlayback();
+      return;
+    }
+    const request = ++playbackRequest;
+    playbackDocument = score;
+    playbackSnapshot = JSON.stringify(score);
+    playbackState = 'loading';
+    syncPlayback();
+    try {
+      // Unlock audio within the user gesture, before waiting for the lazy import or samples.
+      audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+      const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
+      if (request !== playbackRequest) return;
+      player ||= createPlayer(audioContext, vendorUrl, () => { playbackState = 'idle'; playbackTrack = null; syncPlayback(); });
+      const track = playbackTrack || await player.prepare(score, M);
+      if (request !== playbackRequest) return;
+      playbackTrack = track;
+      playbackState = 'playing';
+      player.play(track);
+      syncPlayback();
+    } catch (error) {
+      if (request !== playbackRequest) return;
+      resetPlayback();
+      say(t.playbackError);
+    }
+  });
+  window.addEventListener('pagehide', resetPlayback);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) resetPlayback(); });
+
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
     const shown = { repeats: !settings || toolOn('repeats'), dynamics: !settings || toolOn('dynamics'), barre: guitar };
     barlines.querySelectorAll('[data-group]').forEach((button) => { if (button.dataset.group) button.hidden = !shown[button.dataset.group]; });
     tabToggle.hidden = !guitar;
+    playButton.hidden = !settings || !toolOn('playback', false);
+    if (playButton.hidden && playbackState !== 'idle') resetPlayback();
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
   }
 
@@ -4206,6 +4273,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       ['repeats', t.toolsRepeats, (item) => item.kind === 'bar' || item.kind === 'navigation'],
       ['dynamics', t.toolsDynamics, (item) => item.kind === 'hairpin'],
       ['voices', t.toolsVoices, () => false, false],
+      ['playback', t.toolsPlayback, () => false, false],
     ];
     const toolsHeading = document.createElement('p');
     toolsHeading.className = 'score-settings-heading score-settings-title';
@@ -4238,6 +4306,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           swatch.textContent = button.textContent;
           icons.appendChild(swatch);
         });
+      }
+      if (name === 'playback') {
+        const icon = document.createElement('span');
+        icon.className = 'score-settings-icon';
+        icon.innerHTML = lucide('play');
+        icons.appendChild(icon);
       }
       check.addEventListener('change', () => {
         M.setTool(score, name, check.checked);

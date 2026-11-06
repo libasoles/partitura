@@ -1984,7 +1984,9 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 /* The voice swatches are smaller than the other icons, so the row gets the same breathing room. */
 .score-settings-icons:has(.score-voice-swatch) { padding: 0.6rem 0.5rem 0.4rem; }
 
-.score-settings-toggle svg { display: block; margin: auto; }
+.score-settings-toggle svg, .score-playback svg { display: block; margin: auto; }
+.score-playback { cursor: pointer; }
+.score-playback[aria-busy="true"] { opacity: 0.5; cursor: progress; }
 
 /* Voces: cada figura lleva el color de su voz; la barra de voces va a la izquierda del primer pentagrama. */
 .score-page { --voice-1: #b5472f; --voice-2: #c8922e; --voice-3: #3f7d5a; --voice-4: #3a5f9e; }

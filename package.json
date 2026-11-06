@@ -66,6 +66,7 @@
     "scripts/lib/chords-data.mjs",
     "lib",
     "public/vendor/jspdf.umd.min.js",
+    "public/vendor/audio",
     "src/lib/staff.js",
     "docs/shared-editor.md"
   ],

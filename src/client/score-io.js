@@ -1,3 +1,5 @@
+import { soundingNotes } from './score-notes.js';
+
 /* score-io.js — Cargar y exportar partituras: MusicXML (leer) y MIDI (leer y escribir).
    El MusicXML de salida ya lo arma ScoreModel.toMusicXml; aca solo se traduce desde y hacia otros formatos.
    Sin estado: recibe el modelo (`M`) y devuelve partituras ya saneadas. */
@@ -11,7 +13,6 @@ const api = (function () {
   const ACC_ALTER = { '#': 1, b: -1, n: 0, '##': 2, bb: -2 };
   const SHARP_SPELL = [[0, 0], [0, 1], [1, 0], [1, 1], [2, 0], [3, 0], [3, 1], [4, 0], [4, 1], [5, 0], [5, 1], [6, 0]];
   const FLAT_SPELL = [[0, 0], [1, -1], [1, 0], [2, -1], [2, 0], [3, 0], [4, -1], [4, 0], [5, -1], [5, 0], [6, -1], [6, 0]];
-  const SEMITONES = [0, 2, 4, 5, 7, 9, 11];
 
   // ---- MusicXML -> partitura ----------------------------------------------
 
@@ -424,34 +425,7 @@ const api = (function () {
   }
 
   function toMidi(score, M) {
-    const sounding = [];
-    // Cada pentagrama suena en su canal, para que dos notas iguales de los dos no se corten entre si.
-    const staves = M.stavesOf(score);
-    for (let staff = 0; staff < staves; staff += 1) {
-      const tied = new Map(); // altura -> nota que sigue sonando por una ligadura
-      let origin = 0;
-      M.measures(score, staff).forEach((measure, mi) => {
-        const starts = M.onsets(measure);
-        const accidentals = new Map();
-        const order = measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]);
-        order.forEach((i) => {
-          const ev = measure[i];
-          if (ev.rest) return;
-          if (ev.acc) accidentals.set(ev.n, M.ACCIDENTALS[ev.acc].alter);
-          const alter = accidentals.has(ev.n) ? accidentals.get(ev.n) : M.keyAlter(ev.n, score, mi);
-          // `n` ya es la altura que escribe el MusicXML (la que suena), con cualquier clave: el 8 de la clave de guitarra solo cambia el dibujo.
-          const midi = 12 * Math.floor(ev.n / 7) + SEMITONES[ev.n % 7] + alter;
-          const start = origin + starts[i];
-          const size = M.length(ev);
-          let note = tied.get(midi);
-          if (note && note.end === start) note.end = start + size;
-          else sounding.push(note = { midi, start, end: start + size, channel: staff });
-          if (ev.tie) tied.set(midi, note);
-          else tied.delete(midi);
-        });
-        origin += M.capacity(score, mi);
-      });
-    }
+    const sounding = soundingNotes(score, M);
 
     const events = [];
     sounding.forEach((note) => {
@@ -470,7 +444,7 @@ const api = (function () {
     meta(0x59, [M.keyAt(score, 0) & 0xff, 0]);
     // Piano de cola acustico para el piano; guitarra de cuerdas de nylon para la guitarra.
     const program = M.instrumentOf(score) === 'piano' ? 0 : 24;
-    for (let channel = 0; channel < staves; channel += 1) track.push(0, 0xc0 | channel, program);
+    for (let channel = 0; channel < M.stavesOf(score); channel += 1) track.push(0, 0xc0 | channel, program);
     let previous = 0;
     events.forEach((ev) => {
       track.push(...varLen(ev.tick - previous), ...ev.data);
