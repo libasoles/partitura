@@ -6,26 +6,41 @@ async function open(page) {
 }
 
 test('settings stay inside a short viewport and all options remain reachable by scrolling', async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 1000 });
   await open(page);
   await page.locator('#scoreSettingsToggle').click();
   const popup = page.locator('#scoreSettingsPopup');
   const category = (name) => popup.locator('.score-settings-category').filter({ has: page.getByRole('checkbox', { name, exact: true }) });
-  for (const [left, right] of [['Repetición', 'Dinámica'], ['Voces', 'Reproducción']]) {
+  for (const [left, right] of [['Voces', 'Reproducción'], ['Reproducción', 'Intervalos']]) {
     const a = await category(left).boundingBox();
     const b = await category(right).boundingBox();
     expect(a.y).toBe(b.y);
-    expect(a.x + a.width).toBeLessThan(b.x);
+    expect(b.x - a.x - a.width).toBeGreaterThan(0);
+    expect(b.x - a.x - a.width).toBeLessThanOrEqual(20);
   }
-  await expect(category('Intervalos').locator('.score-settings-icon')).toHaveText('V');
-  await page.setViewportSize({ width: 1100, height: 360 });
+  const repeats = await category('Repetición').boundingBox();
+  const grid = await popup.locator('.score-settings-tools').boundingBox();
+  expect(repeats.width).toBe(grid.width);
+  const repeatIcons = await category('Repetición').locator('.score-settings-icon').evaluateAll((icons) => icons.map((el) => el.getBoundingClientRect().top));
+  expect(new Set(repeatIcons).size).toBe(1);
+  await expect(category('Intervalos').locator('svg path')).toHaveAttribute('d', 'm6 4 5.765 15.835a.25.25 0 00.47 0L18 4');
+  await page.setViewportSize({ width: 1600, height: 360 });
   await expect.poll(async () => {
     const box = await popup.boundingBox();
     return box.y >= 8 && box.y + box.height <= 352;
   }).toBe(true);
-  expect(await popup.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
-  await popup.hover();
+  const content = popup.locator('.score-settings-content');
+  expect(await content.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  await content.hover();
   await page.mouse.wheel(0, 1000);
-  await expect.poll(() => popup.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  await expect.poll(() => content.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  const library = popup.getByRole('checkbox', { name: 'Biblioteca de patrones', exact: true });
+  const libraryBox = await library.boundingBox();
+  const popupBox = await popup.boundingBox();
+  expect(libraryBox.y).toBeGreaterThan(popupBox.y);
+  expect(libraryBox.y + libraryBox.height).toBeLessThan(popupBox.y + popupBox.height);
+  await library.check();
+  await expect(page.locator('.score-library')).toBeVisible();
   const intervals = popup.getByRole('checkbox', { name: 'Intervalos', exact: true });
   await intervals.check();
   await page.evaluate(() => window.ScoreStore.flush());

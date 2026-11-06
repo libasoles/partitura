@@ -4429,6 +4429,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     popup.setAttribute('role', 'dialog');
     popup.setAttribute('aria-label', t.settings);
 
+    const content = document.createElement('div');
+    content.className = 'score-settings-content';
+    popup.appendChild(content);
+
     const cog = document.createElement('button');
     cog.type = 'button';
     cog.id = 'scoreSettingsToggle';
@@ -4445,7 +4449,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     title.className = 'score-settings-heading-main';
     title.innerHTML = `${lucide('settings')}<span></span>`;
     title.lastChild.textContent = t.settings;
-    popup.appendChild(title);
+    content.appendChild(title);
 
     // Cada ajuste es una seccion: su nombre y, debajo, sus opciones en horizontal.
     function section(label, tag = 'p') {
@@ -4459,7 +4463,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       row.setAttribute('role', 'group');
       row.setAttribute('aria-label', label);
       wrap.append(name, row);
-      popup.appendChild(wrap);
+      content.appendChild(wrap);
       return row;
     }
 
@@ -4523,13 +4527,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const toolsHeading = document.createElement('p');
     toolsHeading.className = 'score-settings-heading score-settings-title';
     toolsHeading.textContent = t.settingsTools;
-    popup.appendChild(toolsHeading);
+    content.appendChild(toolsHeading);
     const toolsGrid = document.createElement('div');
     toolsGrid.className = 'score-settings-tools';
-    popup.appendChild(toolsGrid);
+    content.appendChild(toolsGrid);
     const checks = categories.map(([name, label, belongs, fallback = true]) => {
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section score-settings-category';
+      wrap.dataset.category = name;
       const field = document.createElement('label');
       const check = document.createElement('input');
       check.type = 'checkbox';
@@ -4569,7 +4574,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         const icon = document.createElement('span');
         icon.className = 'score-settings-icon score-settings-intervals';
         icon.setAttribute('aria-hidden', 'true');
-        icon.textContent = 'V';
+        icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-letter-v preview-icon"><path d="m6 4 5.765 15.835a.25.25 0 00.47 0L18 4"/></svg>';
         icons.appendChild(icon);
       }
       check.addEventListener('change', () => {
@@ -4599,7 +4604,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       wrap.hidden = !LIBRARY_PAGE.matches;
       LIBRARY_PAGE.addEventListener('change', () => { wrap.hidden = !LIBRARY_PAGE.matches; applyLibrary(); });
       wrap.append(field, hint);
-      popup.appendChild(wrap);
+      content.appendChild(wrap);
     }
 
     // Cada glifo se recorta a su tinta: la caja comun deja mas aire arriba en unos que en otros
@@ -4608,7 +4613,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     function fitIcons() {
       if (fitted) return;
       fitted = true;
-      popup.querySelectorAll('.score-settings-icon svg').forEach((svg) => {
+      popup.querySelectorAll('.score-settings-icon svg:not(.lucide)').forEach((svg) => {
         try {
           const box = svg.getBBox();
           if (!box.width || !box.height) return;
@@ -4632,6 +4637,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     function positionSettings() {
       if (!popup.matches(':popover-open')) return;
       // Se abre a la izquierda del engranaje, que esta pegado al borde derecho.
+      popup.style.setProperty('--settings-height', Math.max(0, window.innerHeight - 16) + 'px');
       const anchor = cog.getBoundingClientRect();
       const box = popup.getBoundingClientRect();
       popup.style.left = Math.max(8, Math.min(anchor.left - box.width - 12, window.innerWidth - box.width - 8)) + 'px';

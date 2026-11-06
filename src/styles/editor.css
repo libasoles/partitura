@@ -1812,16 +1812,23 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   max-height: calc(100vh - 1rem);
   max-height: calc(100dvh - 1rem);
   margin: 0;
-  padding: 1.1rem 1.25rem 1.25rem;
-  overflow: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  padding: 0;
+  overflow: hidden;
   color: var(--ink);
   background: var(--paper);
   border: 1px solid var(--rule);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgb(0 0 0 / 12%);
   font-family: var(--sans);
+}
+
+.score-settings-content {
+  box-sizing: border-box;
+  max-height: calc(var(--settings-height, 100dvh - 1rem) - 2px);
+  padding: 1.1rem 1.25rem 1.25rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .score-settings-popup h2 {
@@ -1842,11 +1849,14 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 /* Pair related tools to keep the settings compact. */
 .score-settings-tools {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem 1rem;
+  grid-template-columns: max-content max-content minmax(max-content, 1fr);
+  gap: 0.5rem 1.25rem;
 }
 .score-settings-tools > * { min-width: 0; }
-.score-settings-intervals { font-size: 1.75rem; font-weight: 600; }
+.score-settings-category[data-category="repeats"],
+.score-settings-category[data-category="dynamics"] { grid-column: 1 / -1; }
+.score-settings-category[data-category="repeats"] .score-settings-icons { flex-wrap: nowrap; }
+.score-settings-intervals svg { width: 24px; height: 24px; }
 
 /* Tool categories share one heading and carry no divider of their own. */
 .score-settings-section.score-settings-category { margin-top: 0.6rem; padding-top: 0; border-top: 0; }
