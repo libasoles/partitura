@@ -16,7 +16,7 @@ async function notes(page, staff = 0) {
   }, staff);
 }
 
-test('lyrics are typed under the notes and advance with space and hyphen', async ({ page }) => {
+test('lyrics are typed under the notes and advance with space; a hyphen stays in the syllable', async ({ page }) => {
   await open(page);
   await notes(page);
   await page.locator('[data-tool="lyric"]').click({ position: { x: 5, y: 5 } });
@@ -24,10 +24,10 @@ test('lyrics are typed under the notes and advance with space and hyphen', async
   await page.mouse.click(note.x + note.width / 2, note.y + note.height / 2);
   const draft = page.locator('.score-lyric-draft');
   await expect(draft).toBeFocused();
-  await page.keyboard.type('glo-ri-a pa');
+  await page.keyboard.type('glo ri en-a pa');
   await draft.press('Enter');
   expect(await page.evaluate(() => window.scoreEditor.score.lyrics)).toEqual({
-    0: [{ at: 0, text: 'glo', hy: true }, { at: 24, text: 'ri', hy: true }, { at: 48, text: 'a' }, { at: 72, text: 'pa' }],
+    0: [{ at: 0, text: 'glo' }, { at: 24, text: 'ri' }, { at: 48, text: 'en-a' }, { at: 72, text: 'pa' }],
   });
   await expect(page.locator('#scoreStage g.verse')).toHaveCount(4);
   await expect(page.locator('.score-lyric-trigger')).toHaveCount(4);

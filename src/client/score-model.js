@@ -1474,7 +1474,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // Letras: una silaba escrita bajo una nota (`score.lyrics[mi]`, lista ordenada por pentagrama y `at`). Una por nota y pentagrama.
-  // `s` es el pentagrama (0 no se guarda) y `hy` indica que la silaba sigue en la proxima nota (se dibuja un guion).
+  // `s` es el pentagrama (0 no se guarda). Un guion escrito es parte del texto ("en-a" en una nota); entre notas no se dibujan guiones.
   // Cada instrumento escribe letra en el pentagrama de arriba; Voces, en cada uno de los que muestra.
   function lyricStaves(score) {
     return instrumentOf(score) === 'voices' ? stavesOf(score) : 1;
@@ -1486,12 +1486,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return ((score.lyrics && score.lyrics[mi]) || []).find((lyric) => lyric.at === at && (lyric.s || 0) === staff);
   }
 
-  // Un guion final ("glo-") marca que la palabra sigue; el guion no es parte del texto guardado.
   function parseLyric(text) {
     text = typeof text === 'string' ? text.trim() : '';
-    const hy = /-$/.test(text);
-    if (hy) text = text.replace(/-+$/, '').trim();
-    return text && text.length <= MAX_LYRIC ? { text, hy } : null;
+    return text && text.length <= MAX_LYRIC ? { text } : null;
   }
 
   function setLyric(score, mi, at, text, staff = 0) {
@@ -1501,7 +1498,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const starts = onsets(measure);
     if (!measure.some((ev, i) => starts[i] === at && !ev.rest)) return false;
     const list = ((score.lyrics && score.lyrics[mi]) || []).filter((lyric) => lyric.at !== at || (lyric.s || 0) !== staff);
-    list.push(Object.assign({ at, text: parsed.text }, staff ? { s: staff } : {}, parsed.hy ? { hy: true } : {}));
+    list.push(Object.assign({ at, text: parsed.text }, staff ? { s: staff } : {}));
     if (!score.lyrics) score.lyrics = {};
     score.lyrics[mi] = list.sort(lyricOrder);
     return true;
@@ -1534,7 +1531,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return spots[here + (back ? -1 : 1)] || null;
   }
 
-  // Reparte una letra ya dividida en silabas ([{ text, hy }]) desde la nota { mi, at }, una por nota, atravesando compases.
+  // Reparte una letra ya dividida en silabas ([{ text }]) desde la nota { mi, at }, una por nota, atravesando compases.
   // Sobrescribe las silabas que pisa. Devuelve cuantas puso y cuantas quedaron sin nota, o null si el origen no es una nota.
   function distributeLyrics(score, mi, at, staff, syllables) {
     const spots = lyricSpots(score, staff);
@@ -1544,20 +1541,18 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     for (const syllable of syllables) {
       const spot = spots[first + placed];
       if (!spot) break;
-      if (!setLyric(score, spot.mi, spot.at, syllable.text + (syllable.hy ? '-' : ''), staff)) break;
+      if (!setLyric(score, spot.mi, spot.at, syllable.text, staff)) break;
       placed += 1;
     }
     return { placed, left: syllables.length - placed };
   }
 
-  // Silabas de un pentagrama en orden de lectura, con su posicion en la palabra para MusicXML: single | begin | middle | end.
+  // Silabas de un pentagrama por compas y tiempo, para MusicXML. Siempre `single`: Verovio solo dibuja guiones entre silabas encadenadas.
   function lyricMap(score, staff) {
     const map = new Map();
-    let open = false;
-    Object.keys(score.lyrics || {}).map(Number).sort((a, b) => a - b).forEach((mi) => {
+    Object.keys(score.lyrics || {}).map(Number).forEach((mi) => {
       score.lyrics[mi].filter((lyric) => (lyric.s || 0) === staff).forEach((lyric) => {
-        map.set(mi + ':' + lyric.at, { text: lyric.text, syllabic: open ? (lyric.hy ? 'middle' : 'end') : (lyric.hy ? 'begin' : 'single') });
-        open = Boolean(lyric.hy);
+        map.set(mi + ':' + lyric.at, { text: lyric.text, syllabic: 'single' });
       });
     });
     return map;
@@ -2202,7 +2197,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         const staff = lyric && lyric.s ? lyric.s : 0;
         const parsed = lyric && parseLyric(lyric.text);
         if (!Number.isInteger(at) || at < 0 || at >= capacity(meterContext, +index) || !parsed || !Number.isInteger(staff) || staff < 0 || staff >= MAX_PARTS || kept.some((other) => other.at === at && (other.s || 0) === staff)) return;
-        kept.push(Object.assign({ at, text: parsed.text }, staff ? { s: staff } : {}, parsed.hy || lyric.hy === true ? { hy: true } : {}));
+        kept.push(Object.assign({ at, text: parsed.text }, staff ? { s: staff } : {}));
       });
       if (kept.length) lyrics[index] = kept.sort(lyricOrder);
     });

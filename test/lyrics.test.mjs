@@ -14,10 +14,9 @@ const withNotes = (instrument, staff = 0) => {
 test('a syllable is stored per measure, staff and time, only on notes', () => {
   const score = withNotes('guitarra');
   assert.ok(M.setLyric(score, 0, 24, 'la'));
-  assert.ok(M.setLyric(score, 0, 0, ' glo- '));
-  assert.deepEqual(score.lyrics, { 0: [{ at: 0, text: 'glo', hy: true }, { at: 24, text: 'la' }] });
+  assert.ok(M.setLyric(score, 0, 0, ' en-a '));
+  assert.deepEqual(score.lyrics, { 0: [{ at: 0, text: 'en-a' }, { at: 24, text: 'la' }] });
   assert.equal(M.setLyric(score, 0, 12, 'x'), false, 'no note there');
-  assert.equal(M.setLyric(score, 0, 0, '-'), false, 'only a hyphen');
   assert.equal(M.setLyric(score, 0, 0, 'x'.repeat(M.MAX_LYRIC + 1)), false);
   assert.equal(M.setLyric(score, 0, 0, 'a', 1), false, 'one staff only');
   assert.ok(M.removeLyric(score, 0, 0));
@@ -36,14 +35,14 @@ test('piano writes lyrics on the top staff only; voices on every visible staff',
   assert.deepEqual(choir.lyrics[0], [{ at: 0, text: 'a', s: 2 }]);
 });
 
-test('MusicXML marks begin, middle, end and single syllables', () => {
+test('MusicXML writes every syllable as single, so no hyphens are drawn between notes', () => {
   const score = withNotes('guitarra');
-  M.setLyric(score, 0, 0, 'glo-');
-  M.setLyric(score, 0, 24, 'ri-');
+  M.setLyric(score, 0, 0, 'glo');
+  M.setLyric(score, 0, 24, 'ri');
   M.setLyric(score, 0, 48, 'a');
   M.setLyric(score, 0, 72, 'sí');
   const xml = M.toMusicXml(score);
-  assert.deepEqual([...xml.matchAll(/<syllabic>(\w+)<\/syllabic><text>([^<]*)<\/text>/g)].map((m) => m[1] + ':' + m[2]), ['begin:glo', 'middle:ri', 'end:a', 'single:sí']);
+  assert.deepEqual([...xml.matchAll(/<syllabic>(\w+)<\/syllabic><text>([^<]*)<\/text>/g)].map((m) => m[1] + ':' + m[2]), ['single:glo', 'single:ri', 'single:a', 'single:sí']);
 });
 
 test('lyrics are escaped, reload from saved data and move with a measure split', () => {
