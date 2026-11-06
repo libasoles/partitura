@@ -2605,3 +2605,4 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   flex-direction: column;
   padding-left: 1.6rem;
 }
+.score-settings-interval-modes .score-settings-radio input { accent-color: var(--blue-france); }
