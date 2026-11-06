@@ -4,7 +4,7 @@
 
 import { stage, pitch, S, SP, beamGroup, pillInner, glyph, noteInner } from './demo.js';
 
-import { tutorialIcon } from './tutorial-icons.js';
+import { tutorialIcon, tutorialIconPaths } from './tutorial-icons.js';
 
 const SEL = 'var(--note-selected)';
 const INK = 'var(--ink)';
@@ -124,7 +124,9 @@ export function copy(s, aria) {
   const d = stage({ id: 'copy', T: 13 });
   const notes = phrase(d, [['E4', 'G4', 'A4', 'G4'].map((n) => q(n))], 36);
   notes.forEach((n, i) => {
-    if (i < 2) d.note(n.x, n.p, 'q', S(d.life(0.05), [[1.5, { c: INK }], [1.6, { c: SEL }], [4.9, { c: SEL }], [5.0, { c: INK }]]));
+    const clicked = i === 0 ? 1.5 : 2.4;
+    if (i < 2) d.note(n.x, n.p, 'q', S(d.life(0.05), [[clicked, { c: INK }], [clicked + 0.1, { c: SEL }], [4.9, { c: SEL }], [5.0, { c: INK }]]));
+    else d.note(n.x, n.p, 'q', d.life(0.05));
   });
   // The copies land right after the last selected note and become the selection.
   [2, 3].forEach((slot, k) => {
@@ -165,7 +167,10 @@ export function ties(s, aria) {
   const d = stage({ id: 'tie', T: 13 });
   const t = s.scoreUiStrings;
   const notes = phrase(d, [[q('G4'), q('G4'), q('A4'), q('B4')]], 40);
-  notes.forEach((n, i) => d.note(n.x, n.p, 'q', i < 2 ? S(d.life(0.05), [[2.4, { c: INK }], [2.5, { c: SEL }], [5.8, { c: SEL }], [5.9, { c: INK }]]) : d.life(0.05)));
+  notes.forEach((n, i) => {
+    const clicked = i === 0 ? 1.5 : 2.4;
+    d.note(n.x, n.p, 'q', i < 2 ? S(d.life(0.05), [[clicked, { c: INK }], [clicked + 0.1, { c: SEL }], [5.8, { c: SEL }], [5.9, { c: INK }]]) : d.life(0.05));
+  });
   const a = notes[0];
   const b = notes[1];
   const y = d.y(a.p) + SP * 0.9;
@@ -513,5 +518,230 @@ export function keyboardTie(s, aria) {
   d.add(0, 0, `<path class="d-tie" d="M${a + 5} ${y}Q${(a + b) / 2 + 5} ${y + 15} ${b + 5} ${y}"/>`, d.life(3.7, 8.2, 0.05), { keep: false, cls: 'd-keyboard-tie' });
   d.keycap('(', 26, 2, 3.5, 5.5);
   d.keycap(')', 26, 6.5, 8, 10);
+  return d.html(aria);
+}
+
+// ----- settings, playback and voices ---------------------------------------------------------------------------------
+
+const VOICE = ['#b5472f', '#c8922e', '#3f7d5a', '#3a5f9e'];
+const ACCENT = 'var(--accent)';
+
+/** A Lucide icon drawn inside a stage, centred on its origin. */
+const ico = (name, size = 12) =>
+  `<g transform="scale(${f2(size / 24)}) translate(-12 -12)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${tutorialIconPaths(name)}</g>`;
+const f2 = (n) => +n.toFixed(3);
+
+/** The spoken name of the space bar, as the tutorial text says it. */
+const SPACE = { Reproducir: 'Espacio', Play: 'Space', Reproduzir: 'Espaço' };
+
+/** A short ledger line under/over a head at staff position p. */
+const ledger = (d, x, p) => d.base(`<path class="d-line" d="M${f2(x - 4)} ${f2(d.y(p))}H${f2(x + 14)}"/>`);
+
+/** A small settings checkbox row; the tick shows from `tick`. */
+function checkRow(d, x, y, label, tick, until, stopsLife) {
+  d.add(x, y, `<rect class="d-field" x="-5" y="-5" width="10" height="10" rx="2"/><text class="d-menutext" x="10" y="3.5" font-size="9.5">${label}</text>`, stopsLife);
+  d.add(x, y, '<path d="M-3 0l2.4 2.6L3.4-2.6" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+    [[0, { o: 0 }], [tick, { o: 0 }], [tick + 0.15, { o: 1 }], [until, { o: 1 }], [until + 0.25, { o: 0 }]], { keep: false });
+}
+
+export function playbackEnable(s, aria) {
+  const u = s.scoreUiStrings;
+  const d = stage({ id: 'pb-enable', T: 12 });
+  const notes = phrase(d, [['E4', 'G4', 'A4', 'G4'].map((n) => q(n))], 24);
+  notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  d.add(d.w - 18, 16, `<rect class="d-pill" x="-10" y="-10" width="20" height="20" rx="5"/>${ico('settings', 13)}`, d.life(0.05));
+  d.add(168, 6, `<rect class="d-panel" width="146" height="64" rx="6"/><text class="d-menutext" x="10" y="16" font-size="9" font-weight="700">${u.settingsTools}</text>`, d.life(1.7, 6.6));
+  checkRow(d, 182, 38, u.toolsPlayback, 3.7, 6.6, d.life(1.7, 6.6));
+  d.add(284, 38, `<g transform="translate(-10 0)">${ico('play', 10)}</g><g transform="translate(6 0)">${ico('pause', 10)}</g>`, d.life(1.7, 6.6));
+  d.add(16, 14, `<circle class="d-pill" r="10"/>${ico('play', 11)}`, d.pop(6.9), { cls: 'd-play-button' });
+  d.pointer([[0.5, 150, 100], ...visit(1.4, d.w - 18, 16), ...visit(3.6, 182, 38), [8.2, d.w - 40, d.h - 20]]);
+  d.click(1.4, d.w - 18, 16);
+  d.click(3.6, 182, 38);
+  return d.html(aria);
+}
+
+export function playbackSetup(s, aria) {
+  const u = s.scoreUiStrings;
+  const d = stage({ id: 'pb-setup', T: 12 });
+  d.add(8, 8, `<rect class="d-panel" width="304" height="104" rx="6"/><text class="d-menutext" x="12" y="18" font-size="9" font-weight="700">${u.settingsInstrument}</text>
+    <text class="d-menutext" x="12" y="68" font-size="9" font-weight="700">${u.settingsTempo}</text>`, d.life(0.05));
+  // Instrument: piano is chosen, then guitar.
+  const radio = (x, name, label) => d.add(x, 38, `<circle class="d-field" r="5"/><g transform="translate(14 0)">${ico(name, 13)}</g><text class="d-menutext" x="26" y="3.5" font-size="9.5">${label}</text>`, d.life(0.05));
+  radio(26, 'piano', u.instrumentPiano);
+  radio(150, 'guitar', u.instrumentGuitar);
+  d.add(26, 38, '<circle class="d-active" r="2.6"/>', [[0, { o: 0 }], [0.1, { o: 1 }], [3.4, { o: 1 }], [3.5, { o: 0 }]], { keep: false });
+  d.add(150, 38, '<circle class="d-active" r="2.6"/>', [[0, { o: 0 }], [3.5, { o: 0 }], [3.6, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  // Tempo: the slider thumb travels and the label follows.
+  d.add(26, 86, '<rect x="0" y="-1.5" width="190" height="3" rx="1.5" fill="var(--rule)"/>', d.life(0.05));
+  d.add(26, 86, '<circle r="5.5" fill="var(--accent)"/>', [[0, { x: 70 }], [5.5, { x: 70 }], [8.5, { x: 135 }], [d.T - 0.7, { x: 135 }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  d.add(246, 86, `<text class="d-menutext" text-anchor="start" font-size="10" font-weight="600">♩ = 80</text>`, [[0, { o: 1 }], [7, { o: 1 }], [7.01, { o: 0 }], [d.T, { o: 0 }]], { keep: false });
+  d.add(246, 86, `<text class="d-menutext" text-anchor="start" font-size="10" font-weight="600">♩ = 132</text>`, [[0, { o: 0 }], [7, { o: 0 }], [7.01, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]], { keep: false });
+  d.pointer([[0.5, 280, 100], ...visit(3.4, 150, 38), [5.4, 96, 86], [8.5, 161, 86], [10.5, 280, 100]]);
+  d.click(3.4, 150, 38);
+  return d.html(aria);
+}
+
+/** A moving vertical line across the staff, like the playback bar. */
+function playhead(d, t0, x0, moves, y0 = d.y(9), y1 = d.y(-1)) {
+  const stops = [[0, { o: 0, x: 0 }], [t0, { o: 0, x: 0 }], [t0 + 0.1, { o: 1, x: 0 }]];
+  moves.forEach(([t, x]) => stops.push([t, { x }]));
+  stops.push([d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]);
+  d.add(x0, y0, `<path class="d-playhead" d="M0 0V${f2(y1 - y0)}"/>`, stops, { keep: false });
+}
+
+export function playbackPlay(s, aria) {
+  const u = s.scoreUiStrings;
+  const d = stage({ id: 'pb-play', T: 15 });
+  const notes = phrase(d, [['E4', 'G4', 'A4', 'G4'].map((n) => q(n)), ['F4', 'E4', 'D4', 'E4'].map((n) => q(n))], 30);
+  notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
+  const button = (name, stops) => d.add(16, 14, `<circle class="d-pill" r="10"/>${ico(name, 11)}`, stops);
+  button('play', [[0, { o: 1 }], [1.6, { o: 1 }], [1.61, { o: 0 }], [7.7, { o: 0 }], [7.71, { o: 1 }], [d.T, { o: 1 }]]);
+  button('pause', [[0, { o: 0 }], [1.6, { o: 0 }], [1.61, { o: 1 }], [7.6, { o: 1 }], [7.61, { o: 0 }]]);
+  const start = d.firstX - 6;
+  const end = notes[notes.length - 1].x - start + 22;
+  // It plays, a press on the space bar pauses it, and a click on an empty spot moves it.
+  playhead(d, 1.6, start, [[1.6, 0], [7.5, end * 0.62], [10.4, end * 0.62], [10.45, end * 0.28]]);
+  d.pointer([[0.5, 160, 104], ...visit(1.5, 16, 14), [3, 160, 104], [9.2, 160, 104], ...visit(10.3, start + end * 0.28, d.y(-2)), [12.5, 160, 104]]);
+  d.click(1.5, 16, 14);
+  d.click(10.3, start + end * 0.28, d.y(-2));
+  d.keycap(SPACE[u.play] ?? 'Space', 160, 5.8, 7.2, 8.7, { cap: true });
+  return d.html(aria);
+}
+
+export function playbackVoices(s, aria) {
+  const d = stage({ id: 'pb-voices', T: 14 });
+  const xs = [0, 1, 2, 3].map((i) => d.firstX + 8 + i * 42);
+  const top = ['G4', 'A4', 'B4', 'A4'];
+  const low = ['E4', 'E4', 'F4', 'E4'];
+  xs.forEach((x, i) => {
+    const t = 4.4 + i * 1.6;
+    d.note(x, pitch(top[i]), 'q', S(d.life(0.05), [[0, { c: VOICE[0] }], [t - 0.05, { c: VOICE[0] }], [t, { c: ACCENT }], [t + 0.7, { c: VOICE[0] }]]), { stemDown: false });
+    d.note(x, pitch(low[i]), 'q', S(d.life(0.05), [[0, { c: VOICE[2] }]]), { stemDown: true });
+  });
+  [1, 3].forEach((n, i) => d.add(d.w - 54 + i * 24, 16, `<circle r="9" fill="${i === 0 ? VOICE[0] : 'none'}" stroke="${VOICE[n === 3 ? 2 : 0]}" stroke-width="1.4"/><text class="d-captext" fill="${i === 0 ? '#fff' : VOICE[2]}" text-anchor="middle" dominant-baseline="central" font-size="9">${n === 3 ? 3 : 1}</text>`, d.life(0.05)));
+  playhead(d, 3.6, d.firstX - 4, [[3.6, 0], [10.3, 172]]);
+  d.pointer([[0.6, 200, 104], ...visit(1.6, d.w - 54, 16), [3, 200, 104], [11.5, 200, 104]]);
+  d.click(1.6, d.w - 54, 16);
+  return d.html(aria);
+}
+
+export function grandStaff(s, aria) {
+  const d = stage({ id: 'grand', T: 8, h: 124, staff: false });
+  const upper = 12;
+  const lower = 72;
+  const x1 = d.x1;
+  d.base(d.lines(d.x0 + 10, x1, upper) + d.lines(d.x0 + 10, x1, lower));
+  d.base(`<path class="d-bar" d="M${d.x0 + 10} ${upper}V${lower + 4 * SP}M${x1} ${upper}V${lower + 4 * SP}M${d.x0 + 150} ${upper}V${lower + 4 * SP}" stroke-width="1.1"/>`);
+  d.base(`<path class="d-bar" fill="none" stroke-width="1.8" d="M${d.x0 + 5} ${upper}Q${d.x0 - 2} ${(upper + lower + 4 * SP) / 2 - 20} ${d.x0 + 1} ${(upper + lower + 4 * SP) / 2}Q${d.x0 + 8} ${(upper + lower + 4 * SP) / 2 + 20} ${d.x0 + 5} ${lower + 4 * SP}"/>`);
+  d.base(glyph('E050', d.x0 + 14, upper + 3 * SP) + glyph('E062', d.x0 + 14, lower + SP));
+  const numerals = (top) => glyph('E084', d.x0 + 44, top + SP) + glyph('E084', d.x0 + 44, top + 3 * SP);
+  d.base(numerals(upper) + numerals(lower));
+  [['E4', 0], ['G4', 1], ['B4', 2], ['G4', 3]].forEach(([n, i]) =>
+    d.add(d.x0 + 64 + i * 20, upper + 4 * SP - (pitch(n) * SP) / 2, noteInner(pitch(n), 'q'), d.life(0.05 + i * 0.3)));
+  [3, 1, 3, 1].forEach((p, i) => d.add(d.x0 + 64 + i * 20, lower + 4 * SP - (p * SP) / 2, noteInner(p, 'q'), d.life(1.4 + i * 0.3)));
+  [['A4', 0], ['G4', 1], ['E4', 2], ['G4', 3]].forEach(([n, i]) =>
+    d.add(d.x0 + 164 + i * 20, upper + 4 * SP - (pitch(n) * SP) / 2, noteInner(pitch(n), 'q'), d.life(2.6 + i * 0.3)));
+  [2, 4, 2, 0].forEach((p, i) => d.add(d.x0 + 164 + i * 20, lower + 4 * SP - (p * SP) / 2, noteInner(p, 'q'), d.life(3.8 + i * 0.3)));
+  return d.html(aria);
+}
+
+// Voices -----------------------------------------------------------------------------------------------------------
+
+export function voicesSelect(s, aria) {
+  const d = stage({ id: 'voices-select', T: 13 });
+  const notes = phrase(d, [['E4', 'G4', 'B4', 'G4'].map((n) => q(n))], 40);
+  notes.forEach((n, i) => {
+    const t = i === 0 ? 1.5 : 3.4;
+    d.note(n.x, n.p, 'q', i < 3 ? S(d.life(0.05), [[t, { c: INK }], [t + 0.1, { c: SEL }], [10, { c: SEL }], [10.1, { c: INK }]]) : d.life(0.05));
+  });
+  d.pointer([[0.6, d.w - 30, d.h - 24], ...visit(1.5, notes[0].x + 5, d.y(notes[0].p)), ...visit(3.4, notes[2].x + 5, d.y(notes[2].p)), [5.2, d.w - 30, d.h - 24]]);
+  d.click(1.5, notes[0].x + 5, d.y(notes[0].p));
+  d.click(3.4, notes[2].x + 5, d.y(notes[2].p));
+  d.keycap('Shift', 30, 2.6, 3.3, 5.2);
+  return d.html(aria);
+}
+
+/** Shift+↑/↓ writes a third above or below; `notesList` is the melody, `dir` is +2 (above) or -2 (below). */
+function thirds(s, aria, id, names, steps) {
+  const d = stage({ id, T: 15 });
+  names.forEach((name, i) => {
+    const x = d.firstX + 30 + i * 55;
+    const p = pitch(name);
+    if (p <= -2) for (let l = -2; l >= p; l -= 2) ledger(d, x, l);
+    d.note(x, p, 'q', S(d.life(0.05), [[0, { c: SEL }], [4.2, { c: INK }]]), { stemDown: steps.some((st) => st.dir > 0) });
+    steps.forEach(({ dir, show, hide }) => {
+      const cp = p + dir;
+      if (cp <= -2) for (let l = -2; l >= cp; l -= 2) d.base(`<path class="d-line" d="M${f2(x - 4)} ${f2(d.y(l))}H${f2(x + 14)}"/>`);
+      d.note(x, cp, 'q', S(d.life(show, hide), [[0, { c: SEL }]]), { stemDown: dir < 0, keep: false });
+    });
+  });
+  steps.forEach(({ dir, show, hide }) => {
+    d.keycap('Shift', 30, show - 1.6, show - 0.4, show + 1.4);
+    d.keycap(dir > 0 ? '↑' : '↓', 70, show - 1.6, show - 0.4, show + 1.4);
+  });
+  return d.html(aria);
+}
+
+export function thirdAbove(s, aria) {
+  return thirds(s, aria, 'third-above', ['C4', 'D4', 'E4'], [{ dir: 2, show: 3.6, hide: 13.5 }]);
+}
+
+export function thirdBelow(s, aria) {
+  return thirds(s, aria, 'third-below', ['C4', 'D4', 'E4'], [{ dir: -2, show: 3.6, hide: 13.5 }]);
+}
+
+export function undoDuplicate(s, aria) {
+  const d = stage({ id: 'undo-duplicate', T: 13 });
+  ['E4', 'G4', 'A4'].forEach((name, i) => {
+    const x = d.firstX + 30 + i * 55;
+    const p = pitch(name);
+    d.note(x, p, 'q', d.life(0.05), { stemDown: true });
+    d.note(x, p + 2, 'q', S(d.life(2.2, 7.2, 0.05), [[0, { c: SEL }]]), { stemDown: false, keep: false });
+  });
+  d.keycap('Ctrl', 40, 5.2, 6.4, 8.8);
+  d.keycap('Z', 76, 5.2, 6.4, 8.8);
+  return d.html(aria);
+}
+
+export function voicesLegend(s, aria) {
+  const u = s.scoreUiStrings;
+  const d = stage({ id: 'voices-legend', T: 15, clef: 'G' });
+  const xs = [0, 1, 2, 3].map((i) => d.firstX + 14 + i * 40);
+  const top = ['G4', 'A4', 'B4', 'A4'];
+  const low = ['E4', 'E4', 'F4', 'E4'];
+  xs.forEach((x, i) => {
+    d.note(x, pitch(top[i]), 'q', S(d.life(0.05), [[0, { c: INK }], [3.4, { c: INK }], [3.5, { c: VOICE[0] }]]), { stemDown: false });
+    d.note(x, pitch(low[i]), 'q', S(d.life(0.05), [[0, { c: INK }], [3.4, { c: INK }], [3.5, { c: VOICE[2] }]]), { stemDown: true });
+  });
+  // The settings checkbox ticks, then the legend appears next to the clef.
+  d.add(176, 6, `<rect class="d-panel" width="140" height="30" rx="6"/>`, d.life(0.9, 4.2));
+  checkRow(d, 190, 21, u.toolsVoices, 2.4, 4.2, d.life(0.9, 4.2));
+  [[1, 0], [2, 2]].forEach(([n, ci], i) => {
+    d.add(d.w - 22, 40 + i * 20, `<circle r="7.5" fill="none" stroke="${VOICE[ci]}" stroke-width="1.3"/><text class="d-captext" fill="${VOICE[ci]}" text-anchor="middle" dominant-baseline="central" font-size="8">${n}</text>`, d.life(3.6), { keep: true });
+  });
+  d.pointer([[0.5, 200, 104], ...visit(2.3, 190, 21), [5, 200, 104]]);
+  d.click(2.3, 190, 21);
+  return d.html(aria);
+}
+
+export function reassignVoice(s, aria) {
+  const u = s.scoreUiStrings;
+  const d = stage({ id: 'reassign', T: 14, h: 130 });
+  const xs = [0, 1, 2, 3].map((i) => d.firstX + 14 + i * 40);
+  const melody = ['G4', 'A4', 'E4', 'A4'];
+  const bass = ['E4', 'E4', 'E4', 'E4'];
+  xs.forEach((x, i) => {
+    const wrong = i === 2;
+    d.note(x, pitch(melody[i]), 'q', S(d.life(0.05), [[0, { c: wrong ? VOICE[1] : VOICE[0] }], [6.4, { c: wrong ? VOICE[1] : VOICE[0] }], [6.5, { c: VOICE[0] }]]), { stemDown: false });
+    if (!wrong) d.note(x, pitch(bass[i]), 'q', d.life(0.05), { stemDown: true });
+  });
+  const wx = xs[2];
+  const wy = d.y(pitch('E4'));
+  d.add(wx, wy, noteInner(pitch('E4'), 'q', { stemDown: false }), S(d.life(1.3, 6.4), [[0, { c: SEL }]]), { keep: false });
+  const label = (u.assignVoice || '').replace('{n}', '1');
+  d.add(wx - 40, wy + 8, `<rect class="d-panel" width="${Math.max(100, label.length * 5.4 + 24)}" height="26" rx="6"/><circle cx="14" cy="13" r="7" fill="${VOICE[0]}"/><text class="d-captext" x="14" y="13" fill="#fff" text-anchor="middle" dominant-baseline="central" font-size="8">1</text><text class="d-menutext d-menutext--hot" x="27" y="16.5" font-size="9">${label}</text>`, d.life(3.2, 6.4));
+  d.pointer([[0.5, 280, 112], ...visit(1.3, wx + 5, wy), ...visit(4.3, wx + 10, wy + 21), [7.5, 280, 112]]);
+  d.click(1.3, wx + 5, wy);
+  d.click(4.3, wx + 10, wy + 21);
   return d.html(aria);
 }

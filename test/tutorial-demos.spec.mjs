@@ -74,3 +74,23 @@ test('the expanded tutorials fit narrow screens and show a complete reduced-moti
     }
   }
 });
+
+test('copy colours only the notes that were clicked, at the moment they are clicked', async ({ page }) => {
+  await page.goto('/es/tutoriales/copy/');
+  const demo = page.locator('.tutorial-demo').first();
+  const colors = () => demo.locator('[style*="copy-"]').evaluateAll(nodes => nodes.slice(0, 2).map(n => getComputedStyle(n).color));
+  await frame(page, 2);
+  const [first, second] = await colors();
+  expect(first).not.toBe(second);
+});
+
+test('key presses show a fingertip and the menu keeps dots after accidentals and shortcuts last', async ({ page }) => {
+  await page.goto('/es/tutoriales/voices/');
+  expect(await page.locator('.tutorial-demo').count()).toBeGreaterThanOrEqual(7);
+  await frame(page, 3.7);
+  expect(await page.locator('.d-finger-actor').count()).toBeGreaterThan(0);
+  const links = await page.locator('nav a[href*="/es/tutoriales/"]').evaluateAll(nodes => nodes.map(n => n.getAttribute('href')));
+  const at = slug => links.findIndex(href => href.includes(`/${slug}/`));
+  expect(at('dots')).toBe(at('accidentals') + 1);
+  expect(at('shortcuts')).toBeGreaterThan(at('playback'));
+});

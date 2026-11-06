@@ -256,3 +256,30 @@ button.tutorial-voice { cursor: pointer; min-width: 2.75rem; min-height: 2.75rem
 .d-toast { fill: #fff; stroke: #ddd; stroke-width: 0.8; filter: drop-shadow(0 2px 3px #0002); }
 .d-toast-text { fill: #222; font-family: var(--sans); }
 .d-toast-close { stroke: #666; stroke-width: 0.8; fill: none; }
+
+/* The settings popup's own controls, redrawn beside each step that explains them (src/lib/settings-items.js). */
+.tutorial-setting {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.9rem;
+  max-width: 22rem; margin: 0.8rem 0 1.2rem; padding: 0.75rem 0.9rem;
+  border: 1px solid var(--rule); border-radius: 0.6rem; background: var(--paper);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.08); color: var(--ink); font-size: 0.92rem;
+}
+.tutorial-setting p { margin: 0; color: inherit; }
+.ts-title { flex-basis: 100%; font-weight: 600; font-size: 0.82rem; }
+.ts-row { display: flex; gap: 1.2rem; }
+.ts-check, .ts-radio { display: inline-flex; align-items: center; gap: 0.45rem; }
+.ts-check { flex: 0 0 auto; }
+.ts-check input, .ts-radio input { margin: 0; accent-color: var(--accent-brand, var(--accent)); opacity: 1; }
+.ts-radio.is-on { font-weight: 600; color: var(--accent-brand, var(--accent)); }
+.ts-icons, .ts-cog { display: inline-flex; align-items: center; gap: 0.35rem; }
+.ts-icons .tutorial-voice { width: 1.4em; height: 1.4em; font-size: 0.85em; }
+.ts-heading { font-size: 1.15rem; font-weight: 700; }
+.ts-cog { padding: 0.35rem; border: 1px solid var(--rule); border-radius: 0.4rem; }
+.ts-slider { display: flex; align-items: center; gap: 0.7rem; flex-basis: 100%; }
+.ts-slider input { flex: 1; accent-color: var(--accent-brand, var(--accent)); }
+.ts-slider output { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ts-hint { flex-basis: 100%; font-size: 0.78rem; color: var(--ink-soft); }
+.tutorial-voice[data-number="3"] { --voice: #3f7d5a; }
+.tutorial-voice[data-number="4"] { --voice: #3a5f9e; }
+.d-finger { fill: var(--paper); stroke: var(--ink); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.d-playhead { stroke: var(--accent); stroke-width: 1.4; }

@@ -1,11 +1,13 @@
 import type { Strings } from '../i18n';
 import { renderShortcutDiagram, renderShortcuts, renderDot, renderBar, renderTabEdit, renderTabMove } from './score-tutorial.js';
 import { highlightTutorialKeys } from './tutorial-keys.js';
+import { tutorialIcon } from './tutorial-icons.js';
+import { settingsItem } from './settings-items.js';
 import * as demos from './demos.js';
 
 /** The sidebar: every tutorial, grouped. The order here is the reading order of "previous" and "next". */
 export const categories = [
-  { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'accidentals', 'shortcuts', 'dots', 'settings', 'playback'] },
+  { id: 'basics', slugs: ['start', 'features', 'notes-rests', 'accidentals', 'dots', 'settings', 'playback', 'shortcuts'] },
   { id: 'editing', slugs: ['select-move', 'copy', 'voices', 'patterns', 'tuplets', 'ties'] },
   { id: 'structure', slugs: ['signatures', 'measures', 'delete-barline', 'repeats', 'dynamics'] },
   { id: 'guitar', slugs: ['tab-toggle', 'edit-tab', 'move-tab', 'refinger', 'chords', 'barre'] },
@@ -45,13 +47,26 @@ const animated: Partial<Record<Slug, Demo>> = {
   scores: demos.scores,
 };
 
-const demo = (draw: Demo, s: Strings, label: string) => `<div class="tutorial-demo">${draw(s, label.replace(/<[^>]*>/g, ''))}</div>`;
+const demo = (draw: Demo, s: Strings, label: string) => `<div class="tutorial-demo">${draw(s, label.replace(/<[^>]*>|\{\{icon:[\w-]+\}\}/g, ''))}</div>`;
 
 const figure = (slug: Slug, s: Strings) => (animated[slug] ? `<div class="tutorial-demo">${animated[slug]!(s, s.tutorials.items[slug][0])}</div>` : '');
 
-const illustrations: Partial<Record<Slug, Record<number, Demo>>> = {
+const settingItem = (name: string): Demo => (s) => settingsItem(name, s);
+
+/** Demos placed under a given step (1st = index 0) of a tutorial, drawn in order. */
+const illustrations: Partial<Record<Slug, Record<number, Demo | Demo[]>>> = {
   'notes-rests': { 1: demos.dragFigure, 2: demos.prepend, 6: demos.fillRests },
   accidentals: { 2: demos.selectedAccidental, 3: demos.doubleDot },
+  settings: {
+    0: settingItem('open'), 1: settingItem('instrument'), 2: settingItem('tempo'), 3: settingItem('tools'), 4: settingItem('voices'),
+    5: demos.grandStaff, 6: settingItem('playback'), 7: settingItem('library'),
+  },
+  playback: { 0: demos.playbackEnable, 1: demos.playbackSetup, 2: demos.playbackPlay, 4: demos.playbackVoices },
+  copy: { 2: [demos.duplicateVoice, demos.adjustCopy] },
+  voices: {
+    0: demos.voicesSelect, 1: demos.duplicateVoice, 2: demos.adjustCopy, 3: [demos.thirdAbove, demos.thirdBelow],
+    4: demos.undoDuplicate, 5: demos.voicesLegend, 7: demos.reassignVoice,
+  },
 };
 
 function guide(slug: Slug, s: Strings): string {
@@ -61,8 +76,8 @@ function guide(slug: Slug, s: Strings): string {
     figure(slug, s) +
     `<h2 class="tutorial-h">${t.stepsHeading}</h2>` +
     `<ol class="tutorial-list">${body.steps.map((step, i) => {
-      const draw = illustrations[slug]?.[i];
-      return `<li>${step}${draw ? demo(draw, s, step) : ''}</li>`;
+      const draws = [illustrations[slug]?.[i] ?? []].flat();
+      return `<li>${step}${draws.map((draw) => demo(draw, s, step)).join('')}</li>`;
     }).join('')}</ol>` +
     (body.tip ? `<p class="tutorial-tip"><strong>${t.tipLabel}:</strong> ${body.tip}</p>` + (slug === 'notes-rests' ? demo(demos.fullMeasure, s, body.tip) : '') : '')
   );
@@ -92,8 +107,11 @@ function rawTutorialBody(slug: Slug, s: Strings): string {
   }
 }
 
+/** `{{icon:name}}` in a string becomes the editor's icon for that tool, on the text line. */
+const withIcons = (html: string) => html.replace(/\{\{icon:([\w-]+)\}\}/g, (_, name) => tutorialIcon(name));
+
 export function tutorialBody(slug: Slug, s: Strings): string {
-  return highlightTutorialKeys(rawTutorialBody(slug, s));
+  return withIcons(highlightTutorialKeys(rawTutorialBody(slug, s)));
 }
 
 /** Topically close tutorials, shown below each guide with descriptive anchor text (in addition to previous/next). */

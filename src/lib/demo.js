@@ -6,6 +6,7 @@
    tutorial carries the instructions. */
 
 import { GLYPHS } from './glyphs.js';
+import { tutorialIconPaths } from './tutorial-icons.js';
 
 export const SP = 9; // a staff space, in px
 const G = SP / 250; // glyph units (1000 per em, so a space is 250) to px
@@ -220,6 +221,11 @@ export function stage(o) {
       [press, { c: 'var(--ink-soft)', y: 0 }], [press + 0.08, { c: 'var(--accent)', y: 1.2 }], [press + 0.5, { c: 'var(--accent)', y: 1.2 }], [press + 0.62, { c: 'var(--ink-soft)', y: 0 }],
       [hide, { o: 1 }], [hide + 0.25, { o: 0 }],
     ], { keep: false });
+    // A fingertip taps the cap at the moment it lights up: the Lucide pointer, its tip on the key.
+    d.add(kx + 1, ky + 1, `<g transform="scale(0.6) translate(-9 -3)" class="d-finger-icon"><g class="d-finger" fill="var(--paper)">${tutorialIconPaths('pointer')}</g></g>`, [
+      [0, { o: 0, y: 5 }], [press - 0.25, { o: 0, y: 5 }], [press - 0.05, { o: 1, y: 0 }], [press + 0.1, { o: 1, y: 1.5 }],
+      [press + 0.5, { o: 1, y: 0 }], [press + 0.75, { o: 0, y: 5 }],
+    ], { keep: false, cls: 'd-finger-actor' });
   };
 
   d.html = (label) => {

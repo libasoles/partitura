@@ -407,7 +407,7 @@
         "Mark a barre and its fret over the notes it covers."
       ],
       "settings": [
-        "Settings: instrument, tempo and tools",
+        "Settings",
         "Piano or guitar, tempo, and which tool groups to show."
       ],
       "files": [
@@ -558,13 +558,13 @@
       },
       "settings": {
         "steps": [
-          "Open <strong>Settings</strong> with the cog, the first tool in the right toolbar. Except for the pattern library, they apply to the score you are looking at, are saved with it, and can be undone with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
-          "<strong>Instrument:</strong> with <em>Piano</em> every system is a grand staff, treble clef above and bass clef below joined by a brace, and TAB and barre are hidden. With <em>Guitar</em> there is a single staff in guitar treble clef, and the TAB button and barre appear. Switching between them deletes nothing: whatever is hidden stays saved.",
+          "Open <strong>Settings</strong> with the cog {{icon:settings}}, the first tool in the right toolbar. Except for the pattern library, they apply to the score you are looking at, are saved with it, and can be undone with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
+          "<strong>Instrument:</strong> with <em>Piano</em> {{icon:piano}} every system is a grand staff, treble clef above and bass clef below joined by a brace, and TAB and barre are hidden. With <em>Guitar</em> {{icon:guitar}} there is a single staff in guitar treble clef, and the TAB button and barre appear. Switching between them deletes nothing: whatever is hidden stays saved.",
           "<strong>Tempo:</strong> the slider goes from 20 to 300 quarter notes per minute. It is written as a metronome mark above the first measure and sets the speed of the exported MIDI. <em>No marking</em> removes it.",
           "<strong>Tools:</strong> turn <em>Repeats</em>, <em>Dynamics</em> and <em>Voices</em> on or off to show or hide their controls in the editor toolbars. Hiding a group does not delete what you already wrote.",
           "<strong>Voices:</strong> with <em>Voices</em> on, each voice gets a color (1 to 4) and a legend appears to the left of the brace. In the legend you choose which voices to color; no note is ever hidden.",
           "<strong>Grand staff:</strong> each staff has its own notes, rests, voices and clef (the clef menu says which one it changes). Measures, key signature, time signature, barlines, repeats and tempo are shared by both. Dynamics and hairpins are written between the two.",
-          "<strong>Playback:</strong> enable it to show play/pause to the left of the staff. It uses this score’s instrument and tempo. With Voices enabled, the selected legend numbers also filter what you hear; with none selected, all voices play.",
+          "<strong>Playback:</strong> {{icon:play}}{{icon:pause}} enable it to show play/pause to the left of the staff. It uses this score’s instrument and tempo. With Voices enabled, the selected legend numbers also filter what you hear; with none selected, all voices play.",
           "<strong>Pattern library:</strong> opens a separate panel to save and reuse motifs with Shift+S. This preference and the patterns belong to the user and browser, rather than to each score.",
           "The left and right toolbars and the pattern library stay within reach as you scroll; on short screens, the toolbars scroll with the page."
         ],
@@ -602,10 +602,10 @@
       },
       "playback": {
         "steps": [
-          "Open the <em>Settings</em> gear and enable <em>Playback</em> under <em>Tools</em>. A play button appears to the left of the staff, above the voice legend.",
-          "Choose <em>Piano</em> or <em>Guitar</em> and set the tempo. The written notes play with a piano or nylon guitar sound; both staves play in piano mode. You may see <em>Loading sounds…</em> the first time.",
-          "Press <em>Play</em> or the space bar. A vertical bar follows the music and moves to the next system. Playback starts at the last position you clicked, on a figure or in empty space, even after deselecting. With no previous click, it starts at the beginning. Clicking empty space repositions the line and keeps it visible to mark that position. During playback, click to jump there immediately.",
-          "Press <em>Pause</em> or the space bar to keep your position, then play again to continue. If you click another position while paused, playback starts there.",
+          "Open the <em>Settings</em> gear {{icon:settings}} and enable <em>Playback</em> under <em>Tools</em>. A play button appears to the left of the staff, above the voice legend.",
+          "Choose <em>Piano</em> {{icon:piano}} or <em>Guitar</em> {{icon:guitar}} and set the tempo. The written notes play with a piano or nylon guitar sound; both staves play in piano mode. You may see <em>Loading sounds…</em> the first time.",
+          "Press {{icon:play}} <em>Play</em> or the space bar. A vertical bar follows the music and moves to the next system. Playback starts at the last position you clicked, on a figure or in empty space, even after deselecting. With no previous click, it starts at the beginning. Clicking empty space repositions the line and keeps it visible to mark that position. During playback, click to jump there immediately.",
+          "Press {{icon:pause}} <em>Pause</em> or the space bar to keep your position, then play again to continue. If you click another position while paused, playback starts there.",
           "To hear a line separately, enable <em>Voices</em> and select its numbers in the legend: the filter applies to both staves. With no voices selected, all voices play. Changing this selection stops playback and resets its position.",
           "Editing the music, switching scores or hiding the page stops playback and resets its position. Press play again when you want to hear the result."
         ],
