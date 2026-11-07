@@ -1071,9 +1071,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const current = JSON.parse(playbackSnapshotOf(score));
       delete previous.sound;
       delete current.sound;
+      delete previous.tempo;
+      delete current.tempo;
       if (playbackDocument === score && JSON.stringify(previous) === JSON.stringify(current)) {
         playbackSnapshot = playbackSnapshotOf(score);
-        if (playbackTrack) refreshPlaybackSound();
+        if (playbackTrack) refreshPlaybackTrack();
       } else resetPlayback();
     }
     if (!toolkit) return;
@@ -4670,7 +4672,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function drawPlaybackCursor() {
     if (!player || !playbackTrack) return;
-    const time = player.position * (score.tempo || 120) * M.DIVISIONS / 60;
+    const time = player.position * playbackTrack.tempo * M.DIVISIONS / 60;
     const mi = playbackLayout.findIndex((measure) => time < measure.end);
     const measure = playbackLayout[mi];
     if (!measure) return;
@@ -4730,23 +4732,28 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     M.pruneLower(clean);
     return JSON.stringify(clean);
   }
-  // A sound change can arrive while samples are loading; only use the latest timbre.
+  // Settings can change while samples load; prepare the latest sound and tempo.
   async function preparePlaybackTrack(request) {
-    let sound, track;
+    let sound, tempo, track;
     do {
       sound = M.soundOf(score);
+      tempo = score.tempo || 120;
       track = await player.prepare(M.clone(score), M, toolOn('voices', false) ? shownVoices : null, VOICE_COUNT);
-    } while (request === playbackRequest && sound !== M.soundOf(score));
-    return { ...track, sound };
+    } while (request === playbackRequest && (sound !== M.soundOf(score) || tempo !== (score.tempo || 120)));
+    return { ...track, sound, tempo };
   }
-  async function refreshPlaybackSound() {
+  async function refreshPlaybackTrack() {
     const request = ++playbackRequest;
     try {
       const track = await preparePlaybackTrack(request);
       if (request !== playbackRequest) return;
+      // Keep playing while samples load, then preserve the musical position at the new tempo.
+      const ratio = playbackTrack.tempo / track.tempo;
+      const from = player.position * ratio;
+      if (playbackSelectionPosition !== null) playbackSelectionPosition *= ratio;
       playbackTrack = track;
-      // Keep the old sound playing during the download and switch at the current audio time.
-      if (playbackState === 'playing') player.play(track, player.position);
+      player.replace(track, from);
+      animatePlayback();
     } catch (error) {
       if (request === playbackRequest) say(t.playbackError);
     }
@@ -4774,7 +4781,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
       if (request !== playbackRequest) return;
       player ||= createPlayer(audioContext, vendorUrl, resetPlayback);
-      const track = playbackTrack?.sound === M.soundOf(score) ? playbackTrack : await preparePlaybackTrack(request);
+      const track = playbackTrack?.sound === M.soundOf(score) && playbackTrack.tempo === (score.tempo || 120) ? playbackTrack : await preparePlaybackTrack(request);
       if (request !== playbackRequest) return;
       playbackTrack = track;
       playbackState = 'playing';

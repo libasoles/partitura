@@ -129,6 +129,11 @@ export function createPlayer(context, vendorUrl, onEnded) {
       }
       timer = setTimeout(() => { silence(); position = 0; onEnded(); }, Math.max(0, origin + duration - context.currentTime) * 1000);
     },
+    // Replace the schedule without changing whether playback is running or paused.
+    replace(track, from) {
+      if (playing) this.play(track, from);
+      else position = Math.max(0, Math.min(track.duration, from));
+    },
     pause() {
       if (playing) position = Math.max(position, context.currentTime - origin);
       silence();

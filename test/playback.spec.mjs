@@ -459,3 +459,58 @@ test('changing choir sound during pause keeps the position and resumes with the 
   expect(Number(await page.locator('.score-playback-cursor').getAttribute('data-time'))).toBeGreaterThanOrEqual(Number(before));
   expect(await page.evaluate(() => window.audioStarts[2].args[1])).toBeGreaterThan(0.2);
 });
+
+for (const paused of [false, true]) test(`changing tempo preserves the musical position while ${paused ? 'paused' : 'playing'}`, async ({ page }) => {
+  await open(page, 'piano', { tempo: 30, tools: { playback: true } });
+  const button = page.locator('#scorePlayback');
+  const cursor = page.locator('.score-playback-cursor');
+  await button.click();
+  await expect(button).toHaveAccessibleName('Pausar');
+  await page.waitForFunction(() => Number(document.querySelector('.score-playback-cursor')?.dataset.time) > 4);
+  if (paused) await button.click();
+  await page.locator('#scoreSettingsToggle').click();
+  const before = Number(await cursor.getAttribute('data-time'));
+  await page.getByRole('slider', { name: /Tempo/ }).fill('60');
+  await expect(button).toHaveAccessibleName(paused ? 'Reproducir' : 'Pausar', { timeout: 1000 });
+  await expect(cursor).toHaveCount(1, { timeout: 1000 });
+  const after = Number(await cursor.getAttribute('data-time'));
+  expect(after).toBeGreaterThanOrEqual(before - 0.5);
+  expect(after).toBeLessThan(before + 8);
+  if (paused) {
+    await page.keyboard.press('Escape');
+    await button.click();
+    await expect(button).toHaveAccessibleName('Pausar');
+  }
+  await page.waitForFunction(() => window.audioStarts.length === 4);
+  // Audio is rescheduled with the new tempo, from the same point in the score.
+  const offset = await page.evaluate(() => window.audioStarts[2].args[1]);
+  expect(offset).toBeGreaterThanOrEqual(before / 24 - 0.1);
+  expect(offset).toBeLessThan(before / 24 + 0.5);
+  const start = Number(await cursor.getAttribute('data-time'));
+  await page.waitForTimeout(300);
+  const advanced = Number(await cursor.getAttribute('data-time')) - start;
+  expect(advanced).toBeGreaterThan(5);
+  expect(advanced).toBeLessThan(10);
+});
+
+test('tempo changes while samples load use the latest tempo without cancelling play', async ({ page }) => {
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  await page.route('**/audio/**', async (route) => { await pending; await route.continue(); });
+  await open(page, 'piano', { tempo: 30, tools: { playback: true } });
+  const button = page.locator('#scorePlayback');
+  try {
+    await button.click();
+    await expect(button).toHaveAttribute('aria-busy', 'true');
+    await page.locator('#scoreSettingsToggle').click();
+    await page.getByRole('slider', { name: /Tempo/ }).fill('60');
+    await expect(button).toHaveAttribute('aria-busy', 'true');
+  } finally { release(); }
+  await expect(button).toHaveAccessibleName('Pausar');
+  const cursor = page.locator('.score-playback-cursor');
+  const start = Number(await cursor.getAttribute('data-time'));
+  await page.waitForTimeout(300);
+  const advanced = Number(await cursor.getAttribute('data-time')) - start;
+  expect(advanced).toBeGreaterThan(5);
+  expect(advanced).toBeLessThan(10);
+});
