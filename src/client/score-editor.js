@@ -1959,7 +1959,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const box = dir.getBoundingClientRect();
       const staves = [...dir.closest('g.measure').querySelectorAll(':scope > g.staff')].map((staff) => ({ staff, top: staff.querySelector(':scope > path').getBoundingClientRect().top }));
       const below = staves.filter((s) => s.top >= box.bottom - 4);
-      const target = below.length ? below.reduce((a, b) => (b.top < a.top ? b : a)) : staves[staves.length - 1];
+      const target = M.instrumentOf(score) === 'voices' ? staves[0] : below.length ? below.reduce((a, b) => (b.top < a.top ? b : a)) : staves[staves.length - 1];
       if (!target) return;
       let limit = target.top;
       target.staff.querySelectorAll('g.note, g.chord, g.rest, g.beam, g.tuplet').forEach((node) => {
@@ -5500,6 +5500,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (demo) {
       loaded.demo = true;
       if (demoId) loaded.demoId = demoId;
+      intervalDocuments.add(loaded);
       document.documentElement.classList.add('banner-closed');
     }
     if (tools) loaded.tools = { ...tools };

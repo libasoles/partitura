@@ -91,6 +91,10 @@ test('a demo page loads the song and its defaults even without query parameters'
   await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');
   await expect(page.locator('#scoreAuthor')).toHaveValue('Aca Seca Trío / Leda Valladares');
   expect(await page.evaluate(() => window.ScoreModel.stavesOf(window.scoreEditor.score))).toBe(3);
+  await expect(page.locator('#scoreIntervals')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#scoreStage g.dir').filter({ hasText: /^[IVXL\s]+$/ }).first()).toBeVisible();
+  await page.locator('#scoreIntervals').click();
+  await expect(page.locator('#scoreIntervals')).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('.welcome-banner')).toBeHidden();
 });
 

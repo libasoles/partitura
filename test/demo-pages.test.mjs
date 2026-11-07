@@ -19,6 +19,14 @@ for (const demo of DEMOS) {
       for (const language of ['es', 'en', 'pt']) assert.ok(html.includes(`hreflang="${language}" href="https://partitura.com.ar${demoPath(language, demo)}"`));
       assert.ok(html.includes(`data-demo-id="${demo.id}"`));
       assert.ok(html.includes('class="banner-closed"'));
+      assert.match(html, /<meta name="robots" content="index, follow/);
+      assert.ok(html.includes(`<h1>${demo.title} — ${demo.author}</h1>`));
+      const index = readFileSync(new URL(`../dist/${locale}/index.html`, import.meta.url), 'utf8');
+      assert.match(index, new RegExp(`<a [^>]*href="${path}"[^>]*data-demo-url=`));
+      const sitemap = readFileSync(new URL('../dist/sitemap-0.xml', import.meta.url), 'utf8');
+      assert.ok(sitemap.includes(`<loc>https://partitura.com.ar${path}</loc>`));
+      const robots = readFileSync(new URL('../dist/robots.txt', import.meta.url), 'utf8');
+      assert.match(robots, /User-agent: \*\nAllow: \//);
     });
   }
 }

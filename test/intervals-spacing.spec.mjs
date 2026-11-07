@@ -1,5 +1,30 @@
 import { test, expect } from '@playwright/test';
 
+test('choir intervals stay above the first staff when the first two voices are silent', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [{
+      instrument: 'voices', parts: 4, meter: '4/4', clef: 'treble',
+      tools: { intervals: true, voices: true }, rows: [[[]]],
+      lower2: { 0: [{ d: 'h', n: 35 }, { d: 'h', n: 36 }] },
+      lower3: { 0: [{ d: 'w', n: 30 }] },
+      lyrics: { 0: [{ s: 2, at: 0, text: 'Can' }, { s: 2, at: 32, text: 'to' }] },
+    }] }));
+  });
+  await page.goto('/es/#pro');
+  await page.locator('#scoreStage:not([aria-busy]) g.note').first().waitFor();
+  for (const voice of [3, 4]) await page.locator(`.score-voice-legend button[data-voice="${voice}"]`).click();
+  await page.locator('#scoreIntervals').click();
+  const intervals = page.locator('#scoreStage g.dir').filter({ hasText: /^[IVXL\s]+$/ });
+  await expect(intervals).toHaveCount(2);
+  for (const width of [1440, 1100]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect.poll(() => intervals.evaluateAll((nodes) => nodes.every((node) => {
+      const top = node.closest('g.measure').querySelector('g.staff > path').getBoundingClientRect().top;
+      return top - node.getBoundingClientRect().bottom >= 8;
+    }))).toBe(true);
+  }
+});
+
 test('interval labels keep a minimum gap above the staff and notes, and chord names sit above them', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [{

@@ -5,6 +5,18 @@ import { choirColumns, withIntervals } from '../src/client/score-intervals.js';
 
 const C = createScoreModel({ grandStaff: true, choir: true });
 
+test('Voces: intervals stay above staff one when only lower voices start notes', () => {
+  const score = C.emptyScore();
+  C.setInstrument(score, 'voices');
+  C.setParts(score, 4);
+  score.lower2 = { 0: [{ d: 'h', n: 35 }, { d: 'h', n: 36 }] };
+  score.lower3 = { 0: [{ d: 'w', n: 30 }] };
+  const xml = withIntervals(C.toMusicXml(score), score, C, new Set([3, 4]));
+  const directions = [...xml.matchAll(/<direction placement="above"><direction-type><words font-family="PartituraIntervals"[\s\S]*?<\/direction>/g)];
+  assert.equal(directions.length, 2);
+  directions.forEach(([direction]) => assert.match(direction, /<staff>1<\/staff>/));
+});
+
 function choir() {
   const score = C.emptyScore();
   C.setInstrument(score, 'voices');

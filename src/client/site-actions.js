@@ -8,13 +8,18 @@ export function bindSiteActions(actions) {
     if (loaded) history.replaceState(history.state, '', demoLink(demo, location.href));
   };
   document.querySelectorAll('[data-demo-url]').forEach((button) => {
-    button.addEventListener('click', async () => {
+    button.addEventListener('click', async (event) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      if (button.getAttribute('aria-disabled') === 'true') return;
       button.disabled = true;
+      button.setAttribute('aria-disabled', 'true');
       try {
         const demo = DEMOS.find((one) => one.url === button.dataset.demoUrl);
         if (demo) await openDemo(demo);
       } finally {
         button.disabled = false;
+        button.removeAttribute('aria-disabled');
       }
     });
   });

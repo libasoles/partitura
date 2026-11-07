@@ -6,6 +6,7 @@ import { scoreFileAccept } from '../client/score-file-types.js';
 import latinFont from '@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2?url';
 import { locales, ogLocales, pathFor, proPath, rootPath, strings, termsPath, tutorialsPath, type Locale } from '../i18n';
 import { pageJsonLd } from '../lib/jsonld';
+import { DEMOS, demoPath } from '../client/demos.js';
 
 interface Props {
   locale: Locale;
@@ -114,7 +115,7 @@ const jsonLd = pageJsonLd({
             <hr class="menu-separator" />
             <p class="menu-heading" id="menuDemoLabel">Demo</p>
             <ul role="group" aria-labelledby="menuDemoLabel" class="menu-scores-list">
-              <li role="none"><button role="menuitem" type="button" data-demo-url="/demos/Canto%20en%20la%20rama%20-%203%20voces.musicxml">Canto en la rama - 3 voces</button></li>
+              {DEMOS.map((demo) => <li role="none"><a role="menuitem" href={demoPath(locale, demo)} data-demo-url={demo.url}>{demo.title} - 3 voces</a></li>)}
             </ul>
           </li>}
           {editor && <li role="none" class="menu-scores" id="menuScoresSection" hidden>

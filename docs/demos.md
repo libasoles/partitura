@@ -4,7 +4,7 @@ La sección **Demo** del menú del editor descarga el MusicXML de `public/demos/
 
 Cada apertura crea una copia independiente que se puede editar o borrar sin cambiar la demo original. Estas copias no aparecen en la lista de partituras propias, tampoco después de recargar la página. Cerrar su pestaña descarta la copia; elegir la demo de nuevo vuelve a descargar el original.
 
-«Canto en la rama» se abre con Voces, reproducción e intervalos activos, timbre Uh y el banner oculto, equivalentes a `?tools=voices,play,intervals&sound=uh&banner=hide`.
+«Canto en la rama» se abre con Voces, reproducción e intervalos activos, timbre Uh y el banner oculto, equivalentes a `?tools=voices,play,intervals&sound=uh&banner=hide`. Además de ofrecer la herramienta, el botón de intervalos empieza encendido; se puede apagar y su estado se conserva mientras esa copia esté abierta. En Voces las etiquetas se ubican siempre sobre el primer pentagrama, aunque las notas empiecen en voces inferiores.
 
 Al cargar una demo, la barra de direcciones se actualiza sin recargar la página. Se puede copiar ese enlace para compartir el original, con sus opciones:
 
@@ -13,6 +13,8 @@ https://partitura.com.ar/es/demos/canto-en-la-rama/?tools=voices,play,intervals&
 ```
 
 Cada demo tiene una página estática propia en cada idioma, con título, autor, descripción, Open Graph, Twitter Cards, canonical y hreflang generados en el HTML inicial. La URL sin parámetros también carga la canción y sus opciones predeterminadas. El catálogo está en `src/client/demos.js` y las páginas se generan desde `src/pages/[locale]/demos/[demo].astro`.
+
+El menú enlaza estas páginas con enlaces HTML rastreables, que también permiten abrir la demo sin JavaScript. Cada página incluye un encabezado y una descripción accesibles en el HTML, permite indexación y aparece en el sitemap. Esto habilita el rastreo; la inclusión efectiva en un buscador se verifica en su consola de búsqueda.
 
 Abrir el enlace importa la canción automáticamente; si ya hay una copia de esa demo en el navegador, la activa sin duplicarla. Las ediciones locales no se comparten. Crear, editar o importar partituras propias no actualiza la URL. También se acepta `?demo=canto-en-la-rama` en el editor; solo admite identificadores del catálogo publicado.
 

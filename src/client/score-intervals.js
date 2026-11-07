@@ -93,7 +93,7 @@ export function chordMarks(score, M, selectedVoices) {
         .map((column) => ({ staff, indices: column.indices, at: column.at, sounding: column.sounding.map((entry) => ({ ...entry, staff })) }))).flat();
     columns.forEach((column) => {
       const { names, pcs } = columnChords(score, mi, M, column);
-      if (names.length) marks.push({ mi, at: column.at, staff: column.staff ?? 0, id: `${M.ID_PREFIX[column.staff ?? 0]}${mi}-${column.indices[0]}`, names, pcs });
+      if (names.length) marks.push({ mi, at: column.at, staff: M.instrumentOf(score) === 'voices' ? 0 : column.staff ?? 0, id: `${M.ID_PREFIX[column.staff ?? 0]}${mi}-${column.indices[0]}`, names, pcs });
     });
   });
   // One harmonic line per staff (piano); in Voces the staves are the voices of one texture.
@@ -114,7 +114,8 @@ export function withIntervals(xml, score, M, selectedVoices, { intervals = true,
   const upper = M.measures(score);
   if (M.instrumentOf(score) === 'voices') {
     upper.forEach((_, mi) => choirColumns(score, mi, M, selectedVoices, bass).forEach((column) => {
-      const mark = { staff: column.staff, intervals: column.intervals, done: false };
+      // Keep the onset anchor in its own voice, but reserve space above the first staff.
+      const mark = { staff: 0, intervals: column.intervals, done: false };
       column.indices.forEach((i) => marks.set(`${M.ID_PREFIX[column.staff]}${mi}-${i}`, mark));
     }));
   } else {
