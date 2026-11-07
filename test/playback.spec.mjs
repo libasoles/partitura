@@ -59,7 +59,7 @@ for (const tools of [{ voices: true, playback: true }, { voices: true }, { playb
   });
 }
 
-test('play follows active voices on both staves and clears the cached track when they change', async ({ page }) => {
+test('play follows active voices on both staves and keeps playing and reschedules when they change', async ({ page }) => {
   await open(page, 'piano', {
     rows: [[[{ d: 'w', n: 35, v: 1, at: 0 }, { d: 'w', n: 37, v: 2, at: 0 }]]],
     lower: { 0: [{ d: 'w', n: 28, v: 1, at: 0 }, { d: 'w', n: 30, v: 2, at: 0 }] },
@@ -77,12 +77,10 @@ test('play follows active voices on both staves and clears the cached track when
   await play.click();
   await expect(play).toHaveAccessibleName('Pausar');
   expect(await page.evaluate(() => window.audioStarts.length)).toBe(4);
-  await voice.click();
-  await expect(play).toHaveAccessibleName('Reproducir');
   await page.evaluate(() => { window.audioStarts = []; });
-  await play.click();
+  await voice.click();
+  await expect.poll(() => page.evaluate(() => window.audioStarts.length)).toBe(2);
   await expect(play).toHaveAccessibleName('Pausar');
-  expect(await page.evaluate(() => window.audioStarts.length)).toBe(2);
 });
 
 test('playback sits left of the staff above voices; settings show play and pause', async ({ page }) => {
