@@ -62,6 +62,8 @@
   background: transparent;
 }
 
+.score-side.is-tall { position: relative; top: auto; }
+
 /* A tall palette must scroll with the page when it cannot fit in the viewport. */
 @media (max-height: 760px) {
   .score-side { position: relative; top: auto; height: auto; }
@@ -111,6 +113,13 @@
   border-radius: 0;
   box-shadow: none;
 }
+
+.score-intensities {
+  display: grid;
+  grid-template-columns: repeat(2, 2.75rem);
+  gap: 0.25rem;
+}
+.score-barlines { align-items: center; }
 
 .score-barlines .score-palette-item {
   min-height: 2.75rem;
@@ -1930,6 +1939,12 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   align-items: center;
   padding: 0;
 }
+.score-settings-tools .score-settings-category[data-category="dynamics"] .score-settings-icons {
+  gap: 0.1rem;
+  flex-wrap: wrap;
+}
+.score-settings-category[data-category="dynamics"] .score-settings-icon { min-width: 1.5rem; }
+.score-settings-category[data-category="dynamics"] .score-settings-icon svg { width: 24px; }
 .score-settings-intervals svg { width: 18px; height: 18px; }
 
 /* Tool categories share one heading and carry no divider of their own. */

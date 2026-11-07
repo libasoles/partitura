@@ -568,6 +568,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       say('');
       return;
     }
+    if (item.kind === 'dynamic') {
+      change(() => M.setDynamic(score, target.mi, target.onNote ? target.t : 0, item.dynamic));
+      say('');
+      return;
+    }
     if (item.kind === 'hairpin') {
       // Como la cejilla: arranca sobre la nota soltada (o al inicio del compas) y llega hasta el final, o hasta el proximo regulador.
       const at = target.onNote ? target.t : 0;
@@ -656,7 +661,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function isPlacing(item) {
-    return item && (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'chord' || item.kind === 'lyric' || item.kind === 'navigation' || item.kind === 'hairpin');
+    return item && (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'chord' || item.kind === 'lyric' || item.kind === 'navigation' || item.kind === 'hairpin' || item.kind === 'dynamic');
   }
 
   function isModifier(item) {
@@ -680,7 +685,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     clearHoverGhost();
     updateHoverGhost();
     toolbars.querySelectorAll('.score-palette-tool').forEach((button) => {
-      const same = item.kind === 'navigation' ? button.dataset.navigation === item.mark : item.kind === 'hairpin' ? button.dataset.hairpin === item.hairpin : item.key ? button.dataset.shortcut === item.key : item.kind === 'bar' ? button.dataset.barline === item.bar : button.dataset.tool === item.kind;
+      const same = item.kind === 'navigation' ? button.dataset.navigation === item.mark : item.kind === 'hairpin' ? button.dataset.hairpin === item.hairpin : item.kind === 'dynamic' ? button.dataset.dynamic === item.dynamic : item.key ? button.dataset.shortcut === item.key : item.kind === 'bar' ? button.dataset.barline === item.bar : button.dataset.tool === item.kind;
       button.setAttribute('aria-pressed', String(same));
     });
     if (isPlacing(item)) return;
@@ -1010,6 +1015,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     side.style.top = 'auto';
     side.style.marginTop = '0';
     const offset = stage.getBoundingClientRect().top + toolbarStaffTop - glyph.getBoundingClientRect().top;
+    side.classList.toggle('is-tall', side.offsetHeight > window.innerHeight - 112);
     side.style.position = '';
     side.style.top = '';
     side.style.marginTop = Math.max(0, offset) + 'px';
@@ -1496,6 +1502,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (score.hairpins) {
       Object.keys(score.hairpins).forEach((mi) => { if (+mi >= M.measures(score).length) delete score.hairpins[mi]; });
       if (!Object.keys(score.hairpins).length) delete score.hairpins;
+    }
+    if (score.dynamics) {
+      Object.keys(score.dynamics).forEach((mi) => { if (+mi >= M.measures(score).length) delete score.dynamics[mi]; });
+      if (!Object.keys(score.dynamics).length) delete score.dynamics;
     }
   }
 
@@ -2644,6 +2654,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function chooseDynamic(value) {
     const target = dynamicsTarget;
     dynamicsPopup.hidePopover();
+    if (target && !target.side) {
+      change(() => M.setDynamic(score, target.mi, target.at, value));
+      stage.focus({ preventScroll: true });
+      return;
+    }
     const h = target && M.findHairpin(score, target.mi, target.at);
     if (!h || (h[target.side === 'start' ? 'startDyn' : 'endDyn'] || null) === value) return;
     change(() => M.setHairpinDynamic(score, target.mi, h, target.side, value));
@@ -2670,10 +2685,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function openDynamicsPopup(anchor, mi, at, side) {
     if (dynamicsPopup.matches(':popover-open')) { dynamicsPopup.hidePopover(); return; }
     const h = M.findHairpin(score, mi, at);
-    if (!h) return;
+    if (side && !h) return;
     dynamicsTarget = { mi, at, side };
-    const current = side === 'start' ? h.startDyn : h.endDyn;
-    dynamicsTitle.textContent = side === 'start' ? t.dynamicStart : t.dynamicEnd;
+    const current = !side ? score.dynamics?.[mi]?.find((mark) => mark.at === at)?.value : side === 'start' ? h.startDyn : h.endDyn;
+    dynamicsTitle.textContent = !side ? t.dynamic : side === 'start' ? t.dynamicStart : t.dynamicEnd;
     [...dynamicsOptions.querySelectorAll('[data-dynamic]')].forEach((option) => option.setAttribute('aria-pressed', String(option.dataset.dynamic === current)));
     dynamicsNone.setAttribute('aria-pressed', String(!current));
     dynamicsPopup.showPopover();
@@ -2853,6 +2868,47 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     });
   }
 
+  function mountDynamicControls() {
+    const origin = stage.getBoundingClientRect();
+    const hairpins = Object.entries(score.hairpins || {}).flatMap(([first, list]) => list.map((h) => ({
+      first: +first, h, begin: measureOffset(0, +first) + h.at,
+      end: measureOffset(0, +first) + hairpinEnd(h, +first),
+    })));
+    Object.entries(score.dynamics || {}).forEach(([mi, marks]) => {
+      // Verovio generates its own ids for dynamics. Pair them by musical time and horizontal order.
+      const times = new Set(marks.map((entry) => entry.at));
+      hairpins.forEach(({ first, h, begin, end }) => {
+        const previous = hairpins.find((other) => other.end === begin);
+        if (first === +mi && (h.startDyn || previous?.h.endDyn)) times.add(h.at);
+        if (first + (h.span || 0) === +mi && h.endDyn && !hairpins.some((other) => other.begin === end)) times.add(h.to ?? M.capacity(score, +mi));
+      });
+      const nodes = [...stage.querySelectorAll('[id="m' + mi + '"] g.dynam')].sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left);
+      const order = [...times].sort((a, b) => a - b);
+      marks.forEach((mark) => {
+        const node = nodes[order.indexOf(mark.at)];
+        if (!node) return;
+        const box = node.getBoundingClientRect();
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'score-hairpin-ui score-hairpin-dyn has-value score-dynamic-trigger';
+        button.setAttribute('aria-label', t.dynamic + ': ' + mark.value);
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.style.left = box.left - origin.left - 3 + 'px';
+        button.style.top = box.top - origin.top - 3 + 'px';
+        button.style.width = box.width + 6 + 'px';
+        button.style.height = box.height + 6 + 'px';
+        button.addEventListener('click', () => openDynamicsPopup(button, +mi, mark.at));
+        button.addEventListener('keydown', (event) => {
+          if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+          event.preventDefault();
+          event.stopPropagation();
+          change(() => M.setDynamic(score, +mi, mark.at, null));
+        });
+        stage.appendChild(button);
+      });
+    });
+  }
+
   function mountHairpinHandles(mi, h, box, origin) {
     [['start', box.left], ['end', box.right]].forEach(([side, edge]) => {
       const x = edge - origin.left;
@@ -2884,6 +2940,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const reach = 3 * (layout[mi].lines[4] - layout[mi].lines[0]) / 4; // hasta donde una dinamica dibujada cuenta como de este extremo
     const middle = (box.top + box.bottom) / 2;
     [['start', box.left], ['end', box.right]].forEach(([side, edge]) => {
+      const point = side === 'start' ? { mi, at: h.at } : barrePoint(mi, hairpinEnd(h, mi));
+      if (score.dynamics?.[point.mi]?.some((mark) => mark.at === point.at)) return;
       const value = side === 'start' ? h.startDyn : h.endDyn;
       if (!picked && !value) return;
       const x = edge - origin.left;
@@ -3016,6 +3074,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (selectedBeam && !selectedBeam.node.isConnected) selectedBeam = null;
     if (selectedHairpin && !M.findHairpin(score, selectedHairpin.mi, selectedHairpin.at)) selectedHairpin = null;
     mountHairpinControls();
+    mountDynamicControls();
     // Highlight a connection only when all its figures are selected, or when
     // the beam itself was picked. This does not change what Delete acts on.
     stage.querySelectorAll('g.beam').forEach((beam) => {
@@ -3220,7 +3279,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const x = item?.kind === 'navigation' ? layout[hit.mi][['dc', 'ds'].includes(item.mark) ? 'right' : 'left']
       : item && item.kind === 'bar' && item.bar !== 'double' ? layout[hit.mi][item.bar === 'start' ? 'left' : 'right']
       : item && item.kind === 'bar' && item.bar === 'double' ? hit.rawX
-      : item && (item.kind === 'barre' || item.kind === 'chord' || item.kind === 'lyric' || item.kind === 'hairpin') && !hit.onNote ? layout[hit.mi].left : hit.x;
+      : item && (item.kind === 'barre' || item.kind === 'chord' || item.kind === 'lyric' || item.kind === 'hairpin' || item.kind === 'dynamic') && !hit.onNote ? layout[hit.mi].left : hit.x;
     line.style.left = x + 'px';
     // Notas y silencios marcan el pentagrama donde caen; barras, repeticiones y reguladores son de todo el renglon.
     const whole = item && item.kind !== 'note' && item.kind !== 'rest';
@@ -4399,7 +4458,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (item.kind === 'lyric') svg.classList.add('score-lyric-glyph');
     svg.setAttribute('fill', 'currentColor');
     svg.setAttribute('aria-hidden', 'true');
-    svg.innerHTML = GLYPHS[glyphKey(item)];
+    if (item.kind === 'dynamic') {
+      svg.innerHTML = '<text x="15" y="22" text-anchor="middle" font-size="' + (item.dynamic.length > 2 ? '15' : '19') + '" font-family="serif" font-style="italic" font-weight="700">' + item.dynamic + '</text>';
+    } else svg.innerHTML = GLYPHS[glyphKey(item)];
     return svg;
   }
 
@@ -4433,10 +4494,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     { kind: 'bar', bar: 'end', label: t.barRepeatEnd },
     { kind: 'bar', bar: 'double', label: t.barDouble },
     ...['dc', 'ds', 'segno', 'first', 'second'].map((mark) => ({ kind: 'navigation', mark, label: t['nav' + mark] })),
+    ...M.DYNAMICS.map((dynamic) => ({ kind: 'dynamic', dynamic, label: t.dynamic + ': ' + dynamic })),
     { kind: 'hairpin', hairpin: 'cresc', label: t.hairpinCresc },
     { kind: 'hairpin', hairpin: 'dim', label: t.hairpinDim },
   ];
 
+  const intensities = document.createElement('div');
+  intensities.className = 'score-intensities';
   ITEMS.concat(BARS).forEach((item) => {
     if (!item) {
       const sep = document.createElement('span');
@@ -4454,7 +4518,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const shown = button.textContent.trim();
     if (shown && !item.label.toLowerCase().includes(shown.toLowerCase())) button.setAttribute('aria-label', shown + ': ' + item.label);
     button.setAttribute('aria-pressed', 'false');
-    button.dataset.group = item.kind === 'bar' || item.kind === 'navigation' ? 'repeats' : item.kind === 'hairpin' ? 'dynamics' : item.kind === 'barre' || item.kind === 'chord' ? 'barre' : item.kind === 'lyric' ? 'lyrics' : '';
+    button.dataset.group = item.kind === 'bar' || item.kind === 'navigation' ? 'repeats' : (item.kind === 'hairpin' || item.kind === 'dynamic') ? 'dynamics' : item.kind === 'barre' || item.kind === 'chord' ? 'barre' : item.kind === 'lyric' ? 'lyrics' : '';
     if (item.kind === 'bar') {
       button.dataset.barline = item.bar;
       button.addEventListener('click', (event) => {
@@ -4463,6 +4527,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     if (item.kind === 'navigation') {
       button.dataset.navigation = item.mark;
+      button.addEventListener('click', (event) => { if (event.detail === 0) activateTool(item); });
+    }
+    if (item.kind === 'dynamic') {
+      button.dataset.dynamic = item.dynamic;
       button.addEventListener('click', (event) => { if (event.detail === 0) activateTool(item); });
     }
     if (item.kind === 'hairpin') {
@@ -4492,7 +4560,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       event.preventDefault();
       beginDrag(event, { item, kind: item.kind, glyph: glyphFor(item) });
     });
-    (item.kind === 'bar' || item.kind === 'barre' || item.kind === 'chord' || item.kind === 'lyric' || item.kind === 'navigation' || item.kind === 'hairpin' ? barlines : palette).appendChild(button);
+    if (item.kind === 'dynamic') {
+      if (!intensities.isConnected) barlines.appendChild(intensities);
+      intensities.appendChild(button);
+    } else (isPlacing(item) ? barlines : palette).appendChild(button);
   });
 
   // TAB: muestra u oculta una tablatura bajo cada renglon.
@@ -4848,7 +4919,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
     const shown = { repeats: !settings || toolOn('repeats'), dynamics: !settings || toolOn('dynamics'), barre: guitar, lyrics: toolOn('lyrics') };
     barlines.querySelectorAll('[data-group]').forEach((button) => { if (button.dataset.group) button.hidden = !shown[button.dataset.group]; });
+    intensities.hidden = !shown.dynamics;
     tabToggle.hidden = !guitar;
+    alignBarlinesToFirstStaff();
     playButton.hidden = !settings || !toolOn('playback', false);
     if (playButton.hidden) clearPlaybackHint();
     if (settings) stage.appendChild(playButton);
@@ -5284,7 +5357,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // Cada categoria de herramientas se activa con una casilla y muestra debajo sus iconos.
     const categories = [
       ['repeats', t.toolsRepeats, (item) => item.kind === 'bar' || item.kind === 'navigation'],
-      ['dynamics', t.toolsDynamics, (item) => item.kind === 'hairpin'],
+      ['dynamics', t.toolsDynamics, (item) => item.kind === 'hairpin' || item.kind === 'dynamic'],
       ['voices', t.toolsVoices, () => false, false],
       ['playback', t.toolsPlayback, () => false, false],
       ['intervals', t.toolsIntervals, () => false, false],

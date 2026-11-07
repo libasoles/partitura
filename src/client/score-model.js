@@ -61,7 +61,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   const laneKey = (staff) => LANE_KEYS[staff - 1];
   const LOWER_CLEFS = CLEF_KEYS.slice(1).map(([, map]) => map);
   // Tablas por compas que se desplazan juntas al insertar, quitar o dividir compases.
-  const BY_MEASURE = ['navigation', 'barlines', 'keys', 'clefs', ...LOWER_CLEFS, 'meters', 'barres', 'hairpins', 'chords', 'lyrics', 'measureDurations', 'measureWidths', ...LANE_KEYS];
+  const BY_MEASURE = ['navigation', 'barlines', 'keys', 'clefs', ...LOWER_CLEFS, 'meters', 'barres', 'hairpins', 'dynamics', 'chords', 'lyrics', 'measureDurations', 'measureWidths', ...LANE_KEYS];
   // Coro (Voces): registro de cada pentagrama; el registro decide la clave.
   const REGISTERS = { soprano: 'treble', mezzo: 'treble', alto: 'treble', tenor: 'guitar', baritone: 'bass', bass: 'bass' };
   const DEFAULT_REGISTERS = ['soprano', 'alto', 'tenor', 'bass'];
@@ -1138,7 +1138,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     LANE_KEYS.forEach((name) => Object.entries(score[name] || {}).forEach(([mi, measure]) => {
       if (positions.get(+mi + 1) !== positions.get(+mi) + 1) edge(measure, 'last').forEach((i) => { delete measure[i].tie; delete measure[i].slur; });
     }));
-    ['navigation', 'barlines', 'barres', 'hairpins', 'chords', 'lyrics', 'measureDurations', 'measureWidths', ...LANE_KEYS].forEach((name) => {
+    ['navigation', 'barlines', 'barres', 'hairpins', 'dynamics', 'chords', 'lyrics', 'measureDurations', 'measureWidths', ...LANE_KEYS].forEach((name) => {
       if (!score[name]) return;
       const moved = {};
       // Una cejilla o un regulador que cruza compases solo sigue unido si esos compases se mueven juntos.
@@ -1353,11 +1353,19 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     // Los acordes escritos despues del corte pasan al compas nuevo.
     const movedChords = (score.chords?.[mi] || []).filter((chord) => chord.at >= at).map((chord) => Object.assign({}, chord, { at: chord.at - at }));
     if (score.chords?.[mi]) score.chords[mi] = score.chords[mi].filter((chord) => chord.at < at);
+    const movedDynamics = (score.dynamics?.[mi] || []).filter((mark) => mark.at >= at).map((mark) => ({ ...mark, at: mark.at - at }));
+    if (score.dynamics?.[mi]) score.dynamics[mi] = score.dynamics[mi].filter((mark) => mark.at < at);
     const movedLyrics = (score.lyrics?.[mi] || []).filter((lyric) => lyric.at >= at).map((lyric) => Object.assign({}, lyric, { at: lyric.at - at }));
     if (score.lyrics?.[mi]) score.lyrics[mi] = score.lyrics[mi].filter((lyric) => lyric.at < at);
     BY_MEASURE.forEach((name) => {
       if (score[name]) score[name] = shiftKeys(score[name], mi + 1, 1);
     });
+    if (movedDynamics.length) {
+      score.dynamics ||= {};
+      score.dynamics[mi + 1] = movedDynamics;
+    }
+    if (score.dynamics?.[mi] && !score.dynamics[mi].length) delete score.dynamics[mi];
+    if (score.dynamics && !Object.keys(score.dynamics).length) delete score.dynamics;
     if (movedLyrics.length) {
       if (!score.lyrics) score.lyrics = {};
       score.lyrics[mi + 1] = movedLyrics;
@@ -1741,6 +1749,22 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return true;
   }
 
+  // Intensidades independientes, una por tiempo y compartidas por todos los pentagramas.
+  function setDynamic(score, mi, at, value) {
+    if (!Number.isInteger(mi) || mi < 0 || mi >= measures(score).length || !Number.isInteger(at) || at < 0 || at >= capacity(score, mi)) return false;
+    if (value != null && !DYNAMICS.includes(value)) return false;
+    const list = (score.dynamics?.[mi] || []).filter((mark) => mark.at !== at);
+    if (value) list.push({ at, value });
+    if (list.length) {
+      score.dynamics ||= {};
+      score.dynamics[mi] = list.sort((a, b) => a.at - b.at);
+    } else if (score.dynamics) {
+      delete score.dynamics[mi];
+      if (!Object.keys(score.dynamics).length) delete score.dynamics;
+    }
+    return true;
+  }
+
   function removeBarline(score, mi, side) {
     if (!Number.isInteger(mi) || mi < 0 || mi >= measures(score).length || !['start', 'end'].includes(side)) return false;
     if (!score.barlines) score.barlines = {};
@@ -1989,6 +2013,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       if (h.at >= capacity(score)) removeHairpin(score, mi, h);
       else if (h.to >= capacity(score)) delete h.to;
     });
+    Object.keys(score.dynamics || {}).forEach((mi) => {
+      score.dynamics[mi] = score.dynamics[mi].filter((mark) => mark.at < capacity(score));
+      if (!score.dynamics[mi].length) delete score.dynamics[mi];
+    });
+    if (score.dynamics && !Object.keys(score.dynamics).length) delete score.dynamics;
     Object.keys(score.chords || {}).forEach((mi) => {
       score.chords[mi] = score.chords[mi].filter((chord) => chord.at < capacity(score));
       if (!score.chords[mi].length) delete score.chords[mi];
@@ -2269,6 +2298,17 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       if (Number.isInteger(to) && (span ? to > 0 : to > at) && to < capacity(meterContext, +index + span)) result.to = to;
       barres[index] = result;
     });
+    const dynamics = {};
+    Object.entries(data.dynamics || {}).forEach(([index, list]) => {
+      if (!/^(0|[1-9]\d*)$/.test(index) || +index >= total || !Array.isArray(list)) return;
+      const kept = [];
+      list.forEach((mark) => {
+        const at = mark?.at * factor;
+        if (!Number.isInteger(at) || at < 0 || at >= capacity(meterContext, +index) || !DYNAMICS.includes(mark?.value) || kept.some((other) => other.at === at)) return;
+        kept.push({ at, value: mark.value });
+      });
+      if (kept.length) dynamics[index] = kept.sort((a, b) => a.at - b.at);
+    });
     const chords = {};
     Object.entries(data.chords || {}).forEach(([index, list]) => {
       if (!/^(0|[1-9]\d*)$/.test(index) || +index >= total || !Array.isArray(list)) return;
@@ -2317,7 +2357,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isFinite(width) && width > 0 && width <= 1) measureWidths[index] = width;
     });
     const tabs = sanitizeTabs(data.tabs, rows.reduce((sum, row) => sum + row.length, 0));
-    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, data.intervalMode === 'voices' ? { intervalMode: 'voices' } : {}, Array.isArray(data.registers) && data.registers.some(validRegister) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (validRegister(data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(chords).length ? { chords } : {}, Object.keys(lyrics).length ? { lyrics } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
+    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, data.intervalMode === 'voices' ? { intervalMode: 'voices' } : {}, Array.isArray(data.registers) && data.registers.some(validRegister) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (validRegister(data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(dynamics).length ? { dynamics } : {}, Object.keys(chords).length ? { chords } : {}, Object.keys(lyrics).length ? { lyrics } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
   }
 
   // Rellena huecos con silencios ocultos: el final del compas y el espacio entre figuras sueltas.
@@ -2856,7 +2896,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // Reguladores en el compas `mi`: su inicio (con la dinamica de partida) y su fin (con la dinamica de llegada), por tiempo.
   // Si otro empieza justo donde este termina, la dinamica del empalme se escribe una vez, al empezar el siguiente.
   function hairpinMarks(score, mi) {
-    const dynamic = (value) => (value ? `<direction placement="below"><direction-type><dynamics><${value}/></dynamics></direction-type></direction>` : '');
+    const dynamic = (value, at) => (value && !score.dynamics?.[mi]?.some((mark) => mark.at === at) ? `<direction placement="below"><direction-type><dynamics><${value}/></dynamics></direction-type></direction>` : '');
     const wedge = (type) => `<direction placement="below"><direction-type><wedge type="${type}" number="1"/></direction-type></direction>`;
     const all = hairpinList(score);
     const marks = [];
@@ -2867,10 +2907,10 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       const previous = all.find((other) => other.h !== h && hairpinStop(score, other.mi, other.h) === begin);
       let opening;
       if (first === mi) {
-        opening = { wedge: true, t: h.at, xml: dynamic(h.startDyn || (previous && previous.h.endDyn)) + wedge(h.kind === 'cresc' ? 'crescendo' : 'diminuendo') };
+        opening = { wedge: true, t: h.at, xml: dynamic(h.startDyn || (previous && previous.h.endDyn), h.at) + wedge(h.kind === 'cresc' ? 'crescendo' : 'diminuendo') };
         marks.push(opening);
       }
-      if (last === mi) marks.push({ wedge: true, stop: true, begin: opening, t: Number.isInteger(h.to) ? h.to : capacity(score, mi), xml: wedge('stop') + (next ? '' : dynamic(h.endDyn)) });
+      if (last === mi) marks.push({ wedge: true, stop: true, begin: opening, t: Number.isInteger(h.to) ? h.to : capacity(score, mi), xml: wedge('stop') + (next ? '' : dynamic(h.endDyn, Number.isInteger(h.to) ? h.to : capacity(score, mi))) });
     });
     return marks;
   }
@@ -2958,6 +2998,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
           // Solo si cae dentro de una figura (no en su inicio) se apoya en el inicio de esa figura.
           chord: true, t: measure.some((ev, i) => starts[i] < chord.at && chord.at < starts[i] + length(ev)) ? Math.max(0, ...starts.filter((start) => start <= chord.at)) : chord.at, xml: `<direction placement="above"><direction-type><words font-weight="bold" font-style="normal">${chord.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</words></direction-type></direction>`,
         }));
+        if (!staff) (score.dynamics?.[mi] || []).forEach((mark) => {
+          xml += `<direction placement="below"><direction-type><dynamics><${mark.value}/></dynamics></direction-type><offset>${mark.at * mult}</offset></direction>`;
+        });
         const marks = barreMarks.concat(wedges, chordMarks).sort((a, b) => a.t - b.t);
         let barreOpen = !barre && Boolean(closing);
         let barreClosed = false;
@@ -3090,7 +3133,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
-    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }

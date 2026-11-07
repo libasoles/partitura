@@ -145,7 +145,7 @@ test('the cog is the first sidebar tool and the dialog switches instrument, temp
 
   // Tool groups are checkboxes, each listing its icons.
   await expect(popup.locator('.score-settings-category').nth(0).locator('.score-settings-icon')).toHaveCount(8);
-  await expect(popup.locator('.score-settings-category').nth(1).locator('.score-settings-icon')).toHaveCount(2);
+  await expect(popup.locator('.score-settings-category').nth(1).locator('.score-settings-icon')).toHaveCount(10);
   await popup.getByRole('checkbox', { name: 'Dinámica' }).uncheck();
   await expect(page.locator('[data-hairpin="cresc"]')).toBeHidden();
   await popup.getByRole('checkbox', { name: 'Repetición' }).uncheck();
