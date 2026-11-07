@@ -501,6 +501,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Nombres de acorde elegidos con el arrastre de seleccion: [{ mi, at }].
   let selectedChords = [];
+  let lyricOnly = false; // la seleccion son silabas: se resaltan ellas, no sus notas, y Suprimir quita solo la letra
 
   function markChords() {
     stage.querySelectorAll('.score-chord-trigger').forEach((button) => {
@@ -509,7 +510,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     });
   }
 
-  function setPicks(list) {
+  function setPicks(list, onlyLyrics = false) {
+    lyricOnly = onlyLyrics && list.length > 0;
     selectedChords = [];
     selectedNavigation = [];
     selectedHairpin = null;
@@ -519,6 +521,28 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     selected = list.length ? list[list.length - 1] : null;
     group = list.length > 1 ? list : [];
     markSelected();
+  }
+
+  function markLyrics() {
+    const on = lyricOnly ? picks() : [];
+    stage.querySelectorAll('.score-lyric-trigger').forEach((button) => {
+      const ref = lyricRef(Number(button.dataset.measure), Number(button.dataset.at), Number(button.dataset.staff));
+      button.classList.toggle('is-selected', Boolean(ref) && on.some((p) => same(p, ref)));
+    });
+  }
+
+  // Suma (o quita) una silaba a la seleccion de silabas; `anchor` es la que tenia el campo abierto y pasa a estar elegida.
+  function toggleLyricPick(anchor, key) {
+    const list = lyricOnly ? picks().slice() : [];
+    const anchorRef = anchor && lyricRef(anchor.mi, anchor.at, anchor.staff);
+    if (anchorRef && !list.some((p) => same(p, anchorRef))) list.push(anchorRef);
+    const ref = lyricRef(key.mi, key.at, key.staff);
+    if (ref) {
+      const k = list.findIndex((p) => same(p, ref));
+      if (k >= 0) list.splice(k, 1);
+      else list.push(ref);
+    }
+    setPicks(list, true);
   }
 
   function togglePick(ref) {
@@ -909,6 +933,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function removeSelected() {
+    if (lyricOnly && picks().length) {
+      const refs = picks();
+      setPicks([]);
+      change(() => refs.map((ref) => {
+        const staff = M.staffOf(ref);
+        return M.removeLyric(score, ref.mi, M.onsets(M.measures(score, staff)[ref.mi])[ref.i], staff);
+      }).some(Boolean));
+      return;
+    }
     if (selectedChords.length) {
       const chords = selectedChords;
       selectedChords = [];
@@ -2271,9 +2304,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     input.setAttribute('aria-label', t.lyricName);
     const fit = () => { input.style.width = Math.max(3, input.value.length + 1.5) + 'ch'; };
     fit();
-    input.style.fontSize = line.space * 2 + 'px';
+    // Mismo tamano y misma linea que la silaba dibujada por Verovio (su tspan interno, en unidades del SVG).
+    const verse = node.querySelector('g.verse') || stage.querySelector('g.verse');
+    const unit = verse && verse.querySelector('tspan[font-size]');
+    const size = unit ? parseFloat(unit.getAttribute('font-size')) * verse.getScreenCTM().a : line.space * 2.25;
+    const own = node.querySelector('g.verse');
+    const box = own && own.getBoundingClientRect();
+    input.style.fontSize = size + 'px';
     input.style.left = centerX(node, origin) + 'px';
-    input.style.top = line.y + 'px';
+    input.style.top = (box ? (box.top + box.bottom) / 2 - origin.top : line.y - size * 0.575) + 'px';
     // Guarda y, si se pide, sigue con la nota vecina del mismo pentagrama (`step`: 1 adelante, -1 atras).
     const finish = (save, step = 0) => {
       // Un redibujado quita el campo sin terminar de escribir: el borrador sigue y se vuelve a montar.
@@ -2298,7 +2337,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (event.key === 'Enter') { event.preventDefault(); finish(true); }
       else if (event.key === 'Escape') { event.preventDefault(); finish(false); }
       else if (event.key === 'Tab') { event.preventDefault(); finish(true, event.shiftKey ? -1 : 1); }
-      else if (event.key === ' ' && input.value.trim()) { event.preventDefault(); finish(true, 1); }
+      else if (event.key === ' ' && !event.shiftKey && input.value.trim()) { event.preventDefault(); finish(true, 1); }
     });
     // Pegar una letra la reparte en silabas, una por nota, desde esta y a traves de los compases.
     input.addEventListener('paste', (event) => {
@@ -2348,15 +2387,22 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         button.dataset.dragged = '';
         // Mayus, Ctrl o Cmd suman la nota de la silaba a la seleccion (para unirlas desde el menu); un click abre el campo.
         button.addEventListener('click', (event) => {
-          if (button.dataset.dragged) return;
-          const ref = lyricRef(mi, lyric.at, staff);
-          if ((event.shiftKey || event.ctrlKey || event.metaKey) && ref) { togglePick(ref); stage.focus({ preventScroll: true }); return; }
+          if (button.dataset.dragged || event.shiftKey || event.ctrlKey || event.metaKey) return;
           setPicks([]);
           startLyricDraft(mi, lyric.at, staff);
         });
         // Arrastrar la silaba la lleva a otra nota libre: la zona subrayada marca el destino.
         button.addEventListener('pointerdown', (event) => {
-          if (event.button !== 0 || event.shiftKey || event.ctrlKey || event.metaKey) return;
+          if (event.button !== 0) return;
+          if (event.shiftKey || event.ctrlKey || event.metaKey) {
+            // Si otra silaba tenia el campo abierto, se guarda y pasa a formar parte de la seleccion (sin foco en ninguna).
+            event.preventDefault();
+            const anchor = lyricDraft && { mi: lyricDraft.mi, at: lyricDraft.at, staff: lyricDraft.staff };
+            if (lyricDraft && lyricDraft.finish) lyricDraft.finish(true);
+            toggleLyricPick(anchor, { mi, at: lyric.at, staff });
+            stage.focus({ preventScroll: true });
+            return;
+          }
           button.dataset.dragged = '';
           const startX = event.clientX, startY = event.clientY;
           let moving = false;
@@ -3060,7 +3106,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (nodes.some((node) => !node)) {
       selected = null;
       group = [];
-    } else nodes.forEach((node) => node.classList.add('is-selected'));
+    } else if (!lyricOnly) nodes.forEach((node) => node.classList.add('is-selected'));
+    markLyrics();
     selectedNavigation = selectedNavigation.filter((pick) =>
       Array.from({ length: pick.last - pick.first + 1 }, (_, i) => score.navigation?.[pick.first + i]?.[pick.mark]).some(Boolean));
     stage.querySelectorAll('[data-navigation-mark]').forEach((node) => {
@@ -3530,6 +3577,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (isPlacing(activeItem)) {
       event.preventDefault();
       stage.focus({ preventScroll: true });
+      // Con la herramienta de letra, arrastrar desde un espacio vacio hace el marco de seleccion (para unir silabas).
+      if (activeItem.kind === 'lyric' && event.pointerType !== 'touch' && !eventUnder(event.clientX, event.clientY)) {
+        beginMarquee(event, event.shiftKey || event.ctrlKey || event.metaKey);
+        return;
+      }
       beginDrag(event, { insert: true });
       return;
     }
@@ -3745,6 +3797,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (m.el) m.el.remove();
     if (!m.active || cancelled) return;
     const r = marqueeRect(m, event);
+    if (activeItem && activeItem.kind === 'lyric') {
+      // Con la herramienta de letra el marco elige silabas (sus triggers), no notas.
+      const refs = [...stage.querySelectorAll('.score-lyric-trigger')].filter((node) => {
+        const b = node.getBoundingClientRect();
+        return b.left <= r.right && b.right >= r.left && b.top <= r.bottom && b.bottom >= r.top;
+      }).map((node) => lyricRef(Number(node.dataset.measure), Number(node.dataset.at), Number(node.dataset.staff))).filter(Boolean);
+      const base = lyricOnly ? m.base : [];
+      setPicks(base.concat(refs.filter((f) => !base.some((b) => same(b, f)))), true);
+      return;
+    }
     const found = [...stage.querySelectorAll('g.note, g.rest')].filter((node) => {
       const b = (node.querySelector('.notehead') || node).getBoundingClientRect();
       return b.left <= r.right && b.right >= r.left && b.top <= r.bottom && b.bottom >= r.top;
@@ -3776,7 +3838,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Un click en un lugar neutro (fuera de la partitura, las paletas y los menus) suelta la herramienta.
   document.addEventListener('pointerdown', (event) => {
-    if (!(event.target instanceof Element)) return;
+    // Un elemento que un redibujado ya quito (la silaba pulsada mientras otra tenia el campo) no cuenta como un click fuera.
+    if (!(event.target instanceof Element) || !event.target.isConnected) return;
     // Los campos del titulo y el autor tambien quedan fuera de la seleccion musical.
     if ((picks().length || selectedNavigation.length || selectedBeam || selectedLink || selectedHairpin) && !event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-side-actions, .score-doc-tab, .score-library, [popover]')) setPicks([]);
     if (!activeItem) return;

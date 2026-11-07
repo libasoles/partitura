@@ -60,11 +60,11 @@ test('a syllable moves to a free note of its staff, across measures', () => {
   assert.equal(M.moveLyric(score, 0, 24, 0, 24), false, 'same place');
 });
 
-test('merging joins the texts with a hyphen and the following syllables close the gap', () => {
+test('merging joins the texts with a space and the following syllables close the gap', () => {
   const score = twoMeasures();
   M.distributeLyrics(score, 0, 0, 0, syllables('Can', 'to', 'de', 'la', 'ma', 'ña'));
   assert.equal(M.applySelection(score, [{ mi: 0, i: 0 }, { mi: 0, i: 1 }], 'mergeLyrics'), true);
-  assert.deepEqual(texts(score), ['0:0:Can-to', '0:24:de', '0:48:la', '0:72:ma', '1:0:ña']);
+  assert.deepEqual(texts(score), ['0:0:Can to', '0:24:de', '0:48:la', '0:72:ma', '1:0:ña']);
 });
 
 test('merging three syllables, with a gap between them, closes every vacated place', () => {
@@ -77,7 +77,7 @@ test('merging three syllables, with a gap between them, closes every vacated pla
   const sel = [0, 1, 3].map((i) => ({ mi: 0, i }));
   assert.ok(M.selectionActions(score, sel).includes('mergeLyrics'));
   assert.ok(M.applySelection(score, sel, 'mergeLyrics'));
-  assert.deepEqual(texts(score), ['0:0:a-b-c', '0:48:d', '1:0:e']);
+  assert.deepEqual(texts(score), ['0:0:a b c', '0:48:d', '1:0:e']);
 });
 
 test('merging needs two syllables and respects the length limit', () => {
@@ -95,5 +95,5 @@ test('merge skips tied notes when closing the gap', () => {
   M.measures(score)[0][2].tie = true;
   M.distributeLyrics(score, 0, 0, 0, syllables('a', 'b', 'c', 'd', 'e'));
   assert.ok(M.applySelection(score, [{ mi: 0, i: 0 }, { mi: 0, i: 1 }], 'mergeLyrics'));
-  assert.deepEqual(texts(score), ['0:0:a-b', '0:24:c', '0:48:d', '1:0:e']);
+  assert.deepEqual(texts(score), ['0:0:a b', '0:24:c', '0:48:d', '1:0:e']);
 });

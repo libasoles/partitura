@@ -15,7 +15,7 @@ test('a syllable is stored per measure, staff and time, only on notes', () => {
   const score = withNotes('guitarra');
   assert.ok(M.setLyric(score, 0, 24, 'la'));
   assert.ok(M.setLyric(score, 0, 0, ' en-a '));
-  assert.deepEqual(score.lyrics, { 0: [{ at: 0, text: 'en-a' }, { at: 24, text: 'la' }] });
+  assert.deepEqual(score.lyrics, { 0: [{ at: 0, text: 'en a' }, { at: 24, text: 'la' }] });
   assert.equal(M.setLyric(score, 0, 12, 'x'), false, 'no note there');
   assert.equal(M.setLyric(score, 0, 0, 'x'.repeat(M.MAX_LYRIC + 1)), false);
   assert.equal(M.setLyric(score, 0, 0, 'a', 1), false, 'one staff only');
@@ -43,6 +43,15 @@ test('MusicXML writes every syllable as single, so no hyphens are drawn between 
   M.setLyric(score, 0, 72, 'sí');
   const xml = M.toMusicXml(score);
   assert.deepEqual([...xml.matchAll(/<syllabic>(\w+)<\/syllabic><text>([^<]*)<\/text>/g)].map((m) => m[1] + ':' + m[2]), ['single:glo', 'single:ri', 'single:a', 'single:sí']);
+});
+
+test('a hyphen or a space inside a syllable is stored as a space and drawn as an elision tie', () => {
+  const score = withNotes('guitarra');
+  M.setLyric(score, 0, 0, 'me-a');
+  M.setLyric(score, 0, 24, 'la  la');
+  assert.deepEqual(score.lyrics[0].map((l) => l.text), ['me a', 'la la']);
+  assert.ok(M.toMusicXml(score).includes('<text>me\u203fa</text>'));
+  assert.equal(M.setLyric(score, 0, 48, '-'), false);
 });
 
 test('lyrics are escaped, reload from saved data and move with a measure split', () => {

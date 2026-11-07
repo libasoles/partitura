@@ -1505,7 +1505,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   function parseLyric(text) {
-    text = typeof text === 'string' ? text.trim() : '';
+    // Un guion o un espacio dentro de la silaba son lo mismo: dos sonidos en una nota, unidos por una ligadura al dibujarla.
+    text = typeof text === 'string' ? text.replace(/-/g, ' ').replace(/\s+/g, ' ').trim() : '';
     return text && text.length <= MAX_LYRIC ? { text } : null;
   }
 
@@ -1605,13 +1606,13 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return chosen.length >= 2 ? { staff, spots, entries, chosen } : null;
   }
 
-  // Une las silabas elegidas en la primera ("Can" + "to" = "Can-to") y corre las siguientes a la izquierda para ocupar los lugares
+  // Une las silabas elegidas en la primera ("Can" + "to" = "Can to") y corre las siguientes a la izquierda para ocupar los lugares
   // que quedaron libres. Falla si el texto resultante es demasiado largo.
   function mergeLyrics(score, sel) {
     const run = lyricMergeRun(score, sel);
     if (!run) return false;
     const [first, ...rest] = run.chosen;
-    const text = run.chosen.map((entry) => entry.text).join('-');
+    const text = run.chosen.map((entry) => entry.text).join(' ');
     if (text.length > MAX_LYRIC) return false;
     const removed = new Set(rest.map((entry) => entry.idx));
     const moves = run.entries.map((entry) => {
@@ -1653,7 +1654,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const tied = tiedLyricSpots(score, staff);
     Object.keys(score.lyrics || {}).map(Number).forEach((mi) => {
       score.lyrics[mi].filter((lyric) => (lyric.s || 0) === staff && !tied.has(mi + ':' + lyric.at)).forEach((lyric) => {
-        map.set(mi + ':' + lyric.at, { text: lyric.text, syllabic: 'single' });
+        map.set(mi + ':' + lyric.at, { text: lyric.text.replace(/ /g, '\u203f'), syllabic: 'single' });
       });
     });
     return map;
