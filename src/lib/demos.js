@@ -504,20 +504,21 @@ function toolSidebar(d, which = [0, 1]) {
 // ----- guitar -------------------------------------------------------------------------------------------------------------
 
 const TAB_TOP = 94;
+const TAB_GAP = 10;
 
 /** The six tab lines under the staff, with the T A B letters. */
 function tabLines(d) {
-  return d.lines(d.x0 + 14, d.x1, TAB_TOP, 6, 7) +
-    ['T', 'A', 'B'].map((c, i) => `<text class="d-text" x="${d.x0 + 6}" y="${TAB_TOP + 9 + i * 9}" text-anchor="middle" font-size="8" font-weight="700">${c}</text>`).join('');
+  return d.lines(d.x0 + 14, d.x1, TAB_TOP, 6, TAB_GAP) +
+    ['T', 'A', 'B'].map((c, i) => `<text class="d-text" x="${d.x0 + 6}" y="${TAB_TOP + 13 + i * 12}" text-anchor="middle" font-size="8" font-weight="700">${c}</text>`).join('');
 }
 
 export function tabToggle(s, aria) {
-  const d = stage68({ id: 'tab', T: 13, bottom: 62, h: 146 });
+  const d = stage68({ id: 'tab', T: 13, bottom: 62, h: 170 });
   const notes = twoMeasures(d, MEASURE_A, MEASURE_B).filter((n) => !n.rest);
   d.add(0, 0, tabLines(d), [[0, { o: 0 }], [3.0, { o: 0 }], [3.4, { o: 1 }], [d.T - 0.7, { o: 1 }], [d.T - 0.2, { o: 0 }]]);
   notes.forEach((n, i) => {
     const [string, fret] = tabOf(n.name);
-    d.fret(n.x + 5, TAB_TOP, string, fret, d.pop(3.6 + i * 0.25), {});
+    d.fret(n.x + 5, TAB_TOP, string, fret, d.pop(3.6 + i * 0.25), { gap: TAB_GAP });
   });
   // The button in the palette lights up when it is on.
   const bx = d.w - 30;
@@ -530,18 +531,18 @@ export function tabToggle(s, aria) {
 
 /** Shift+↓ on a selected tab number looks for the next fingering of that pitch on the strings below, one press at a time. */
 export function refinger(s, aria) {
-  const d = stage({ id: 'refing', T: 13, bottom: 62, h: 160 });
+  const d = stage({ id: 'refing', T: 13, bottom: 62, h: 184 });
   const notes = phrase(d, [[q('D4'), q('G4')]], 56);
   notes.forEach((n) => d.note(n.x, n.p, 'q', d.life(0.05)));
   d.base(tabLines(d));
-  d.fret(notes[0].x + 5, TAB_TOP, 3, 0, d.life(0.05), {});
+  d.fret(notes[0].x + 5, TAB_TOP, 3, 0, d.life(0.05), { gap: TAB_GAP });
   const x = notes[1].x + 5;
   // The same G on the open third string, then the fifth fret of the fourth, then the tenth of the fifth.
-  d.fret(x, TAB_TOP, 2, 0, S(d.life(0.05, 4.0), [[2.2, { c: INK }], [2.3, { c: SEL }]]), { keep: false });
-  d.fret(x, TAB_TOP, 3, 5, S(d.pop(4.0, 5.8), [[0, { c: SEL }]]), { keep: false });
-  d.fret(x, TAB_TOP, 4, 10, S(d.pop(5.8), [[0, { c: SEL }]]), {});
-  d.click(2.2, x, TAB_TOP + 2 * 7 + 3);
-  d.pointer([[0.8, d.w - 30, d.h - 24], ...visit(2.2, x + 2, TAB_TOP + 2 * 7 + 3), [3.6, d.w - 30, d.h - 24]]);
+  d.fret(x, TAB_TOP, 2, 0, S(d.life(0.05, 4.0), [[2.2, { c: INK }], [2.3, { c: SEL }]]), { gap: TAB_GAP, keep: false });
+  d.fret(x, TAB_TOP, 3, 5, S(d.pop(4.0, 5.8), [[0, { c: SEL }]]), { gap: TAB_GAP, keep: false });
+  d.fret(x, TAB_TOP, 4, 10, S(d.pop(5.8), [[0, { c: SEL }]]), { gap: TAB_GAP });
+  d.click(2.2, x, TAB_TOP + 2 * TAB_GAP + 3);
+  d.pointer([[0.8, d.w - 30, d.h - 24], ...visit(2.2, x + 2, TAB_TOP + 2 * TAB_GAP + 3), [3.6, d.w - 30, d.h - 24]]);
   d.keycap('Shift', d.w - 60, 3.0, [3.9, 5.7], 8.4);
   d.keycap('↓', d.w - 24, 3.0, [3.9, 5.7], 8.4);
   return d.html(aria);
@@ -1025,7 +1026,7 @@ export function reassignVoice(s, aria) {
   });
   const wx = xs[2];
   const wy = d.y(pitch('E4'));
-  d.add(wx, wy, noteInner(pitch('E4'), 'q', { stemDown: false }), S(d.life(1.3, 6.4), [[0, { c: SEL }]]), { keep: false });
+  d.add(wx, wy, noteInner(pitch('E4'), 'q', { stemDown: false }), S(d.life(1.3, 6.4), [[0, { c: SEL }]]), { gap: TAB_GAP, keep: false });
   const label = (u.assignVoice || '').replace('{n}', '1');
   d.add(wx - 40, wy + 8, `<rect class="d-panel" width="${Math.max(100, label.length * 5.4 + 24)}" height="26" rx="6"/><circle cx="14" cy="13" r="7" fill="${VOICE[0]}"/><text class="d-captext" x="14" y="13" fill="#fff" text-anchor="middle" dominant-baseline="central" font-size="8">1</text><text class="d-menutext d-menutext--hot" x="27" y="16.5" font-size="9">${label}</text>`, d.life(3.2, 6.4));
   d.pointer([[0.5, 280, 112], ...visit(1.3, wx + 5, wy), ...visit(4.3, wx + 10, wy + 21), [7.5, 280, 112]]);

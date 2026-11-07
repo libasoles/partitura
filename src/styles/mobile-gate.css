@@ -4,7 +4,7 @@
 .mobile-gate { display: none; }
 
 @media (max-width: 899px) {
-  .mobile-gate { display: block; }
+  .mobile-gate { display: block; margin-top: 1.5rem; }
   .score-editor { display: none; }
   .score-editor[data-demo-id] { display: block; }
   .score-editor[data-demo-id] .score-workspace { display: block; }
