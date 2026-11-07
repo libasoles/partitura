@@ -8,7 +8,7 @@ import { stage, noteInner, pillInner, beamGroup } from './demo.js';
 
 const M = createScoreModel({ choir: true, grandStaff: true });
 const song = IO.parseMusicXml(source, M, new DOMParser());
-const colors = ['#c58e97', '#92ae9e', '#93a7c9'];
+const colors = ['#b57682', '#749982', '#768fb5'];
 const lanes = [M.measures(song), song.lower, song.lower2];
 const x = (at) => 120 + at * 2.6;
 
@@ -16,7 +16,7 @@ export function songDemo(kind, label) {
   const choir = kind === 'choir';
   const lyrics = kind === 'lyrics';
   const intervals = kind === 'intervals';
-  const mi = choir ? 29 : intervals ? 7 : 10;
+  const mi = choir ? 29 : intervals ? 42 : 10;
   const d = stage({ id: `mobile-${kind}`, T: 12, h: choir ? 300 : lyrics ? 150 : 130, bottom: intervals ? 92 : 76, meter: [3, 4], key: 5 });
   const count = choir ? 3 : lyrics ? 1 : 2;
   for (let staff = 0; staff < count; staff++) {
@@ -26,7 +26,10 @@ export function songDemo(kind, label) {
     }
     lanes[staff][mi].forEach((n, i) => {
       const p = n.n - 30;
-      const px = x(n.at);
+      // Adjacent heads on a shared staff sit beside each other, as in the editor.
+      const adjacent = !choir && staff === 1 && lanes[0][mi].some((other) =>
+        other.at === n.at && !other.rest && Math.abs(other.n - n.n) === 1);
+      const px = x(n.at) + (adjacent ? 11 : 0);
       const py = d.y(p) + offset;
       const note = `<g style="color:${colors[staff]};fill:currentColor">${noteInner(p, n.d, { dot: n.dot, acc: n.acc, stemDown: !choir && staff === 1 })}</g>`;
       if (lyrics || intervals) d.base(`<g transform="translate(${px} ${py})">${note}</g>`);
