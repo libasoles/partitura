@@ -12,7 +12,7 @@
   .score-editor[data-demo-id] .score-title { grid-column: 1 / -1; grid-row: 1; margin: 0.25rem 12px 0; }
   .score-editor[data-demo-id] .score-author { grid-column: 1 / -1; grid-row: 2; margin: 0 12px; text-align: left; }
   .score-editor[data-demo-id] .score-author input { text-align: left; }
-  .site-header--editor .site-menu { display: none; }
+  .site-header--editor :is(.brand, .site-menu) { display: none; }
 }
 
 .mobile-gate__hero {
