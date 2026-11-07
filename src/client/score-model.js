@@ -1832,12 +1832,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return tools;
   }
 
-  // Intervalos: entre voces vecinas (por defecto, no se guarda) o respecto del bajo.
-  const INTERVAL_MODES = ['voices', 'bass'];
-  const intervalModeOf = (score) => (score && score.intervalMode === 'bass' ? 'bass' : 'voices');
+  // Intervalos: respecto del bajo (por defecto, no se guarda) o entre voces vecinas.
+  const INTERVAL_MODES = ['bass', 'voices'];
+  const intervalModeOf = (score) => (score && score.intervalMode === 'voices' ? 'voices' : 'bass');
   function setIntervalMode(score, mode) {
     if (!INTERVAL_MODES.includes(mode)) return false;
-    if (mode === 'voices') delete score.intervalMode; else score.intervalMode = mode;
+    if (mode === 'bass') delete score.intervalMode; else score.intervalMode = mode;
     return true;
   }
 
@@ -2317,7 +2317,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isFinite(width) && width > 0 && width <= 1) measureWidths[index] = width;
     });
     const tabs = sanitizeTabs(data.tabs, rows.reduce((sum, row) => sum + row.length, 0));
-    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, data.intervalMode === 'bass' ? { intervalMode: 'bass' } : {}, Array.isArray(data.registers) && data.registers.some(validRegister) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (validRegister(data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(chords).length ? { chords } : {}, Object.keys(lyrics).length ? { lyrics } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
+    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, data.intervalMode === 'voices' ? { intervalMode: 'voices' } : {}, Array.isArray(data.registers) && data.registers.some(validRegister) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (validRegister(data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(chords).length ? { chords } : {}, Object.keys(lyrics).length ? { lyrics } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
   }
 
   // Rellena huecos con silencios ocultos: el final del compas y el espacio entre figuras sueltas.

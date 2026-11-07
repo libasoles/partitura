@@ -74,9 +74,14 @@ test('Intervals relative to the bass label every note against the lowest one', (
   score.lower2 = { 0: [{ d: 'w', n: 35 }] };
   assert.deepEqual(choirColumns(score, 0, C)[0].intervals, ['III', 'III']);
   assert.deepEqual(choirColumns(score, 0, C, null, true)[0].intervals, ['V', 'III']);
-  assert.equal(C.intervalModeOf(score), 'voices');
-  C.setIntervalMode(score, 'bass');
-  assert.equal(C.sanitize(score).intervalMode, 'bass');
+  assert.equal(C.intervalModeOf(score), 'bass');
   C.setIntervalMode(score, 'voices');
+  assert.equal(C.intervalModeOf(C.sanitize(score)), 'voices');
+  assert.equal(C.sanitize(score).intervalMode, 'voices');
+  C.setIntervalMode(score, 'bass');
   assert.equal(score.intervalMode, undefined);
+  assert.equal(C.intervalModeOf(C.sanitize(score)), 'bass');
+  assert.equal(C.intervalModeOf(C.sanitize({ ...score, intervalMode: 'bass' })), 'bass');
+  const xml = withIntervals(C.toMusicXml(score), score, C);
+  assert.match(xml, />V\nIII<\/words>/);
 });

@@ -5344,7 +5344,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         modes.className = 'score-settings-interval-modes';
         modes.setAttribute('role', 'radiogroup');
         modes.setAttribute('aria-label', t.toolsIntervals);
-        intervalModes = ['voices', 'bass'].map((id) => {
+        intervalModes = ['bass', 'voices'].map((id) => {
           const mode = document.createElement('label');
           mode.className = 'score-settings-radio';
           const radio = document.createElement('input');

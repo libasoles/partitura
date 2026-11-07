@@ -76,6 +76,8 @@ test('settings stay inside a short viewport and all options remain reachable by 
   await expect(modes).toBeHidden();
   await intervals.check();
   await expect(modes).toBeVisible();
+  await expect(modes.getByRole('radio').first()).toHaveAccessibleName('En relación al bajo');
+  await expect(modes.getByRole('radio').first()).toBeChecked();
   const labelBox = await category('Intervalos').locator(':scope > .score-settings-check').boundingBox();
   const modesBox = await modes.boundingBox();
   expect(modesBox.y).toBeGreaterThanOrEqual(labelBox.y + labelBox.height);
