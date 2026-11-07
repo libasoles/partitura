@@ -13,6 +13,7 @@
   .score-editor[data-demo-id] .score-author { grid-column: 1 / -1; grid-row: 2; margin: 0 12px; text-align: left; }
   .score-editor[data-demo-id] .score-author input { text-align: left; }
   .site-header--editor :is(.brand, .site-menu) { display: none; }
+  .beta-badge, .beta-popover { display: none; }
 }
 
 .mobile-gate__hero {
