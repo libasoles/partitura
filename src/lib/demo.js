@@ -194,7 +194,7 @@ export function stage(o) {
     d.add(x, py, `<text class="d-text" text-anchor="${anchor}" font-size="${size}" font-weight="${weight}"${italic ? ' font-style="italic"' : ''}${font ? ` style="font-family:${font}"` : ''}>${text}</text>`, stops, opts);
 
   /** A fret number on a tab line, with the paper behind it hiding the string. */
-  d.fret = (x, top, string, n, stops, opts = {}) => d.text(x, top + string * 7 + 3, n, stops, { size: 8.5, cls: 'd-fret', ...opts });
+  d.fret = (x, top, string, n, stops, { gap = 7, ...opts } = {}) => d.text(x, top + string * gap + 3, n, stops, { size: 8.5, cls: 'd-fret', ...opts });
 
   /** A click ripple at (x, y) at time t. */
   d.click = (t, x, py) =>
