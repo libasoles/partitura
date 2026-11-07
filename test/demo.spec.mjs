@@ -9,6 +9,45 @@ async function ready(page, url = '/es/') {
   await page.waitForFunction(() => window.scoreEditor);
 }
 
+test('demo is readable without JavaScript on desktop and mobile', async ({ browser }) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const page = await context.newPage();
+    await page.goto('/es/demos/canto-en-la-rama/');
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      const notes = page.locator('#scoreStage g.note');
+      await expect(notes.first()).toBeVisible();
+      await expect(notes.last()).toBeVisible();
+      await expect(page.locator('#scoreStage g.verse').first()).toBeVisible();
+      const title = await page.locator('#scoreTitle').evaluate((input) => ({ width: input.clientWidth, text: input.scrollWidth }));
+      expect(title.width).toBeGreaterThanOrEqual(title.text);
+      const heights = await page.locator('#scoreStage').evaluate((stage) => ({ stage: stage.clientHeight, svg: [...stage.querySelectorAll(':scope > svg')].reduce((h, svg) => h + svg.getBoundingClientRect().height, 0) }));
+      expect(heights.stage).toBeGreaterThanOrEqual(Math.floor(heights.svg));
+    }
+  } finally {
+    await context.close();
+  }
+});
+
+test('prerendered demo becomes editable without downloading MusicXML or losing personal scores', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [{ title: 'Mi partitura', rows: [[[]]] }] }));
+  });
+  let downloads = 0;
+  await page.route(`**${demoPath}`, (route) => { downloads++; return route.abort(); });
+  await ready(page, '/es/demos/canto-en-la-rama/');
+  await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');
+  expect(downloads).toBe(0);
+  await expect(page.locator('#scoreIntervals')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('#scoreTitle').fill('Demo editada');
+  await expect(page.locator('.score-doc-tab.is-active input')).toHaveValue('Demo editada');
+  await page.locator('.score-doc-tab:not(.is-active)').click();
+  await expect(page.locator('#scoreTitle')).toHaveValue('Mi partitura');
+  await page.locator('.score-doc-tab:not(.is-active)').click();
+  await expect(page.locator('#scoreTitle')).toHaveValue('Demo editada');
+});
+
 test('demo is fetched only on selection and opens through the importer in a new tab', async ({ page }) => {
   let requests = 0;
   await page.route(`**${demoPath}`, async (route) => {

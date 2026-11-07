@@ -10,7 +10,7 @@ import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
 import { applyUrlDefaults } from './url-defaults.js';
 
-export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, lyrics = false, patterns = false, urlDefaults = {} } = {}) {
+export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, lyrics = false, patterns = false, urlDefaults = {}, initialDemo } = {}) {
 
   const M = window.ScoreModel;
   const STORAGE_KEY = 'scoreEditor.v2';
@@ -33,6 +33,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const tabsBar = document.getElementById('scoreTabs');
   const stored = loadAll();
   const docs = stored.scores; // una partitura por pestana
+  if (initialDemo) {
+    docs.push(Object.assign(M.sanitize(initialDemo.score), { demo: true, demoId: initialDemo.id }));
+    stored.active = docs.length - 1;
+  }
   docs.forEach((one) => applyUrlDefaults(one, urlDefaults, M));
   const histories = docs.map(() => []);
   let active = stored.active;
@@ -4796,6 +4800,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // The analysis toggle is a view preference for each open document.
   const intervalDocuments = new WeakSet();
+  if (score.demo) intervalDocuments.add(score);
   const intervalButton = document.createElement('button');
   intervalButton.id = 'scoreIntervals';
   intervalButton.className = 'score-palette-item score-interval-toggle tooltip';

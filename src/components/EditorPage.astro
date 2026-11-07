@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { renderEmptyStaff } from '../lib/staff.js';
+import { renderDemo } from '../lib/published-demo.js';
 import { pathFor, strings, locales, type Locale } from '../i18n';
 import MobileGate from './MobileGate.astro';
 import WelcomeBanner from './WelcomeBanner.astro';
@@ -16,7 +17,9 @@ interface Props {
 const { locale, demo } = Astro.props;
 const s = strings(locale);
 // The staff the editor starts from, drawn now so the first paint (and anything that does not run JS) already has it.
-const staff = await renderEmptyStaff(undefined, undefined, { grandStaff: true });
+const demoSources = import.meta.glob<string>('/public/demos/*.musicxml', { query: '?raw', import: 'default' });
+const published = demo ? await renderDemo(await demoSources[`/public${decodeURIComponent(demo.url)}`]()) : undefined;
+const staff = published?.svg ?? await renderEmptyStaff(undefined, undefined, { grandStaff: true });
 const paths = Object.fromEntries(locales.map((l) => [l, demo ? demoPath(l, demo) : pathFor(l)])) as Record<Locale, string>;
 const title = demo ? `${demo.title} — ${demo.author} | ${s.ui.siteName}` : s.scorePageTitle;
 const descriptions = demo && {
@@ -41,7 +44,7 @@ const clientStrings = Object.fromEntries([
     </div>
     <WelcomeBanner locale={locale} />
 
-    <MobileGate locale={locale} />
+    {!demo && <MobileGate locale={locale} />}
 
     <section id="editor" class="score-editor" aria-label={s.scoreLabel} data-demo-id={demo?.id}>
       <div class="score-workspace">
@@ -58,7 +61,7 @@ const clientStrings = Object.fromEntries([
           <section class="score-sheet" aria-label={s.scoreLabel}>
             <p class="score-author"><input id="scoreAuthor" type="text" placeholder={s.scoreAuthorPlaceholder} aria-label={s.scoreAuthorLabel} value={demo?.author} /></p>
             <div class="score-title"><input id="scoreTitle" type="text" aria-label={s.scoreTitleLabel} value={demo?.title ?? s.scoreH1} /></div>
-            <div id="scoreStage" class="score-stage" tabindex="0" aria-busy="true" aria-label={s.scoreLabel} set:html={staff} />
+            <div id="scoreStage" class="score-stage" tabindex="0" aria-busy={demo ? 'false' : 'true'} data-prerendered={demo ? 'true' : undefined} aria-label={s.scoreLabel} set:html={staff} />
           </section>
         </div>
         <aside class="score-side">
@@ -76,6 +79,7 @@ const clientStrings = Object.fromEntries([
     </section>
 
     <script id="scoreStrings" type="application/json" set:html={JSON.stringify(clientStrings).replace(/</g, '\\u003c')} />
+    {demo && published && <script id="demoScore" type="application/json" set:html={JSON.stringify({ id: demo.id, score: published.score }).replace(/</g, '\\u003c')} />}
     <script>
       import '../client/main.js';
     </script>

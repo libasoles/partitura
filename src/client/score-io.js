@@ -63,8 +63,8 @@ const api = (function () {
     return null;
   }
 
-  function parseMusicXml(source, M) {
-    const doc = new DOMParser().parseFromString(source, 'application/xml');
+  function parseMusicXml(source, M, parser = new DOMParser()) {
+    const doc = parser.parseFromString(source, 'application/xml');
     if (doc.querySelector('parsererror')) throw new Error('xml');
     const root = doc.documentElement;
     if (root.localName !== 'score-partwise') throw new Error('xml');

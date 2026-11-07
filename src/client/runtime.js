@@ -11,7 +11,7 @@ export async function startEditor({ defaultClef = 'treble', saveDelay = 300, ...
   const urlChoir = options.urlDefaults?.tools?.voices || Boolean(options.urlDefaults?.sound);
   window.ScoreModel = createScoreModel({ defaultClef, grandStaff: Boolean(options.settings), choir: Boolean(options.settings) && (isPro() || urlChoir) });
   await initStorage({ saveDelay });
-  if (window.ScoreStore.stored) document.getElementById('scoreStage')?.classList.add('is-loading');
+  if (window.ScoreStore.stored && !options.initialDemo) document.getElementById('scoreStage')?.classList.add('is-loading');
   // Letra y biblioteca de patrones son Pro: solo con #pro en la URL.
   start({ ...options, lyrics: Boolean(options.lyrics) && isPro(), patterns: Boolean(options.patterns) && isPro() });
 }

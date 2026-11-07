@@ -1,9 +1,10 @@
-/* staff.js — Renders the empty score once, at build time, with the same Verovio and ScoreModel the editor uses
+/* staff.js — Renders scores at build time, with the same Verovio and ScoreModel the editor uses
    in the browser, so the HTML already contains a real staff (crawlers, no-JS visitors and the first paint) and the
    editor only swaps it for the live one. */
 
 import { createRequire } from 'node:module';
 import ScoreModel, { createScoreModel } from '../client/score-model.js';
+import { withIntervals } from '../client/score-intervals.js';
 
 const verovio = createRequire(import.meta.url)('verovio');
 
@@ -33,7 +34,13 @@ function createToolkit(ready) {
 export async function renderEmptyStaff(ready = verovio.module, score, { grandStaff = false } = {}) {
   const model = grandStaff ? createScoreModel({ grandStaff }) : ScoreModel;
   score ??= model.emptyScore();
-  const key = grandStaff + JSON.stringify(score);
+  return renderScoreStaff(score, { model, ready });
+}
+
+// Published scores use the same model and engraver as the interactive editor.
+export async function renderScoreStaff(score, { model = ScoreModel, ready = verovio.module, intervals = false } = {}) {
+  const xml = model.toMusicXml(score);
+  const key = intervals + xml;
   if (cache.has(key)) return cache.get(key);
   const toolkit = await createToolkit(ready);
   toolkit.setOptions({
@@ -53,9 +60,13 @@ export async function renderEmptyStaff(ready = verovio.module, score, { grandSta
     spacingSystem: 12,
     mnumInterval: 0,
   });
-  toolkit.loadData(model.toMusicXml(score));
-  const svg = model.refineTempo(toolkit.renderToSVG(1));
-  toolkit.destroy();
-  cache.set(key, svg);
-  return svg;
+  try {
+    toolkit.loadData(intervals ? withIntervals(xml, score, model) : xml);
+    if (intervals) toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="60%"'));
+    const svg = Array.from({ length: toolkit.getPageCount() }, (_, i) => model.refineTempo(toolkit.renderToSVG(i + 1))).join('');
+    cache.set(key, svg);
+    return svg;
+  } finally {
+    toolkit.destroy();
+  }
 }

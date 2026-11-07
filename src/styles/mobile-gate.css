@@ -6,6 +6,12 @@
 @media (max-width: 899px) {
   .mobile-gate { display: block; }
   .score-editor { display: none; }
+  .score-editor[data-demo-id] { display: block; }
+  .score-editor[data-demo-id] .score-workspace { display: block; }
+  .score-editor[data-demo-id] :is(.score-doc-tabs, .score-toolbar, .score-status, .score-side, .score-rows) { display: none; }
+  .score-editor[data-demo-id] .score-title { grid-column: 1 / -1; grid-row: 1; margin: 0.25rem 12px 0; }
+  .score-editor[data-demo-id] .score-author { grid-column: 1 / -1; grid-row: 2; margin: 0 12px; text-align: left; }
+  .score-editor[data-demo-id] .score-author input { text-align: left; }
   .site-header--editor .site-menu { display: none; }
 }
 

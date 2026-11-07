@@ -9,7 +9,8 @@ async function start() {
   const { readUrlDefaults } = await import('./url-defaults.js');
   const demo = document.getElementById('editor')?.dataset.demoId;
   const urlDefaults = readUrlDefaults(demo ? '?tools=voices,play,intervals&sound=uh' : location.search);
-  await startEditor({ bindActions: bindSiteActions, settings: true, chords: true, lyrics: true, patterns: true, urlDefaults });
+  const initialDemo = document.getElementById('demoScore');
+  await startEditor({ bindActions: bindSiteActions, settings: true, chords: true, lyrics: true, patterns: true, urlDefaults, initialDemo: initialDemo ? JSON.parse(initialDemo.textContent) : undefined });
 }
 
 if (desktop.matches) start();

@@ -16,6 +16,8 @@ Cada demo tiene una página estática propia en cada idioma, con título, autor,
 
 El menú enlaza estas páginas con enlaces HTML rastreables, que también permiten abrir la demo sin JavaScript. Cada página incluye un encabezado y una descripción accesibles en el HTML, permite indexación y aparece en el sitemap. Esto habilita el rastreo; la inclusión efectiva en un buscador se verifica en su consola de búsqueda.
 
+La partitura completa también se genera durante el build: el MusicXML del catálogo se importa con el mismo modelo del editor y se dibuja con Verovio, incluidas voces, sílabas e intervalos. El HTML contiene el SVG y los datos de la demo. Se puede leer sin JavaScript, también en móvil; en escritorio, al terminar la carga, el editor usa esos datos para volverla interactiva sin descargar otra vez el MusicXML. La copia sigue siendo volátil y conserva las partituras propias del visitante. Abrir una demo desde el menú sigue usando la importación bajo demanda.
+
 Abrir el enlace importa la canción automáticamente; si ya hay una copia de esa demo en el navegador, la activa sin duplicarla. Las ediciones locales no se comparten. Crear, editar o importar partituras propias no actualiza la URL. También se acepta `?demo=canto-en-la-rama` en el editor; solo admite identificadores del catálogo publicado.
 
 La URL puede fijar los grupos de herramientas activos al abrir la página:
