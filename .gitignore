@@ -17,3 +17,4 @@ test-results/
 playwright-report/
 .lighthouse-reports/
 /lib/
+TODO.md
