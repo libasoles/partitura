@@ -52,7 +52,7 @@ const icons: Record<string, string> = {
       {g.features.map(([key, title, body]) => (
         <li class={`feature feature--${key}`}>
           <div class="feature__demo" aria-hidden="true">
-            {key === 'voices' && <><Fragment set:html={songDemo('voices', title)} /><Fragment set:html={songDemo('choir', title)} /></>}
+            {key === 'voices' && <Fragment set:html={songDemo('voices', title)} />}
             {key === 'lyrics' && <Fragment set:html={songDemo('lyrics', title)} />}
             {key === 'intervals' && <Fragment set:html={songDemo('intervals', title)} />}
             {key === 'context' && <Fragment set:html={contextDemo(s, title)} />}
@@ -80,8 +80,10 @@ const icons: Record<string, string> = {
           <svg class="feature__icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><Fragment set:html={icons[key]} /></svg>
           <h3>{title}</h3>
           <p>{body}</p>
+          {key === 'voices' && <div class="feature__demo feature__demo--after" aria-hidden="true"><Fragment set:html={songDemo('choir', title)} /></div>}
         </li>
       ))}
     </ul>
+    <a class="mobile-gate__cta mobile-gate__cta--ghost" href={tutorialsPath(locale)}>{g.tutorials}</a>
   </div>
 </section>

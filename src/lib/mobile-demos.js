@@ -8,7 +8,7 @@ import { stage, noteInner, pillInner, beamGroup } from './demo.js';
 
 const M = createScoreModel({ choir: true, grandStaff: true });
 const song = IO.parseMusicXml(source, M, new DOMParser());
-const colors = ['#b5472f', '#3f7d5a', '#3a5f9e'];
+const colors = ['#c58e97', '#92ae9e', '#93a7c9'];
 const lanes = [M.measures(song), song.lower, song.lower2];
 const x = (at) => 120 + at * 2.6;
 
@@ -16,7 +16,7 @@ export function songDemo(kind, label) {
   const choir = kind === 'choir';
   const lyrics = kind === 'lyrics';
   const intervals = kind === 'intervals';
-  const mi = choir ? 29 : 10;
+  const mi = choir ? 29 : intervals ? 7 : 10;
   const d = stage({ id: `mobile-${kind}`, T: 12, h: choir ? 300 : lyrics ? 150 : 130, bottom: intervals ? 92 : 76, meter: [3, 4], key: 5 });
   const count = choir ? 3 : lyrics ? 1 : 2;
   for (let staff = 0; staff < count; staff++) {
@@ -28,12 +28,13 @@ export function songDemo(kind, label) {
       const p = n.n - 30;
       const px = x(n.at);
       const py = d.y(p) + offset;
-      d.add(px, py, `<g style="color:${colors[staff]};fill:currentColor">${noteInner(p, n.d, { dot: n.dot, acc: n.acc, stemDown: !choir && staff === 1 })}</g>`,
-        d.pop(0.6 + staff * 1.5 + i * 0.4));
+      const note = `<g style="color:${colors[staff]};fill:currentColor">${noteInner(p, n.d, { dot: n.dot, acc: n.acc, stemDown: !choir && staff === 1 })}</g>`;
+      if (lyrics || intervals) d.base(`<g transform="translate(${px} ${py})">${note}</g>`);
+      else d.add(px, py, note, d.pop(0.6 + staff * 1.5 + i * 0.4));
       if (lyrics) {
         const text = song.lyrics[mi].find((l) => !l.s && l.at === n.at)?.text;
         const t = 3 + i * 2;
-        d.add(px + 5, 106, '<rect class="d-field d-field--on" x="-20" y="-12" width="40" height="20" rx="3"/>', d.life(t, t + 1.4), { keep: false });
+        d.add(px + 5, 106, '<path d="M-20 8H20" stroke="var(--accent)" stroke-width="1.2" fill="none"/>', d.life(t, t + 1.4), { keep: false });
         d.text(px + 5, 108, text, d.pop(t + 0.5), { size: 12, font: 'Georgia, serif' });
         d.keycap(i === 2 ? 'Enter' : 'Space', 30, 0, t + 1.4, 0);
       }
@@ -49,7 +50,7 @@ export function songDemo(kind, label) {
 
 // One sequence: make a triplet in bar 1, then slur its last note to bar 2.
 export function contextDemo(s, label) {
-  const d = stage({ id: 'mobile-context', T: 18, h: 160, bottom: 100 });
+  const d = stage({ id: 'mobile-context', T: 13, h: 160, bottom: 100 });
   const xs = [92, 118, 144, 174, 246];
   const ps = [2, 3, 4, 4, 4];
   const heads = xs.slice(0, 3).map((px, i) => ({ x: px, y: d.y(ps[i]) }));
@@ -59,15 +60,15 @@ export function contextDemo(s, label) {
   d.note(xs[3], ps[3], 'h', d.life(0.05), { dot: true });
   d.note(xs[4], ps[4], 'w', d.life(0.05));
   const selection = (left, width, from, to) => d.add(left, 62, `<rect class="d-marquee" width="${width}" height="48" rx="3"/>`, d.life(from, to), { keep: false });
-  selection(84, 86, 1, 4.4);
-  d.add(128, 26, pillInner(s.scoreUiStrings.triplet), d.life(2, 4.4), { keep: false });
-  d.click(3.5, 128, 26);
-  d.text(128, 47, '3', d.pop(4.4), { size: 12, italic: true });
-  selection(166, 100, 7, 11);
-  d.add(210, 32, pillInner(s.scoreUiStrings.link), d.life(8.5, 11), { keep: false });
-  d.click(10, 210, 32);
-  d.add(0, 0, '<path class="d-tie" d="M180 91Q216 119 252 91"/>', d.pop(11));
-  d.pointer([[0.5, 84, 62], [1, 84, 62], [1.8, 170, 110], [3.3, 128, 26], [4, 128, 26], [6.5, 166, 62], [7, 166, 62], [8, 266, 110], [9.8, 210, 32], [10.4, 210, 32], [12, 294, 140]]);
+  selection(84, 86, 0.7, 3.2);
+  d.add(128, 26, pillInner(s.scoreUiStrings.triplet), d.life(1.4, 3.2), { keep: false });
+  d.click(2.5, 128, 26);
+  d.text(128, 47, '3', d.pop(3.2), { size: 12, italic: true });
+  selection(166, 100, 5, 8);
+  d.add(210, 32, pillInner(s.scoreUiStrings.link), d.life(6.1, 8), { keep: false });
+  d.click(7.2, 210, 32);
+  d.add(0, 0, '<path class="d-tie" d="M180 91Q216 119 252 91"/>', d.pop(8));
+  d.pointer([[0.3, 84, 62], [0.7, 84, 62], [1.3, 170, 110], [2.3, 128, 26], [2.9, 128, 26], [4.6, 166, 62], [5, 166, 62], [5.8, 266, 110], [7, 210, 32], [7.6, 210, 32], [8.7, 294, 140]]);
   return d.html(label);
 }
 
@@ -87,6 +88,6 @@ export function guitarDemo(s, label) {
   d.keycap('↓', 70, 0, 6, 0);
   d.click(4, 175, 122);
   d.pointer([[3, 280, 180], [3.8, 175, 122], [4.3, 175, 122], [5, 280, 180]]);
-  d.add(90, 18, `<text class="d-text" font-size="10">${s.scoreUiStrings.barre.charAt(0)}3</text><path class="d-bracket" d="M22 -3H164V3"/>`, d.pop(9));
+  d.add(90, 18, `<text class="d-text" font-size="15" font-weight="600">${s.scoreUiStrings.barre.charAt(0)}3</text><path class="d-bracket" d="M30 -3H164V3"/>`, d.pop(9));
   return d.html(label);
 }

@@ -187,9 +187,12 @@
 /* Benefits use the same list as the tutorial landing, ahead of the tour. */
 .mobile-gate__intro { padding: 2.5rem 0 0; }
 .mobile-gate .welcome h2 { font-family: var(--sans); font-size: 1.05rem; line-height: 1.4; }
-.mobile-gate__tutorials { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 2rem; padding: 1.4rem; border-radius: 0.8rem; background: var(--ink); color: var(--paper); font-weight: 600; text-decoration: none; }
+.mobile-gate__tutorials { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-top: 3rem; padding: 1.4rem; border-radius: 0.8rem; background: var(--ink); color: var(--paper); font-weight: 600; text-decoration: none; }
 .feature--voices .feature__demo, .feature--lyrics .feature__demo,
 .feature--intervals .feature__demo, .feature--context .feature__demo, .feature--barre .feature__demo { height: auto; }
 .feature__demo .demo { padding: 0.5rem 0; }
 .feature__demo .demo + .demo { border-top: 1px solid var(--rule); }
 .feature__demo .demo svg { height: auto; }
+
+.feature__demo--after { margin: 1rem 0 0; }
+.feature--barre .d-fret text { font-size: 13px; font-weight: 700; }
