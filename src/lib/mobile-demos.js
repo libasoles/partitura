@@ -8,7 +8,7 @@ import { stage, noteInner, pillInner, beamGroup } from './demo.js';
 
 const M = createScoreModel({ choir: true, grandStaff: true });
 const song = IO.parseMusicXml(source, M, new DOMParser());
-const colors = ['#b57682', '#749982', '#768fb5'];
+const colors = ['#b57682', '#c28b55', '#768fb5'];
 const lanes = [M.measures(song), song.lower, song.lower2];
 const x = (at) => 120 + at * 2.6;
 
@@ -31,21 +31,21 @@ export function songDemo(kind, label) {
         other.at === n.at && !other.rest && Math.abs(other.n - n.n) === 1);
       const px = x(n.at) + (adjacent ? 11 : 0);
       const py = d.y(p) + offset;
-      const note = `<g style="color:${colors[staff]};fill:currentColor">${noteInner(p, n.d, { dot: n.dot, acc: n.acc, stemDown: !choir && staff === 1 })}</g>`;
+      const note = `<g style="color:${colors[staff]};fill:currentColor">${noteInner(p, n.d, { dot: n.dot, acc: n.acc, stemDown: !choir && (intervals ? staff === 0 : staff === 1) })}</g>`;
       if (lyrics || intervals) d.base(`<g transform="translate(${px} ${py})">${note}</g>`);
       else d.add(px, py, note, d.pop(0.6 + staff * 1.5 + i * 0.4));
       if (lyrics) {
         const text = song.lyrics[mi].find((l) => !l.s && l.at === n.at)?.text;
-        const t = 3 + i * 2;
-        d.add(px + 5, 106, '<path d="M-20 8H20" stroke="var(--accent)" stroke-width="1.2" fill="none"/>', d.life(t, t + 1.4), { keep: false });
-        d.text(px + 5, 108, text, d.pop(t + 0.5), { size: 12, font: 'Georgia, serif' });
-        d.keycap(i === 2 ? 'Enter' : 'Space', 30, 0, t + 1.4, 0);
+        const t = 0.4 + i * 1.2;
+        d.add(px + 5, 106, '<path d="M-20 8H20" stroke="var(--accent)" stroke-width="1.2" fill="none"/>', d.life(t, t + 0.8), { keep: false });
+        d.text(px + 5, 108, text, d.pop(t + 0.2), { size: 12, font: 'Georgia, serif' });
+        d.keycap(i === 2 ? 'Enter' : 'Space', 30, 0, t + 0.8, 0);
       }
     });
   }
   if (intervals) {
     choirColumns(song, mi, M, new Set([1, 2])).forEach((col, i) => {
-      d.text(x(col.at) + 5, 24, col.intervals.join(' '), d.pop(3 + i * 0.6), { size: 13 });
+      d.text(x(col.at) + 5, 24, col.intervals.join(' '), d.pop(0.4 + i * 0.6), { size: 13 });
     });
   }
   return d.html(label);

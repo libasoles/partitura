@@ -195,7 +195,16 @@
 .feature__demo .demo svg { height: auto; }
 
 .feature__demo--after { margin: 1rem 0 0; }
-.feature--barre .d-fret text { font-size: 13px; font-weight: 700; }
+.feature--barre .d-fret text { font-size: 18px; font-weight: 700; }
 
 .mobile-gate__tutorials img { flex: none; }
 .mobile-gate__tutorials span:first-of-type { flex: 1; }
+
+/* Short loops stay readable while visitors scroll through the mobile tour. */
+@media (prefers-reduced-motion: no-preference) {
+  .mobile-gate .d-a { animation-duration: 6s !important; }
+  .feature--context .d-a { animation-duration: 6.5s !important; }
+  .feature--barre .d-a { animation-duration: 8s !important; }
+  .feature--hairpin :is(.beam, .hp, .dyn1, .dyn2, .m) { animation-duration: 2.5s; }
+  .feature--export :is(.arrow, .badges text) { animation-duration: 1.2s; }
+}
