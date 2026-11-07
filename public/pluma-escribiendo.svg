@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 -245 800 1035" fill="currentColor" color="#fff" role="img" aria-labelledby="title desc">
+  <title id="title">Pluma escribiendo</title>
+  <desc id="desc">La pluma se sacude suavemente mientras avanza a la derecha y ligeramente hacia abajo; después vuelve al inicio.</desc>
+  <style>
+    :root { --paper: #000; }
+    .pen-static { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .pen-motion { display: none; }
+      .pen-static { display: inline; }
+    }
+  </style>
+  <defs>
+    <g id="feather">
+      <g transform="translate(-43 -87)">
+        <g transform="translate(229 687) rotate(12) scale(0.88 1.14) translate(-229 -687)">
+          <path d="M207 597 C172 556 152 525 143 473 L167 492 C119 447 109 387 120 326 L145 354 C128 262 146 178 196 119 C232 75 285 43 340 25 C356 21 362 28 359 46 C354 93 342 144 336 173 L312 214 L345 185 C370 265 381 336 368 397 C361 430 347 452 323 478 L359 450 C353 494 330 528 306 556 L339 535 C319 574 287 601 259 624 C240 644 231 664 229 687 C218 652 213 620 207 597Z"/>
+          <path d="M229 687 C195 536 201 375 255 208 C221 395 223 553 238 619 C233 648 230 671 229 687Z" fill="var(--paper)"/>
+        </g>
+      </g>
+    </g>
+  </defs>
+  <g transform="rotate(-8 420 272.5)">
+    <g class="pen-motion">
+      <animateTransform attributeName="transform" type="translate" values="0 0; 5 1; 11 2; 17 3; 23 4; 29 5; 35 6; 35 6; 0 0" keyTimes="0; .1; .2; .3; .4; .5; .6; .8; 1" dur="1.8s" repeatCount="indefinite"/>
+      <g>
+        <animateTransform attributeName="transform" type="rotate" values="0 186 600; 1.4 186 600; -1.2 186 600; 1.7 186 600; -1 186 600; 1 186 600; 0 186 600; 0 186 600; 0 186 600" keyTimes="0; .1; .2; .3; .4; .5; .6; .8; 1" dur="1.8s" repeatCount="indefinite"/>
+        <use href="#feather"/>
+      </g>
+    </g>
+    <use class="pen-static" href="#feather"/>
+    <path transform="translate(-8 0)" d="M229 687 L389 573 C485 493 583 458 679 498 C600 474 518 492 398 585 L229 698Z"/>
+    <ellipse cx="168" cy="657" rx="69.6" ry="30.9" transform="rotate(35 168 657)"/>
+  </g>
+</svg>
