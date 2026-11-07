@@ -914,22 +914,27 @@
       [
         "voices",
         "Varias voces",
-        "Escribí dos o más voces en el mismo pentagrama, con sus silencios en cada una."
+        "Escribí dos o más voces, en el mismo pentagrama o en varios."
       ],
       [
-        "slur",
-        "Ligaduras entre compases",
-        "Seleccioná dos notas, incluso de compases distintos, y ligalas desde el menú."
+        "lyrics",
+        "Letra de canto",
+        "Poné letra a las notas, sílaba por sílaba, como en «Canto en la rama»."
       ],
       [
-        "triplet",
-        "Tresillos",
-        "Seleccioná tres corcheas y convertilas en tresillo desde el menú contextual."
+        "intervals",
+        "Análisis de intervalos",
+        "Compará las voces de «Canto en la rama» con números romanos sobre las notas."
+      ],
+      [
+        "context",
+        "Menús contextuales",
+        "Seleccioná las notas para crear un tresillo. Después, uní la última nota del primer compás con la primera del siguiente."
       ],
       [
         "barre",
-        "Cejillas",
-        "Marcá la cejilla en la tablatura con su traste, de principio a fin."
+        "Cejillas y Tabs para guitarras",
+        "Cálculo automático de tabs, y edición con sugerencia de cambio de cuerdas."
       ],
       [
         "hairpin",

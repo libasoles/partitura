@@ -917,22 +917,27 @@
       [
         "voices",
         "Várias vozes",
-        "Escreva duas ou mais vozes na mesma pauta, cada uma com suas pausas."
+        "Escreva duas ou mais vozes, no mesmo pentagrama ou em vários."
       ],
       [
-        "slur",
-        "Ligaduras entre compassos",
-        "Selecione duas notas, mesmo de compassos diferentes, e ligue-as pelo menu."
+        "lyrics",
+        "Letra de canto",
+        "Coloque letra nas notas, sílaba por sílaba, como em “Canto en la rama”."
       ],
       [
-        "triplet",
-        "Quiálteras",
-        "Selecione três colcheias e transforme-as em quiáltera pelo menu contextual."
+        "intervals",
+        "Análise de intervalos",
+        "Compare as vozes de “Canto en la rama” com números romanos sobre as notas."
+      ],
+      [
+        "context",
+        "Menus de contexto",
+        "Selecione as notas para criar uma tercina. Depois, ligue a última nota do primeiro compasso à primeira do próximo."
       ],
       [
         "barre",
-        "Pestanas",
-        "Marque a pestana na tablatura com sua casa, do início ao fim."
+        "Pestanas e tabs para guitarra",
+        "Cálculo automático de tabs e edição com sugestões de troca de cordas."
       ],
       [
         "hairpin",

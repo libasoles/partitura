@@ -1,4 +1,7 @@
 ---
+import { welcomeIcons } from '../lib/welcome-icons';
+import { songDemo, contextDemo, guitarDemo } from '../lib/mobile-demos.js';
+import '../styles/tutorials.css';
 import { tutorialsPath, type Locale, strings } from '../i18n';
 
 interface Props {
@@ -8,14 +11,13 @@ interface Props {
 const { locale } = Astro.props;
 const s = strings(locale);
 const g = s.mobileGate;
-const ui = s.scoreUiStrings;
-// The barre label is the first letter of the editor's own word for it, plus the fret ("C5").
-const barreLabel = `${ui.barre.charAt(0)}5`;
+
 // Lucide icons (stroke 2, 24 grid), one per feature. Keys are quoted: the Astro compiler reads a bare `export:` as a statement.
 const icons: Record<string, string> = {
   'voices': '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
-  'slur': '<path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><path d="M8 12h8"/>',
-  'triplet': '<path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/>',
+  'lyrics': '<path d="M4 7V4h16v3M9 20h6M12 4v16"/>',
+  'intervals': '<path d="m5 4 7 16 7-16"/>',
+  'context': '<path d="m4 3 7 18 2-8 8-2Z"/>',
   'barre': '<path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>',
   'hairpin': '<path d="M3 12 21 5M3 12l18 7"/>',
   'export': '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
@@ -32,68 +34,29 @@ const icons: Record<string, string> = {
     <p class="mobile-gate__hint" aria-hidden="true">{g.scroll}</p>
   </div>
 
+  <div class="mobile-gate__intro">
+    <ul class="welcome">
+      {s.tutorials.welcome.cards.map((card) => (
+        <li>
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={welcomeIcons[card.icon]} />
+          <div><h2>{card.title}</h2><p>{card.text}</p></div>
+        </li>
+      ))}
+    </ul>
+    <a class="mobile-gate__tutorials" href={tutorialsPath(locale)}>{g.tutorials} <span aria-hidden="true">→</span></a>
+  </div>
+
   <div class="mobile-gate__features">
     <h2>{s.scoreFeaturesH2}</h2>
     <ul>
       {g.features.map(([key, title, body]) => (
         <li class={`feature feature--${key}`}>
           <div class="feature__demo" aria-hidden="true">
-            {key === 'voices' && (
-              <svg viewBox="0 0 120 60">
-                <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112" /></g>
-                <g class="n v1 a1"><ellipse cx="30" cy="24" rx="5.5" ry="4" /><path d="M35.5 24V4" /></g>
-                <g class="n v1 a2"><ellipse cx="60" cy="16" rx="5.5" ry="4" /><path d="M65.5 16V-4" /></g>
-                <g class="n v1 a3"><ellipse cx="90" cy="24" rx="5.5" ry="4" /><path d="M95.5 24V4" /></g>
-                <g class="n v2 b1"><ellipse cx="30" cy="40" rx="5.5" ry="4" /><path d="M24.5 40V58" /></g>
-                <g class="n v2 b2"><path d="M58 33l4.5 5-4.5 4.5 4.5 5" /><path d="M62.5 47.5q-4.5-1.5-4.5 1.5" /></g>
-                <g class="n v2 b3"><ellipse cx="90" cy="40" rx="5.5" ry="4" /><path d="M84.5 40V58" /></g>
-              </svg>
-            )}
-            {key === 'slur' && (
-              <svg viewBox="0 0 120 60">
-                <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112" /></g>
-                <path class="bar" d="M44 16V48" />
-                <rect class="sel" x="19" y="12" width="50" height="38" rx="5" />
-                <g class="m"><ellipse cx="10" cy="36" rx="4.5" ry="3.3" /><path d="M14.5 36V14" /></g>
-                <g class="m"><ellipse cx="26" cy="36" rx="4.5" ry="3.3" /><path d="M30.5 36V14" /></g>
-                <g class="m"><ellipse cx="62" cy="36" rx="4.5" ry="3.3" /><path d="M66.5 36V14" /></g>
-                <path class="slur" pathLength="1" d="M26 42Q44 58 62 42" />
-                <g class="menubox">
-                  <rect class="menubox__bg" x="76" y="8" width="40" height="18" rx="4" />
-                  <rect class="item i1" x="78" y="10" width="36" height="14" rx="3" />
-                  <text class="label" x="82" y="20">{ui.link}</text>
-                </g>
-              </svg>
-            )}
-            {key === 'triplet' && (
-              <svg viewBox="0 0 120 60">
-                <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112" /></g>
-                <rect class="sel" x="6" y="12" width="48" height="38" rx="5" />
-                <g class="m"><ellipse cx="14" cy="38" rx="4.5" ry="3.3" /><path d="M18.5 38V16" /></g>
-                <g class="m"><ellipse cx="29" cy="34" rx="4.5" ry="3.3" /><path d="M33.5 34V16" /></g>
-                <g class="m"><ellipse cx="44" cy="38" rx="4.5" ry="3.3" /><path d="M48.5 38V16" /></g>
-                <path class="beam" d="M18.5 16H48.5" />
-                <g class="three"><path d="M18.5 8h10M38.5 8h10" /><text x="33.5" y="10">3</text></g>
-                <g class="menubox">
-                  <rect class="menubox__bg" x="66" y="8" width="50" height="18" rx="4" />
-                  <rect class="item i2" x="68" y="10" width="46" height="14" rx="3" />
-                  <text class="label" x="72" y="20">{ui.triplet}</text>
-                </g>
-              </svg>
-            )}
-            {key === 'barre' && (
-              <svg viewBox="0 0 120 60">
-                <g class="staff"><path d="M4 16h112M4 24h112M4 32h112M4 40h112M4 48h112M4 56h112" /></g>
-                <g class="barre">
-                  <text class="barre__label" x="26" y="9">{barreLabel}</text>
-                  <path class="barre__line" d="M40 7H96V13" />
-                </g>
-                <text class="t" x="44" y="38">5</text>
-                <text class="t" x="62" y="30">5</text>
-                <text class="t" x="80" y="22">7</text>
-                <text class="t" x="94" y="46">5</text>
-              </svg>
-            )}
+            {key === 'voices' && <><Fragment set:html={songDemo('voices', title)} /><Fragment set:html={songDemo('choir', title)} /></>}
+            {key === 'lyrics' && <Fragment set:html={songDemo('lyrics', title)} />}
+            {key === 'intervals' && <Fragment set:html={songDemo('intervals', title)} />}
+            {key === 'context' && <Fragment set:html={contextDemo(s, title)} />}
+            {key === 'barre' && <Fragment set:html={guitarDemo(s, title)} />}
             {key === 'hairpin' && (
               <svg viewBox="0 0 120 60">
                 <g class="staff"><path d="M4 14h112M4 20h112M4 26h112M4 32h112M4 38h112" /></g>
@@ -120,6 +83,5 @@ const icons: Record<string, string> = {
         </li>
       ))}
     </ul>
-    <a class="mobile-gate__cta mobile-gate__cta--ghost" href={tutorialsPath(locale)}>{g.tutorials}</a>
   </div>
 </section>

@@ -917,22 +917,27 @@
       [
         "voices",
         "Multiple voices",
-        "Write two or more voices on the same staff, each with its own rests."
+        "Write two or more voices, on one staff or across several."
       ],
       [
-        "slur",
-        "Slurs across barlines",
-        "Select two notes, even in different measures, and slur them from the menu."
+        "lyrics",
+        "Song lyrics",
+        "Add lyrics to the notes, syllable by syllable, as in “Canto en la rama”."
       ],
       [
-        "triplet",
-        "Triplets",
-        "Select three eighth notes and turn them into a triplet from the context menu."
+        "intervals",
+        "Interval analysis",
+        "Compare the voices of “Canto en la rama” with Roman numerals above the notes."
+      ],
+      [
+        "context",
+        "Context menus",
+        "Select notes to create a triplet. Then slur the last note of the first bar to the first note of the next."
       ],
       [
         "barre",
-        "Barre chords",
-        "Mark the barre on the tablature with its fret, from start to end."
+        "Barres and tabs for guitar",
+        "Automatic tab calculation, with string-change suggestions as you edit."
       ],
       [
         "hairpin",
