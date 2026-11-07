@@ -38,3 +38,24 @@ test('settings sample all intensities; sidebar places, edits, undoes and hides t
   await page.keyboard.press('Escape');
   await expect(button).toBeHidden();
 });
+
+test('sidebar tools do not move the add-row button and intensities form one column', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/es/?banner=hide');
+  await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
+  await page.locator('#scoreSettingsToggle').click();
+  const popup = page.locator('#scoreSettingsPopup');
+  await popup.getByRole('group', { name: 'Instrumento' }).locator('label').filter({ hasText: 'Guitarra' }).click();
+  await popup.getByRole('checkbox', { name: 'Repetición', exact: true }).uncheck();
+  await popup.getByRole('checkbox', { name: 'Dinámica', exact: true }).uncheck();
+  const position = () => page.locator('#scoreAddRow').evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+  const before = await position();
+  await popup.getByRole('checkbox', { name: 'Dinámica', exact: true }).check();
+  expect(Math.abs(await position() - before)).toBeLessThan(1);
+  await popup.getByRole('checkbox', { name: 'Repetición', exact: true }).check();
+  expect(Math.abs(await position() - before)).toBeLessThan(1);
+  await page.keyboard.press('Escape');
+  const boxes = await page.locator('.score-intensities button').evaluateAll((buttons) => buttons.map((el) => { const r = el.getBoundingClientRect(); return { x: r.x, y: r.y }; }));
+  expect(new Set(boxes.map((box) => box.x)).size).toBe(1);
+  expect(boxes.every((box, i) => !i || box.y > boxes[i - 1].y)).toBe(true);
+});
