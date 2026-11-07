@@ -1072,17 +1072,17 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   window.addEventListener('resize', scheduleLeftToolbarAlignment);
 
   function render() {
-    if (playbackState !== 'idle' && (playbackDocument !== score || playbackSnapshot !== playbackSnapshotOf(score))) {
-      const previous = JSON.parse(playbackSnapshot);
-      const current = JSON.parse(playbackSnapshotOf(score));
-      delete previous.sound;
-      delete current.sound;
-      delete previous.tempo;
-      delete current.tempo;
-      if (playbackDocument === score && JSON.stringify(previous) === JSON.stringify(current)) {
+    // Editing, voices, tempo or sound never stop playback: the schedule is rebuilt and the position kept.
+    if (playbackState !== 'idle') {
+      if (playbackDocument !== score) resetPlayback();
+      else if (playbackSnapshot !== playbackSnapshotOf(score)) {
+        const loose = (json) => { const copy = JSON.parse(json); delete copy.sound; delete copy.tempo; return JSON.stringify(copy); };
+        const changed = loose(playbackSnapshot) !== loose(playbackSnapshotOf(score));
         playbackSnapshot = playbackSnapshotOf(score);
-        if (playbackTrack) refreshPlaybackTrack();
-      } else resetPlayback();
+        // Before the first sound starts there is no position to keep: a content change cancels the pending start.
+        if (playbackState === 'loading' && changed) resetPlayback();
+        else if (playbackTrack) refreshPlaybackTrack();
+      }
     }
     if (!toolkit) return;
     const width = stage.clientWidth;
@@ -4874,7 +4874,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!event.repeat) playButton.click();
   });
   window.addEventListener('pagehide', resetPlayback);
-  document.addEventListener('visibilitychange', () => { if (document.hidden) resetPlayback(); });
 
   // The analysis toggle is a view preference for each open document.
   const intervalDocuments = new WeakSet();
@@ -4953,7 +4952,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     button.setAttribute('aria-pressed', 'false');
     button.addEventListener('click', () => {
       if (shownVoices.has(n)) shownVoices.delete(n); else shownVoices.add(n);
-      resetPlayback();
+      if (playbackTrack && playbackState !== 'loading') refreshPlaybackTrack();
       if (toolOn('intervals', false) && (intervalDocuments.has(score) || chordNameDocuments.has(score))) render();
       else applyVoices();
       updateSelectionMenu();
