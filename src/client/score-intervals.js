@@ -4,10 +4,10 @@ import { measurePitches } from './score-notes.js';
 
 // Diatonic intervals between neighbouring sounding pitches. Piano: independently on each staff. Voices (choir):
 // each staff is one line, so the intervals are taken between the staves.
-export function intervalColumns(measure, M, selectedVoices, bass = false) {
+export function intervalColumns(measure, M, selectedVoices, bass = false, legend = (k) => k % 4 + 1) {
   const starts = M.onsets(measure);
   const included = selectedVoices ? new Set(M.voices(measure).flatMap((voice, k) =>
-    selectedVoices.has(k % 4 + 1) ? voice.groups.flatMap((group) => group.indices) : [])) : null;
+    selectedVoices.has(legend(k)) ? voice.groups.flatMap((group) => group.indices) : [])) : null;
   const selected = (i) => !included || included.has(i);
   const times = [...new Set(starts.filter((_, i) => selected(i) && !measure[i].rest))].sort((a, b) => a - b);
   return times.flatMap((at) => {
@@ -45,7 +45,7 @@ const roman = (value) => {
 // Whether the score has any simultaneous notes for the toggle to label.
 export function hasIntervals(score, M, selectedVoices) {
   if (M.voicePerStaff(score)) return M.measures(score).some((_, mi) => choirColumns(score, mi, M, selectedVoices).length);
-  return M.measures(score).some((measure, mi) => [measure, ...(M.stavesOf(score) > 1 ? [score.lower?.[mi] || []] : [])].some((lane) => intervalColumns(lane, M, selectedVoices).length));
+  return M.measures(score).some((measure, mi) => [measure, ...(M.stavesOf(score) > 1 ? [score.lower?.[mi] || []] : [])].some((lane, staff) => intervalColumns(lane, M, selectedVoices, false, (k) => M.legendOf(score, staff, k)).length));
 }
 
 // Choir columns: every sounding note of every visible staff at each onset, highest first. `n` is already the
@@ -54,19 +54,20 @@ export function hasIntervals(score, M, selectedVoices) {
 export function choirColumns(score, mi, M, selectedVoices, bass = false) {
   const lanes = Array.from({ length: M.stavesOf(score) }, (_, staff) => {
     const measure = M.measures(score, staff)[mi] || [];
-    return { staff, measure, starts: M.onsets(measure) };
-  }).filter(({ staff }) => !selectedVoices || selectedVoices.has(staff + 1));
-  const times = [...new Set(lanes.flatMap(({ measure, starts }) => starts.filter((_, i) => !measure[i].rest)))].sort((a, b) => a - b);
+    return { staff, measure, starts: M.onsets(measure), included: M.selectedEvents(score, staff, measure, selectedVoices) };
+  }).filter(({ measure, included }) => !included || measure.some((_, i) => included.has(i)));
+  const shown = (lane, i) => !lane.included || lane.included.has(i);
+  const times = [...new Set(lanes.flatMap((lane) => lane.starts.filter((_, i) => !lane.measure[i].rest && shown(lane, i))))].sort((a, b) => a - b);
   return times.flatMap((at) => {
-    const sounding = lanes.flatMap(({ staff, measure, starts }) => measure
-      .map((note, i) => ({ note, i, staff }))
-      .filter(({ note, i }) => !note.rest && starts[i] <= at && starts[i] + M.length(note) > at))
+    const sounding = lanes.flatMap((lane) => lane.measure
+      .map((note, i) => ({ note, i, staff: lane.staff }))
+      .filter(({ note, i }) => shown(lane, i) && !note.rest && lane.starts[i] <= at && lane.starts[i] + M.length(note) > at))
       .sort((a, b) => b.note.n - a.note.n || a.staff - b.staff || a.i - b.i);
     if (sounding.length < 2) return [];
-    const owner = lanes.find(({ measure, starts }) => measure.some((note, i) => !note.rest && starts[i] === at));
+    const owner = lanes.find((lane) => lane.measure.some((note, i) => shown(lane, i) && !note.rest && lane.starts[i] === at));
     if (!owner) return [];
     const intervals = labels(sounding, bass);
-    return [withSounding({ at, staff: owner.staff, indices: owner.measure.flatMap((_, i) => owner.starts[i] === at ? [i] : []), intervals }, sounding)];
+    return [withSounding({ at, staff: owner.staff, indices: owner.measure.flatMap((_, i) => shown(owner, i) && owner.starts[i] === at ? [i] : []), intervals }, sounding)];
   });
 }
 
@@ -89,7 +90,7 @@ export function chordMarks(score, M, selectedVoices) {
   M.measures(score).forEach((measure, mi) => {
     const columns = M.voicePerStaff(score)
       ? choirColumns(score, mi, M, selectedVoices, bass)
-      : Array.from({ length: M.stavesOf(score) }, (_, staff) => intervalColumns(staff ? score.lower?.[mi] || [] : measure, M, selectedVoices, bass)
+      : Array.from({ length: M.stavesOf(score) }, (_, staff) => intervalColumns(staff ? score.lower?.[mi] || [] : measure, M, selectedVoices, bass, (k) => M.legendOf(score, staff, k))
         .map((column) => ({ staff, indices: column.indices, at: column.at, sounding: column.sounding.map((entry) => ({ ...entry, staff })) }))).flat();
     columns.forEach((column) => {
       const { names, pcs } = columnChords(score, mi, M, column);
@@ -121,7 +122,7 @@ export function withIntervals(xml, score, M, selectedVoices, { intervals = true,
   } else {
     for (let staff = 0; staff < M.stavesOf(score); staff++) {
       upper.forEach((measure, mi) => {
-        intervalColumns(staff ? score.lower?.[mi] || [] : measure, M, selectedVoices, bass).forEach((column) => {
+        intervalColumns(staff ? score.lower?.[mi] || [] : measure, M, selectedVoices, bass, (k) => M.legendOf(score, staff, k)).forEach((column) => {
           const mark = { staff, intervals: column.intervals, done: false };
           column.indices.forEach((i) => marks.set(`${staff ? 'l' : 'e'}${mi}-${i}`, mark));
         });

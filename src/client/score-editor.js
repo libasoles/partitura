@@ -1095,7 +1095,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const legendHeight = voiceLegend.isConnected ? voiceLegend.offsetHeight : 0;
     const intervalsHeight = intervalButton.isConnected ? intervalButton.offsetHeight : 0;
     const chordNamesHeight = chordNamesButton.isConnected ? chordNamesButton.offsetHeight : 0;
-    const above = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
+    const restructureHeight = restructureButton.isConnected ? restructureButton.offsetHeight : 0;
+    const legendEnd = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
+    const above = legendEnd + (restructureHeight ? restructureHeight + (legendEnd ? 8 : 0) : 0);
     const withChords = above + (chordNamesHeight ? chordNamesHeight + (above ? 8 : 0) : 0);
     const height = withChords + (intervalsHeight ? intervalsHeight + (withChords ? 8 : 0) : 0);
     // Follow the right toolbar's sticky offset, stopping at the end of the sheet.
@@ -1105,7 +1107,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const top = Number.isFinite(stickyTop)
       ? Math.max(staffTop, Math.min(stickyTop - origin.top, origin.height - height))
       : staffTop;
-    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, intervalButton.isConnected ? intervalButton.offsetWidth : 0, chordNamesButton.isConnected ? chordNamesButton.offsetWidth : 0);
+    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, restructureButton.isConnected ? restructureButton.offsetWidth : 0, intervalButton.isConnected ? intervalButton.offsetWidth : 0, chordNamesButton.isConnected ? chordNamesButton.offsetWidth : 0);
     const left = WIDE_PAGE.matches ? -(width + 16) : Math.max(0, edge - width - 6);
     if (playbackShown) {
       playButton.style.top = top + 'px';
@@ -1113,6 +1115,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 14 : 0)) + 'px';
     voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
+    restructureButton.style.top = (top + (playbackShown ? playButton.offsetHeight + 14 : 0) + legendHeight + (legendHeight ? 8 : 0)) + 'px';
+    restructureButton.style.left = (left + (width - restructureButton.offsetWidth) / 2) + 'px';
     intervalButton.style.top = (top + height - intervalsHeight) + 'px';
     intervalButton.style.left = (left + (width - intervalButton.offsetWidth) / 2) + 'px';
     chordNamesButton.style.top = (top + height - intervalsHeight - (intervalsHeight ? 8 : 0) - chordNamesHeight) + 'px';
@@ -4451,6 +4455,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- paleta -------------------------------------------------------------
 
   const ICONS = {
+    merge: '<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
     play: '<polygon points="6 3 20 12 6 21 6 3"/>',
     pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
@@ -5018,6 +5023,151 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   });
   ['pointerdown', 'mousedown', 'click'].forEach((type) => chordNamesButton.addEventListener(type, (event) => event.stopPropagation()));
 
+  // Pro (categoria Voces): unir pentagramas en uno (cada voz conserva su numero) o separar voces de un pentagrama.
+  // Un popup anclado al boton pregunta cuales, con los mismos circulos 1-4 de la leyenda.
+  const restructureButton = document.createElement('button');
+  restructureButton.id = 'scoreRestructure';
+  restructureButton.className = 'score-palette-item score-interval-toggle score-restructure-toggle tooltip';
+  restructureButton.type = 'button';
+  restructureButton.innerHTML = lucide('merge');
+  restructureButton.dataset.tooltip = t.restructureTooltip;
+  restructureButton.setAttribute('aria-label', t.restructureTooltip);
+  restructureButton.setAttribute('aria-haspopup', 'dialog');
+  restructureButton.setAttribute('aria-expanded', 'false');
+  ['pointerdown', 'mousedown', 'click'].forEach((type) => restructureButton.addEventListener(type, (event) => event.stopPropagation()));
+  const restructurePopup = document.createElement('div');
+  restructurePopup.id = 'scoreRestructurePopup';
+  restructurePopup.className = 'score-meter-popup score-restructure-popup';
+  restructurePopup.setAttribute('popover', 'auto');
+  restructurePopup.setAttribute('role', 'dialog');
+  restructurePopup.setAttribute('aria-label', t.restructureTooltip);
+  document.querySelector('.score-page').appendChild(restructurePopup);
+  restructurePopup.addEventListener('toggle', (event) => restructureButton.setAttribute('aria-expanded', String(event.newState === 'open')));
+
+  const voiceDot = (n, tag = 'span') => {
+    const dot = document.createElement(tag);
+    dot.className = 'score-restructure-voice';
+    dot.dataset.voice = String(n);
+    dot.textContent = String(n);
+    return dot;
+  };
+  function toggleButton(button, onChange) {
+    button.type = 'button';
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => {
+      const on = button.getAttribute('aria-pressed') !== 'true';
+      button.setAttribute('aria-pressed', String(on));
+      onChange(on);
+    });
+    return button;
+  }
+  function fillRestructurePopup() {
+    restructurePopup.replaceChildren();
+    const staves = M.stavesOf(score);
+    const failed = () => say(t.restructureFailed);
+    // Unir: elegir 2 o mas pentagramas.
+    const joinTitle = document.createElement('p');
+    joinTitle.textContent = t.restructureJoin;
+    const joinList = document.createElement('div');
+    joinList.className = 'score-restructure-list';
+    joinList.setAttribute('role', 'group');
+    joinList.setAttribute('aria-label', t.restructureJoin);
+    const joinSelected = new Set();
+    const join = document.createElement('button');
+    join.type = 'button';
+    join.className = 'score-restructure-go';
+    join.textContent = t.restructureJoinAction;
+    join.disabled = true;
+    for (let staff = 0; staff < staves; staff += 1) {
+      const item = toggleButton(document.createElement('button'), (on) => {
+        if (on) joinSelected.add(staff); else joinSelected.delete(staff);
+        join.disabled = joinSelected.size < 2;
+      });
+      item.className = 'score-restructure-staff';
+      item.dataset.staff = String(staff);
+      const label = document.createElement('span');
+      label.textContent = t.restructureStaff.replace('{n}', staff + 1);
+      item.append(label, ...M.legendsOf(score, staff).map((n) => voiceDot(n)));
+      if (!M.legendsOf(score, staff).length) item.append(voiceDot(M.legendOf(score, staff, 0)));
+      joinList.appendChild(item);
+    }
+    join.addEventListener('click', () => {
+      const chosen = [...joinSelected];
+      restructurePopup.hidePopover();
+      if (!change(() => M.joinStaves(score, chosen))) failed();
+    });
+    restructurePopup.append(joinTitle, joinList, join);
+    // Separar: elegir, de un pentagrama con varias voces, las que pasan a uno nuevo.
+    const splitTitle = document.createElement('p');
+    splitTitle.textContent = t.restructureSplit;
+    const splitList = document.createElement('div');
+    splitList.className = 'score-restructure-list';
+    splitList.setAttribute('role', 'group');
+    splitList.setAttribute('aria-label', t.restructureSplit);
+    const split = document.createElement('button');
+    split.type = 'button';
+    split.className = 'score-restructure-go';
+    split.textContent = t.restructureSplitAction;
+    split.disabled = true;
+    let splitStaffIndex = -1;
+    const splitSelected = new Set();
+    const rows = [];
+    for (let staff = 0; staff < staves; staff += 1) {
+      const legends = M.legendsOf(score, staff);
+      if (legends.length < 2) continue;
+      const row = document.createElement('div');
+      row.className = 'score-restructure-row';
+      const label = document.createElement('span');
+      label.textContent = t.restructureStaff.replace('{n}', staff + 1);
+      row.appendChild(label);
+      legends.forEach((n) => {
+        const dot = toggleButton(voiceDot(n, 'button'), (on) => {
+          // Una sola voz de origen a la vez: elegir en otro pentagrama reemplaza lo elegido.
+          if (splitStaffIndex !== staff) {
+            splitSelected.clear();
+            rows.forEach((other) => other.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', 'false')));
+            splitStaffIndex = staff;
+            dot.setAttribute('aria-pressed', String(on));
+          }
+          if (on) splitSelected.add(n); else splitSelected.delete(n);
+          // Siempre queda al menos una voz en el pentagrama de origen.
+          split.disabled = !splitSelected.size || splitSelected.size >= legends.length;
+        });
+        dot.setAttribute('aria-label', t.restructureStaff.replace('{n}', staff + 1) + ' · ' + n);
+        row.appendChild(dot);
+      });
+      rows.push(row);
+      splitList.appendChild(row);
+    }
+    if (!rows.length) {
+      const none = document.createElement('p');
+      none.className = 'score-restructure-none';
+      none.textContent = t.restructureNoSplit;
+      splitList.appendChild(none);
+    }
+    split.addEventListener('click', () => {
+      const staff = splitStaffIndex, chosen = [...splitSelected];
+      restructurePopup.hidePopover();
+      if (!change(() => M.splitStaff(score, staff, chosen))) failed();
+    });
+    restructurePopup.append(splitTitle, splitList, split);
+  }
+  function placeRestructurePopup() {
+    if (!restructureButton.isConnected || !restructurePopup.matches(':popover-open')) return;
+    const anchor = restructureButton.getBoundingClientRect();
+    const box = restructurePopup.getBoundingClientRect();
+    restructurePopup.style.left = Math.max(8, Math.min(anchor.right + 8, window.innerWidth - box.width - 8)) + 'px';
+    restructurePopup.style.top = Math.max(8, Math.min(anchor.top, window.innerHeight - box.height - 8)) + 'px';
+  }
+  restructureButton.addEventListener('click', () => {
+    if (restructurePopup.matches(':popover-open')) { restructurePopup.hidePopover(); return; }
+    fillRestructurePopup();
+    restructurePopup.showPopover();
+    placeRestructurePopup();
+  });
+  window.addEventListener('scroll', placeRestructurePopup, { passive: true, capture: true });
+  window.addEventListener('resize', placeRestructurePopup);
+
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
@@ -5035,6 +5185,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     chordNamesButton.remove();
     if (proChordNames && toolOn('voices', false) && toolOn('intervals', false)) stage.appendChild(chordNamesButton);
     chordNamesButton.setAttribute('aria-pressed', String(chordNameDocuments.has(score)));
+    restructureButton.remove();
+    if (settings && toolOn('voices', false) && M.restructurable(score)) stage.appendChild(restructureButton);
+    else if (restructurePopup.matches(':popover-open')) restructurePopup.hidePopover();
     alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
@@ -5073,8 +5226,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.remove();
     if (!on) return;
     voiceButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(shownVoices.has(i + 1))));
-    // En coro cada pentagrama es una voz de la leyenda; en piano cada mano infiere sus propias voces.
-    const choir = M.voicePerStaff(score);
     const upper = M.measures(score);
     const total = upper.length;
     for (let staff = 0; staff < M.stavesOf(score); staff++) {
@@ -5084,7 +5235,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         M.voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
           const node = stage.querySelector('[id="' + M.ID_PREFIX[staff] + mi + '-' + i + '"]');
           if (!node) return;
-          const n = choir ? staff + 1 : k % VOICE_COUNT + 1;
+          const n = M.legendOf(score, staff, k);
           node.dataset.voice = String(n);
           node.classList.toggle('is-voice-on', shownVoices.has(n));
         })));
@@ -5524,6 +5675,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           swatch.textContent = button.textContent;
           icons.appendChild(swatch);
         });
+        // Pro: unir o separar voces es una herramienta de esta categoria, sin casilla propia.
+        if (M.choir) {
+          const icon = document.createElement('span');
+          icon.className = 'score-settings-icon';
+          icon.setAttribute('role', 'img');
+          icon.setAttribute('aria-label', t.restructureTooltip);
+          icon.title = t.restructureTooltip;
+          icon.innerHTML = lucide('merge');
+          icons.appendChild(icon);
+        }
       }
       if (name === 'voices' && proChordNames) {
         const duplicate = document.createElement('button');
