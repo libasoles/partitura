@@ -1,6 +1,8 @@
 {
   "htmlLang": "pt-BR",
   "partDownloadsHeading": "Downloads",
+  "saveSaving": "Salvando…",
+  "saveSaved": "Salvo",
   "toastLabel": "Notificação",
   "toastViewportLabel": "Notificações ({hotkey})",
   "toastClose": "Fechar notificação",

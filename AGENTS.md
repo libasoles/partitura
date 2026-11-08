@@ -175,6 +175,7 @@ No es una PWA: no hay manifest ni service worker.
 - **Respaldo**: si IndexedDB no está disponible (modo privado, bloqueado), las partituras vuelven a guardarse en
   localStorage.
 - **Las demos son volátiles**: una partitura abierta desde una demo (`demo: true`) nunca se escribe en IndexedDB ni en el respaldo (`save()` la filtra); `loadAll` descarta las que dejó una versión anterior. Al volver al índice no aparece entre los archivos del usuario: solo se accede por su URL, que la abre de nuevo.
+- **Feedback de autoguardado**: `#saveStatus` (esquina inferior derecha, `.autosave-status`, textos `saveSaving` / `saveSaved` en `src/i18n`) muestra «Guardando…» al llamar `ScoreStore.save` y «Guardado» cuando la escritura termina (`showStatus` en `storage.js`). Sin ese elemento (otros hosts) no hace nada.
 - Ninguno es una copia de seguridad: limpiar los datos del sitio borra todo.
 
 ### Voces y conducción
