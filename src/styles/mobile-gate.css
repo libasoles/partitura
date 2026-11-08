@@ -2,6 +2,7 @@
    impractical), plus a short animated tour of what the editor does. Wide screens never see it. */
 
 .mobile-gate { display: none; }
+.mobile-pdf { display: none; }
 
 @media (max-width: 899px) {
   .mobile-gate { display: block; margin-top: 1.5rem; }
@@ -14,6 +15,14 @@
   .score-editor[data-demo-id] .score-author input { text-align: left; }
   .site-header--editor :is(.brand, .site-menu) { display: none; }
   .beta-badge, .beta-popover { display: none; }
+  .score-page:has(.score-editor[data-demo-id]) ~ .site-footer { display: none; }
+  .mobile-pdf {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    margin: 1.5rem auto 2rem; padding: 0.7rem 1.4rem;
+    border: 0; border-radius: 999px; background: var(--ink); color: var(--paper);
+    font: inherit; font-weight: 600;
+  }
+  .mobile-pdf:disabled { opacity: 0.6; }
 }
 
 .mobile-gate__hero {
