@@ -1,5 +1,5 @@
 import { chordNames } from './chord-names.js';
-import { pickChords } from './chord-context.js';
+import { estimateKey, pickChords } from './chord-context.js';
 import { measurePitches } from './score-notes.js';
 
 // Diatonic intervals between neighbouring sounding pitches. Piano: independently on each staff. Voices (choir):
@@ -23,11 +23,76 @@ export function intervalColumns(measure, M, selectedVoices, bass = false) {
 // The notes behind a column (for chord names) travel with it without being part of its shape.
 const withSounding = (column, sounding) => Object.defineProperty(column, 'sounding', { value: sounding });
 
-// `sounding` goes from the highest note down; one label per note except the lowest, highest first.
-// Neighbouring voices: each note against the one below it. Against the bass: each note against the lowest.
-const labels = (sounding, bass) => {
+// `sounding` goes from the highest note down. `reference` picks what each label measures:
+//   false  neighbouring voices: each note against the one below it (one label per note except the lowest)
+//   true   the bass: each note against the lowest (same)
+//   number the tonic (letter index, C = 0): every note, the lowest included, as a scale degree I-VII
+const labels = (sounding, reference) => {
+  if (typeof reference === 'number') return sounding.map(({ note }) => roman((((note.n - reference) % 7) + 7) % 7 + 1));
   const low = sounding[sounding.length - 1].note.n;
-  return sounding.slice(0, -1).map(({ note }, i) => roman(bass ? note.n - low + 1 : note.n - sounding[i + 1].note.n + 1));
+  return sounding.slice(0, -1).map(({ note }, i) => roman(reference ? note.n - low + 1 : note.n - sounding[i + 1].note.n + 1));
+};
+
+const LETTERS = 'CDEFGAB';
+const FIFTHS_LETTERS = 'FCGDAEB';
+const PITCH = [0, 2, 4, 5, 7, 9, 11];
+const mod12 = (n) => ((n % 12) + 12) % 12;
+
+// A tonic as the editor stores it ("Bb", "F#m"): its letter (C = 0), pitch class and mode.
+export function parseTonic(name) {
+  const [, letter, accidental, minor] = /^([A-G])(#|b)?(m?)$/.exec(name);
+  return { name, letter: LETTERS.indexOf(letter), tonic: mod12(PITCH[LETTERS.indexOf(letter)] + (accidental === '#' ? 1 : accidental === 'b' ? -1 : 0)), mode: minor ? 'min' : 'maj' };
+}
+
+// Spells a tonic (pitch class and mode) the way the key signature would: the spelling whose signature is closest to `fifths`.
+export function spellTonic(tonic, mode, fifths = 0) {
+  const home = mod12(tonic * 7);
+  const position = [home - 12, home, home + 12].reduce((best, p) => {
+    const distance = Math.abs((mode === 'min' ? p - 3 : p) - fifths);
+    const bestDistance = Math.abs((mode === 'min' ? best - 3 : best) - fifths);
+    return distance < bestDistance || (distance === bestDistance && Math.abs(p) < Math.abs(best)) ? p : best;
+  });
+  const accidental = Math.floor((position + 1) / 7);
+  return FIFTHS_LETTERS[(((position + 1) % 7) + 7) % 7] + (accidental > 0 ? '#'.repeat(accidental) : 'b'.repeat(-accidental)) + (mode === 'min' ? 'm' : '');
+}
+
+// The tonic the user fixed or, failing that, the estimate over the whole score (same profiles as the chord names).
+// `detected` tells which one it is, and `detectedName` is the estimate even when the user overrode it.
+export function scoreKey(score, M) {
+  const fifths = M.fifthsOf(score);
+  const histogram = Array(12).fill(0);
+  let count = 0;
+  let first = null;
+  let last = null;
+  let origin = 0;
+  M.measures(score).forEach((_, mi) => {
+    const columns = new Map();
+    for (let staff = 0; staff < M.stavesOf(score); staff++) {
+      const measure = M.measures(score, staff)[mi] || [];
+      const starts = M.onsets(measure);
+      const pitches = measurePitches(score, M, measure, mi);
+      measure.forEach((note, i) => { if (!note.rest) columns.set(`${staff}:${starts[i]}`, [...(columns.get(`${staff}:${starts[i]}`) || []), { midi: pitches[i].midi, at: origin + starts[i] }]); });
+    }
+    columns.forEach((notes) => {
+      count += 1;
+      new Set(notes.map(({ midi }) => mod12(midi))).forEach((pc) => { histogram[pc] += 1; });
+      const bass = notes.reduce((a, b) => (b.midi < a.midi ? b : a));
+      if (!first || bass.at < first.at) first = bass;
+      if (!last || bass.at >= last.at) last = bass;
+    });
+    origin += M.capacity(score, mi);
+  });
+  const estimate = count ? estimateKey({ histogram, count, first: mod12(first.midi), last: mod12(last.midi) }, fifths) : { tonic: mod12(fifths * 7), mode: 'maj' };
+  const detectedName = spellTonic(estimate.tonic, estimate.mode, fifths);
+  const fixed = M.tonicOf(score);
+  const name = fixed || detectedName;
+  return { ...parseTonic(name), detected: !fixed, detectedName };
+}
+
+// What the interval labels of this score measure: see `labels`.
+export const intervalReference = (score, M) => {
+  const mode = M.intervalModeOf(score);
+  return mode === 'tonic' ? scoreKey(score, M).letter : mode === 'bass';
 };
 
 // Roman numerals show the distance between notes (I = unison, III = third, VIII = octave).
@@ -84,7 +149,7 @@ function columnChords(score, mi, M, column) {
 // Chord names to show above each column with at least three sounding voices. `names[0]` is the one shown, picked from the
 // candidates by the harmony of the whole line (docs/armonia-contexto.md); the rest are the alternatives.
 export function chordMarks(score, M, selectedVoices) {
-  const bass = M.intervalModeOf(score) === 'bass';
+  const bass = intervalReference(score, M);
   const marks = [];
   M.measures(score).forEach((measure, mi) => {
     const columns = M.instrumentOf(score) === 'voices'
@@ -102,7 +167,8 @@ export function chordMarks(score, M, selectedVoices) {
     const key = M.instrumentOf(score) === 'voices' ? 0 : mark.staff;
     lines.set(key, [...(lines.get(key) || []), mark]);
   });
-  lines.forEach((line) => pickChords(line, M.fifthsOf(score)).forEach((names, k) => { line[k].names = names; }));
+  const fixed = M.tonicOf(score) ? scoreKey(score, M) : null;
+  lines.forEach((line) => pickChords(line, M.fifthsOf(score), fixed).forEach((names, k) => { line[k].names = names; }));
   return marks;
 }
 
@@ -110,7 +176,7 @@ export function chordMarks(score, M, selectedVoices) {
 // The stored score and the exported MusicXML keep their original notation.
 export function withIntervals(xml, score, M, selectedVoices, { intervals = true, chords = false } = {}) {
   const marks = new Map();
-  const bass = M.intervalModeOf(score) === 'bass';
+  const bass = intervalReference(score, M);
   const upper = M.measures(score);
   if (M.instrumentOf(score) === 'voices') {
     upper.forEach((_, mi) => choirColumns(score, mi, M, selectedVoices, bass).forEach((column) => {

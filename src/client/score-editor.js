@@ -5,7 +5,7 @@ import { ARCHIVE_CHOIRS } from './choir-sounds.js';
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
 import { getSetting, setSetting } from './settings.js';
-import { chordMarks, hasIntervals, withIntervals } from './score-intervals.js';
+import { chordMarks, hasIntervals, parseTonic, scoreKey, spellTonic, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
 import { applyUrlDefaults } from './url-defaults.js';
@@ -5437,6 +5437,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     toolsGrid.className = 'score-settings-tools';
     content.appendChild(toolsGrid);
     let intervalModes = [];
+    let refreshTonic = () => {};
     const checks = categories.map(([name, label, belongs, fallback = true]) => {
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section score-settings-category';
@@ -5490,14 +5491,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         modes.className = 'score-settings-interval-modes';
         modes.setAttribute('role', 'radiogroup');
         modes.setAttribute('aria-label', t.toolsIntervals);
-        intervalModes = ['bass', 'voices'].map((id) => {
+        intervalModes = ['bass', 'voices', 'tonic'].map((id) => {
           const mode = document.createElement('label');
           mode.className = 'score-settings-radio';
           const radio = document.createElement('input');
           radio.type = 'radio';
           radio.name = 'scoreIntervalMode';
           radio.value = id;
-          mode.append(radio, document.createTextNode(t[id === 'bass' ? 'intervalsBass' : 'intervalsVoices']));
+          mode.append(radio, document.createTextNode(t[{ bass: 'intervalsBass', voices: 'intervalsVoices', tonic: 'intervalsTonic' }[id]]));
           radio.addEventListener('change', () => {
             if (M.intervalModeOf(score) === id) return;
             const before = M.clone(score);
@@ -5510,6 +5511,45 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           return radio;
         });
         wrap.appendChild(modes);
+        // La tonica que se estima (la misma de los nombres de acorde): se muestra y el usuario la confirma o la corrige.
+        const notes = t.tonicNotes.split(',');
+        const spell = (name) => {
+          const { letter, mode } = parseTonic(name);
+          return notes[letter] + (/#/.test(name) ? '\u266f' : /b/.test(name) ? '\u266d' : '') + ' ' + (mode === 'min' ? t.tonicMinor : t.tonicMajor);
+        };
+        const tonic = document.createElement('label');
+        tonic.className = 'score-settings-tonic';
+        const caption = document.createElement('span');
+        caption.textContent = t.tonicLabel;
+        const tonicSelect = document.createElement('select');
+        tonicSelect.title = t.tonicHint;
+        tonicSelect.setAttribute('aria-label', t.tonicLabel + '. ' + t.tonicHint);
+        tonicSelect.addEventListener('change', () => {
+          if ((M.tonicOf(score) || '') === tonicSelect.value) return;
+          const before = M.clone(score);
+          M.pruneLower(before);
+          M.setTonic(score, tonicSelect.value || null);
+          recordChange(before);
+          sync();
+        });
+        tonic.append(caption, tonicSelect);
+        modes.appendChild(tonic);
+        refreshTonic = () => {
+          const key = scoreKey(score, M);
+          // Las 30 tonalidades con armadura de hasta siete alteraciones; la detectada se suma si quedara fuera.
+          const pc = (n) => ((n % 12) + 12) % 12;
+          const names = Array.from({ length: 15 }, (_, k) => spellTonic(pc((k - 7) * 7), 'maj', k - 7))
+            .concat(Array.from({ length: 15 }, (_, k) => spellTonic(pc((k - 7) * 7 + 9), 'min', k - 7)));
+          if (!names.includes(key.detectedName)) names.push(key.detectedName);
+          tonicSelect.replaceChildren(...[['', t.tonicDetected + ': ' + spell(key.detectedName)], ...names.map((name) => [name, spell(name)])].map(([value, label]) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            return option;
+          }));
+          tonicSelect.value = M.tonicOf(score) || '';
+          tonic.hidden = M.intervalModeOf(score) !== 'tonic';
+        };
       }
       check.addEventListener('change', () => {
         M.setTool(score, name, check.checked);
@@ -5571,6 +5611,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       voicesCard.hidden = M.instrumentOf(score) !== 'voices';
       sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });
       intervalModes.forEach((radio) => { radio.checked = M.intervalModeOf(score) === radio.value; });
+      refreshTonic();
       partsSlider.value = String(M.partsOf(score));
       showParts();
       tempoSlider.value = String(score.tempo || 120);
