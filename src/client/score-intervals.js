@@ -44,7 +44,7 @@ const roman = (value) => {
 
 // Whether the score has any simultaneous notes for the toggle to label.
 export function hasIntervals(score, M, selectedVoices) {
-  if (M.instrumentOf(score) === 'voices') return M.measures(score).some((_, mi) => choirColumns(score, mi, M, selectedVoices).length);
+  if (M.voicePerStaff(score)) return M.measures(score).some((_, mi) => choirColumns(score, mi, M, selectedVoices).length);
   return M.measures(score).some((measure, mi) => [measure, ...(M.stavesOf(score) > 1 ? [score.lower?.[mi] || []] : [])].some((lane) => intervalColumns(lane, M, selectedVoices).length));
 }
 
@@ -87,19 +87,19 @@ export function chordMarks(score, M, selectedVoices) {
   const bass = M.intervalModeOf(score) === 'bass';
   const marks = [];
   M.measures(score).forEach((measure, mi) => {
-    const columns = M.instrumentOf(score) === 'voices'
+    const columns = M.voicePerStaff(score)
       ? choirColumns(score, mi, M, selectedVoices, bass)
       : Array.from({ length: M.stavesOf(score) }, (_, staff) => intervalColumns(staff ? score.lower?.[mi] || [] : measure, M, selectedVoices, bass)
         .map((column) => ({ staff, indices: column.indices, at: column.at, sounding: column.sounding.map((entry) => ({ ...entry, staff })) }))).flat();
     columns.forEach((column) => {
       const { names, pcs } = columnChords(score, mi, M, column);
-      if (names.length) marks.push({ mi, at: column.at, staff: M.instrumentOf(score) === 'voices' ? 0 : column.staff ?? 0, id: `${M.ID_PREFIX[column.staff ?? 0]}${mi}-${column.indices[0]}`, names, pcs });
+      if (names.length) marks.push({ mi, at: column.at, staff: M.voicePerStaff(score) ? 0 : column.staff ?? 0, id: `${M.ID_PREFIX[column.staff ?? 0]}${mi}-${column.indices[0]}`, names, pcs });
     });
   });
   // One harmonic line per staff (piano); in Voces the staves are the voices of one texture.
   const lines = new Map();
   marks.forEach((mark) => {
-    const key = M.instrumentOf(score) === 'voices' ? 0 : mark.staff;
+    const key = M.voicePerStaff(score) ? 0 : mark.staff;
     lines.set(key, [...(lines.get(key) || []), mark]);
   });
   lines.forEach((line) => pickChords(line, M.fifthsOf(score)).forEach((names, k) => { line[k].names = names; }));
@@ -112,7 +112,7 @@ export function withIntervals(xml, score, M, selectedVoices, { intervals = true,
   const marks = new Map();
   const bass = M.intervalModeOf(score) === 'bass';
   const upper = M.measures(score);
-  if (M.instrumentOf(score) === 'voices') {
+  if (M.voicePerStaff(score)) {
     upper.forEach((_, mi) => choirColumns(score, mi, M, selectedVoices, bass).forEach((column) => {
       // Keep the onset anchor in its own voice, but reserve space above the first staff.
       const mark = { staff: 0, intervals: column.intervals, done: false };
