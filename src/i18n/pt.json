@@ -306,6 +306,7 @@
     "menuExportXml": "MusicXML",
     "menuExportMidi": "MIDI",
     "menuExportPdf": "PDF",
+    "downloadPdf": "Baixar PDF",
     "footerTerms": "Termos e condições",
     "betaLabel": "Beta",
     "betaP1": "Um software Beta continua em experimentação. Está disponível para uso, embora algumas coisas possam não funcionar bem.",
