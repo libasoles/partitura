@@ -222,7 +222,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   let enteringTab = -1; // index of the tab just added, animated in by renderTabs
   function renderTabs() {
     document.getElementById('scoreClear').hidden = Boolean(score.demo);
-    document.getElementById('scoreDuplicate').hidden = Boolean(score.demo);
+    document.getElementById('scoreDuplicate').hidden = !proTabs || Boolean(score.demo);
     tabsBar.querySelectorAll('.score-doc-tab').forEach((node) => node.remove());
     const add = document.getElementById('scoreNewTab');
     const closable = proTabs && openCount() > 1;
@@ -393,7 +393,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function duplicateTab() {
-    if (score.demo) return;
+    if (!proTabs || score.demo) return;
     docs[active] = score;
     histories[active] = history;
     const copy = JSON.parse(JSON.stringify(score));
