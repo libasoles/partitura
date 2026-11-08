@@ -34,7 +34,7 @@ const clientStrings = Object.fromEntries([
 ]);
 ---
 
-<Base locale={locale} title={title} description={descriptions ? descriptions[locale] : s.scoreMetaDescription} author={demo?.author} hideWelcomeBanner={Boolean(demo)} paths={paths} editor>
+<Base locale={locale} title={title} description={descriptions ? descriptions[locale] : s.scoreMetaDescription} author={demo?.author} ogImage={demo && `/demos/${demo.id}/og.png`} hideWelcomeBanner={Boolean(demo)} paths={paths} editor>
   <main class="score-page" id="top">
     {demo && <div class="sr-only"><h1>{demo.title} — {demo.author}</h1><p>{descriptions?.[locale]}</p></div>}
     <div id="scoreDropzone" class="score-dropzone" role="status" aria-live="polite" hidden>

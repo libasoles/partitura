@@ -36,6 +36,16 @@ for (const file of ['dist/es/index.html', 'dist/en/index.html', 'dist/pt/index.h
   });
 }
 
+test('demos: each has its own 1200x630 social image, built from its score', () => {
+  const html = readFileSync(new URL('../dist/es/demos/canto-en-la-rama/index.html', import.meta.url), 'utf8');
+  assert.match(html, /<meta property="og:image" content="https:\/\/[^"]+\/demos\/canto-en-la-rama\/og\.png"/);
+  assert.match(html, /<meta name="twitter:image" content="https:\/\/[^"]+\/demos\/canto-en-la-rama\/og\.png"/);
+  const png = readFileSync(new URL('../dist/demos/canto-en-la-rama/og.png', import.meta.url));
+  assert.equal(png.subarray(1, 4).toString(), 'PNG');
+  assert.equal(png.readUInt32BE(16), 1200);
+  assert.equal(png.readUInt32BE(20), 630);
+});
+
 test('social preview and icons are declared', () => {
   const html = readFileSync(new URL('../dist/es/index.html', import.meta.url), 'utf8');
   assert.match(html, /<meta property="og:image" content="https:\/\/[^"]+\/og-es\.png"/);

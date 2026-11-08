@@ -20,15 +20,17 @@ interface Props {
   hideMenu?: boolean;
   author?: string;
   hideWelcomeBanner?: boolean;
+  /** Absolute path of a page-specific social image (1200x630 PNG); defaults to the language's generic one. */
+  ogImage?: string;
 }
 
-const { locale, title, description, paths, faq, editor = false, hideMenu = false, author, hideWelcomeBanner = false } = Astro.props;
+const { locale, title, description, paths, faq, editor = false, hideMenu = false, author, hideWelcomeBanner = false, ogImage: ogImagePath } = Astro.props;
 const verovioFile = __VEROVIO_FILE__;
 const s = strings(locale);
 const site = Astro.site!;
 const abs = (l: Locale) => new URL(paths[l], site).toString();
 const canonical = abs(locale);
-const ogImage = new URL(`/og-${locale}.png`, site).toString();
+const ogImage = new URL(ogImagePath ?? `/og-${locale}.png`, site).toString();
 const homeUrl = new URL(rootPath, site).toString();
 const jsonLd = pageJsonLd({
   locale,
