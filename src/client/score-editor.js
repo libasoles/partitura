@@ -657,7 +657,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Sin lugar para una figura: o es mas larga que el compas, o repite una nota que ya suena en ese tiempo.
   function noRoom(ev, mi) {
-    return M.length(ev) > M.capacity(score, mi) ? t.full : t.duplicate;
+    return t.duplicate;
   }
 
   function isPlacing(item) {
@@ -723,13 +723,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     };
     const measureKey = (ref) => staffOf(ref) + ':' + ref.mi;
     const touched = [...new Set(edits.map((e) => measureKey(e.ref)))];
-    // Se cuenta en orden: lo que sigue en su voz se corre, y la voz tiene que seguir entrando en el compas.
-    for (const key of touched) {
-      const here = edits.filter((e) => measureKey(e.ref) === key);
-      const trial = M.settle(M.clone(laneOf(here[0].ref)[here[0].ref.mi]));
-      here.forEach((e) => place(trial, { ref: e.ref, replacement: M.clone(e.replacement) }));
-      if (M.measureLength(trial) > M.capacity(score, here[0].ref.mi)) return say(t.full);
-    }
     change(() => {
       touched.forEach((key) => {
         const here = edits.filter((e) => measureKey(e.ref) === key);
@@ -844,8 +837,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // al espacio disponible para todo el grupo, tambien al soltar cerca de una barra.
     if (items.some((x) => !stave(0)[x.mi + dmi] || x.staff + dstaff < 0 || x.staff + dstaff >= staves)) return say(t.full);
     const minDt = Math.ceil(Math.max(...items.map((x) => -x.at)) / grid) * grid;
-    const maxDt = Math.floor(Math.min(...items.map((x) => M.capacity(score, x.mi + dmi) - x.at - M.length(x.ev))) / grid) * grid;
-    if (minDt > maxDt) return say(t.full);
+    const maxDt = Math.max(minDt, Math.floor(Math.min(...items.map((x) => M.capacity(score, x.mi + dmi) - x.at - M.length(x.ev))) / grid) * grid);
     const dt = Math.max(minDt, Math.min(maxDt, Math.round((target.t - anchorAt) / grid) * grid));
     const pitched = items.filter((x) => !x.ev.rest);
     let dn = anchor.rest ? 0 : target.n - anchor.n;
@@ -859,7 +851,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const clash = (p) => {
       const rest = stave(p.toStaff)[p.to].filter((o) => !moving.has(o));
       const starts = M.hints(rest); // el lugar de cada una antes de sacar las que se mueven
-      return p.at < 0 || p.at + M.length(p.ev) > M.capacity(score, p.to) ||
+      return p.at < 0 ||
         (!p.ev.rest && rest.some((o, i) => !o.rest && starts[i] === p.at && o.n === p.ev.n + dn && o.acc === p.ev.acc));
     };
     if (plan.some(clash)) return say(t.full);
@@ -879,7 +871,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       trialInserts.get(destinationKey(p)).push([ev, p.at]);
     });
     trialInserts.forEach((list, key) => { M.insertMany(trial.get(key), list); });
-    if (plan.some((p) => M.measureLength(trial.get(destinationKey(p))) > M.capacity(score, p.to))) return say(t.full);
     change(() => {
       Array.from({ length: staves }, (_, staff) => staff).forEach((staff) => stave(staff).forEach((measure) => {
         for (let i = measure.length - 1; i >= 0; i -= 1) if (moving.has(measure[i])) measure.splice(i, 1);
