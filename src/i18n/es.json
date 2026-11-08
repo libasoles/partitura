@@ -159,7 +159,7 @@
     "voiceDuplicatePick": "Voces a duplicar",
     "voiceDuplicateConfirm": "Duplicar",
     "voiceDuplicateUnavailable": "No se puede duplicar la voz: alguna nota quedaría fuera de rango o sin lugar.",
-    "toolsVoices": "Identificador de voces",
+    "toolsVoices": "Voces",
     "toolsPlayback": "Reproducción",
     "toolsIntervals": "Intervalos",
     "toolsLyrics": "Letra de canto",

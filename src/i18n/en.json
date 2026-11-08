@@ -163,7 +163,7 @@
     "voiceDuplicatePick": "Voices to duplicate",
     "voiceDuplicateConfirm": "Duplicate",
     "voiceDuplicateUnavailable": "The voice cannot be duplicated: a note would fall out of range or have no room.",
-    "toolsVoices": "Voice identifier",
+    "toolsVoices": "Voices",
     "toolsPlayback": "Playback",
     "toolsIntervals": "Intervals",
     "toolsLyrics": "Song lyrics",
