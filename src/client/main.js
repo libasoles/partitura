@@ -11,7 +11,7 @@ async function start() {
   const { bindSiteActions } = await import('./site-actions.js');
   const { readUrlDefaults } = await import('./url-defaults.js');
   const demo = document.getElementById('editor')?.dataset.demoId;
-  const urlDefaults = readUrlDefaults(demo ? '?tools=voices,play,intervals&sound=uh' : location.search);
+  const urlDefaults = readUrlDefaults(demo ? '?tools=voices,play,intervals&sound=uh' : new URLSearchParams(location.search).has('score') ? '' : location.search);
   const initialDemo = document.getElementById('demoScore');
   await startEditor({ bindActions: (actions) => { bindSiteActions(actions); siteActions = actions; }, settings: true, chords: true, lyrics: true, patterns: true, urlDefaults, initialDemo: initialDemo ? JSON.parse(initialDemo.textContent) : undefined });
 }

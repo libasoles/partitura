@@ -154,6 +154,8 @@ Tercer instrumento (`score.instrument === 'voices'`): 2 a 4 pentagramas en clave
 
 ### Pestañas cerrables y lista de partituras (Pro)
 
+- **URL por partitura**: cada partitura guardada lleva un `uid` (se asigna al abrirla) y `syncUrl` (`score-editor.js`) deja en la URL `?score=<uid>` más sus ajustes (`tools`, `sound`) en cada `save()`, también al cambiar de pestaña. Con `?score=` el editor abre esa partitura y los ajustes de la URL no pisan a las demás (`main.js`). Las demos conservan su ruta.
+
 - Solo con `#pro` y `settings` (`proTabs` en `score-editor.js`). Cada pestaña (si hay más de una abierta) lleva una X: cerrar **no borra** la partitura, solo le pone `closed: true` en el registro guardado (`loadAll` lo conserva; la activa nunca está cerrada). Borrar de verdad sigue siendo el tacho. Debajo del tacho, el botón «Duplicar la partitura» (`#scoreDuplicate`, icono Lucide copy; también solo con `#pro`) abre en una pestaña nueva una copia de la activa con el título + «(copia)»; oculto en demos.
 - El menú hamburguesa (`Base.astro`, `#menuScoresSection`, oculto sin Pro) lista al final, tras un separador, **todas** las partituras; elegir una la abre en su pestaña (o la activa si ya estaba abierta). La lista se reconstruye en `renderTabs` y al editar el título. El desplegable mide `min-width: 17rem`.
 - Con la X, las pestañas inactivas pasan de `<button>` a `div.score-doc-tab.has-close` con un botón de etiqueta y otro de cierre (no se anidan botones). Tests: `test/tab-close.spec.mjs`.

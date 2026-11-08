@@ -37,9 +37,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     docs.push(Object.assign(M.sanitize(initialDemo.score), { demo: true, demoId: initialDemo.id }));
     stored.active = docs.length - 1;
   }
-  docs.forEach((one) => applyUrlDefaults(one, urlDefaults, M));
+  // `?score=<uid>` names one stored score; its settings travel in the same URL, so they must not overwrite the others.
+  const sharedUid = new URLSearchParams(location.search).get('score');
+  if (!sharedUid) docs.forEach((one) => applyUrlDefaults(one, urlDefaults, M));
   const histories = docs.map(() => []);
   let active = stored.active;
+  const sharedIndex = sharedUid ? docs.findIndex((one) => one.uid === sharedUid) : -1;
+  if (sharedIndex >= 0) {
+    active = sharedIndex;
+    delete docs[sharedIndex].closed;
+  }
   let score = docs[active];
   const defaultTitle = tabsBar.dataset.defaultTitle;
   if (typeof score.title !== 'string') score.title = defaultTitle;
@@ -95,7 +102,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (data && Array.isArray(data.scores)) data.scores = data.scores.filter((one) => !(one && one.demo === true));
       if (data && Array.isArray(data.scores) && data.scores.length) {
         // `closed` marks a score taken off the tab strip (Pro); it stays stored and listed in the site menu.
-        const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}, one && one.demo === true ? { demo: true, demoId: one.demoId } : {}));
+        const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}, one && typeof one.uid === 'string' && /^[\w-]{4,32}$/.test(one.uid) ? { uid: one.uid } : {}, one && one.demo === true ? { demo: true, demoId: one.demoId } : {}));
         const active = Math.min(Math.max(data.active | 0, 0), scores.length - 1);
         delete scores[active].closed;
         return { scores, active };
@@ -106,9 +113,27 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return { scores: [loadOne()], active: 0 };
   }
 
+  // The address of the open score: its own id plus the settings it shows now. Demos keep their path.
+  function syncUrl() {
+    if (score.demo) {
+      const url = new URL(location.href);
+      if (url.searchParams.has('score')) { url.searchParams.delete('score'); history.replaceState(history.state, '', url); }
+      return;
+    }
+    if (!score.uid) score.uid = Math.random().toString(36).slice(2, 10).padEnd(8, '0');
+    const url = new URL(location.href);
+    url.searchParams.set('score', score.uid);
+    const tools = ['repeats', 'dynamics', 'voices', 'playback', 'intervals'].filter((name) => score.tools && score.tools[name]);
+    if (tools.length) url.searchParams.set('tools', tools.join(',').replace('playback', 'play')); else url.searchParams.delete('tools');
+    const sound = M.soundOf(score);
+    if (sound !== M.CHOIR_SOUNDS[0]) url.searchParams.set('sound', sound === 'mm' ? 'uh' : sound); else url.searchParams.delete('sound');
+    if (url.href !== location.href) history.replaceState(history.state, '', url);
+  }
+
   function save() {
     M.pruneLower(score);
     docs[active] = score;
+    syncUrl();
     // Demos live only in this session; they are never written to storage.
     const kept = docs.filter((one) => !one.demo);
     if (!kept.length) return;
@@ -398,6 +423,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     histories[active] = history;
     const copy = JSON.parse(JSON.stringify(score));
     delete copy.closed;
+    delete copy.uid;
     copy.title = (score.title || defaultTitle) + ' ' + t.duplicateSuffix;
     docs.push(copy);
     histories.push([]);
@@ -485,7 +511,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (score.showTabs) restored.showTabs = true;
     else delete restored.showTabs;
     if (intervalDocuments.has(score)) intervalDocuments.add(restored);
-    score = Object.assign(restored, { title: score.title }, score.author ? { author: score.author } : {});
+    score = Object.assign(restored, { title: score.title }, score.author ? { author: score.author } : {}, score.uid ? { uid: score.uid } : {});
     clearBarSelection();
     selected = null;
     selectedNavigation = [];
@@ -5953,6 +5979,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   document.getElementById('scoreDuplicate').addEventListener('click', duplicateTab);
   renderTabs();
   applyLibrary();
+  syncUrl();
 
   document.getElementById('scoreClear').addEventListener('click', async (event) => {
     if (score.demo) return;
