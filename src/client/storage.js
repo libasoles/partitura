@@ -55,6 +55,14 @@ function fallback(value) {
   try { localStorage.setItem(LEGACY_TABS_KEY, JSON.stringify(value)); } catch (e) { /* Storage unavailable. */ }
 }
 
+// Feedback del autoguardado: el host aporta #saveStatus con los textos en data-saving / data-saved.
+function showStatus(state) {
+  const el = document.getElementById('saveStatus');
+  if (!el) return;
+  el.dataset.state = state;
+  el.textContent = el.dataset[state] || '';
+}
+
 function flush() {
   if (pending === null) return writing;
   const value = pending;
@@ -67,6 +75,7 @@ function flush() {
         if (db === connection) db = null;
         fallback(value);
       });
+      writing = writing.then(() => { if (pending === null) showStatus('saved'); });
       return writing;
     } catch (e) {
       connection.close();
@@ -74,6 +83,7 @@ function flush() {
     }
   }
   fallback(value);
+  if (pending === null) showStatus('saved');
   return writing;
 }
 
@@ -109,6 +119,7 @@ export async function initStorage({ saveDelay = 300 } = {}) {
     flush: flushPending,
     save(value) {
       pending = value;
+      showStatus('saving');
       clearTimeout(timer);
       if (saveDelay) timer = setTimeout(flush, saveDelay);
       else flush();

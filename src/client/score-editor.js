@@ -222,6 +222,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   let enteringTab = -1; // index of the tab just added, animated in by renderTabs
   function renderTabs() {
     document.getElementById('scoreClear').hidden = Boolean(score.demo);
+    document.getElementById('scoreDuplicate').hidden = !proTabs || Boolean(score.demo);
     tabsBar.querySelectorAll('.score-doc-tab').forEach((node) => node.remove());
     const add = document.getElementById('scoreNewTab');
     const closable = proTabs && openCount() > 1;
@@ -389,6 +390,19 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     switchTo(docs.length - 1);
     tabTitle.focus();
     tabTitle.select();
+  }
+
+  function duplicateTab() {
+    if (!proTabs || score.demo) return;
+    docs[active] = score;
+    histories[active] = history;
+    const copy = JSON.parse(JSON.stringify(score));
+    delete copy.closed;
+    copy.title = (score.title || defaultTitle) + ' ' + t.duplicateSuffix;
+    docs.push(copy);
+    histories.push([]);
+    enteringTab = docs.length - 1;
+    switchTo(docs.length - 1);
   }
 
   // Closing only takes the tab off the strip: the score stays stored, and listed in the site menu.
@@ -703,22 +717,26 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function activateTool(item) {
     if (selectedNavigation.length || selectedBeam || selectedLink || selectedHairpin) { selectedNavigation = []; selectedBeam = null; selectedLink = null; selectedHairpin = null; markSelected(); }
-    if (activeItem === item) { deactivateTool(); return; }
-    activeItem = item;
-    stage.classList.add('has-tool');
-    clearHoverGhost();
-    updateHoverGhost();
-    toolbars.querySelectorAll('.score-palette-tool').forEach((button) => {
-      const same = item.kind === 'navigation' ? button.dataset.navigation === item.mark : item.kind === 'hairpin' ? button.dataset.hairpin === item.hairpin : item.kind === 'dynamic' ? button.dataset.dynamic === item.dynamic : item.key ? button.dataset.shortcut === item.key : item.kind === 'bar' ? button.dataset.barline === item.bar : button.dataset.tool === item.kind;
-      button.setAttribute('aria-pressed', String(same));
-    });
+    // Con figuras elegidas, alteraciones, puntillo, figuras y silencios les dan formato sin activar ninguna herramienta del menu.
+    const onSelection = (isModifier(item) || item.kind === 'note' || item.kind === 'rest') && picks().some((ref) => eventAt(ref));
+    if (onSelection) deactivateTool();
+    else {
+      if (activeItem === item) { deactivateTool(); return; }
+      activeItem = item;
+      stage.classList.add('has-tool');
+      clearHoverGhost();
+      updateHoverGhost();
+      toolbars.querySelectorAll('.score-palette-tool').forEach((button) => {
+        const same = item.kind === 'navigation' ? button.dataset.navigation === item.mark : item.kind === 'hairpin' ? button.dataset.hairpin === item.hairpin : item.kind === 'dynamic' ? button.dataset.dynamic === item.dynamic : item.key ? button.dataset.shortcut === item.key : item.kind === 'bar' ? button.dataset.barline === item.bar : button.dataset.tool === item.kind;
+        button.setAttribute('aria-pressed', String(same));
+      });
+    }
     if (isPlacing(item)) return;
     if (isModifier(item)) {
-      if (eventAt(selected)) applyModifier(item, selected);
+      if (item.kind === 'acc' && picks().length > 1) applyAccidentals(item, picks());
+      else if (eventAt(selected)) applyModifier(item, selected);
       return;
     }
-    // Con figuras elegidas, la tecla solo les da formato: no queda ninguna herramienta activa.
-    if ((item.kind === 'note' || item.kind === 'rest') && picks().some((ref) => eventAt(ref))) deactivateTool();
     // La nota muerta no cambia la duracion: marca (o, si todas ya lo son, desmarca) las notas elegidas.
     if (item.dead) {
       const notes = picks().map((ref) => eventAt(ref)).filter((ev) => ev && !ev.rest);
@@ -779,6 +797,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       else if (ev.acc === double) delete ev.acc;
       else ev.acc = item.acc;
     });
+  }
+
+  // Con varias figuras elegidas la alteracion se aplica a todas: el paso del ciclo lo marca la nota principal.
+  function applyAccidentals(item, refs) {
+    const notes = refs.map((ref) => eventAt(ref)).filter((ev) => ev && !ev.rest);
+    if (!notes.length) return;
+    const lead = eventAt(selected);
+    const base = lead && !lead.rest ? lead : notes[0];
+    const double = { '#': '##', b: 'bb' }[item.acc];
+    let next;
+    if (base.acc === item.acc) next = double;
+    else if (base.acc === double) next = undefined;
+    else next = item.acc;
+    change(() => notes.forEach((ev) => { if (next) ev.acc = next; else delete ev.acc; }));
   }
 
   function moveEvent(from, target) {
@@ -1038,8 +1070,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     side.style.position = 'relative';
     side.style.top = 'auto';
     side.style.marginTop = '0';
+    side.style.zoom = '';
     const offset = stage.getBoundingClientRect().top + toolbarStaffTop - glyph.getBoundingClientRect().top;
-    side.classList.toggle('is-tall', side.offsetHeight > window.innerHeight - 112);
+    // The toolbar stays sticky and shrinks to fit the viewport below its sticky offset.
+    const room = window.innerHeight - parseFloat(getComputedStyle(document.documentElement).fontSize) * 6 - 16;
+    if (side.offsetHeight > room) side.style.zoom = String(Math.max(0.5, room / side.offsetHeight));
     side.style.position = '';
     side.style.top = '';
     side.style.marginTop = Math.max(0, offset) + 'px';
@@ -1060,7 +1095,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const legendHeight = voiceLegend.isConnected ? voiceLegend.offsetHeight : 0;
     const intervalsHeight = intervalButton.isConnected ? intervalButton.offsetHeight : 0;
     const chordNamesHeight = chordNamesButton.isConnected ? chordNamesButton.offsetHeight : 0;
-    const above = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
+    const restructureHeight = restructureButton.isConnected ? restructureButton.offsetHeight : 0;
+    const legendEnd = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
+    const above = legendEnd + (restructureHeight ? restructureHeight + (legendEnd ? 8 : 0) : 0);
     const withChords = above + (chordNamesHeight ? chordNamesHeight + (above ? 8 : 0) : 0);
     const height = withChords + (intervalsHeight ? intervalsHeight + (withChords ? 8 : 0) : 0);
     // Follow the right toolbar's sticky offset, stopping at the end of the sheet.
@@ -1070,7 +1107,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const top = Number.isFinite(stickyTop)
       ? Math.max(staffTop, Math.min(stickyTop - origin.top, origin.height - height))
       : staffTop;
-    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, intervalButton.isConnected ? intervalButton.offsetWidth : 0, chordNamesButton.isConnected ? chordNamesButton.offsetWidth : 0);
+    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, restructureButton.isConnected ? restructureButton.offsetWidth : 0, intervalButton.isConnected ? intervalButton.offsetWidth : 0, chordNamesButton.isConnected ? chordNamesButton.offsetWidth : 0);
     const left = WIDE_PAGE.matches ? -(width + 16) : Math.max(0, edge - width - 6);
     if (playbackShown) {
       playButton.style.top = top + 'px';
@@ -1078,6 +1115,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 14 : 0)) + 'px';
     voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
+    restructureButton.style.top = (top + (playbackShown ? playButton.offsetHeight + 14 : 0) + legendHeight + (legendHeight ? 8 : 0)) + 'px';
+    restructureButton.style.left = (left + (width - restructureButton.offsetWidth) / 2) + 'px';
     intervalButton.style.top = (top + height - intervalsHeight) + 'px';
     intervalButton.style.left = (left + (width - intervalButton.offsetWidth) / 2) + 'px';
     chordNamesButton.style.top = (top + height - intervalsHeight - (intervalsHeight ? 8 : 0) - chordNamesHeight) + 'px';
@@ -1094,6 +1133,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
   window.addEventListener('scroll', scheduleLeftToolbarAlignment, { passive: true });
   window.addEventListener('resize', scheduleLeftToolbarAlignment);
+  window.addEventListener('resize', () => alignBarlinesToFirstStaff());
 
   function render() {
     // Editing, voices, tempo or sound never stop playback: the schedule is rebuilt and the position kept.
@@ -1616,8 +1656,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       let previous = -Infinity;
       const positions = keys.map((key) => {
         const [mi, at] = key.split(':').map(Number);
-        const xs = eventNodes(mi).filter((node, i) => !M.measures(score)[mi][i].rest && M.onsets(M.measures(score)[mi])[i] === at)
-          .map((node) => centerX(node, origin));
+        const xs = Array.from({ length: M.stavesOf(score) }, (_, staff) => staff).flatMap((staff) => {
+          const measure = M.measures(score, staff)[mi] || [];
+          const starts = M.onsets(measure);
+          return eventNodes(mi, staff).filter((node, i) => !measure[i].rest && starts[i] === at).map((node) => centerX(node, origin));
+        });
         const x = xs.length ? xs.reduce((sum, value) => sum + value, 0) / xs.length : layout[mi].left;
         previous = Math.max(x - head.left, previous + minStep);
         return previous;
@@ -1637,9 +1680,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const system = stage.querySelectorAll('g.system')[row];
       const boxes = [...system.querySelectorAll('g.layer, g.fermata, g.slur, g.tie, g.hairpin, g.dynam')]
         .map(node => node.getBoundingClientRect()).filter(box => box.width || box.height);
-      const contentBottom = Math.max(last.lines[4], ...boxes.map(box => box.bottom - origin.top));
-      const offset = Math.max(TAB_CLEF_CLEARANCE, contentBottom - last.lines[4] + TAB_GAP);
-      tabs.style.top = (last.lines[4] + offset) + 'px';
+      const contentBottom = Math.max(last.bottom, ...boxes.map(box => box.bottom - origin.top));
+      const offset = Math.max(TAB_CLEF_CLEARANCE, contentBottom - last.bottom + TAB_GAP);
+      tabs.style.top = (last.bottom + offset) + 'px';
       tabs.style.width = (last.right - head.left) + 'px';
       tabs.appendChild(document.createElement('ascii-tabs-sheet'));
       // El componente se redibuja al hacer clic, asi que el escenario ya no puede reconocer el destino: no le llega el evento.
@@ -1999,7 +2042,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const box = dir.getBoundingClientRect();
       const staves = [...dir.closest('g.measure').querySelectorAll(':scope > g.staff')].map((staff) => ({ staff, top: staff.querySelector(':scope > path').getBoundingClientRect().top }));
       const below = staves.filter((s) => s.top >= box.bottom - 4);
-      const target = M.instrumentOf(score) === 'voices' ? staves[0] : below.length ? below.reduce((a, b) => (b.top < a.top ? b : a)) : staves[staves.length - 1];
+      const target = M.voicePerStaff(score) ? staves[0] : below.length ? below.reduce((a, b) => (b.top < a.top ? b : a)) : staves[staves.length - 1];
       if (!target) return;
       let limit = target.top;
       target.staff.querySelectorAll('g.note, g.chord, g.rest, g.beam, g.tuplet').forEach((node) => {
@@ -3137,7 +3180,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     hideSelectionMenu();
     const list = picks();
     if (!list.length || drag?.active) return;
-    const actions = M.selectionActions(score, list, toolOn('voices', false) && M.instrumentOf(score) !== 'voices' ? shownVoices : []).filter((action) => action !== 'mergeLyrics' || lyricsActive());
+    const actions = M.selectionActions(score, list, toolOn('voices', false) && !M.voicePerStaff(score) ? shownVoices : []).filter((action) => action !== 'mergeLyrics' || lyricsActive());
     if (!actions.length) return;
     const origin = stage.getBoundingClientRect();
     let boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
@@ -4136,6 +4179,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Nombre del pentagrama `staff` para etiquetas accesibles: el registro en Voces; arriba o abajo en el piano.
   function staffName(staff) {
     if (M.instrumentOf(score) === 'voices') return registerLabel(staff);
+    if (M.voicePerStaff(score)) return t.voiceStaff.replace('{n}', staff + 1);
     return staff ? t.lowerStaff : t.upperStaff;
   }
 
@@ -4411,6 +4455,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- paleta -------------------------------------------------------------
 
   const ICONS = {
+    merge: '<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
     play: '<polygon points="6 3 20 12 6 21 6 3"/>',
     pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
@@ -4427,6 +4472,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     chevronLeft: '<path d="m15 18-6-6 6-6"/>',
     search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',
+    copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
     trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
     // Sin equivalente en Lucide: ligadura (arco entre dos notas) y ligadura quitada.
     merge: '<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
@@ -4440,6 +4486,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     'move-horizontal': '<path d="m18 8 4 4-4 4"/><path d="M2 12h20"/><path d="m6 8-4 4 4 4"/>',
     'arrow-left': '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
     'arrow-right': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+    copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
     download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
   };
 
@@ -4976,6 +5023,151 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   });
   ['pointerdown', 'mousedown', 'click'].forEach((type) => chordNamesButton.addEventListener(type, (event) => event.stopPropagation()));
 
+  // Pro (categoria Voces): unir pentagramas en uno (cada voz conserva su numero) o separar voces de un pentagrama.
+  // Un popup anclado al boton pregunta cuales, con los mismos circulos 1-4 de la leyenda.
+  const restructureButton = document.createElement('button');
+  restructureButton.id = 'scoreRestructure';
+  restructureButton.className = 'score-palette-item score-interval-toggle score-restructure-toggle tooltip';
+  restructureButton.type = 'button';
+  restructureButton.innerHTML = lucide('merge');
+  restructureButton.dataset.tooltip = t.restructureTooltip;
+  restructureButton.setAttribute('aria-label', t.restructureTooltip);
+  restructureButton.setAttribute('aria-haspopup', 'dialog');
+  restructureButton.setAttribute('aria-expanded', 'false');
+  ['pointerdown', 'mousedown', 'click'].forEach((type) => restructureButton.addEventListener(type, (event) => event.stopPropagation()));
+  const restructurePopup = document.createElement('div');
+  restructurePopup.id = 'scoreRestructurePopup';
+  restructurePopup.className = 'score-meter-popup score-restructure-popup';
+  restructurePopup.setAttribute('popover', 'auto');
+  restructurePopup.setAttribute('role', 'dialog');
+  restructurePopup.setAttribute('aria-label', t.restructureTooltip);
+  document.querySelector('.score-page').appendChild(restructurePopup);
+  restructurePopup.addEventListener('toggle', (event) => restructureButton.setAttribute('aria-expanded', String(event.newState === 'open')));
+
+  const voiceDot = (n, tag = 'span') => {
+    const dot = document.createElement(tag);
+    dot.className = 'score-restructure-voice';
+    dot.dataset.voice = String(n);
+    dot.textContent = String(n);
+    return dot;
+  };
+  function toggleButton(button, onChange) {
+    button.type = 'button';
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => {
+      const on = button.getAttribute('aria-pressed') !== 'true';
+      button.setAttribute('aria-pressed', String(on));
+      onChange(on);
+    });
+    return button;
+  }
+  function fillRestructurePopup() {
+    restructurePopup.replaceChildren();
+    const staves = M.stavesOf(score);
+    const failed = () => say(t.restructureFailed);
+    // Unir: elegir 2 o mas pentagramas.
+    const joinTitle = document.createElement('p');
+    joinTitle.textContent = t.restructureJoin;
+    const joinList = document.createElement('div');
+    joinList.className = 'score-restructure-list';
+    joinList.setAttribute('role', 'group');
+    joinList.setAttribute('aria-label', t.restructureJoin);
+    const joinSelected = new Set();
+    const join = document.createElement('button');
+    join.type = 'button';
+    join.className = 'score-restructure-go';
+    join.textContent = t.restructureJoinAction;
+    join.disabled = true;
+    for (let staff = 0; staff < staves; staff += 1) {
+      const item = toggleButton(document.createElement('button'), (on) => {
+        if (on) joinSelected.add(staff); else joinSelected.delete(staff);
+        join.disabled = joinSelected.size < 2;
+      });
+      item.className = 'score-restructure-staff';
+      item.dataset.staff = String(staff);
+      const label = document.createElement('span');
+      label.textContent = t.restructureStaff.replace('{n}', staff + 1);
+      item.append(label, ...M.legendsOf(score, staff).map((n) => voiceDot(n)));
+      if (!M.legendsOf(score, staff).length) item.append(voiceDot(M.legendOf(score, staff, 0)));
+      joinList.appendChild(item);
+    }
+    join.addEventListener('click', () => {
+      const chosen = [...joinSelected];
+      restructurePopup.hidePopover();
+      if (!change(() => M.joinStaves(score, chosen))) failed();
+    });
+    restructurePopup.append(joinTitle, joinList, join);
+    // Separar: elegir, de un pentagrama con varias voces, las que pasan a uno nuevo.
+    const splitTitle = document.createElement('p');
+    splitTitle.textContent = t.restructureSplit;
+    const splitList = document.createElement('div');
+    splitList.className = 'score-restructure-list';
+    splitList.setAttribute('role', 'group');
+    splitList.setAttribute('aria-label', t.restructureSplit);
+    const split = document.createElement('button');
+    split.type = 'button';
+    split.className = 'score-restructure-go';
+    split.textContent = t.restructureSplitAction;
+    split.disabled = true;
+    let splitStaffIndex = -1;
+    const splitSelected = new Set();
+    const rows = [];
+    for (let staff = 0; staff < staves; staff += 1) {
+      const legends = M.legendsOf(score, staff);
+      if (legends.length < 2) continue;
+      const row = document.createElement('div');
+      row.className = 'score-restructure-row';
+      const label = document.createElement('span');
+      label.textContent = t.restructureStaff.replace('{n}', staff + 1);
+      row.appendChild(label);
+      legends.forEach((n) => {
+        const dot = toggleButton(voiceDot(n, 'button'), (on) => {
+          // Una sola voz de origen a la vez: elegir en otro pentagrama reemplaza lo elegido.
+          if (splitStaffIndex !== staff) {
+            splitSelected.clear();
+            rows.forEach((other) => other.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', 'false')));
+            splitStaffIndex = staff;
+            dot.setAttribute('aria-pressed', String(on));
+          }
+          if (on) splitSelected.add(n); else splitSelected.delete(n);
+          // Siempre queda al menos una voz en el pentagrama de origen.
+          split.disabled = !splitSelected.size || splitSelected.size >= legends.length;
+        });
+        dot.setAttribute('aria-label', t.restructureStaff.replace('{n}', staff + 1) + ' · ' + n);
+        row.appendChild(dot);
+      });
+      rows.push(row);
+      splitList.appendChild(row);
+    }
+    if (!rows.length) {
+      const none = document.createElement('p');
+      none.className = 'score-restructure-none';
+      none.textContent = t.restructureNoSplit;
+      splitList.appendChild(none);
+    }
+    split.addEventListener('click', () => {
+      const staff = splitStaffIndex, chosen = [...splitSelected];
+      restructurePopup.hidePopover();
+      if (!change(() => M.splitStaff(score, staff, chosen))) failed();
+    });
+    restructurePopup.append(splitTitle, splitList, split);
+  }
+  function placeRestructurePopup() {
+    if (!restructureButton.isConnected || !restructurePopup.matches(':popover-open')) return;
+    const anchor = restructureButton.getBoundingClientRect();
+    const box = restructurePopup.getBoundingClientRect();
+    restructurePopup.style.left = Math.max(8, Math.min(anchor.right + 8, window.innerWidth - box.width - 8)) + 'px';
+    restructurePopup.style.top = Math.max(8, Math.min(anchor.top, window.innerHeight - box.height - 8)) + 'px';
+  }
+  restructureButton.addEventListener('click', () => {
+    if (restructurePopup.matches(':popover-open')) { restructurePopup.hidePopover(); return; }
+    fillRestructurePopup();
+    restructurePopup.showPopover();
+    placeRestructurePopup();
+  });
+  window.addEventListener('scroll', placeRestructurePopup, { passive: true, capture: true });
+  window.addEventListener('resize', placeRestructurePopup);
+
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
@@ -4993,6 +5185,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     chordNamesButton.remove();
     if (proChordNames && toolOn('voices', false) && toolOn('intervals', false)) stage.appendChild(chordNamesButton);
     chordNamesButton.setAttribute('aria-pressed', String(chordNameDocuments.has(score)));
+    restructureButton.remove();
+    if (settings && toolOn('voices', false) && M.restructurable(score)) stage.appendChild(restructureButton);
+    else if (restructurePopup.matches(':popover-open')) restructurePopup.hidePopover();
     alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
@@ -5031,8 +5226,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.remove();
     if (!on) return;
     voiceButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(shownVoices.has(i + 1))));
-    // En coro cada pentagrama es una voz de la leyenda; en piano cada mano infiere sus propias voces.
-    const choir = M.instrumentOf(score) === 'voices';
     const upper = M.measures(score);
     const total = upper.length;
     for (let staff = 0; staff < M.stavesOf(score); staff++) {
@@ -5042,7 +5235,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         M.voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
           const node = stage.querySelector('[id="' + M.ID_PREFIX[staff] + mi + '-' + i + '"]');
           if (!node) return;
-          const n = choir ? staff + 1 : k % VOICE_COUNT + 1;
+          const n = M.legendOf(score, staff, k);
           node.dataset.voice = String(n);
           node.classList.toggle('is-voice-on', shownVoices.has(n));
         })));
@@ -5287,6 +5480,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const clear = document.getElementById('scoreClear');
     clear.classList.replace('score-download', 'score-palette-item');
     cog.after(clear);
+    const duplicate = document.getElementById('scoreDuplicate');
+    duplicate.classList.replace('score-download', 'score-palette-item');
+    clear.after(duplicate);
 
     const title = document.createElement('h2');
     title.className = 'score-settings-heading-main';
@@ -5344,31 +5540,43 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const voicesCard = document.createElement('div');
     voicesCard.className = 'score-settings-card';
     voicesCard.hidden = true;
-    const partsRow = section(t.settingsParts);
-    partsRow.parentElement.classList.add('is-inline');
-    const partsSlider = document.createElement('input');
-    partsSlider.type = 'range';
-    partsSlider.className = 'score-settings-slider';
-    partsSlider.min = String(M.MIN_PARTS);
-    partsSlider.max = String(M.MAX_PARTS);
-    partsSlider.step = '1';
-    partsSlider.setAttribute('aria-label', t.settingsParts);
-    const partsValue = document.createElement('output');
-    partsValue.className = 'score-settings-tempo-value';
-    const showParts = () => { partsValue.textContent = t.partsValue.replace('{n}', partsSlider.value); };
-    partsSlider.addEventListener('input', showParts);
-    partsSlider.addEventListener('change', () => { change(() => M.setParts(score, Number(partsSlider.value))); sync(); });
-    const partsLine = document.createElement('div');
-    partsLine.className = 'score-settings-slider-line';
-    partsLine.append(partsSlider, partsValue);
-    partsRow.classList.add('is-stacked');
-    partsRow.append(partsLine);
+    // El mismo control sirve al coro (2 a 4) y a la guitarra Pro (1 a 4 pentagramas con una sola tablatura).
+    function partsControl(min, apply) {
+      const row = section(t.settingsParts);
+      row.parentElement.classList.add('is-inline');
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.className = 'score-settings-slider';
+      slider.min = String(min);
+      slider.max = String(M.MAX_PARTS);
+      slider.step = '1';
+      slider.setAttribute('aria-label', t.settingsParts);
+      const value = document.createElement('output');
+      value.className = 'score-settings-tempo-value';
+      const show = () => { value.textContent = t.partsValue.replace('{n}', slider.value); };
+      slider.addEventListener('input', show);
+      slider.addEventListener('change', () => { change(() => apply(score, Number(slider.value))); sync(); });
+      const line = document.createElement('div');
+      line.className = 'score-settings-slider-line';
+      line.append(slider, value);
+      row.classList.add('is-stacked');
+      row.append(line);
+      return { row, slider, show };
+    }
+    const { row: partsRow, slider: partsSlider, show: showParts } = partsControl(M.MIN_PARTS, M.setParts);
 
     // Voces: timbre del coro y colección de SoundFonts. Solo cambia el audio y el programa del MIDI.
     const soundRow = section(t.settingsSound);
     soundRow.classList.add('score-settings-sounds');
     voicesCard.append(partsRow.parentElement, soundRow.parentElement);
     content.appendChild(voicesCard);
+    // Guitarra (solo Pro): cada voz es un pentagrama y todas comparten la misma tablatura.
+    const guitarCard = document.createElement('div');
+    guitarCard.className = 'score-settings-card';
+    guitarCard.hidden = true;
+    const { row: guitarPartsRow, slider: guitarPartsSlider, show: showGuitarParts } = partsControl(1, M.setGuitarParts);
+    guitarCard.append(guitarPartsRow.parentElement);
+    content.appendChild(guitarCard);
     const sounds = M.CHOIR_SOUNDS.map((id) => {
       const field = document.createElement('label');
       field.className = 'score-settings-radio';
@@ -5393,6 +5601,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
     // El tempo se arrastra en un control deslizante; la casilla de abajo ("sin indicacion") lo quita.
     const tempoRow = section(t.settingsTempo);
+    tempoRow.parentElement.classList.add('score-settings-tempo');
     const tempoSlider = document.createElement('input');
     tempoSlider.type = 'range';
     tempoSlider.className = 'score-settings-slider';
@@ -5438,6 +5647,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     content.appendChild(toolsGrid);
     let intervalModes = [];
     let refreshTonic = () => {};
+    let voiceDuplicate = null;
     const checks = categories.map(([name, label, belongs, fallback = true]) => {
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section score-settings-category';
@@ -5466,6 +5676,81 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           swatch.textContent = button.textContent;
           icons.appendChild(swatch);
         });
+        // Pro: unir o separar voces es una herramienta de esta categoria, sin casilla propia.
+        if (M.choir) {
+          const icon = document.createElement('span');
+          icon.className = 'score-settings-icon';
+          icon.setAttribute('role', 'img');
+          icon.setAttribute('aria-label', t.restructureTooltip);
+          icon.title = t.restructureTooltip;
+          icon.innerHTML = lucide('merge');
+          icons.appendChild(icon);
+        }
+      }
+      if (name === 'voices' && proChordNames) {
+        const duplicate = document.createElement('button');
+        duplicate.type = 'button';
+        duplicate.className = 'score-settings-action';
+        duplicate.id = 'scoreDuplicateVoice';
+        duplicate.innerHTML = lucide('copy') + '<span>' + t.voiceDuplicate + '</span>';
+        duplicate.title = t.voiceDuplicateTooltip;
+        // Con varias voces se elige cuales duplicar en un popup anclado al boton (dentro de Ajustes, para no cerrarlos).
+        const picker = document.createElement('div');
+        picker.id = 'scoreVoicePicker';
+        picker.className = 'score-meter-popup score-voice-picker';
+        picker.setAttribute('popover', 'auto');
+        picker.setAttribute('role', 'dialog');
+        picker.setAttribute('aria-label', t.voiceDuplicatePick);
+        const pickerHeading = document.createElement('p');
+        pickerHeading.textContent = t.voiceDuplicatePick;
+        const pickerList = document.createElement('div');
+        pickerList.className = 'score-voice-picker-list';
+        const pickerConfirm = document.createElement('button');
+        pickerConfirm.type = 'button';
+        pickerConfirm.className = 'score-voice-picker-confirm';
+        pickerConfirm.textContent = t.voiceDuplicateConfirm;
+        picker.append(pickerHeading, pickerList, pickerConfirm);
+        popup.appendChild(picker);
+        const duplicateVoices = (voices) => {
+          const trial = M.clone(score);
+          if (!M.duplicateVoice(trial, voices)) { say(t.voiceDuplicateUnavailable); return; }
+          change(() => { Object.assign(score, trial); return true; });
+          say('');
+          picker.hidePopover();
+          popup.hidePopover();
+        };
+        const placePicker = () => {
+          const anchor = duplicate.getBoundingClientRect(), box = picker.getBoundingClientRect();
+          picker.style.left = Math.max(8, Math.min(anchor.left, window.innerWidth - box.width - 8)) + 'px';
+          picker.style.top = Math.max(8, Math.min(anchor.bottom + 6, window.innerHeight - box.height - 8)) + 'px';
+        };
+        const picked = () => [...pickerList.querySelectorAll('[aria-pressed="true"]')].map((b) => Number(b.dataset.voice));
+        pickerConfirm.addEventListener('click', () => duplicateVoices(picked()));
+        duplicate.setAttribute('aria-haspopup', 'dialog');
+        duplicate.setAttribute('aria-controls', picker.id);
+        duplicate.addEventListener('click', () => {
+          if (picker.matches(':popover-open')) { picker.hidePopover(); return; }
+          const numbers = M.voiceNumbers(score);
+          if (numbers.length < 2) { duplicateVoices(null); return; }
+          pickerList.replaceChildren(...numbers.map((n) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.voice = String(n);
+            button.setAttribute('aria-pressed', 'false');
+            button.setAttribute('aria-label', t.voiceStaff.replace('{n}', n));
+            button.textContent = String(n);
+            button.addEventListener('click', () => {
+              button.setAttribute('aria-pressed', String(button.getAttribute('aria-pressed') !== 'true'));
+              pickerConfirm.disabled = !picked().length;
+            });
+            return button;
+          }));
+          pickerConfirm.disabled = true;
+          picker.showPopover();
+          placePicker();
+          pickerList.firstElementChild.focus({ preventScroll: true });
+        });
+        voiceDuplicate = duplicate;
       }
       if (name === 'playback') {
         for (const name of ['play', 'pause']) {
@@ -5485,6 +5770,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         icons.appendChild(icon);
       }
       wrap.append(field, icons);
+      if (name === 'voices' && voiceDuplicate) wrap.appendChild(voiceDuplicate);
       // Intervalos: respecto de las voces vecinas (por defecto) o del bajo; viaja con la partitura y se deshace.
       if (name === 'intervals') {
         const modes = document.createElement('div');
@@ -5612,8 +5898,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });
       intervalModes.forEach((radio) => { radio.checked = M.intervalModeOf(score) === radio.value; });
       refreshTonic();
+      guitarCard.hidden = !M.choir || M.instrumentOf(score) !== 'guitar';
       partsSlider.value = String(M.partsOf(score));
       showParts();
+      guitarPartsSlider.value = String(M.guitarPartsOf(score));
+      showGuitarParts();
       tempoSlider.value = String(score.tempo || 120);
       showTempo();
       tempoNone.checked = !score.tempo;
@@ -5639,6 +5928,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (ICONS[node.dataset.icon]) node.insertAdjacentHTML('afterbegin', lucide(node.dataset.icon));
   });
   document.getElementById('scoreNewTab').addEventListener('click', newTab);
+  document.getElementById('scoreDuplicate').addEventListener('click', duplicateTab);
   renderTabs();
   applyLibrary();
 

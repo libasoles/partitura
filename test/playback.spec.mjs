@@ -91,7 +91,7 @@ test('playback sits left of the staff above voices; settings show play and pause
   await expect(category.getByRole('img', { name: 'Reproducir', exact: true })).toBeVisible();
   await expect(category.getByRole('img', { name: 'Pausar', exact: true })).toBeVisible();
   await category.getByRole('checkbox').check();
-  await popup.getByRole('checkbox', { name: 'Identificador de voces', exact: true }).check();
+  await popup.getByRole('checkbox', { name: 'Voces', exact: true }).check();
   await page.keyboard.press('Escape');
   const button = page.locator('#scorePlayback');
   await expect(page.locator('#scoreBarlines #scorePlayback')).toHaveCount(0);

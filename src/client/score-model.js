@@ -417,7 +417,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // Duplica a una tercera diatonica en una voz independiente, continuando la vecina si esta libre.
-  function duplicateVertical(score, refs, delta) {
+  function duplicateVertical(score, refs, delta, stack = false) {
     if (delta !== 1 && delta !== -1) return null;
     const trial = clone(score);
     const chosen = refs.filter((r, i) => measures(trial, staffOf(r))[r.mi]?.[r.i] &&
@@ -440,8 +440,10 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       const sourceVoices = [...new Set(group.map((r) => measure[r.i].v))].sort((a, b) => a - b);
       // Continuar la voz vecina si esta libre durante todas las figuras copiadas.
       // Duplicar una frase por partes no debe insertar una voz nueva cada vez.
+      const stacked = stack && sourceVoices.length > 1; // Las copias van juntas bajo la voz mas grave elegida.
+      const lowest = sourceVoices[sourceVoices.length - 1];
       const reuse = new Map();
-      for (const source of sourceVoices) {
+      for (const source of stacked ? [] : sourceVoices) {
         const target = source - delta;
         if (target < 1 || target > MAX_VOICE || sourceVoices.includes(target)) continue;
         const selected = group.filter(ref => measure[ref.i].v === source);
@@ -450,8 +452,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         if (!overlaps) reuse.set(source, target);
       }
       const inserted = sourceVoices.filter(source => !reuse.has(source));
-      const oldVoice = (v) => v + inserted.filter((s) => delta > 0 ? s <= v : s < v).length;
-      const newVoice = (v) => reuse.has(v) ? oldVoice(reuse.get(v)) : oldVoice(v) - delta;
+      const oldVoice = (v) => v + (stacked ? (v > lowest ? inserted.length : 0) : inserted.filter((s) => delta > 0 ? s <= v : s < v).length);
+      const newVoice = (v) => stacked ? lowest + 1 + sourceVoices.indexOf(v) : reuse.has(v) ? oldVoice(reuse.get(v)) : oldVoice(v) - delta;
       if (Math.max(...measure.map(ev => oldVoice(ev.v)), ...sourceVoices.map(newVoice)) > MAX_VOICE) return null;
       let nextTuplet = Math.max(0, ...measure.map((ev) => ev.tp || 0));
       const tuplets = new Map();
@@ -480,6 +482,39 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         inserts.some(([ev, at]) => after[measure.indexOf(ev)] !== at)) return null;
       inserts.forEach(([ev]) => created.push(refOf(staff, mi, measure.indexOf(ev))));
     }
+    Object.assign(score, trial);
+    return created;
+  }
+
+  // Numeros de voz que hay en la partitura (los de cualquier compas de los pentagramas visibles), de menor a mayor.
+  function voiceNumbers(score) {
+    const trial = clone(score), found = new Set();
+    for (let staff = 0; staff < stavesOf(trial); staff += 1) {
+      measures(trial, staff).forEach((measure) => {
+        if (!measure?.length) return;
+        settleVoices(measure);
+        measure.forEach((ev) => found.add(ev.v));
+      });
+    }
+    return [...found].sort((x, y) => x - y);
+  }
+
+  // Duplica las voces `voices` (por defecto la superior) de toda la partitura una tercera diatonica abajo. Con varias,
+  // las copias quedan juntas bajo la mas grave de las elegidas en cada compas. Devuelve las figuras creadas, o null
+  // (sin tocar la partitura) si alguna no entra.
+  function duplicateVoice(score, voices = null) {
+    const trial = clone(score);
+    const refs = [];
+    for (let staff = 0; staff < stavesOf(trial); staff += 1) {
+      measures(trial, staff).forEach((measure, mi) => {
+        if (!measure?.length) return;
+        settleVoices(measure);
+        const chosen = voices ? new Set(voices) : new Set([Math.min(...measure.map((ev) => ev.v))]);
+        measure.forEach((ev, i) => { if (chosen.has(ev.v)) refs.push(refOf(staff, mi, i)); });
+      });
+    }
+    const created = refs.length ? duplicateVertical(trial, refs, -1, true) : null;
+    if (!created?.length) return null;
     Object.assign(score, trial);
     return created;
   }
@@ -938,7 +973,201 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     if (!grandStaff) return 1;
     const instrument = instrumentOf(score);
     if (instrument === 'piano') return 2;
-    return choir && instrument === 'voices' ? partsOf(score) : 1;
+    if (!choir) return 1;
+    return instrument === 'voices' ? partsOf(score) : instrument === 'guitar' ? guitarPartsOf(score) : 1;
+  }
+
+  // Guitarra (Pro, `choir`): 1 a 4 pentagramas que comparten una sola tablatura. Con uno no se guarda `parts`.
+  const guitarPartsOf = (score) => (score && partsValid(score.parts) ? score.parts : 1);
+  function setGuitarParts(score, parts) {
+    if (!Number.isInteger(parts) || parts < 1 || parts > MAX_PARTS) return false;
+    if (parts === 1) delete score.parts; else score.parts = parts;
+    return true;
+  }
+
+  // Cada pentagrama es una voz de la leyenda: en coro y en guitarra con varias voces (en piano, cada mano infiere las suyas).
+  const voicePerStaff = (score) => {
+    const instrument = instrumentOf(score);
+    return instrument === 'voices' || (instrument === 'guitar' && stavesOf(score) > 1);
+  };
+
+  // Numero de la leyenda (1-4) de la voz de notacion `k` del pentagrama `staff`. Unir y separar pentagramas lo fijan en
+  // `score.voiceMap[staff][k]`; sin eso, cada pentagrama es una voz (`staff + 1`) o, con uno solo, la voz `k` (en piano, igual).
+  const legendMapOf = (score, staff) => {
+    const map = score && Array.isArray(score.voiceMap) ? score.voiceMap[staff] : null;
+    return validLegendMap(map) ? map : null;
+  };
+  const validLegendMap = (map) => Array.isArray(map) && map.length > 0 && map.length <= MAX_VOICE && map.every((n) => Number.isInteger(n) && n >= 1 && n <= 4);
+  function legendOf(score, staff, k) {
+    const map = legendMapOf(score, staff);
+    if (map) return map[k] ?? map[0];
+    return voicePerStaff(score) ? staff + 1 : k % 4 + 1;
+  }
+
+  // Compas `mi` del pentagrama `staff` sin crearlo si no existe.
+  const laneAt = (score, staff, mi) => (staff ? (score[laneKey(staff)] && score[laneKey(staff)][mi]) || [] : measures(score)[mi] || []);
+
+  // Indices de las figuras de `measure` cuya voz esta en `selected`; null si no se filtra.
+  function selectedEvents(score, staff, measure, selected) {
+    if (!selected) return null;
+    return new Set(voices(measure).flatMap((voice, k) => (selected.has(legendOf(score, staff, k)) ? voice.groups.flatMap((group) => group.indices) : [])));
+  }
+
+  // Unir y separar pentagramas (Pro): solo guitarra y coro, que tienen una cantidad variable de pentagramas.
+  const restructurable = (score) => choir && grandStaff && ['guitar', 'voices'].includes(instrumentOf(score));
+  const minStaves = (score) => (instrumentOf(score) === 'voices' ? MIN_PARTS : 1);
+  function setStaffCount(score, count) {
+    if (instrumentOf(score) === 'voices') return setParts(score, count);
+    return setGuitarParts(score, count);
+  }
+
+  // Voces (numeros de la leyenda) con figuras en el pentagrama, de menor a mayor.
+  function legendsOf(score, staff) {
+    const used = new Set();
+    measures(score).forEach((_, mi) => voices(laneAt(score, staff, mi)).forEach((voice, k) => { if (voice.groups.length) used.add(legendOf(score, staff, k)); }));
+    return [...used].sort((a, b) => a - b);
+  }
+
+  // Aplica `change` a una copia y solo si sale bien reemplaza la partitura: unir o separar no deja nada a medias.
+  function rebuild(score, change) {
+    const trial = clone(score);
+    if (!change(trial)) return false;
+    Object.keys(score).forEach((key) => { delete score[key]; });
+    Object.assign(score, trial);
+    return true;
+  }
+
+  const moveKey = (score, from, to) => { if (score[from] === undefined) delete score[to]; else score[to] = score[from]; };
+  // Lleva el contenido (figuras, claves, registro, voces de leyenda) del pentagrama `from` al `to`, ambos de 1 a 3.
+  function moveStaffData(score, from, to) {
+    moveKey(score, LANE_KEYS[from - 1], LANE_KEYS[to - 1]);
+    CLEF_KEYS[from].forEach((key, k) => moveKey(score, key, CLEF_KEYS[to][k]));
+  }
+  const clearStaffData = (score, staff) => {
+    delete score[LANE_KEYS[staff - 1]];
+    CLEF_KEYS[staff].forEach((key) => { delete score[key]; });
+  };
+  const withMaps = (score, edit) => {
+    const maps = Array.from({ length: MAX_PARTS }, (_, t) => (validLegendMap(score.voiceMap?.[t]) ? score.voiceMap[t] : null));
+    edit(maps);
+    if (maps.some(Boolean)) score.voiceMap = maps; else delete score.voiceMap;
+  };
+  const withRegisters = (score, edit) => {
+    if (!Array.isArray(score.registers) && instrumentOf(score) !== 'voices') return;
+    const registers = Array.from({ length: MAX_PARTS }, (_, k) => registerOf(score, k));
+    edit(registers);
+    score.registers = registers;
+  };
+  const shiftLyrics = (score, from, by) => {
+    Object.values(score.lyrics || {}).forEach((list) => list.forEach((lyric) => {
+      if ((lyric.s || 0) < from) return;
+      const staff = (lyric.s || 0) + by;
+      if (staff) lyric.s = staff; else delete lyric.s;
+    }));
+  };
+
+  // Quita el pentagrama `staff` (1 a 3) y sube los de abajo.
+  function dropStaff(score, staff) {
+    for (let t = staff; t < MAX_PARTS - 1; t += 1) moveStaffData(score, t + 1, t);
+    clearStaffData(score, MAX_PARTS - 1);
+    withMaps(score, (maps) => { maps.splice(staff, 1); maps.push(null); });
+    withRegisters(score, (registers) => { registers.splice(staff, 1); registers.push(DEFAULT_REGISTERS[MAX_PARTS - 1]); });
+  }
+
+  // Abre un pentagrama vacio en `staff` (1 a 3) con la clave y el registro del anterior; los de abajo bajan un lugar.
+  function openStaff(score, staff) {
+    for (let t = MAX_PARTS - 1; t > staff; t -= 1) moveStaffData(score, t - 1, t);
+    clearStaffData(score, staff);
+    CLEF_KEYS[staff - 1].forEach((key, k) => { if (score[key] !== undefined) score[CLEF_KEYS[staff][k]] = JSON.parse(JSON.stringify(score[key])); });
+    withMaps(score, (maps) => { maps.splice(staff, 0, null); maps.pop(); });
+    withRegisters(score, (registers) => { registers.splice(staff, 0, registers[staff - 1]); registers.pop(); });
+  }
+
+  // Une pentagramas en el primero de `staves`: sus voces pasan a ser voces del mismo pentagrama, cada una con su numero.
+  // Rechaza (false) si quedaria un pentagrama de menos de la cantidad minima, pasaria de 16 voces, dos voces tocarian la
+  // misma nota a la vez o algun inicio cambiaria.
+  function joinStaves(score, staves) {
+    const list = [...new Set(staves)].sort((a, b) => a - b);
+    const count = stavesOf(score);
+    if (!restructurable(score) || list.length < 2 || list.some((s) => !Number.isInteger(s) || s < 0 || s >= count) || count - (list.length - 1) < minStaves(score)) return false;
+    return rebuild(score, (trial) => {
+      const total = measures(trial).length;
+      const counts = list.map((s) => Math.max(1, ...Array.from({ length: total }, (_, mi) => voices(laneAt(trial, s, mi)).length)));
+      if (counts.reduce((a, b) => a + b, 0) > MAX_VOICE) return false;
+      const joined = list.flatMap((s, j) => Array.from({ length: counts[j] }, (_, k) => legendOf(trial, s, k)));
+      const first = list[0];
+      for (let mi = 0; mi < total; mi += 1) {
+        const expected = new Map();
+        const merged = [];
+        let offset = 0;
+        list.forEach((s, j) => {
+          const measure = laneAt(trial, s, mi);
+          const { lanes, starts } = arrange(measure);
+          lanes.forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
+            measure[i].v = offset + k + 1;
+            measure[i].at = starts[i];
+            expected.set(measure[i], starts[i]);
+          })));
+          merged.push(...measure);
+          offset += counts[j];
+        });
+        if (!merged.length) continue;
+        const target = first ? ((trial[laneKey(first)] ||= {})[mi] ||= []) : measures(trial)[mi];
+        target.splice(0, target.length, ...merged);
+        const starts = onsets(target);
+        if (target.some((ev, i) => starts[i] !== expected.get(ev) || (!ev.rest && target.some((o, j) => j > i && !o.rest && starts[j] === starts[i] && o.n === ev.n)))) return false;
+      }
+      // Las silabas del pentagrama que se va pasan al primero si el lugar esta libre; el resto se descarta.
+      list.slice(1).reverse().forEach((s) => {
+        Object.entries(trial.lyrics || {}).forEach(([mi, items]) => {
+          trial.lyrics[mi] = items.filter((lyric) => (lyric.s || 0) !== s || !items.some((o) => o !== lyric && o.at === lyric.at && (o.s || 0) === first));
+          trial.lyrics[mi].forEach((lyric) => { if ((lyric.s || 0) === s) { if (first) lyric.s = first; else delete lyric.s; } });
+        });
+        shiftLyrics(trial, s + 1, -1);
+        dropStaff(trial, s);
+      });
+      withMaps(trial, (maps) => { maps[first] = joined; });
+      return setStaffCount(trial, count - (list.length - 1));
+    });
+  }
+
+  // Separa del pentagrama `staff` las voces `legends` (numeros de la leyenda) en un pentagrama nuevo justo debajo.
+  // Rechaza (false) si no deja voces en alguno de los dos, no hay lugar (4 pentagramas) o se perderia un pentagrama oculto.
+  function splitStaff(score, staff, legends) {
+    const count = stavesOf(score);
+    const chosen = new Set(legends);
+    if (!restructurable(score) || !Number.isInteger(staff) || staff < 0 || staff >= count || count + 1 > MAX_PARTS || !chosen.size) return false;
+    if (Object.values(score[LANE_KEYS[MAX_PARTS - 2]] || {}).some((measure) => measure.length)) return false;
+    return rebuild(score, (trial) => {
+      const total = measures(trial).length;
+      let size = 1;
+      for (let mi = 0; mi < total; mi += 1) {
+        const measure = laneAt(trial, staff, mi);
+        const { lanes, starts } = arrange(measure);
+        size = Math.max(size, lanes.length);
+        lanes.forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => { measure[i].v = k + 1; measure[i].at = starts[i]; })));
+      }
+      const map = Array.from({ length: size }, (_, k) => legendOf(trial, staff, k));
+      const used = new Set();
+      for (let mi = 0; mi < total; mi += 1) laneAt(trial, staff, mi).forEach((ev) => used.add(ev.v - 1));
+      const moved = [...used].filter((k) => chosen.has(map[k])).sort((a, b) => a - b);
+      const kept = [...used].filter((k) => !chosen.has(map[k])).sort((a, b) => a - b);
+      if (!moved.length || !kept.length) return false;
+      openStaff(trial, staff + 1);
+      for (let mi = 0; mi < total; mi += 1) {
+        const measure = laneAt(trial, staff, mi);
+        const stay = [], go = [];
+        measure.forEach((ev) => {
+          const k = ev.v - 1;
+          if (moved.includes(k)) { ev.v = moved.indexOf(k) + 1; go.push(ev); } else { ev.v = kept.indexOf(k) + 1; stay.push(ev); }
+        });
+        measure.splice(0, measure.length, ...stay);
+        if (go.length) (trial[laneKey(staff + 1)] ||= {})[mi] = go;
+      }
+      shiftLyrics(trial, staff + 1, 1);
+      withMaps(trial, (maps) => { maps[staff] = kept.map((k) => map[k]); maps[staff + 1] = moved.map((k) => map[k]); });
+      return setStaffCount(trial, count + 1);
+    });
   }
 
   const partsValid = (parts) => Number.isInteger(parts) && parts >= MIN_PARTS && parts <= MAX_PARTS;
@@ -1812,7 +2041,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const saved = score && score[CLEF_KEYS[staff][0]];
     if (Object.hasOwn(CLEFS, saved)) return saved;
     if (!staff) return defaultClef;
-    return score && score.instrument === 'voices' ? registerClef(score, staff) : LOWER_CLEF;
+    if (score && score.instrument === 'voices') return registerClef(score, staff);
+    return instrumentOf(score) === 'guitar' ? 'guitar' : LOWER_CLEF;
   }
 
   const INSTRUMENTS = ['piano', 'guitar', 'voices'];
@@ -1834,9 +2064,10 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     if (instrument === 'voices') {
       delete score.showTabs;
       for (let staff = 0; staff < MAX_PARTS; staff += 1) setClef(score, 0, registerClef(score, staff), staff);
-    } else if (instrument === 'guitar') setClef(score, 0, 'guitar');
-    else {
-      if (before === 'voices') setClef(score, 0, 'treble'), setClef(score, 0, LOWER_CLEF, 1);
+    } else if (instrument === 'guitar') {
+      for (let staff = 0; staff < MAX_PARTS; staff += 1) setClef(score, 0, 'guitar', staff);
+    } else {
+      if (before !== 'piano') setClef(score, 0, 'treble'), setClef(score, 0, LOWER_CLEF, 1);
       delete score.showTabs;
       if (clefOf(score) === 'guitar') setClef(score, 0, 'treble');
     }
@@ -2122,26 +2353,37 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // suena una octava mas grave que la escrita). Las notas ligadas a la anterior no se vuelven a tocar.
   function attacks(score, withEvents = false) {
     const result = [];
-    let tied = new Set();
-    measures(score).forEach((measure, mi) => {
-      const clef = CLEFS[clefAt(score, mi)];
-      const starts = onsets(measure);
-      const accidentals = new Map();
+    // Una sola tablatura para todos los pentagramas: las notas que empiezan juntas forman una columna.
+    const tied = Array.from({ length: instrumentOf(score) === 'guitar' ? stavesOf(score) : 1 }, () => new Set());
+    measures(score).forEach((_, mi) => {
       const moments = new Map();
-      measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
-        const ev = measure[i];
-        if (ev.rest) return;
-        if (ev.acc) accidentals.set(ev.n, ACCIDENTALS[ev.acc].alter);
-        const alter = accidentals.has(ev.n) ? accidentals.get(ev.n) : keyAlter(ev.n, score, mi);
-        const midi = 12 * (Math.floor(ev.n / 7) + 1) + SEMITONES[ev.n % 7] + alter + 12 * (clef.octave || 0);
-        if (!moments.has(starts[i])) moments.set(starts[i], []);
-        moments.get(starts[i]).push({ n: ev.n, midi, tie: !!ev.tie, ev });
+      tied.forEach((tiedNotes, staff) => {
+        const measure = measures(score, staff)[mi] || [];
+        const clef = CLEFS[clefAt(score, mi, staff)];
+        const starts = onsets(measure);
+        const accidentals = new Map();
+        const staffMoments = new Map();
+        measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
+          const ev = measure[i];
+          if (ev.rest) return;
+          if (ev.acc) accidentals.set(ev.n, ACCIDENTALS[ev.acc].alter);
+          const alter = accidentals.has(ev.n) ? accidentals.get(ev.n) : keyAlter(ev.n, score, mi);
+          const midi = 12 * (Math.floor(ev.n / 7) + 1) + SEMITONES[ev.n % 7] + alter + 12 * (clef.octave || 0);
+          if (!staffMoments.has(starts[i])) staffMoments.set(starts[i], []);
+          staffMoments.get(starts[i]).push({ n: ev.n, midi, tie: !!ev.tie, ev });
+        });
+        [...staffMoments.keys()].sort((a, b) => a - b).forEach((at) => {
+          const all = staffMoments.get(at);
+          const notes = all.filter((note) => !tiedNotes.has(note.n));
+          all.forEach((note) => { if (note.tie) tiedNotes.add(note.n); else tiedNotes.delete(note.n); });
+          if (!notes.length) return;
+          if (!moments.has(at)) moments.set(at, []);
+          moments.get(at).push(...notes);
+        });
       });
       [...moments.keys()].sort((a, b) => a - b).forEach((at) => {
-        const all = moments.get(at);
-        const notes = all.filter((note) => !tied.has(note.n));
-        all.forEach((note) => { if (note.tie) tied.add(note.n); else tied.delete(note.n); });
-        if (notes.length) result.push(Object.assign({ mi, at, key: mi + ':' + at, midis: notes.map((note) => note.midi) }, withEvents ? { events: notes.map((note) => note.ev) } : {}));
+        const notes = moments.get(at);
+        result.push(Object.assign({ mi, at, key: mi + ':' + at, midis: notes.map((note) => note.midi) }, withEvents ? { events: notes.map((note) => note.ev) } : {}));
       });
     });
     return result;
@@ -2381,7 +2623,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isFinite(width) && width > 0 && width <= 1) measureWidths[index] = width;
     });
     const tabs = sanitizeTabs(data.tabs, rows.reduce((sum, row) => sum + row.length, 0));
-    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, data.intervalMode === 'voices' || data.intervalMode === 'tonic' ? { intervalMode: data.intervalMode } : {}, tonicOf(data) ? { tonic: data.tonic } : {}, Array.isArray(data.registers) && data.registers.some(validRegister) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (validRegister(data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(dynamics).length ? { dynamics } : {}, Object.keys(chords).length ? { chords } : {}, Object.keys(lyrics).length ? { lyrics } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
+    return Object.assign(Object.keys(navigation).length ? { navigation } : {}, Object.keys(meters).length ? { meters } : {}, Object.keys(measureWidths).length ? { measureWidths } : {}, Object.keys(measureDurations).length ? { measureDurations } : {}, Object.keys(barlines).length ? { barlines } : {}, Object.keys(keys).length ? { keys } : {}, Object.keys(clefs).length ? { clefs } : {}, ...[1, 2, 3].map((staff) => (Object.hasOwn(CLEFS, data[CLEF_KEYS[staff][0]]) ? { [CLEF_KEYS[staff][0]]: data[CLEF_KEYS[staff][0]] } : {})), ...lowerClefMaps.map((changes, k) => (Object.keys(changes).length ? { [CLEF_KEYS[k + 1][1]]: changes } : {})), ...lowers.map((lane, k) => (Object.keys(lane).length ? { [LANE_KEYS[k]]: lane } : {})), partsValid(data.parts) ? { parts: data.parts } : {}, Array.isArray(data.voiceMap) && data.voiceMap.some(validLegendMap) ? { voiceMap: Array.from({ length: MAX_PARTS }, (_, t) => (validLegendMap(data.voiceMap[t]) ? data.voiceMap[t] : null)) } : {}, CHOIR_SOUNDS.includes(data.sound) && data.sound !== CHOIR_SOUNDS[0] ? { sound: data.sound } : {}, data.intervalMode === 'voices' || data.intervalMode === 'tonic' ? { intervalMode: data.intervalMode } : {}, tonicOf(data) ? { tonic: data.tonic } : {}, Array.isArray(data.registers) && data.registers.some(validRegister) ? { registers: Array.from({ length: MAX_PARTS }, (_, k) => (validRegister(data.registers[k]) ? data.registers[k] : DEFAULT_REGISTERS[k])) } : {}, Object.keys(barres).length ? { barres } : {}, Object.keys(hairpins).length ? { hairpins } : {}, Object.keys(dynamics).length ? { dynamics } : {}, Object.keys(chords).length ? { chords } : {}, Object.keys(lyrics).length ? { lyrics } : {}, TUNINGS.some(tuning => tuning.id === data.tuning) ? { tuning: data.tuning } : {}, data.showTabs === true ? { showTabs: true } : {}, INSTRUMENTS.includes(data.instrument) ? { instrument: data.instrument } : {}, tempoValid(data.tempo) ? { tempo: data.tempo } : {}, Object.keys(toolsOf(data)).length ? { tools: toolsOf(data) } : {}, Object.keys(tabs).length ? { tabs } : {}, { meter, clef: clefOf(data), fifths: fifthsOf(data), rows }, typeof data.title === 'string' ? { title: data.title } : {}, typeof data.author === 'string' && data.author ? { author: data.author } : {});
   }
 
   // Rellena huecos con silencios ocultos: el final del compas y el espacio entre figuras sueltas.
@@ -3155,8 +3397,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
-    CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, voiceNumbers, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
+    CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
