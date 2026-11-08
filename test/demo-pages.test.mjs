@@ -10,10 +10,16 @@ for (const demo of DEMOS) {
     test(`${locale}: ${demo.id} has its own share metadata in the static HTML`, () => {
       const path = demoPath(locale, demo);
       const html = readFileSync(new URL(`../dist${path}index.html`, import.meta.url), 'utf8');
-      for (const attribute of ['property="og:title"', 'property="og:description"', 'name="twitter:title"', 'name="twitter:description"']) {
+      for (const attribute of ['property="og:title"', 'name="twitter:title"']) {
         const content = html.match(new RegExp(`<meta ${attribute} content="([^"]+)"`))?.[1];
         assert.ok(content?.includes(demo.title), attribute);
         assert.ok(content?.includes(demo.author), attribute);
+      }
+      // The description is about the site and the PDF; the title already says which score it is.
+      for (const attribute of ['name="description"', 'property="og:description"', 'name="twitter:description"']) {
+        const content = html.match(new RegExp(`<meta ${attribute} content="([^"]+)"`))?.[1];
+        assert.match(content ?? '', /PDF/, attribute);
+        assert.ok(!content.includes(demo.title) && !content.includes(demo.author), attribute);
       }
       assert.ok(html.includes(`<meta name="author" content="${demo.author}"`));
       assert.ok(html.includes(`<link rel="canonical" href="https://partitura.com.ar${path}"`));

@@ -23,9 +23,9 @@ const staff = published?.svg ?? await renderEmptyStaff(undefined, undefined, { g
 const paths = Object.fromEntries(locales.map((l) => [l, demo ? demoPath(l, demo) : pathFor(l)])) as Record<Locale, string>;
 const title = demo ? `${demo.title} — ${demo.author} | ${s.ui.siteName}` : s.scorePageTitle;
 const descriptions = demo && {
-  es: `${demo.title}, de ${demo.author}. Partitura para tres voces con reproducción e intervalos.`,
-  en: `${demo.title}, by ${demo.author}. Three-voice sheet music with playback and intervals.`,
-  pt: `${demo.title}, de ${demo.author}. Partitura para três vozes com reprodução e intervalos.`,
+  es: 'Descargá la partitura en PDF, escuchala y mirá sus intervalos. Editor de partituras online, gratis y sin registro.',
+  en: 'Download the sheet music as a PDF, listen to it and see its intervals. Free online sheet music editor, no sign-up.',
+  pt: 'Baixe a partitura em PDF, ouça e veja seus intervalos. Editor de partituras online, grátis e sem cadastro.',
 };
 // The editor reads these at start-up; the toast bundle reads the same block.
 const clientStrings = Object.fromEntries([
