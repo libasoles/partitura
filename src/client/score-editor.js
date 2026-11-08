@@ -4481,6 +4481,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     'move-horizontal': '<path d="m18 8 4 4-4 4"/><path d="M2 12h20"/><path d="m6 8-4 4 4 4"/>',
     'arrow-left': '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
     'arrow-right': '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+    copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
     download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
   };
 
@@ -5494,6 +5495,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     toolsGrid.className = 'score-settings-tools';
     content.appendChild(toolsGrid);
     let intervalModes = [];
+    let voiceDuplicate = null;
     const checks = categories.map(([name, label, belongs, fallback = true]) => {
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section score-settings-category';
@@ -5523,6 +5525,22 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           icons.appendChild(swatch);
         });
       }
+      if (name === 'voices' && proChordNames) {
+        const duplicate = document.createElement('button');
+        duplicate.type = 'button';
+        duplicate.className = 'score-settings-action';
+        duplicate.id = 'scoreDuplicateVoice';
+        duplicate.innerHTML = lucide('copy') + '<span>' + t.voiceDuplicate + '</span>';
+        duplicate.title = t.voiceDuplicateTooltip;
+        duplicate.addEventListener('click', () => {
+          const trial = M.clone(score);
+          if (!M.duplicateVoice(trial)) { say(t.voiceDuplicateUnavailable); return; }
+          change(() => { Object.assign(score, trial); return true; });
+          say('');
+          popup.hidePopover();
+        });
+        voiceDuplicate = duplicate;
+      }
       if (name === 'playback') {
         for (const name of ['play', 'pause']) {
           const icon = document.createElement('span');
@@ -5541,6 +5559,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         icons.appendChild(icon);
       }
       wrap.append(field, icons);
+      if (name === 'voices' && voiceDuplicate) wrap.appendChild(voiceDuplicate);
       // Intervalos: respecto de las voces vecinas (por defecto) o del bajo; viaja con la partitura y se deshace.
       if (name === 'intervals') {
         const modes = document.createElement('div');
