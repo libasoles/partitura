@@ -5532,12 +5532,61 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         duplicate.id = 'scoreDuplicateVoice';
         duplicate.innerHTML = lucide('copy') + '<span>' + t.voiceDuplicate + '</span>';
         duplicate.title = t.voiceDuplicateTooltip;
-        duplicate.addEventListener('click', () => {
+        // Con varias voces se elige cuales duplicar en un popup anclado al boton (dentro de Ajustes, para no cerrarlos).
+        const picker = document.createElement('div');
+        picker.id = 'scoreVoicePicker';
+        picker.className = 'score-meter-popup score-voice-picker';
+        picker.setAttribute('popover', 'auto');
+        picker.setAttribute('role', 'dialog');
+        picker.setAttribute('aria-label', t.voiceDuplicatePick);
+        const pickerHeading = document.createElement('p');
+        pickerHeading.textContent = t.voiceDuplicatePick;
+        const pickerList = document.createElement('div');
+        pickerList.className = 'score-voice-picker-list';
+        const pickerConfirm = document.createElement('button');
+        pickerConfirm.type = 'button';
+        pickerConfirm.className = 'score-voice-picker-confirm';
+        pickerConfirm.textContent = t.voiceDuplicateConfirm;
+        picker.append(pickerHeading, pickerList, pickerConfirm);
+        popup.appendChild(picker);
+        const duplicateVoices = (voices) => {
           const trial = M.clone(score);
-          if (!M.duplicateVoice(trial)) { say(t.voiceDuplicateUnavailable); return; }
+          if (!M.duplicateVoice(trial, voices)) { say(t.voiceDuplicateUnavailable); return; }
           change(() => { Object.assign(score, trial); return true; });
           say('');
+          picker.hidePopover();
           popup.hidePopover();
+        };
+        const placePicker = () => {
+          const anchor = duplicate.getBoundingClientRect(), box = picker.getBoundingClientRect();
+          picker.style.left = Math.max(8, Math.min(anchor.left, window.innerWidth - box.width - 8)) + 'px';
+          picker.style.top = Math.max(8, Math.min(anchor.bottom + 6, window.innerHeight - box.height - 8)) + 'px';
+        };
+        const picked = () => [...pickerList.querySelectorAll('[aria-pressed="true"]')].map((b) => Number(b.dataset.voice));
+        pickerConfirm.addEventListener('click', () => duplicateVoices(picked()));
+        duplicate.setAttribute('aria-haspopup', 'dialog');
+        duplicate.setAttribute('aria-controls', picker.id);
+        duplicate.addEventListener('click', () => {
+          if (picker.matches(':popover-open')) { picker.hidePopover(); return; }
+          const numbers = M.voiceNumbers(score);
+          if (numbers.length < 2) { duplicateVoices(null); return; }
+          pickerList.replaceChildren(...numbers.map((n) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.dataset.voice = String(n);
+            button.setAttribute('aria-pressed', 'false');
+            button.setAttribute('aria-label', t.voiceStaff.replace('{n}', n));
+            button.textContent = String(n);
+            button.addEventListener('click', () => {
+              button.setAttribute('aria-pressed', String(button.getAttribute('aria-pressed') !== 'true'));
+              pickerConfirm.disabled = !picked().length;
+            });
+            return button;
+          }));
+          pickerConfirm.disabled = true;
+          picker.showPopover();
+          placePicker();
+          pickerList.firstElementChild.focus({ preventScroll: true });
         });
         voiceDuplicate = duplicate;
       }
