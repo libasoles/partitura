@@ -77,10 +77,12 @@
   "scoreTabs": "Open scores",
   "scoreNewTab": "New score",
   "scoreClear": "Clear the score",
+  "scoreDuplicate": "Duplicate the score",
   "scoreUiStrings": {
     "titleLabel": "Score title",
     "untitledScore": "Untitled {n}",
     "closeTab": "Close score",
+    "duplicateSuffix": "(copy)",
     "clearTitle": "Clear the score?",
     "clearDescription": "All notes, barlines, the title and the author will be removed.",
     "clearDescriptionTab": "This score will be deleted completely.",
