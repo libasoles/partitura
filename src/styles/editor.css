@@ -2780,7 +2780,7 @@ button.score-restructure-voice[aria-pressed="false"] { background: #fff; color: 
 .score-settings-sounds label { overflow-wrap: anywhere; }
 .score-settings-sounds input { flex-shrink: 0; }
 
-/* Intervalos: los dos modos de calcularlos, debajo de la casilla. */
+/* Intervalos: los tres modos de calcularlos, debajo de la casilla. */
 .score-settings-tools > .score-settings-category[data-category="intervals"] { flex-wrap: wrap; }
 .score-settings-interval-modes {
   display: flex;
@@ -2791,6 +2791,15 @@ button.score-restructure-voice[aria-pressed="false"] { background: #fff; color: 
 }
 .score-settings-interval-modes .score-settings-radio input { accent-color: var(--blue-france); }
 .score-settings-category:has(> .score-settings-check input:not(:checked)) > .score-settings-interval-modes { display: none; }
+.score-settings-tonic {
+  display: flex;
+  flex: 0 0 100%;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+.score-settings-tonic[hidden] { display: none; }
+.score-settings-tonic select { min-width: 0; font: inherit; }
 
 .score-lyric-glyph { scale: 0.9; }
 

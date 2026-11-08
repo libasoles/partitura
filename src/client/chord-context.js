@@ -25,24 +25,29 @@ function parse(name) {
   return { name, root, suffix, bass, pcs: SHAPES[suffix].map((step) => mod(root + step)) };
 }
 
-// `columns`: consecutive [{ names, pcs }] of one line (names as ordered by chordNames, pcs the sounding pitch classes);
-// `fifths`: key signature. Returns the names in the same order with the chosen one first.
-export function pickChords(columns, fifths = 0) {
-  if (!columns.length) return [];
-  const parsed = columns.map((column) => column.names.map(parse));
-  const histogram = Array(12).fill(0);
-  columns.forEach((column) => column.pcs.forEach((pc) => { histogram[pc] += 1; }));
-  const first = parsed[0][0];
-  const last = parsed[parsed.length - 1][0];
+// Global key from a pitch-class histogram (`count` columns), the bass pitch class of the first and last column and the
+// key signature: { tonic: pitch class, mode: 'maj' | 'min' }.
+export function estimateKey({ histogram, count, first, last }, fifths = 0) {
   let key = null;
   for (let tonic = 0; tonic < 12; tonic++) {
     for (const mode of ['maj', 'min']) {
-      let score = histogram.reduce((sum, count, pc) => sum + count * PROFILE[mode][mod(pc - tonic)], 0) / columns.length;
-      score += W.tonic * ((last.bass === tonic ? 1 : 0) + (first.bass === tonic ? 0.5 : 0));
+      let score = histogram.reduce((sum, amount, pc) => sum + amount * PROFILE[mode][mod(pc - tonic)], 0) / count;
+      score += W.tonic * ((last === tonic ? 1 : 0) + (first === tonic ? 0.5 : 0));
       if (tonic === mod(fifths * 7 + (mode === 'maj' ? 0 : 9))) score += W.signature;
       if (!key || score > key.score) key = { tonic, mode, score };
     }
   }
+  return { tonic: key.tonic, mode: key.mode };
+}
+
+// `columns`: consecutive [{ names, pcs }] of one line (names as ordered by chordNames, pcs the sounding pitch classes);
+// `fifths`: key signature; `override`: { tonic, mode } fixed by the user instead of the estimate. Returns the names in the same order with the chosen one first.
+export function pickChords(columns, fifths = 0, override = null) {
+  if (!columns.length) return [];
+  const parsed = columns.map((column) => column.names.map(parse));
+  const histogram = Array(12).fill(0);
+  columns.forEach((column) => column.pcs.forEach((pc) => { histogram[pc] += 1; }));
+  const key = override || estimateKey({ histogram, count: columns.length, first: parsed[0][0].bass, last: parsed[parsed.length - 1][0].bass }, fifths);
   const degree = (chord) => mod(chord.root - key.tonic);
   const outside = (chord) => chord.pcs.filter((pc) => !SCALE[key.mode].includes(mod(pc - key.tonic))).length;
   const unary = (chord) => {
