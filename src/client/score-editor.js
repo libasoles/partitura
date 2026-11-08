@@ -703,22 +703,26 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function activateTool(item) {
     if (selectedNavigation.length || selectedBeam || selectedLink || selectedHairpin) { selectedNavigation = []; selectedBeam = null; selectedLink = null; selectedHairpin = null; markSelected(); }
-    if (activeItem === item) { deactivateTool(); return; }
-    activeItem = item;
-    stage.classList.add('has-tool');
-    clearHoverGhost();
-    updateHoverGhost();
-    toolbars.querySelectorAll('.score-palette-tool').forEach((button) => {
-      const same = item.kind === 'navigation' ? button.dataset.navigation === item.mark : item.kind === 'hairpin' ? button.dataset.hairpin === item.hairpin : item.kind === 'dynamic' ? button.dataset.dynamic === item.dynamic : item.key ? button.dataset.shortcut === item.key : item.kind === 'bar' ? button.dataset.barline === item.bar : button.dataset.tool === item.kind;
-      button.setAttribute('aria-pressed', String(same));
-    });
+    // Con figuras elegidas, alteraciones, puntillo, figuras y silencios les dan formato sin activar ninguna herramienta del menu.
+    const onSelection = (isModifier(item) || item.kind === 'note' || item.kind === 'rest') && picks().some((ref) => eventAt(ref));
+    if (onSelection) deactivateTool();
+    else {
+      if (activeItem === item) { deactivateTool(); return; }
+      activeItem = item;
+      stage.classList.add('has-tool');
+      clearHoverGhost();
+      updateHoverGhost();
+      toolbars.querySelectorAll('.score-palette-tool').forEach((button) => {
+        const same = item.kind === 'navigation' ? button.dataset.navigation === item.mark : item.kind === 'hairpin' ? button.dataset.hairpin === item.hairpin : item.kind === 'dynamic' ? button.dataset.dynamic === item.dynamic : item.key ? button.dataset.shortcut === item.key : item.kind === 'bar' ? button.dataset.barline === item.bar : button.dataset.tool === item.kind;
+        button.setAttribute('aria-pressed', String(same));
+      });
+    }
     if (isPlacing(item)) return;
     if (isModifier(item)) {
-      if (eventAt(selected)) applyModifier(item, selected);
+      if (item.kind === 'acc' && picks().length > 1) applyAccidentals(item, picks());
+      else if (eventAt(selected)) applyModifier(item, selected);
       return;
     }
-    // Con figuras elegidas, la tecla solo les da formato: no queda ninguna herramienta activa.
-    if ((item.kind === 'note' || item.kind === 'rest') && picks().some((ref) => eventAt(ref))) deactivateTool();
     // La nota muerta no cambia la duracion: marca (o, si todas ya lo son, desmarca) las notas elegidas.
     if (item.dead) {
       const notes = picks().map((ref) => eventAt(ref)).filter((ev) => ev && !ev.rest);
@@ -779,6 +783,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       else if (ev.acc === double) delete ev.acc;
       else ev.acc = item.acc;
     });
+  }
+
+  // Con varias figuras elegidas la alteracion se aplica a todas: el paso del ciclo lo marca la nota principal.
+  function applyAccidentals(item, refs) {
+    const notes = refs.map((ref) => eventAt(ref)).filter((ev) => ev && !ev.rest);
+    if (!notes.length) return;
+    const lead = eventAt(selected);
+    const base = lead && !lead.rest ? lead : notes[0];
+    const double = { '#': '##', b: 'bb' }[item.acc];
+    let next;
+    if (base.acc === item.acc) next = double;
+    else if (base.acc === double) next = undefined;
+    else next = item.acc;
+    change(() => notes.forEach((ev) => { if (next) ev.acc = next; else delete ev.acc; }));
   }
 
   function moveEvent(from, target) {
