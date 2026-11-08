@@ -78,6 +78,8 @@ const clientStrings = Object.fromEntries([
       <noscript><p class="noscript">{s.ui.noscript}</p></noscript>
     </section>
 
+    <p id="saveStatus" class="autosave-status" role="status" aria-live="polite" data-saving={s.saveSaving} data-saved={s.saveSaved}></p>
+
     <script id="scoreStrings" type="application/json" set:html={JSON.stringify(clientStrings).replace(/</g, '\\u003c')} />
     {demo && published && <script id="demoScore" type="application/json" set:html={JSON.stringify({ id: demo.id, score: published.score }).replace(/</g, '\\u003c')} />}
     <script>
