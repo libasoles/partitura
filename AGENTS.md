@@ -30,6 +30,7 @@
   preguntas frecuentes están en el HTML que lee un crawler, sin ejecutar JavaScript.
 - **El pentagrama vacío también se dibuja en el servidor** (`src/lib/staff.js`, mismo Verovio y mismo `ScoreModel`
   que el editor), así el primer render ya muestra una partitura. En el navegador, el editor lo reemplaza por el vivo.
+- **Cada demo tiene su imagen social** (`/demos/<id>/og.png`, 1200×630, `src/pages/demos/[demo]/og.png.ts` y `src/lib/og-demo.js`): se dibuja en el build con el mismo grabado de la demo (segundo sistema, el primero suele ser silencios) sobre una tarjeta con título y autor, usando `sharp`. No depende del idioma; `Base.astro` la usa como `og:image`/`twitter:image` mediante la prop `ogImage`. Es la URL que puede usar el-silbador para mostrar la partitura con su vista previa.
 - **Solo el editor corre en el cliente** (`src/client/`): Verovio dibuja el pentagrama, jsPDF exporta. React y
   Radix (toast y diálogo de confirmación) se cargan recién cuando hacen falta.
 
