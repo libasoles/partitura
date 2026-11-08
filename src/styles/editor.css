@@ -76,15 +76,6 @@
   .score-side { position: relative; top: auto; height: auto; }
 }
 
-.score-side-actions {
-  position: fixed;
-  bottom: 25px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0 0.3rem;
-}
-
 /* Keep every sidebar tooltip inside the viewport, including on tablets. */
 .score-side .tooltip::after {
   right: calc(100% + 0.6rem);
@@ -103,11 +94,6 @@
 #scoreDownloadToggle[aria-expanded="true"]::before,
 #scoreDownloadToggle[aria-expanded="true"]::after {
   display: none;
-}
-
-.score-side-actions .score-download {
-  width: 2.75rem;
-  min-height: 2.75rem;
 }
 
 .score-barlines {
@@ -2618,7 +2604,6 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 /* Tablets keep full-size touch targets without wasting the staff's inner margins
    on the horizontal palette. any-pointer also covers an iPad with a trackpad. */
 @media (min-width: 900px) and (any-pointer: coarse) {
-  .score-side-actions { bottom: 60px; }
   .score-toolbar { padding-inline: 0.75rem; }
   .score-palette { gap: 0.1rem; }
   .score-palette .score-palette-item { min-width: 2.75rem; padding-inline: 0.25rem; }

@@ -3841,9 +3841,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // Un elemento que un redibujado ya quito (la silaba pulsada mientras otra tenia el campo) no cuenta como un click fuera.
     if (!(event.target instanceof Element) || !event.target.isConnected) return;
     // Los campos del titulo y el autor tambien quedan fuera de la seleccion musical.
-    if ((picks().length || selectedNavigation.length || selectedBeam || selectedLink || selectedHairpin) && !event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-side-actions, .score-doc-tab, .score-library, [popover]')) setPicks([]);
+    if ((picks().length || selectedNavigation.length || selectedBeam || selectedLink || selectedHairpin) && !event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-doc-tab, .score-library, [popover]')) setPicks([]);
     if (!activeItem) return;
-    if (event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-side-actions, .score-doc-tab, [popover], button, a, input, select, textarea')) return;
+    if (event.target.closest('.score-stage, .score-palette, .score-toolbar, .score-doc-tab, [popover], button, a, input, select, textarea')) return;
     deactivateTool();
   });
 
@@ -5283,6 +5283,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     cog.setAttribute('aria-expanded', 'false');
     cog.dataset.tooltip = t.settings;
     barlines.prepend(cog);
+    // The clear button sits right under the gear, as one more sidebar tool.
+    const clear = document.getElementById('scoreClear');
+    clear.classList.replace('score-download', 'score-palette-item');
+    cog.after(clear);
 
     const title = document.createElement('h2');
     title.className = 'score-settings-heading-main';
