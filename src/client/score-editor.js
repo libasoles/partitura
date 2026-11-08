@@ -3480,8 +3480,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (d.group) setPicks([d.from]);
       if (d.item) activateTool(d.item);
       else if (d.from && isModifier(activeItem)) applyModifier(activeItem, d.from);
-      // Un click limpio sobre una nota (sin herramienta ni grupo) cicla el puntillo: uno, dos, ninguno.
-      else if (d.from && !activeItem && !d.group && !eventAt(d.from).rest) applyModifier({ kind: 'dot' }, d.from);
       else if (d.insert) {
         const at = aimed(event);
         const target = locate(at.clientX, at.clientY);
@@ -3519,6 +3517,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     updateHoverGhost();
   });
   document.addEventListener('pointercancel', (event) => endDrag(event, true));
+  // Un doble click sobre una nota (sin herramienta activa) cicla el puntillo: uno, dos, ninguno.
+  stage.addEventListener('dblclick', (event) => {
+    if (activeItem || event.target.closest('input, button, textarea, ascii-tabs')) return;
+    const hit = eventUnder(event.clientX, event.clientY);
+    if (hit && !eventAt(hit).rest) applyModifier({ kind: 'dot' }, hit);
+  });
   // Escape durante un arrastre lo cancela sin tocar la seleccion ni la herramienta.
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !drag) return;

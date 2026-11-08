@@ -83,7 +83,7 @@ Con voces elegidas en la leyenda y la herramienta Voces activa, play reproduce s
 
 ### Puntillo
 
-- Un click limpio (sin arrastre) sobre una nota, sin herramienta activa ni grupo seleccionado, cicla el puntillo: uno, doble y ninguno (`applyModifier`, `kind: 'dot'`; si el doble no entra, vuelve a ninguno). No hay `dblclick`; los silencios no se puntúan con click. La tecla <kbd>P</kbd> sigue aplicándolo con la herramienta.
+- Un doble click sobre una nota, sin herramienta activa, cicla el puntillo: uno, doble y ninguno (`applyModifier`, `kind: 'dot'`; si el doble no entra, vuelve a ninguno). Un click simple no puntúa; los silencios no se puntúan con doble click. La tecla <kbd>P</kbd> sigue aplicándolo con la herramienta.
 
 ### Biblioteca de patrones
 
