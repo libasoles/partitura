@@ -46,7 +46,7 @@ test('the reported bass becomes a separate line, beams independently and support
   await seed(page, measure);
   await expect(page.locator('#scoreStage g.chord')).toHaveCount(3);
   await page.locator('#scoreSettingsToggle').click();
-  await page.getByRole('checkbox', { name: 'Identificador de voces', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Voces', exact: true }).check();
   await page.keyboard.press('Escape');
   await page.locator('.score-voice-legend button[data-voice="2"]').click();
   await select(page, [1, 3, 5, 7]);
@@ -71,7 +71,7 @@ test('the reported bass becomes a separate line, beams independently and support
 test('voice destinations follow the active legend, work for one note and survive undo and reload', async ({ page }, testInfo) => {
   await seed(page, [{ n: 35, d: 'q', at: 0, v: 1 }]);
   await page.locator('#scoreSettingsToggle').click();
-  await page.getByRole('checkbox', { name: 'Identificador de voces', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Voces', exact: true }).check();
   await page.keyboard.press('Escape');
   await select(page, [0]);
   const options = page.locator('[data-action^="assignVoice"]');
