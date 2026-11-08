@@ -1056,8 +1056,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     side.style.position = 'relative';
     side.style.top = 'auto';
     side.style.marginTop = '0';
+    side.style.zoom = '';
     const offset = stage.getBoundingClientRect().top + toolbarStaffTop - glyph.getBoundingClientRect().top;
-    side.classList.toggle('is-tall', side.offsetHeight > window.innerHeight - 112);
+    // The toolbar stays sticky and shrinks to fit the viewport below its sticky offset.
+    const room = window.innerHeight - parseFloat(getComputedStyle(document.documentElement).fontSize) * 6 - 16;
+    if (side.offsetHeight > room) side.style.zoom = String(Math.max(0.5, room / side.offsetHeight));
     side.style.position = '';
     side.style.top = '';
     side.style.marginTop = Math.max(0, offset) + 'px';
@@ -1112,6 +1115,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
   window.addEventListener('scroll', scheduleLeftToolbarAlignment, { passive: true });
   window.addEventListener('resize', scheduleLeftToolbarAlignment);
+  window.addEventListener('resize', () => alignBarlinesToFirstStaff());
 
   function render() {
     // Editing, voices, tempo or sound never stop playback: the schedule is rebuilt and the position kept.
