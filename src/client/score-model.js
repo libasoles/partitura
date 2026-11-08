@@ -648,7 +648,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // Prepara todo antes de escribir: un pegado que no entra no cambia la partitura.
-  function pasteSelection(score, fragment, mi, { preserveSignatures = true, staff: target } = {}) {
+  function pasteSelection(score, fragment, mi, { preserveSignatures = true, staff: target, at: start = 0 } = {}) {
     if (fragment?.type !== 'guitar-score-selection' || fragment.version !== 1 ||
       !Number.isInteger(mi) || mi < 0 || mi >= measures(score).length ||
       !Array.isArray(fragment.measures) || !fragment.measures.length ||
@@ -716,6 +716,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         desired.set(ev, pitch);
         if (pitch.alter !== keyAlter(ev.n, trial, mi + offset)) ev.acc = accidentalFor(pitch.alter);
       }
+      // Con un punto de inicio (el cursor), el primer compas del fragmento empieza ahi y no al comienzo del compas.
+      if (offset === 0 && start > 0) {
+        const grid = gridOf(clean[0]);
+        const shift = Math.round(start / grid) * grid;
+        clean[0].forEach((ev) => { ev.at += shift; });
+      }
       const starts = onsets(destination);
       const clashes = () => clean[offset].some((ev) => !ev.rest && destination.some((other, i) =>
         !other.rest && starts[i] === ev.at && other.n === ev.n &&
@@ -747,7 +753,6 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         if (pitch && alter !== pitch.alter) ev.acc = accidentalFor(pitch.alter);
         if (ev.acc) actual.set(ev.n, ACCIDENTALS[ev.acc].alter);
       });
-      if (measureLength(destination) > Infinity) return null;
       indices.forEach((i) => refs.push(refOf(staff, mi + offset, i)));
     }
     restoreTabReferences(trial, savedTabs);
