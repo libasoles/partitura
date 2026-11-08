@@ -1096,8 +1096,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const intervalsHeight = intervalButton.isConnected ? intervalButton.offsetHeight : 0;
     const chordNamesHeight = chordNamesButton.isConnected ? chordNamesButton.offsetHeight : 0;
     const restructureHeight = restructureButton.isConnected ? restructureButton.offsetHeight : 0;
+    const duplicateHeight = duplicateVoiceButton?.isConnected ? duplicateVoiceButton.offsetHeight : 0;
     const legendEnd = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
-    const above = legendEnd + (restructureHeight ? restructureHeight + (legendEnd ? 8 : 0) : 0);
+    const restructureEnd = legendEnd + (restructureHeight ? restructureHeight + (legendEnd ? 8 : 0) : 0);
+    const above = restructureEnd + (duplicateHeight ? duplicateHeight + (restructureEnd ? 8 : 0) : 0);
     const withChords = above + (chordNamesHeight ? chordNamesHeight + (above ? 8 : 0) : 0);
     const height = withChords + (intervalsHeight ? intervalsHeight + (withChords ? 8 : 0) : 0);
     // Follow the right toolbar's sticky offset, stopping at the end of the sheet.
@@ -1107,7 +1109,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const top = Number.isFinite(stickyTop)
       ? Math.max(staffTop, Math.min(stickyTop - origin.top, origin.height - height))
       : staffTop;
-    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, restructureButton.isConnected ? restructureButton.offsetWidth : 0, intervalButton.isConnected ? intervalButton.offsetWidth : 0, chordNamesButton.isConnected ? chordNamesButton.offsetWidth : 0);
+    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, restructureButton.isConnected ? restructureButton.offsetWidth : 0, duplicateHeight ? duplicateVoiceButton.offsetWidth : 0, intervalButton.isConnected ? intervalButton.offsetWidth : 0, chordNamesButton.isConnected ? chordNamesButton.offsetWidth : 0);
     const left = WIDE_PAGE.matches ? -(width + 16) : Math.max(0, edge - width - 6);
     if (playbackShown) {
       playButton.style.top = top + 'px';
@@ -1117,6 +1119,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
     restructureButton.style.top = (top + (playbackShown ? playButton.offsetHeight + 14 : 0) + legendHeight + (legendHeight ? 8 : 0)) + 'px';
     restructureButton.style.left = (left + (width - restructureButton.offsetWidth) / 2) + 'px';
+    if (duplicateHeight) {
+      duplicateVoiceButton.style.top = (top + restructureEnd + (restructureEnd ? 8 : 0)) + 'px';
+      duplicateVoiceButton.style.left = (left + (width - duplicateVoiceButton.offsetWidth) / 2) + 'px';
+    }
     intervalButton.style.top = (top + height - intervalsHeight) + 'px';
     intervalButton.style.left = (left + (width - intervalButton.offsetWidth) / 2) + 'px';
     chordNamesButton.style.top = (top + height - intervalsHeight - (intervalsHeight ? 8 : 0) - chordNamesHeight) + 'px';
@@ -5026,6 +5032,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Pro (categoria Voces): unir pentagramas en uno (cada voz conserva su numero) o separar voces de un pentagrama.
   // Un popup anclado al boton pregunta cuales, con los mismos circulos 1-4 de la leyenda.
   const restructureButton = document.createElement('button');
+  let duplicateVoiceButton = null; // Pro: la crea el bloque de Ajustes; vive en la barra izquierda
   restructureButton.id = 'scoreRestructure';
   restructureButton.className = 'score-palette-item score-interval-toggle score-restructure-toggle tooltip';
   restructureButton.type = 'button';
@@ -5188,6 +5195,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     restructureButton.remove();
     if (settings && toolOn('voices', false) && M.restructurable(score)) stage.appendChild(restructureButton);
     else if (restructurePopup.matches(':popover-open')) restructurePopup.hidePopover();
+    if (duplicateVoiceButton) {
+      duplicateVoiceButton.remove();
+      if (toolOn('voices', false)) stage.appendChild(duplicateVoiceButton);
+      else document.getElementById('scoreVoicePicker')?.hidePopover();
+    }
     alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
@@ -5690,9 +5702,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (name === 'voices' && proChordNames) {
         const duplicate = document.createElement('button');
         duplicate.type = 'button';
-        duplicate.className = 'score-settings-action';
+        duplicate.className = 'score-palette-item score-interval-toggle score-duplicate-voice-toggle tooltip';
         duplicate.id = 'scoreDuplicateVoice';
-        duplicate.innerHTML = lucide('copy') + '<span>' + t.voiceDuplicate + '</span>';
+        duplicate.innerHTML = lucide('copy');
+        duplicate.setAttribute('aria-label', t.voiceDuplicate);
+        duplicate.dataset.tooltip = t.voiceDuplicate;
         duplicate.title = t.voiceDuplicateTooltip;
         // Con varias voces se elige cuales duplicar en un popup anclado al boton (dentro de Ajustes, para no cerrarlos).
         const picker = document.createElement('div');
@@ -5710,14 +5724,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         pickerConfirm.className = 'score-voice-picker-confirm';
         pickerConfirm.textContent = t.voiceDuplicateConfirm;
         picker.append(pickerHeading, pickerList, pickerConfirm);
-        popup.appendChild(picker);
+        document.querySelector('.score-page').appendChild(picker);
         const duplicateVoices = (voices) => {
           const trial = M.clone(score);
           if (!M.duplicateVoice(trial, voices)) { say(t.voiceDuplicateUnavailable); return; }
           change(() => { Object.assign(score, trial); return true; });
           say('');
           picker.hidePopover();
-          popup.hidePopover();
         };
         const placePicker = () => {
           const anchor = duplicate.getBoundingClientRect(), box = picker.getBoundingClientRect();
@@ -5750,7 +5763,17 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           placePicker();
           pickerList.firstElementChild.focus({ preventScroll: true });
         });
+        // Herramienta de la barra izquierda, bajo los botones de voces; en Ajustes solo queda su icono, informativo.
+        ['pointerdown', 'mousedown', 'click'].forEach((type) => duplicate.addEventListener(type, (event) => event.stopPropagation()));
+        duplicateVoiceButton = duplicate;
         voiceDuplicate = duplicate;
+        const info = document.createElement('span');
+        info.className = 'score-settings-icon';
+        info.setAttribute('role', 'img');
+        info.setAttribute('aria-label', t.voiceDuplicate);
+        info.title = t.voiceDuplicate;
+        info.innerHTML = lucide('copy');
+        icons.appendChild(info);
       }
       if (name === 'playback') {
         for (const name of ['play', 'pause']) {
@@ -5770,7 +5793,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         icons.appendChild(icon);
       }
       wrap.append(field, icons);
-      if (name === 'voices' && voiceDuplicate) wrap.appendChild(voiceDuplicate);
       // Intervalos: respecto de las voces vecinas (por defecto) o del bajo; viaja con la partitura y se deshace.
       if (name === 'intervals') {
         const modes = document.createElement('div');

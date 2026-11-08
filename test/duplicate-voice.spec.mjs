@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('Pro: Ajustes > Voces duplicates the top voice a third below', async ({ page }) => {
+test('Pro: the left sidebar button under the voices duplicates the top voice a third below', async ({ page }) => {
   await page.goto('/es/#pro');
   await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
   await page.waitForFunction(() => window.scoreEditor && document.querySelector('.score-doc-tab-input'));
@@ -31,7 +31,7 @@ test('Pro: with several voices a popup anchored to the button picks which to dup
   await page.locator('#scoreDuplicateVoice').click();
   const picker = page.locator('#scoreVoicePicker');
   await expect(picker).toBeVisible();
-  await expect(page.locator('#scoreSettingsToggle')).toHaveAttribute('aria-expanded', 'true');
+  await expect(page.locator('#scoreStage > #scoreDuplicateVoice')).toHaveCount(1);
   await expect(picker.locator('.score-voice-picker-list button')).toHaveText(['1', '2', '3']);
   await expect(picker.locator('.score-voice-picker-confirm')).toBeDisabled();
   await picker.locator('button[data-voice="1"]').click();
