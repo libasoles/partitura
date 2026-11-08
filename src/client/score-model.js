@@ -336,16 +336,15 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   function placement(others, ev, t, score, mi, preserveVoice = false) {
     const limit = capacity(score, mi);
     const size = length(ev);
-    if (size > limit) return null;
     const grid = gridOf([ev]);
-    const at = Math.max(0, Math.min(limit - size, tidy(Math.round(t / grid) * grid)));
+    const at = Math.max(0, Math.min(Math.max(0, limit - size), tidy(Math.round(t / grid) * grid)));
     const starts = hints(others);
     if (!ev.rest && others.some((o, i) => !o.rest && starts[i] === at && o.n === ev.n && o.acc === ev.acc)) return null;
     if (!ev.rest) {
       const trial = clone(others);
       // Al mover se conserva la voz; al agregar se busca una linea independiente.
       (preserveVoice ? insertAt : insertNote)(trial, Object.assign({}, ev), at);
-      if (voices(trial).length > MAX_VOICE || measureLength(trial) > limit) return null;
+      if (voices(trial).length > MAX_VOICE) return null;
     }
     return { at, d: ev.d, dot: ev.dot };
   }
@@ -476,7 +475,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       measure.forEach((ev, i) => { ev.at = starts[i]; ev.v = oldVoice(ev.v); });
       insertMany(measure, inserts);
       const after = onsets(measure);
-      if (measureLength(measure) > capacity(trial, mi) ||
+      if (measureLength(measure) > Infinity ||
         original.some((ev, i) => after[measure.indexOf(ev)] !== starts[i]) ||
         inserts.some(([ev, at]) => after[measure.indexOf(ev)] !== at)) return null;
       inserts.forEach(([ev]) => created.push(refOf(staff, mi, measure.indexOf(ev))));
@@ -605,7 +604,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         landed.set(part, part);
       }
       insertMany(dest, inserts);
-      if (measureLength(dest) > capacity(trial, mi)) return null;
+      if (measureLength(dest) > Infinity) return null;
       // Una alteracion copiada no debe cambiar la altura de lo que ya estaba en el compas.
       const actual = new Map();
       const order = onsets(dest);
@@ -748,7 +747,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         if (pitch && alter !== pitch.alter) ev.acc = accidentalFor(pitch.alter);
         if (ev.acc) actual.set(ev.n, ACCIDENTALS[ev.acc].alter);
       });
-      if (measureLength(destination) > capacity(trial, mi + offset)) return null;
+      if (measureLength(destination) > Infinity) return null;
       indices.forEach((i) => refs.push(refOf(staff, mi + offset, i)));
     }
     restoreTabReferences(trial, savedTabs);
@@ -881,7 +880,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         list.push([ev, when]);
       }
       const indices = insertMany(destination, list);
-      if (measureLength(destination) > capacity(score, mi + offset) || voices(destination).length > MAX_VOICE) return null;
+      if (measureLength(destination) > Infinity || voices(destination).length > MAX_VOICE) return null;
       indices.forEach((i) => refs.push(refOf(staff, mi + offset, i)));
     }
     pruneLower(score);
@@ -2032,9 +2031,22 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return true;
   }
 
-  function fits(measure, ev, ignore, score) {
-    const others = ignore === undefined ? measure : measure.filter((_, i) => i !== ignore);
-    return measureLength(others) + length(ev) <= capacity(score, score && score.rows ? measures(score).indexOf(measure) : undefined);
+  // Por ahora un compas puede pasarse de su duracion: se valida (ver `problems`) pero no se impide escribir.
+  function fits() {
+    return true;
+  }
+
+  // Compases cuyo contenido, contado en orden, supera su duracion: [{ mi, staff, extra }] con `extra` en divisiones.
+  // Todavia no se muestra: queda para un listado de problemas («en el compas 1 sobre una corchea»).
+  function problems(score) {
+    const found = [];
+    for (let staff = 0; staff < stavesOf(score); staff += 1) {
+      measures(score, staff).forEach((measure, mi) => {
+        const extra = measureLength(measure) - capacity(score, mi);
+        if (extra > 0) found.push({ mi, staff, extra });
+      });
+    }
+    return found;
   }
 
   function canDot(measure, index, score) {
@@ -2048,11 +2060,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const ev = measure[index];
     if (ev.dot === 2 || ev.tp || ev.d === 'w' || ev.d === 's' || ev.d === 'f') return null;
     if (ev.dot && !DOUBLE_DOTTABLE.includes(ev.d)) return null;
-    const limit = capacity(score, score && score.rows ? measures(score).indexOf(measure) : undefined);
-    const trial = settle(clone(measure));
     const dot = ev.dot ? 2 : true;
-    trial[index].dot = dot;
-    if (measureLength(trial) > limit) return null;
     return { start: onsets(measure)[index], moves: [], dot };
   }
 
@@ -2518,7 +2526,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       rest.at = first * 2;
       others.unshift(rest);
       settle(others);
-      if (measureLength(others) > capacity(score, mi)) return { full: true };
+      if (measureLength(others) > Infinity) return { full: true };
       return { measure: others, index: 0 };
     }
     const end = at + length(ev);
@@ -2544,7 +2552,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     }
     const index = insertAt(others, rest, at);
     if (!clash.length) settleVoices(others);
-    if (measureLength(others) > capacity(score, mi)) return { full: true };
+    if (measureLength(others) > Infinity) return { full: true };
     return { measure: others, index };
   }
 
@@ -2584,7 +2592,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const trial = clone(measure);
     const added = clone(ev);
     const index = insertBefore(trial, added, at, n, bottomLine(score, mi, staff) + 4);
-    if (index === null || measureLength(trial) > capacity(score, mi)) return { full: true };
+    if (index === null || measureLength(trial) > Infinity) return { full: true };
     return { measure: trial, index };
   }
 
@@ -2753,7 +2761,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         if (starts[i] !== starts[j] || length(trial[i]) !== length(trial[j]) || trial[i].rest || trial[j].rest) return null;
       }
       settle(trial);
-      if (measureLength(trial) > capacity(score, mi) || trial.some((ev, i) =>
+      if (measureLength(trial) > Infinity || trial.some((ev, i) =>
         ev.v !== (indices.has(i) ? target : originalVoices[i]) || ev.at !== starts[i])) return null;
     }
     return changed ? [...groups.values()] : null;
@@ -2818,7 +2826,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       settle(r.measure);
       const saved = clone(r.measure);
       r.groups.forEach((g) => eachEvent(r, g, (ev) => { delete ev.tp; delete ev.tn; }));
-      if (measureLength(r.measure) > capacity(score, sel[0].mi)) {
+      if (measureLength(r.measure) > Infinity) {
         r.measure.splice(0, r.measure.length, ...saved);
         return false;
       }
@@ -3132,7 +3140,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,

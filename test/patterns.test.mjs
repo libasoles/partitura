@@ -49,7 +49,7 @@ test('a pattern that does not fit leaves the caller to discard the trial', () =>
   const target = M.emptyScore();
   const short = Object.assign(M.emptyScore(), { meter: '2/4' });
   const eight = scoreWith(Array.from({ length: 8 }, (_, i) => ({ n: base + i })));
-  assert.equal(M.applyPattern(short, M.patternFrom(eight, all(eight)), { mi: 0, n: base }), null);
+  assert.ok(M.applyPattern(short, M.patternFrom(eight, all(eight)), { mi: 0, n: base }), 'overflowing a measure is allowed');
   assert.equal(M.applyPattern(target, pattern, { mi: 0, n: M.HIGHEST }), null);
 });
 

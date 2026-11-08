@@ -18,11 +18,26 @@ test('a half note before two eighths continues their voice, including repeated p
   }
 });
 
-test('prepending refuses overflow instead of opening an overlapping voice', () => {
+test('prepending allows overflow without opening an overlapping voice, and reports it as a problem', () => {
+  const score = Object.assign(M.emptyScore(), { meter: '3/4' });
   const measure = [{ d: 'q', n: 35, at: 0 }, { d: 'q', n: 36, at: 24 }];
   const original = structuredClone(measure);
-  assert.deepEqual(M.placeBefore(measure, { d: 'h', n: 37 }, 0, 37, { meter: '3/4' }, 0), { full: true });
+  const placed = M.placeBefore(measure, { d: 'h', n: 37 }, 0, 37, score, 0);
+  assert.ok(placed.measure);
   assert.deepEqual(measure, original);
+  assert.equal(M.voices(placed.measure).length, 1);
+  M.measures(score)[0].splice(0, 0, ...placed.measure);
+  assert.deepEqual(M.problems(score), [{ mi: 0, staff: 0, extra: 24 }]);
+});
+
+test('reordering an eighth after a quarter in a full measure is allowed', () => {
+  const score = Object.assign(M.emptyScore(), { meter: '3/4' });
+  const measure = M.measures(score)[0];
+  [{ d: 'e', n: 35 }, { d: 'e', n: 34 }, { d: 'e', n: 33 }, { d: 'e', n: 32 }, { d: 'q', n: 31 }].forEach((ev, i) => M.insertAt(measure, ev, i < 4 ? i * 12 : 48));
+  const others = measure.slice(0, 3).concat(measure.slice(4));
+  const spot = M.placement(others, Object.assign({}, measure[3]), 60, score, 0, true);
+  assert.ok(spot);
+  assert.deepEqual(M.problems(score), []);
 });
 
 test('prepending keeps the other voice and explicit chords intact', () => {
