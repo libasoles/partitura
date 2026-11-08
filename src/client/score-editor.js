@@ -3929,7 +3929,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     event.clipboardData.setData('text/plain', text);
   });
   document.addEventListener('paste', (event) => {
-    if (editingText(event) || selectedMeasure === null || !event.clipboardData) return;
+    // Destino: el compas elegido o, si no hay, el del cursor (la linea roja de un clic en una zona neutra), desde su tiempo.
+    const atCursor = playbackHint && playbackHintPosition?.document === score && playbackActivityDocument === score && playbackActivityMeasure !== null;
+    if (editingText(event) || (selectedMeasure === null && !atCursor) || !event.clipboardData) return;
+    const destinationMeasure = selectedMeasure ?? playbackActivityMeasure;
+    const destinationStaff = selectedMeasure !== null ? selectedMeasureStaff : 0;
+    const cursorAt = atCursor && (selectedMeasure === null || selectedMeasure === playbackActivityMeasure) ? playbackActivityAt : 0;
     let fragment;
     try {
       fragment = JSON.parse(event.clipboardData.getData(clipboardType) || event.clipboardData.getData('text/plain'));
@@ -3938,7 +3943,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     event.preventDefault();
     const trial = M.clone(score);
     M.restoreTabReferences(trial, M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs));
-    const refs = M.pasteSelection(trial, fragment, selectedMeasure, { preserveSignatures: !pasteWithoutSignatures, staff: selectedMeasureStaff });
+    const refs = M.pasteSelection(trial, fragment, destinationMeasure, { preserveSignatures: !pasteWithoutSignatures, staff: destinationStaff, at: cursorAt });
     if (!refs) return say(t.full);
     change(() => {
       Object.assign(score, trial);
