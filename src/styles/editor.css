@@ -2667,6 +2667,10 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-settings-section.is-inline .score-settings-slider-line { width: 7.5rem; }
 .score-settings-section.is-inline .score-settings-tempo-value { min-width: 1ch; text-align: right; }
 
+/* Tempo breathes below the instrument; after a visible card (voices) the card's own bottom margin already does it. */
+.score-settings-section.score-settings-tempo { margin-top: 1.1rem; }
+.score-settings-card:not([hidden]) ~ .score-settings-tempo { margin-top: 0; }
+
 /* Keep the complete choir collection readable inside the scrolling settings panel. */
 .score-settings-sounds {
   display: grid;

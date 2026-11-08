@@ -22,7 +22,7 @@ export function soundingNotes(score, M, selectedVoices, voiceCount = 4) {
   const sounding = [];
   // Cada pentagrama suena en su canal, para que dos notas iguales de los dos no se corten entre si.
   const staves = M.stavesOf(score);
-  const choir = M.instrumentOf(score) === 'voices';
+  const choir = M.voicePerStaff(score);
   for (let staff = 0; staff < staves; staff += 1) {
     if (choir && selectedVoices?.size && !selectedVoices.has(staff + 1)) continue;
     const tied = new Map(); // altura -> nota que sigue sonando por una ligadura

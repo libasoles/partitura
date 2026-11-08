@@ -1616,8 +1616,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       let previous = -Infinity;
       const positions = keys.map((key) => {
         const [mi, at] = key.split(':').map(Number);
-        const xs = eventNodes(mi).filter((node, i) => !M.measures(score)[mi][i].rest && M.onsets(M.measures(score)[mi])[i] === at)
-          .map((node) => centerX(node, origin));
+        const xs = Array.from({ length: M.stavesOf(score) }, (_, staff) => staff).flatMap((staff) => {
+          const measure = M.measures(score, staff)[mi] || [];
+          const starts = M.onsets(measure);
+          return eventNodes(mi, staff).filter((node, i) => !measure[i].rest && starts[i] === at).map((node) => centerX(node, origin));
+        });
         const x = xs.length ? xs.reduce((sum, value) => sum + value, 0) / xs.length : layout[mi].left;
         previous = Math.max(x - head.left, previous + minStep);
         return previous;
@@ -1637,9 +1640,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const system = stage.querySelectorAll('g.system')[row];
       const boxes = [...system.querySelectorAll('g.layer, g.fermata, g.slur, g.tie, g.hairpin, g.dynam')]
         .map(node => node.getBoundingClientRect()).filter(box => box.width || box.height);
-      const contentBottom = Math.max(last.lines[4], ...boxes.map(box => box.bottom - origin.top));
-      const offset = Math.max(TAB_CLEF_CLEARANCE, contentBottom - last.lines[4] + TAB_GAP);
-      tabs.style.top = (last.lines[4] + offset) + 'px';
+      const contentBottom = Math.max(last.bottom, ...boxes.map(box => box.bottom - origin.top));
+      const offset = Math.max(TAB_CLEF_CLEARANCE, contentBottom - last.bottom + TAB_GAP);
+      tabs.style.top = (last.bottom + offset) + 'px';
       tabs.style.width = (last.right - head.left) + 'px';
       tabs.appendChild(document.createElement('ascii-tabs-sheet'));
       // El componente se redibuja al hacer clic, asi que el escenario ya no puede reconocer el destino: no le llega el evento.
@@ -1999,7 +2002,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const box = dir.getBoundingClientRect();
       const staves = [...dir.closest('g.measure').querySelectorAll(':scope > g.staff')].map((staff) => ({ staff, top: staff.querySelector(':scope > path').getBoundingClientRect().top }));
       const below = staves.filter((s) => s.top >= box.bottom - 4);
-      const target = M.instrumentOf(score) === 'voices' ? staves[0] : below.length ? below.reduce((a, b) => (b.top < a.top ? b : a)) : staves[staves.length - 1];
+      const target = M.voicePerStaff(score) ? staves[0] : below.length ? below.reduce((a, b) => (b.top < a.top ? b : a)) : staves[staves.length - 1];
       if (!target) return;
       let limit = target.top;
       target.staff.querySelectorAll('g.note, g.chord, g.rest, g.beam, g.tuplet').forEach((node) => {
@@ -3137,7 +3140,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     hideSelectionMenu();
     const list = picks();
     if (!list.length || drag?.active) return;
-    const actions = M.selectionActions(score, list, toolOn('voices', false) && M.instrumentOf(score) !== 'voices' ? shownVoices : []).filter((action) => action !== 'mergeLyrics' || lyricsActive());
+    const actions = M.selectionActions(score, list, toolOn('voices', false) && !M.voicePerStaff(score) ? shownVoices : []).filter((action) => action !== 'mergeLyrics' || lyricsActive());
     if (!actions.length) return;
     const origin = stage.getBoundingClientRect();
     let boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
@@ -4136,6 +4139,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Nombre del pentagrama `staff` para etiquetas accesibles: el registro en Voces; arriba o abajo en el piano.
   function staffName(staff) {
     if (M.instrumentOf(score) === 'voices') return registerLabel(staff);
+    if (M.voicePerStaff(score)) return t.voiceStaff.replace('{n}', staff + 1);
     return staff ? t.lowerStaff : t.upperStaff;
   }
 
@@ -5032,7 +5036,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!on) return;
     voiceButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(shownVoices.has(i + 1))));
     // En coro cada pentagrama es una voz de la leyenda; en piano cada mano infiere sus propias voces.
-    const choir = M.instrumentOf(score) === 'voices';
+    const choir = M.voicePerStaff(score);
     const upper = M.measures(score);
     const total = upper.length;
     for (let staff = 0; staff < M.stavesOf(score); staff++) {
@@ -5344,31 +5348,43 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const voicesCard = document.createElement('div');
     voicesCard.className = 'score-settings-card';
     voicesCard.hidden = true;
-    const partsRow = section(t.settingsParts);
-    partsRow.parentElement.classList.add('is-inline');
-    const partsSlider = document.createElement('input');
-    partsSlider.type = 'range';
-    partsSlider.className = 'score-settings-slider';
-    partsSlider.min = String(M.MIN_PARTS);
-    partsSlider.max = String(M.MAX_PARTS);
-    partsSlider.step = '1';
-    partsSlider.setAttribute('aria-label', t.settingsParts);
-    const partsValue = document.createElement('output');
-    partsValue.className = 'score-settings-tempo-value';
-    const showParts = () => { partsValue.textContent = t.partsValue.replace('{n}', partsSlider.value); };
-    partsSlider.addEventListener('input', showParts);
-    partsSlider.addEventListener('change', () => { change(() => M.setParts(score, Number(partsSlider.value))); sync(); });
-    const partsLine = document.createElement('div');
-    partsLine.className = 'score-settings-slider-line';
-    partsLine.append(partsSlider, partsValue);
-    partsRow.classList.add('is-stacked');
-    partsRow.append(partsLine);
+    // El mismo control sirve al coro (2 a 4) y a la guitarra Pro (1 a 4 pentagramas con una sola tablatura).
+    function partsControl(min, apply) {
+      const row = section(t.settingsParts);
+      row.parentElement.classList.add('is-inline');
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.className = 'score-settings-slider';
+      slider.min = String(min);
+      slider.max = String(M.MAX_PARTS);
+      slider.step = '1';
+      slider.setAttribute('aria-label', t.settingsParts);
+      const value = document.createElement('output');
+      value.className = 'score-settings-tempo-value';
+      const show = () => { value.textContent = t.partsValue.replace('{n}', slider.value); };
+      slider.addEventListener('input', show);
+      slider.addEventListener('change', () => { change(() => apply(score, Number(slider.value))); sync(); });
+      const line = document.createElement('div');
+      line.className = 'score-settings-slider-line';
+      line.append(slider, value);
+      row.classList.add('is-stacked');
+      row.append(line);
+      return { row, slider, show };
+    }
+    const { row: partsRow, slider: partsSlider, show: showParts } = partsControl(M.MIN_PARTS, M.setParts);
 
     // Voces: timbre del coro y colección de SoundFonts. Solo cambia el audio y el programa del MIDI.
     const soundRow = section(t.settingsSound);
     soundRow.classList.add('score-settings-sounds');
     voicesCard.append(partsRow.parentElement, soundRow.parentElement);
     content.appendChild(voicesCard);
+    // Guitarra (solo Pro): cada voz es un pentagrama y todas comparten la misma tablatura.
+    const guitarCard = document.createElement('div');
+    guitarCard.className = 'score-settings-card';
+    guitarCard.hidden = true;
+    const { row: guitarPartsRow, slider: guitarPartsSlider, show: showGuitarParts } = partsControl(1, M.setGuitarParts);
+    guitarCard.append(guitarPartsRow.parentElement);
+    content.appendChild(guitarCard);
     const sounds = M.CHOIR_SOUNDS.map((id) => {
       const field = document.createElement('label');
       field.className = 'score-settings-radio';
@@ -5393,6 +5409,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
     // El tempo se arrastra en un control deslizante; la casilla de abajo ("sin indicacion") lo quita.
     const tempoRow = section(t.settingsTempo);
+    tempoRow.parentElement.classList.add('score-settings-tempo');
     const tempoSlider = document.createElement('input');
     tempoSlider.type = 'range';
     tempoSlider.className = 'score-settings-slider';
@@ -5571,8 +5588,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       voicesCard.hidden = M.instrumentOf(score) !== 'voices';
       sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });
       intervalModes.forEach((radio) => { radio.checked = M.intervalModeOf(score) === radio.value; });
+      guitarCard.hidden = !M.choir || M.instrumentOf(score) !== 'guitar';
       partsSlider.value = String(M.partsOf(score));
       showParts();
+      guitarPartsSlider.value = String(M.guitarPartsOf(score));
+      showGuitarParts();
       tempoSlider.value = String(score.tempo || 120);
       showTempo();
       tempoNone.checked = !score.tempo;

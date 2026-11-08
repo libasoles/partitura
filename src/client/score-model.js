@@ -938,8 +938,23 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     if (!grandStaff) return 1;
     const instrument = instrumentOf(score);
     if (instrument === 'piano') return 2;
-    return choir && instrument === 'voices' ? partsOf(score) : 1;
+    if (!choir) return 1;
+    return instrument === 'voices' ? partsOf(score) : instrument === 'guitar' ? guitarPartsOf(score) : 1;
   }
+
+  // Guitarra (Pro, `choir`): 1 a 4 pentagramas que comparten una sola tablatura. Con uno no se guarda `parts`.
+  const guitarPartsOf = (score) => (score && partsValid(score.parts) ? score.parts : 1);
+  function setGuitarParts(score, parts) {
+    if (!Number.isInteger(parts) || parts < 1 || parts > MAX_PARTS) return false;
+    if (parts === 1) delete score.parts; else score.parts = parts;
+    return true;
+  }
+
+  // Cada pentagrama es una voz de la leyenda: en coro y en guitarra con varias voces (en piano, cada mano infiere las suyas).
+  const voicePerStaff = (score) => {
+    const instrument = instrumentOf(score);
+    return instrument === 'voices' || (instrument === 'guitar' && stavesOf(score) > 1);
+  };
 
   const partsValid = (parts) => Number.isInteger(parts) && parts >= MIN_PARTS && parts <= MAX_PARTS;
   const partsOf = (score) => (score && partsValid(score.parts) ? score.parts : DEFAULT_PARTS);
@@ -1812,7 +1827,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const saved = score && score[CLEF_KEYS[staff][0]];
     if (Object.hasOwn(CLEFS, saved)) return saved;
     if (!staff) return defaultClef;
-    return score && score.instrument === 'voices' ? registerClef(score, staff) : LOWER_CLEF;
+    if (score && score.instrument === 'voices') return registerClef(score, staff);
+    return instrumentOf(score) === 'guitar' ? 'guitar' : LOWER_CLEF;
   }
 
   const INSTRUMENTS = ['piano', 'guitar', 'voices'];
@@ -1834,9 +1850,10 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     if (instrument === 'voices') {
       delete score.showTabs;
       for (let staff = 0; staff < MAX_PARTS; staff += 1) setClef(score, 0, registerClef(score, staff), staff);
-    } else if (instrument === 'guitar') setClef(score, 0, 'guitar');
-    else {
-      if (before === 'voices') setClef(score, 0, 'treble'), setClef(score, 0, LOWER_CLEF, 1);
+    } else if (instrument === 'guitar') {
+      for (let staff = 0; staff < MAX_PARTS; staff += 1) setClef(score, 0, 'guitar', staff);
+    } else {
+      if (before !== 'piano') setClef(score, 0, 'treble'), setClef(score, 0, LOWER_CLEF, 1);
       delete score.showTabs;
       if (clefOf(score) === 'guitar') setClef(score, 0, 'treble');
     }
@@ -2112,26 +2129,37 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // suena una octava mas grave que la escrita). Las notas ligadas a la anterior no se vuelven a tocar.
   function attacks(score, withEvents = false) {
     const result = [];
-    let tied = new Set();
-    measures(score).forEach((measure, mi) => {
-      const clef = CLEFS[clefAt(score, mi)];
-      const starts = onsets(measure);
-      const accidentals = new Map();
+    // Una sola tablatura para todos los pentagramas: las notas que empiezan juntas forman una columna.
+    const tied = Array.from({ length: instrumentOf(score) === 'guitar' ? stavesOf(score) : 1 }, () => new Set());
+    measures(score).forEach((_, mi) => {
       const moments = new Map();
-      measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
-        const ev = measure[i];
-        if (ev.rest) return;
-        if (ev.acc) accidentals.set(ev.n, ACCIDENTALS[ev.acc].alter);
-        const alter = accidentals.has(ev.n) ? accidentals.get(ev.n) : keyAlter(ev.n, score, mi);
-        const midi = 12 * (Math.floor(ev.n / 7) + 1) + SEMITONES[ev.n % 7] + alter + 12 * (clef.octave || 0);
-        if (!moments.has(starts[i])) moments.set(starts[i], []);
-        moments.get(starts[i]).push({ n: ev.n, midi, tie: !!ev.tie, ev });
+      tied.forEach((tiedNotes, staff) => {
+        const measure = measures(score, staff)[mi] || [];
+        const clef = CLEFS[clefAt(score, mi, staff)];
+        const starts = onsets(measure);
+        const accidentals = new Map();
+        const staffMoments = new Map();
+        measure.map((ev, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
+          const ev = measure[i];
+          if (ev.rest) return;
+          if (ev.acc) accidentals.set(ev.n, ACCIDENTALS[ev.acc].alter);
+          const alter = accidentals.has(ev.n) ? accidentals.get(ev.n) : keyAlter(ev.n, score, mi);
+          const midi = 12 * (Math.floor(ev.n / 7) + 1) + SEMITONES[ev.n % 7] + alter + 12 * (clef.octave || 0);
+          if (!staffMoments.has(starts[i])) staffMoments.set(starts[i], []);
+          staffMoments.get(starts[i]).push({ n: ev.n, midi, tie: !!ev.tie, ev });
+        });
+        [...staffMoments.keys()].sort((a, b) => a - b).forEach((at) => {
+          const all = staffMoments.get(at);
+          const notes = all.filter((note) => !tiedNotes.has(note.n));
+          all.forEach((note) => { if (note.tie) tiedNotes.add(note.n); else tiedNotes.delete(note.n); });
+          if (!notes.length) return;
+          if (!moments.has(at)) moments.set(at, []);
+          moments.get(at).push(...notes);
+        });
       });
       [...moments.keys()].sort((a, b) => a - b).forEach((at) => {
-        const all = moments.get(at);
-        const notes = all.filter((note) => !tied.has(note.n));
-        all.forEach((note) => { if (note.tie) tied.add(note.n); else tied.delete(note.n); });
-        if (notes.length) result.push(Object.assign({ mi, at, key: mi + ':' + at, midis: notes.map((note) => note.midi) }, withEvents ? { events: notes.map((note) => note.ev) } : {}));
+        const notes = moments.get(at);
+        result.push(Object.assign({ mi, at, key: mi + ':' + at, midis: notes.map((note) => note.midi) }, withEvents ? { events: notes.map((note) => note.ev) } : {}));
       });
     });
     return result;
@@ -3146,7 +3174,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
-    CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
+    CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
