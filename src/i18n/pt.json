@@ -75,10 +75,12 @@
   "scoreTabs": "Partituras abertas",
   "scoreNewTab": "Nova partitura",
   "scoreClear": "Apagar a partitura",
+  "scoreDuplicate": "Duplicar a partitura",
   "scoreUiStrings": {
     "titleLabel": "Título da partitura",
     "untitledScore": "Sem título {n}",
     "closeTab": "Fechar partitura",
+    "duplicateSuffix": "(cópia)",
     "clearTitle": "Apagar a partitura?",
     "clearDescription": "Todas as notas e barras, o título e o autor serão removidos.",
     "clearDescriptionTab": "Esta partitura será apagada por completo.",
