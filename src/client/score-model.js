@@ -417,7 +417,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // Duplica a una tercera diatonica en una voz independiente, continuando la vecina si esta libre.
-  function duplicateVertical(score, refs, delta) {
+  function duplicateVertical(score, refs, delta, stack = false) {
     if (delta !== 1 && delta !== -1) return null;
     const trial = clone(score);
     const chosen = refs.filter((r, i) => measures(trial, staffOf(r))[r.mi]?.[r.i] &&
@@ -440,8 +440,10 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       const sourceVoices = [...new Set(group.map((r) => measure[r.i].v))].sort((a, b) => a - b);
       // Continuar la voz vecina si esta libre durante todas las figuras copiadas.
       // Duplicar una frase por partes no debe insertar una voz nueva cada vez.
+      const stacked = stack && sourceVoices.length > 1; // Las copias van juntas bajo la voz mas grave elegida.
+      const lowest = sourceVoices[sourceVoices.length - 1];
       const reuse = new Map();
-      for (const source of sourceVoices) {
+      for (const source of stacked ? [] : sourceVoices) {
         const target = source - delta;
         if (target < 1 || target > MAX_VOICE || sourceVoices.includes(target)) continue;
         const selected = group.filter(ref => measure[ref.i].v === source);
@@ -450,8 +452,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         if (!overlaps) reuse.set(source, target);
       }
       const inserted = sourceVoices.filter(source => !reuse.has(source));
-      const oldVoice = (v) => v + inserted.filter((s) => delta > 0 ? s <= v : s < v).length;
-      const newVoice = (v) => reuse.has(v) ? oldVoice(reuse.get(v)) : oldVoice(v) - delta;
+      const oldVoice = (v) => v + (stacked ? (v > lowest ? inserted.length : 0) : inserted.filter((s) => delta > 0 ? s <= v : s < v).length);
+      const newVoice = (v) => stacked ? lowest + 1 + sourceVoices.indexOf(v) : reuse.has(v) ? oldVoice(reuse.get(v)) : oldVoice(v) - delta;
       if (Math.max(...measure.map(ev => oldVoice(ev.v)), ...sourceVoices.map(newVoice)) > MAX_VOICE) return null;
       let nextTuplet = Math.max(0, ...measure.map((ev) => ev.tp || 0));
       const tuplets = new Map();
@@ -484,20 +486,34 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return created;
   }
 
-  // Duplica la voz superior de toda la partitura una tercera diatonica abajo, en una voz nueva (o la vecina si esta libre).
-  // Devuelve las figuras creadas, o null (sin tocar la partitura) si alguna no entra.
-  function duplicateVoice(score) {
+  // Numeros de voz que hay en la partitura (los de cualquier compas de los pentagramas visibles), de menor a mayor.
+  function voiceNumbers(score) {
+    const trial = clone(score), found = new Set();
+    for (let staff = 0; staff < stavesOf(trial); staff += 1) {
+      measures(trial, staff).forEach((measure) => {
+        if (!measure?.length) return;
+        settleVoices(measure);
+        measure.forEach((ev) => found.add(ev.v));
+      });
+    }
+    return [...found].sort((x, y) => x - y);
+  }
+
+  // Duplica las voces `voices` (por defecto la superior) de toda la partitura una tercera diatonica abajo. Con varias,
+  // las copias quedan juntas bajo la mas grave de las elegidas en cada compas. Devuelve las figuras creadas, o null
+  // (sin tocar la partitura) si alguna no entra.
+  function duplicateVoice(score, voices = null) {
     const trial = clone(score);
     const refs = [];
     for (let staff = 0; staff < stavesOf(trial); staff += 1) {
       measures(trial, staff).forEach((measure, mi) => {
         if (!measure?.length) return;
         settleVoices(measure);
-        const top = Math.min(...measure.map((ev) => ev.v));
-        measure.forEach((ev, i) => { if (ev.v === top) refs.push(refOf(staff, mi, i)); });
+        const chosen = voices ? new Set(voices) : new Set([Math.min(...measure.map((ev) => ev.v))]);
+        measure.forEach((ev, i) => { if (chosen.has(ev.v)) refs.push(refOf(staff, mi, i)); });
       });
     }
-    const created = refs.length ? duplicateVertical(trial, refs, -1) : null;
+    const created = refs.length ? duplicateVertical(trial, refs, -1, true) : null;
     if (!created?.length) return null;
     Object.assign(score, trial);
     return created;
@@ -3192,7 +3208,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, voiceNumbers, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,

@@ -2540,6 +2540,38 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
   color: var(--accent-brand);
   cursor: pointer;
 }
+.score-voice-picker p { margin: 0 0 0.5rem; font-size: 0.85rem; font-weight: 600; }
+.score-voice-picker-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem; }
+.score-voice-picker-list button {
+  --voice: var(--accent-brand);
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: 1px solid var(--voice);
+  border-radius: 50%;
+  background: var(--voice);
+  color: #fff;
+  font: 600 0.85rem/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.score-voice-picker-list button[data-voice="1"] { --voice: var(--voice-1); }
+.score-voice-picker-list button[data-voice="2"] { --voice: var(--voice-2); }
+.score-voice-picker-list button[data-voice="3"] { --voice: var(--voice-3); }
+.score-voice-picker-list button[data-voice="4"] { --voice: var(--voice-4); }
+.score-voice-picker-list button[aria-pressed="false"] { background: #fff; color: var(--voice); }
+.score-voice-picker-confirm {
+  padding: 0.3rem 0.8rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent-brand);
+  color: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.score-voice-picker-confirm:disabled { opacity: 0.4; cursor: default; }
 .score-settings-action:hover { text-decoration: underline; }
 .score-settings-action svg { width: 1rem; height: 1rem; }
 .score-settings-category:has(> .score-settings-check input:not(:checked)) > .score-settings-action { display: none; }
