@@ -160,6 +160,8 @@
     "toolsDynamics": "Dinâmica",
     "voiceDuplicate": "Duplicar voz uma terça abaixo",
     "voiceDuplicateTooltip": "Cria uma voz uma terça abaixo da que você escolher, em toda a partitura",
+    "voiceDuplicateSixth": "Duplicar voz uma sexta abaixo",
+    "voiceDuplicateSixthTooltip": "Cria uma voz uma sexta abaixo da que você escolher, em toda a partitura",
     "voiceDuplicatePick": "Vozes a duplicar",
     "voiceDuplicateConfirm": "Duplicar",
     "voiceDuplicateUnavailable": "Não é possível duplicar a voz: alguma nota ficaria fora do alcance ou sem espaço.",
