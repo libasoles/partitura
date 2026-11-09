@@ -4,7 +4,7 @@ import '../styles/global.css';
 import Analytics from '../components/Analytics.astro';
 import { scoreFileAccept } from '../client/score-file-types.js';
 import latinFont from '@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2?url';
-import { locales, ogLocales, pathFor, rootPath, strings, termsPath, tutorialsPath, type Locale } from '../i18n';
+import { locales, ogLocales, pathFor, proPath, rootPath, strings, termsPath, tutorialsPath, type Locale } from '../i18n';
 import { pageJsonLd } from '../lib/jsonld';
 import { DEMOS, demoPath } from '../client/demos.js';
 
@@ -125,6 +125,7 @@ const jsonLd = pageJsonLd({
             <p class="menu-heading" id="menuScoresLabel">{s.ui.menuScores}</p>
             <ul role="group" aria-labelledby="menuScoresLabel" class="menu-scores-list" id="menuScores"></ul>
           </li>}
+          {locale !== 'es' && <li role="none"><hr class="menu-separator" /><a role="menuitem" href={proPath(locale)} data-pro-menu><svg class="menu-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>{s.ui.navPro}</a></li>}
         </ul>
         {editor && <input id="menuFile" type="file" accept={scoreFileAccept} hidden />}
       </div>}
@@ -179,6 +180,7 @@ const jsonLd = pageJsonLd({
           if (!list.hidden) list.querySelector('[role=menuitem]').focus();
         });
         document.addEventListener('click', function (event) {
+          if (event.target.closest && event.target.closest('[data-pro-menu]') && window.gtag) gtag('event', 'pro_menu_click');
           if (!box.contains(event.target)) close(false);
           else if (event.target.closest('[data-submenu-toggle]')) setSub(sub.getAttribute('aria-expanded') !== 'true');
           else if (event.target.closest('[role=menuitem]')) close(false);
