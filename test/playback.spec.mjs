@@ -278,6 +278,24 @@ test('space toggles playback only when enabled and outside text fields', async (
   await expect(button).toHaveAccessibleName('Pausar');
 });
 
+test('enter rewinds playback to the start only with nothing selected', async ({ page }) => {
+  await open(page);
+  await enable(page);
+  const stage = page.locator('#scoreStage');
+  const cursor = page.locator('.score-playback-cursor');
+  await stage.focus();
+  await page.keyboard.press('Space');
+  await expect(page.locator('#scorePlayback')).toHaveAccessibleName('Pausar');
+  await page.waitForTimeout(600);
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#scorePlayback')).toHaveAccessibleName('Pausar');
+  expect(Number(await cursor.getAttribute('data-time'))).toBeLessThan(5);
+  await page.keyboard.press('Space');
+  await expect(page.locator('#scorePlayback')).toHaveAccessibleName('Reproducir');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('.score-playback-hint')).toHaveCount(1);
+});
+
 for (const instrument of ['piano', 'guitar']) {
   test(`${instrument}: lazy samples, real decoded audio, pause/resume and end`, async ({ page }) => {
     const audioRequests = [];
