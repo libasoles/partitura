@@ -21,10 +21,11 @@ async function open(page, hash = '#pro', extra = {}) {
 test('Pro: the voices category offers join and split, asking which staves or voices', async ({ page }) => {
   const errors = await open(page);
   await expect(staves(page)).toHaveCount(3);
-  const button = page.locator('#scoreRestructure');
+  const button = page.locator('#scoreJoin');
   await expect(button).toBeVisible();
+  await expect(page.locator('#scoreSplit')).toBeVisible();
   await button.click();
-  const popup = page.locator('#scoreRestructurePopup');
+  const popup = page.locator('#scoreJoinPopup');
   await expect(popup).toBeVisible();
   // Nothing happens until two staves are chosen.
   const join = popup.getByRole('button', { name: 'Unir', exact: true });
@@ -35,11 +36,12 @@ test('Pro: the voices category offers join and split, asking which staves or voi
   await join.click();
   await expect(staves(page)).toHaveCount(2);
   // The joined staff now has two voices (2 and 3) that can be told apart again.
-  await button.click();
-  await expect(popup.locator('.score-restructure-row button')).toHaveCount(2);
-  const split = popup.getByRole('button', { name: 'Separar', exact: true });
+  const splitPopup = page.locator('#scoreSplitPopup');
+  await page.locator('#scoreSplit').click();
+  await expect(splitPopup.locator('.score-restructure-row button')).toHaveCount(2);
+  const split = splitPopup.getByRole('button', { name: 'Separar', exact: true });
   await expect(split).toBeDisabled();
-  await popup.locator('.score-restructure-row button[data-voice="3"]').click();
+  await splitPopup.locator('.score-restructure-row button[data-voice="3"]').click();
   await split.click();
   await expect(staves(page)).toHaveCount(3);
   expect(errors).toEqual([]);
@@ -47,10 +49,10 @@ test('Pro: the voices category offers join and split, asking which staves or voi
 
 test('without the voices tool, or without Pro, there is no join/split button', async ({ page }) => {
   await open(page, '#pro', { tools: { voices: false } });
-  await expect(page.locator('#scoreRestructure')).toHaveCount(0);
+  await expect(page.locator('#scoreJoin')).toHaveCount(0);
 });
 
 test('free sites do not offer it', async ({ page }) => {
   await open(page, '');
-  await expect(page.locator('#scoreRestructure')).toHaveCount(0);
+  await expect(page.locator('#scoreJoin')).toHaveCount(0);
 });

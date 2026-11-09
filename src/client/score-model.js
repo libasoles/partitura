@@ -1016,6 +1016,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // Unir y separar pentagramas (Pro): solo guitarra y coro, que tienen una cantidad variable de pentagramas.
   const restructurable = (score) => choir && grandStaff && ['guitar', 'voices'].includes(instrumentOf(score));
   const minStaves = (score) => (instrumentOf(score) === 'voices' ? MIN_PARTS : 1);
+  const canJoinStaves = (score) => restructurable(score) && stavesOf(score) >= 2 && stavesOf(score) - 1 >= minStaves(score);
   function setStaffCount(score, count) {
     if (instrumentOf(score) === 'voices') return setParts(score, count);
     return setGuitarParts(score, count);
@@ -1161,6 +1162,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
           const k = ev.v - 1;
           if (moved.includes(k)) { ev.v = moved.indexOf(k) + 1; go.push(ev); } else { ev.v = kept.indexOf(k) + 1; stay.push(ev); }
         });
+        // Un silencio compartido pertenece a una sola voz: el otro pentagrama tambien lo necesita donde no suena nada.
+        const covers = (list, ev) => list.some((o) => o.at < ev.at + length(ev) && ev.at < o.at + length(o));
+        const shared = (from, into) => from.filter((ev) => ev.rest && !covers(into, ev)).map((ev) => ({ ...ev, v: 1 }));
+        const stayRests = shared(go, stay), goRests = shared(stay, go);
+        stay.push(...stayRests);
+        go.push(...goRests);
         measure.splice(0, measure.length, ...stay);
         if (go.length) (trial[laneKey(staff + 1)] ||= {})[mi] = go;
       }
@@ -3398,7 +3405,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, voiceNumbers, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
-    CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
+    CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, canJoinStaves, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };

@@ -120,3 +120,17 @@ test('there is no room to separate beyond four staves', () => {
   score.rows[0][0] = [{ d: 'w', n: 40, v: 1 }, { d: 'w', n: 33, v: 2 }];
   assert.equal(M.splitStaff(score, 0, [2]), false);
 });
+
+test('splitting keeps the shared rests on both staves', () => {
+  const score = M.emptyScore();
+  M.setInstrument(score, 'guitar');
+  score.rows[0][0] = [
+    { d: 'h', rest: true, v: 1, at: 0 },
+    { d: 'q', n: 40, v: 1, at: 2 }, { d: 'q', n: 33, v: 2, at: 2 },
+    { d: 'q', n: 41, v: 1, at: 3 }, { d: 'q', n: 35, v: 2, at: 3 },
+  ];
+  M.sanitize(score);
+  assert.ok(M.splitStaff(score, 0, [2]));
+  assert.ok(M.measures(score, 0)[0].some((ev) => ev.rest && ev.at === 0));
+  assert.ok(M.measures(score, 1)[0].some((ev) => ev.rest && ev.at === 0));
+});
