@@ -177,7 +177,7 @@
     "restructureStaff": "Staff {n}",
     "restructureVoice": "Voice {n}",
     "restructureNoJoin": "There is only one staff, so there is nothing to join",
-    "restructureSplitHint": "The chosen voices move to a new staff; at least one stays on the original.",
+    "restructureSplitHint": "Only the voices you choose will move to new staves.",
     "restructureNoSplit": "No staff has several voices to split",
     "restructureFailed": "Not possible: the voices would not fit, would play the same note at once, or there is no room for another staff",
     "intervalsVoices": "Between voices",

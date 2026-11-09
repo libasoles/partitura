@@ -5107,22 +5107,18 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return { button, popup };
   }
 
-  const voiceDot = (n, tag = 'span') => {
-    const dot = document.createElement(tag);
-    dot.className = 'score-restructure-voice';
-    dot.dataset.voice = String(n);
-    dot.textContent = String(n);
-    return dot;
-  };
-  function toggleButton(button, onChange) {
-    button.type = 'button';
-    button.setAttribute('aria-pressed', 'false');
-    button.addEventListener('click', () => {
-      const on = button.getAttribute('aria-pressed') !== 'true';
-      button.setAttribute('aria-pressed', String(on));
-      onChange(on);
-    });
-    return button;
+  // Fila de un popup de unir/separar: casilla al inicio y el nombre a su lado.
+  function checkRow(text, checked, onChange) {
+    const row = document.createElement('label');
+    row.className = 'score-restructure-row';
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.checked = checked;
+    box.addEventListener('change', () => onChange(box.checked, box));
+    const label = document.createElement('span');
+    label.textContent = text;
+    row.append(box, label);
+    return { row, box };
   }
   const restructureHeading = (text) => {
     const heading = document.createElement('p');
@@ -5161,20 +5157,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       return;
     }
     const list = restructureList(t.restructureJoin);
-    const selected = new Set();
+    const selected = new Set(Array.from({ length: staves }, (_, staff) => staff));
     const join = restructureGo(t.restructureJoinAction);
+    join.disabled = selected.size < 2;
     for (let staff = 0; staff < staves; staff += 1) {
-      const item = toggleButton(document.createElement('button'), (on) => {
+      const { row } = checkRow(t.restructureStaff.replace('{n}', staff + 1), true, (on) => {
         if (on) selected.add(staff); else selected.delete(staff);
         join.disabled = selected.size < 2;
       });
-      item.className = 'score-restructure-staff';
-      item.dataset.staff = String(staff);
-      const label = document.createElement('span');
-      label.textContent = t.restructureStaff.replace('{n}', staff + 1);
-      const legends = M.legendsOf(score, staff);
-      item.append(label, ...(legends.length ? legends : [M.legendOf(score, staff, 0)]).map((n) => voiceDot(n)));
-      list.appendChild(item);
+      row.dataset.staff = String(staff);
+      list.appendChild(row);
     }
     join.addEventListener('click', () => {
       const chosen = [...selected];
@@ -5198,34 +5190,31 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const split = restructureGo(t.restructureSplitAction);
     let from = -1;
     const selected = new Set();
-    const rows = [];
+    const boxes = [];
     splittable.forEach((staff) => {
       const legends = M.legendsOf(score, staff);
-      const row = document.createElement('div');
-      row.className = 'score-restructure-row';
       // Con un solo pentagrama que separar no hace falta nombrarlo.
       if (staves > 1) {
-        const label = document.createElement('span');
-        label.textContent = t.restructureStaff.replace('{n}', staff + 1);
-        row.appendChild(label);
-      } else row.classList.add('is-single');
+        const name = document.createElement('p');
+        name.className = 'score-restructure-staff-name';
+        name.textContent = t.restructureStaff.replace('{n}', staff + 1);
+        list.appendChild(name);
+      }
       legends.forEach((n) => {
-        const dot = toggleButton(voiceDot(n, 'button'), (on) => {
+        const { row, box } = checkRow(t.restructureVoice.replace('{n}', n), false, (on) => {
           // Una sola voz de origen a la vez: elegir en otro pentagrama reemplaza lo elegido.
           if (from !== staff) {
             selected.clear();
-            rows.forEach((other) => other.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', 'false')));
+            boxes.forEach((other) => { if (other !== box) other.checked = false; });
             from = staff;
-            dot.setAttribute('aria-pressed', String(on));
           }
           if (on) selected.add(n); else selected.delete(n);
           split.disabled = !selected.size || selected.size >= legends.length;
         });
-        dot.setAttribute('aria-label', t.restructureVoice.replace('{n}', n));
-        row.appendChild(dot);
+        row.dataset.voice = String(n);
+        boxes.push(box);
+        list.appendChild(row);
       });
-      rows.push(row);
-      list.appendChild(row);
     });
     split.addEventListener('click', () => {
       const staff = from, chosen = [...selected];
@@ -5254,7 +5243,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     chordNamesButton.remove();
     if (proChordNames && toolOn('voices', false) && toolOn('intervals', false)) stage.appendChild(chordNamesButton);
     chordNamesButton.setAttribute('aria-pressed', String(chordNameDocuments.has(score)));
-    [[joinButton, joinPopup], [splitButton, splitPopup]].forEach(([button, popup]) => {
+    [[splitButton, splitPopup], [joinButton, joinPopup]].forEach(([button, popup]) => {
       button.remove();
       if (settings && toolOn('voices', false) && M.restructurable(score)) stage.appendChild(button);
       else if (popup.matches(':popover-open')) popup.hidePopover();
