@@ -417,7 +417,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // Duplica a una tercera diatonica en una voz independiente, continuando la vecina si esta libre.
-  function duplicateVertical(score, refs, delta, stack = false) {
+  function duplicateVertical(score, refs, delta, stack = false, steps = 2) {
     if (delta !== 1 && delta !== -1) return null;
     const trial = clone(score);
     const chosen = refs.filter((r, i) => measures(trial, staffOf(r))[r.mi]?.[r.i] &&
@@ -465,7 +465,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
           if (!tuplets.has(ev.tp)) tuplets.set(ev.tp, ++nextTuplet);
           ev.tp = tuplets.get(ev.tp);
         }
-        if (Number.isInteger(ev.n)) ev.n += 2 * delta;
+        if (Number.isInteger(ev.n)) ev.n += steps * delta;
         delete ev.tie;
         delete ev.slur;
         const link = included.find((l) => sameRef(l.from, ref));
@@ -499,10 +499,10 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return [...found].sort((x, y) => x - y);
   }
 
-  // Duplica las voces `voices` (por defecto la superior) de toda la partitura una tercera diatonica abajo. Con varias,
+  // Duplica las voces `voices` (por defecto la superior) de toda la partitura `steps` pasos diatonicos abajo (2: una tercera; 5: una sexta). Con varias,
   // las copias quedan juntas bajo la mas grave de las elegidas en cada compas. Devuelve las figuras creadas, o null
   // (sin tocar la partitura) si alguna no entra.
-  function duplicateVoice(score, voices = null) {
+  function duplicateVoice(score, voices = null, steps = 2) {
     const trial = clone(score);
     const refs = [];
     for (let staff = 0; staff < stavesOf(trial); staff += 1) {
@@ -513,7 +513,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         measure.forEach((ev, i) => { if (chosen.has(ev.v)) refs.push(refOf(staff, mi, i)); });
       });
     }
-    const created = refs.length ? duplicateVertical(trial, refs, -1, true) : null;
+    const created = refs.length ? duplicateVertical(trial, refs, -1, true, steps) : null;
     if (!created?.length) return null;
     Object.assign(score, trial);
     return created;

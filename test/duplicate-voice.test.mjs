@@ -40,6 +40,13 @@ test('a single chosen voice is copied right below itself', () => {
   assert.deepEqual([1, 2, 3].map(byVoice), [[40], [38], [30]]);
 });
 
+test('duplicates the top voice a sixth below (five diatonic steps)', () => {
+  const score = M.emptyScore();
+  score.rows[0][0] = [37, 40, 39, 38].map((n) => ({ d: 'q', n }));
+  M.duplicateVoice(score, null, 5);
+  assert.deepEqual(score.rows[0][0].filter((ev) => ev.v === 2).map((ev) => ev.n), [32, 35, 34, 33]);
+});
+
 test('leaves the score untouched when nothing can be duplicated', () => {
   const score = M.emptyScore();
   const before = JSON.stringify(score);
