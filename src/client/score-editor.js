@@ -5245,7 +5245,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     chordNamesButton.setAttribute('aria-pressed', String(chordNameDocuments.has(score)));
     [[splitButton, splitPopup], [joinButton, joinPopup]].forEach(([button, popup]) => {
       button.remove();
-      if (settings && toolOn('voices', false) && M.restructurable(score)) stage.appendChild(button);
+      if (settings && isPro() && toolOn('voices', false) && M.restructurable(score)) stage.appendChild(button);
       else if (popup.matches(':popover-open')) popup.hidePopover();
     });
     if (duplicateVoiceButtons.length) {
@@ -5753,7 +5753,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           icons.appendChild(swatch);
         });
         // Pro: unir y separar voces son herramientas de esta categoria, sin casilla propia.
-        if (M.choir) {
+        if (M.choir && isPro()) {
           [['merge', t.restructureJoin], ['split', t.restructureSplit]].forEach(([name, label]) => {
             const icon = document.createElement('span');
             icon.className = 'score-settings-icon';
@@ -5998,6 +5998,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       refreshTonic();
       guitarCard.hidden = !M.choir || M.instrumentOf(score) !== 'guitar';
       partsSlider.value = String(M.partsOf(score));
+      // Cambiar la cantidad de voces es Pro; sin #pro (p. ej. en una demo) el control se ve pero no se mueve.
+      partsSlider.disabled = !isPro();
       showParts();
       guitarPartsSlider.value = String(M.guitarPartsOf(score));
       showGuitarParts();
