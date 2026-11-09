@@ -177,7 +177,7 @@
     "restructureStaff": "Pauta {n}",
     "restructureVoice": "Voz {n}",
     "restructureNoJoin": "Há só uma pauta, não há nada para unir",
-    "restructureSplitHint": "As vozes escolhidas passam para uma pauta nova; ao menos uma fica na original.",
+    "restructureSplitHint": "Somente as vozes que você escolher passarão para pautas novas.",
     "restructureNoSplit": "Nenhuma pauta tem várias vozes para separar",
     "restructureFailed": "Não foi possível: as vozes não cabem, tocariam a mesma nota ao mesmo tempo ou não há lugar para outra pauta",
     "intervalsVoices": "Entre as vozes",

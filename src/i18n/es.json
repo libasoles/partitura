@@ -173,7 +173,7 @@
     "restructureStaff": "Pentagrama {n}",
     "restructureVoice": "Voz {n}",
     "restructureNoJoin": "Hay un solo pentagrama: no hay nada que unir",
-    "restructureSplitHint": "Las voces elegidas pasan a un pentagrama nuevo; al menos una queda en el original.",
+    "restructureSplitHint": "Solo las voces que elijas se pasarán a pentagramas nuevos.",
     "restructureNoSplit": "Ningún pentagrama tiene varias voces para separar",
     "restructureFailed": "No se pudo: las voces no entran, tocarían la misma nota a la vez o no hay lugar para otro pentagrama",
     "intervalsVoices": "Voces entre sí",

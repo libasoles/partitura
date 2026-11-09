@@ -27,21 +27,25 @@ test('Pro: the voices category offers join and split, asking which staves or voi
   await button.click();
   const popup = page.locator('#scoreJoinPopup');
   await expect(popup).toBeVisible();
-  // Nothing happens until two staves are chosen.
   const join = popup.getByRole('button', { name: 'Unir', exact: true });
+  // Every staff starts chosen; with fewer than two there is nothing to join.
+  await expect(popup.locator('.score-restructure-row input:checked')).toHaveCount(3);
+  await expect(join).toBeEnabled();
+  await popup.locator('.score-restructure-row[data-staff="0"] input').uncheck();
+  await popup.locator('.score-restructure-row[data-staff="1"] input').uncheck();
   await expect(join).toBeDisabled();
-  await popup.locator('.score-restructure-staff[data-staff="1"]').click();
-  await expect(join).toBeDisabled();
-  await popup.locator('.score-restructure-staff[data-staff="2"]').click();
+  await popup.locator('.score-restructure-row[data-staff="1"] input').check();
   await join.click();
   await expect(staves(page)).toHaveCount(2);
   // The joined staff now has two voices (2 and 3) that can be told apart again.
   const splitPopup = page.locator('#scoreSplitPopup');
   await page.locator('#scoreSplit').click();
-  await expect(splitPopup.locator('.score-restructure-row button')).toHaveCount(2);
+  await expect(splitPopup.locator('.score-restructure-row input')).toHaveCount(2);
   const split = splitPopup.getByRole('button', { name: 'Separar', exact: true });
+  // Nothing starts chosen.
+  await expect(splitPopup.locator('.score-restructure-row input:checked')).toHaveCount(0);
   await expect(split).toBeDisabled();
-  await splitPopup.locator('.score-restructure-row button[data-voice="3"]').click();
+  await splitPopup.locator('.score-restructure-row[data-voice="3"] input').check();
   await split.click();
   await expect(staves(page)).toHaveCount(3);
   expect(errors).toEqual([]);
