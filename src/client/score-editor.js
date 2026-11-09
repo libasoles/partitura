@@ -5054,7 +5054,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   chordNamesButton.id = 'scoreChordNames';
   chordNamesButton.className = 'score-palette-item score-interval-toggle score-chord-names-toggle tooltip';
   chordNamesButton.type = 'button';
-  chordNamesButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4l5 16 5-16"/><path stroke-width="1.7" d="M16 9a2.5 2.5 0 1 0 5 0 2.5 2.5 0 1 0-5 0M16 9c0-3 1.5-5 4.5-5.5"/></svg>';
+  chordNamesButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><text x="2" y="18" font-family="system-ui, sans-serif" font-size="14" font-weight="700">G</text><text x="13.5" y="11.5" font-family="system-ui, sans-serif" font-size="9.5" font-weight="700">7</text></svg>';
   chordNamesButton.dataset.tooltip = t.toolsChordNamesTooltip;
   chordNamesButton.setAttribute('aria-label', t.toolsChordNamesTooltip);
   chordNamesButton.setAttribute('aria-pressed', 'false');
