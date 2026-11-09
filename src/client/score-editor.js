@@ -4794,7 +4794,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
       if (request !== previewRequest || playbackState === 'playing') return;
       player ||= createPlayer(audioContext, vendorUrl, resetPlayback);
-      await player.preview(M.clone(score), M, midi, seconds);
+      await player.preview(M.clone(score), M, midi, seconds, () => request === previewRequest && playbackState !== 'playing' && playbackState !== 'loading');
     } catch (error) { /* a missing sample or blocked audio just stays silent */ }
   }
 

@@ -23,11 +23,12 @@ async function open(page) {
 }
 
 test('selecting a single note sounds it, and selecting a rest does not', async ({ page }) => {
+  const heard = () => page.evaluate(() => window.audioStarts.length);
   await open(page);
-  await page.locator('#scoreStage g.note').first().click();
-  await expect.poll(() => page.evaluate(() => window.audioStarts.length)).toBeGreaterThan(0);
-  const heard = await page.evaluate(() => window.audioStarts.length);
-  await page.locator('#scoreStage g.rest').first().click();
-  await page.waitForTimeout(500);
-  expect(await page.evaluate(() => window.audioStarts.length)).toBe(heard);
+  await page.locator('[id="e0-0"] .notehead').click();
+  await expect.poll(heard, { intervals: [200] }).toBeGreaterThan(0);
+  const before = await heard();
+  await page.locator('[id="e0-1"]').first().click({ force: true, timeout: 5000 });
+  await page.waitForTimeout(700);
+  expect(await heard()).toBe(before);
 });

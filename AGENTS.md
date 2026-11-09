@@ -86,6 +86,8 @@
 
 Con voces elegidas en la leyenda y la herramienta Voces activa, play reproduce solo esas voces en ambos pentagramas; sin voces elegidas reproduce todas. Cambiar la selección de voces no interrumpe: sigue sonando desde la misma posición con las voces nuevas. El filtro no afecta al MIDI exportado.
 
+**Audición al seleccionar**: elegir una única nota (no un silencio, un grupo, un acorde ni una sílaba) la hace sonar, aunque Reproducción esté apagada (`previewSelectedNote` en `score-editor.js`, disparada desde `rememberPlaybackSelection`; `player.preview` en `score-playback.js`). Dura lo que la figura, entre 0,4 y 1,5 s; no toca el cronograma, no suena durante play y pulsar play la corta. Test: `test/select-sound.spec.mjs`.
+
 ### Puntillo
 
 - Un doble click sobre una nota, sin herramienta activa, cicla el puntillo: uno, doble y ninguno (`applyModifier`, `kind: 'dot'`; si el doble no entra, vuelve a ninguno). Un click simple no puntúa; los silencios no se puntúan con doble click. La tecla <kbd>P</kbd> sigue aplicándolo con la herramienta.

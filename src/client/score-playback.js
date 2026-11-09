@@ -140,10 +140,10 @@ export function createPlayer(context, vendorUrl, onEnded) {
       timer = setTimeout(() => { silence(); position = 0; onEnded(); }, Math.max(0, origin + duration - context.currentTime) * 1000);
     },
     // A short audition of one pitch; it never touches the running schedule.
-    async preview(score, M, midi, seconds) {
+    async preview(score, M, midi, seconds, current = () => true) {
       const notes = [{ midi, start: 0, end: seconds }];
       const { samples, shape } = await loadSamples(score, M, notes);
-      sound(notes, samples, shape, context.currentTime + 0.02, 0);
+      if (current()) sound(notes, samples, shape, context.currentTime + 0.02, 0);
     },
     // Replace the schedule without changing whether playback is running or paused.
     replace(track, from) {
