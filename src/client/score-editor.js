@@ -5026,6 +5026,31 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     event.preventDefault();
     if (!event.repeat) playButton.click();
   });
+  // Enter sends the play position back to the start, only with nothing selected and outside text fields and controls.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.defaultPrevented || event.repeat || playButton.hidden) return;
+    if (event.target.closest('input, textarea, select, [contenteditable], ascii-tabs, [popover]:popover-open, [role="dialog"], button, a')) return;
+    if (playbackState === 'loading' || activeItem || picks().length || selectedChords.length || selectedNavigation.length || selectedLink || selectedBeam || selectedHairpin || selectedMeasure !== null) return;
+    event.preventDefault();
+    rememberPlaybackMeasure(0, 0);
+    clearPlaybackHint();
+    playbackSelectionPosition = null;
+    if (playbackState === 'playing') {
+      player.play(playbackTrack, 0);
+      playbackSelectionPosition = 0;
+      if (playbackState === 'playing') animatePlayback();
+      return;
+    }
+    // Paused or idle: forget the old position and mark the start; play begins there.
+    resetPlayback();
+    if (!layout[0]) return;
+    playbackHintPosition = { document: score, mi: 0, ratio: 0 };
+    playbackHint = document.createElement('span');
+    playbackHint.className = 'score-playback-hint';
+    playbackHint.setAttribute('aria-hidden', 'true');
+    playbackHint.dataset.measure = '0';
+    drawPlaybackHint();
+  });
   window.addEventListener('pagehide', resetPlayback);
 
   // The analysis toggle is a view preference for each open document.
