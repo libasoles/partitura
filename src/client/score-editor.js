@@ -4495,8 +4495,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- paleta -------------------------------------------------------------
 
   const ICONS = {
-    'third-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17" y="20" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" stroke="none">3</text>',
-    'sixth-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17" y="20" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" stroke="none">6</text>',
+    'third-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17.5" y="19.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor" stroke="none">3</text>',
+    'sixth-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17.5" y="19.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor" stroke="none">6</text>',
     merge: '<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
     split: '<path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.828L3 3"/><path d="m15 9 6-6"/>',
     play: '<polygon points="6 3 20 12 6 21 6 3"/>',
