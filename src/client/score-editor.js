@@ -5621,8 +5621,18 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const value = document.createElement('output');
       value.className = 'score-settings-tempo-value';
       const show = () => { value.textContent = t.partsValue.replace('{n}', slider.value); };
-      slider.addEventListener('input', show);
-      slider.addEventListener('change', () => { change(() => apply(score, Number(slider.value))); sync(); });
+      // Los pentagramas cambian mientras se arrastra; todo el arrastre queda como un solo paso para deshacer.
+      let dragged = false;
+      slider.addEventListener('input', () => {
+        show();
+        const parts = Number(slider.value);
+        if (parts === M.stavesOf(score)) return;
+        if (!change(() => apply(score, parts))) return;
+        if (dragged) history.pop();
+        dragged = true;
+        sync();
+      });
+      slider.addEventListener('change', () => { dragged = false; });
       const line = document.createElement('div');
       line.className = 'score-settings-slider-line';
       line.append(slider, value);
