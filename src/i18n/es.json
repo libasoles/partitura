@@ -156,6 +156,8 @@
     "toolsDynamics": "Dinámica",
     "voiceDuplicate": "Duplicar voz a una tercera abajo",
     "voiceDuplicateTooltip": "Crea una voz una tercera debajo de la que elijas, en toda la partitura",
+    "voiceDuplicateSixth": "Duplicar voz a una sexta abajo",
+    "voiceDuplicateSixthTooltip": "Crea una voz una sexta debajo de la que elijas, en toda la partitura",
     "voiceDuplicatePick": "Voces a duplicar",
     "voiceDuplicateConfirm": "Duplicar",
     "voiceDuplicateUnavailable": "No se puede duplicar la voz: alguna nota quedaría fuera de rango o sin lugar.",

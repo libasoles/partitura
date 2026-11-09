@@ -160,6 +160,8 @@
     "toolsDynamics": "Dynamics",
     "voiceDuplicate": "Duplicate voice a third below",
     "voiceDuplicateTooltip": "Creates a voice a third below the one you choose, across the whole score",
+    "voiceDuplicateSixth": "Duplicate voice a sixth below",
+    "voiceDuplicateSixthTooltip": "Creates a voice a sixth below the one you choose, across the whole score",
     "voiceDuplicatePick": "Voices to duplicate",
     "voiceDuplicateConfirm": "Duplicate",
     "voiceDuplicateUnavailable": "The voice cannot be duplicated: a note would fall out of range or have no room.",
