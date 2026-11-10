@@ -1017,8 +1017,26 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       // el hueco. Hasta representar esas esperas explicitamente, conservar la escritura.
       if (kept.some(item => item.ev.v !== moved.v && planned[trial.indexOf(item.ev)] !== item.at)) return say(t.keepVoiceTiming);
     }
+    // Soltada mas a la derecha de donde terminaria su voz, la nota conserva ese lugar: el compas es una sucesion de
+    // duraciones, asi que el hueco se llena con silencios (sin ellos la figura se pegaria a la anterior).
+    const probe = destination.filter((o) => o !== ev).map((o) => M.clone(o));
+    const probed = M.clone(moved);
+    const probedAt = M.insertAt(probe, probed, spot.at);
+    const gap = Math.max(0, spot.at - M.onsets(probe)[probedAt]);
     change(() => {
       source[from.mi].splice(from.i, 1);
+      if (gap > 0) {
+        let at = spot.at - gap;
+        for (let left = gap; left > 0;) {
+          const d = ['w', 'h', 'q', 'e', 's', 'f'].find((k) => M.VALUES[k] <= left);
+          if (!d) break;
+          const rest = { d, rest: true };
+          if (Number.isInteger(moved.v)) rest.v = moved.v;
+          M.insertAt(destination, rest, at);
+          at += M.VALUES[d];
+          left -= M.VALUES[d];
+        }
+      }
       // Alinear con otra columna no convierte la nota movida en parte de su acorde.
       selected = M.refOf(target.staff, target.mi, M.insertAt(destination, moved, spot.at));
       group = [];
