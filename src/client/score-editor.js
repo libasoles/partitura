@@ -4868,6 +4868,36 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     } catch (error) { /* a missing sample or blocked audio just stays silent */ }
   }
 
+  // Space with figures selected sounds them (together or in sequence, as written) instead of toggling playback.
+  function playSelectedNotes() {
+    const refs = picks().filter((ref) => { const event = eventAt(ref); return event && !event.rest; });
+    if (!refs.length || lyricOnly || selectedChords.length) return false;
+    const seconds = 60 / (score.tempo || 120) / M.DIVISIONS;
+    const notes = refs.map((ref) => ({
+      midi: measurePitches(score, M, laneOf(ref)[ref.mi], ref.mi)[ref.i]?.midi,
+      start: measureOffset(0, ref.mi) + M.onsets(laneOf(ref)[ref.mi])[ref.i],
+      end: 0,
+      length: M.length(eventAt(ref)),
+    })).filter((note) => note.midi !== undefined);
+    if (!notes.length) return false;
+    const first = Math.min(...notes.map((note) => note.start));
+    const heard = notes.map((note) => ({ midi: note.midi, start: (note.start - first) * seconds, end: (note.start - first + note.length) * seconds }));
+    const total = Math.max(...heard.map((note) => note.end));
+    const scale = total > 4 ? 4 / total : 1;
+    heard.forEach((note) => { note.start *= scale; note.end = Math.max(note.start + 0.3, note.end * scale); });
+    const request = ++previewRequest;
+    (async () => {
+      try {
+        audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+        const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
+        if (request !== previewRequest) return;
+        player ||= createPlayer(audioContext, vendorUrl, resetPlayback);
+        await player.preview(M.clone(score), M, heard, 0, () => request === previewRequest);
+      } catch (error) { /* silent */ }
+    })();
+    return true;
+  }
+
   function playbackOffset(mi, at = 0) {
     return (measureOffset(0, mi) + at) * 60 / (score.tempo || 120) / M.DIVISIONS;
   }
@@ -5107,8 +5137,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
   });
   document.addEventListener('keydown', (event) => {
-    if (event.code !== 'Space' || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.defaultPrevented || playButton.hidden) return;
+    if (event.code !== 'Space' || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.defaultPrevented) return;
     if (event.target.closest('input, textarea, select, [contenteditable], ascii-tabs, [popover]:popover-open, [role="dialog"], button, a')) return;
+    if (activeItem) return;
+    if (playbackState !== 'playing' && playbackState !== 'loading' && picks().length && !event.repeat) {
+      event.preventDefault();
+      if (playSelectedNotes()) return;
+    }
+    if (playButton.hidden) return;
     event.preventDefault();
     if (!event.repeat) playButton.click();
   });

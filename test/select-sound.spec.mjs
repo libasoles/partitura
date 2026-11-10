@@ -22,6 +22,17 @@ async function open(page) {
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
 }
 
+test('Space sounds the selected notes', async ({ page }) => {
+  const heard = () => page.evaluate(() => window.audioStarts.length);
+  await open(page);
+  await page.locator('[id="e0-0"] .notehead').click();
+  await expect.poll(heard, { intervals: [200] }).toBeGreaterThan(0);
+  await page.waitForTimeout(300);
+  const before = await heard();
+  await page.keyboard.press('Space');
+  await expect.poll(heard, { intervals: [200] }).toBeGreaterThan(before);
+});
+
 test('selecting a single note sounds it, and selecting a rest does not', async ({ page }) => {
   const heard = () => page.evaluate(() => window.audioStarts.length);
   await open(page);

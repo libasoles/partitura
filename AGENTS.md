@@ -88,7 +88,7 @@
 
 Con voces elegidas en la leyenda y la herramienta Voces activa, play reproduce solo esas voces en ambos pentagramas; sin voces elegidas reproduce todas. Cambiar la selección de voces no interrumpe: sigue sonando desde la misma posición con las voces nuevas. El filtro no afecta al MIDI exportado.
 
-**Audición al seleccionar**: elegir una única nota (no un silencio, un grupo, un acorde ni una sílaba) la hace sonar, aunque Reproducción esté apagada (`previewSelectedNote` en `score-editor.js`, disparada desde `rememberPlaybackSelection`; `player.preview` en `score-playback.js`). Dura lo que la figura, entre 0,4 y 1,5 s; no toca el cronograma, no suena durante play y pulsar play la corta. Test: `test/select-sound.spec.mjs`.
+**Audición al seleccionar**: elegir una única nota (no un silencio, un grupo, un acorde ni una sílaba) la hace sonar, aunque Reproducción esté apagada (`previewSelectedNote` en `score-editor.js`, disparada desde `rememberPlaybackSelection`; `player.preview` en `score-playback.js`). Dura lo que la figura, entre 0,4 y 1,5 s; no toca el cronograma, no suena durante play y pulsar play la corta. **Espacio con figuras elegidas** las hace sonar (`playSelectedNotes`: juntas o en secuencia según su posición, máx. 4 s), también con Reproducción apagada; sin selección alterna play/pausa, y durante play sigue pausando. Test: `test/select-sound.spec.mjs`.
 
 ### Puntillo
 
