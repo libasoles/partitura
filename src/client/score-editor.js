@@ -4964,7 +4964,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       tempo = score.tempo || 120;
       track = await player.prepare(M.clone(score), M, toolOn('voices', false) ? shownVoices : null, VOICE_COUNT);
     } while (request === playbackRequest && (sound !== M.soundOf(score) || tempo !== (score.tempo || 120)));
-    return { ...track, sound, tempo };
+    return { ...track, sound, tempo, transpose: M.transposeOf(score) };
   }
   async function refreshPlaybackTrack() {
     const request = ++playbackRequest;
@@ -5005,7 +5005,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
       if (request !== playbackRequest) return;
       player ||= createPlayer(audioContext, vendorUrl, resetPlayback);
-      const track = playbackTrack?.sound === M.soundOf(score) && playbackTrack.tempo === (score.tempo || 120) ? playbackTrack : await preparePlaybackTrack(request);
+      const track = playbackTrack?.sound === M.soundOf(score) && playbackTrack.tempo === (score.tempo || 120) && playbackTrack.transpose === M.transposeOf(score) ? playbackTrack : await preparePlaybackTrack(request);
       if (request !== playbackRequest) return;
       playbackTrack = track;
       playbackState = 'playing';
@@ -5731,6 +5731,27 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     tempoRow.classList.add('is-stacked');
     tempoRow.append(sliderLine, tempoField);
 
+    // Transposicion (Pro): corta, como el control de voces; solo cambia lo que suena y el MIDI, no la notacion.
+    const transposeRow = section(t.settingsTranspose);
+    transposeRow.parentElement.classList.add('is-inline', 'score-settings-transpose');
+    transposeRow.parentElement.hidden = !isPro();
+    const transposeSlider = document.createElement('input');
+    transposeSlider.type = 'range';
+    transposeSlider.className = 'score-settings-slider';
+    transposeSlider.min = String(-M.MAX_TRANSPOSE);
+    transposeSlider.max = String(M.MAX_TRANSPOSE);
+    transposeSlider.step = '1';
+    transposeSlider.setAttribute('aria-label', t.settingsTranspose + ' (' + t.transposeUnit + ')');
+    const transposeValue = document.createElement('output');
+    transposeValue.className = 'score-settings-tempo-value';
+    const showTranspose = () => { const n = Number(transposeSlider.value); transposeValue.textContent = (n > 0 ? '+' : '') + n; };
+    transposeSlider.addEventListener('input', showTranspose);
+    transposeSlider.addEventListener('change', () => { change(() => M.setTranspose(score, Number(transposeSlider.value))); sync(); });
+    const transposeLine = document.createElement('div');
+    transposeLine.className = 'score-settings-slider-line';
+    transposeLine.append(transposeSlider, transposeValue);
+    transposeRow.appendChild(transposeLine);
+
     // Cada categoria de herramientas se activa con una casilla y muestra debajo sus iconos.
     const categories = [
       ['repeats', t.toolsRepeats, (item) => item.kind === 'bar' || item.kind === 'navigation'],
@@ -6031,6 +6052,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       tempoSlider.value = String(score.tempo || 120);
       showTempo();
       tempoNone.checked = !score.tempo;
+      transposeSlider.value = String(M.transposeOf(score));
+      showTranspose();
       checks.forEach(([name, check, fallback]) => { check.checked = toolOn(name, fallback); });
     }
 

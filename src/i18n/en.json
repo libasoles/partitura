@@ -155,6 +155,8 @@
     "settingsTempo": "Tempo",
     "tempoNone": "None",
     "tempoUnit": "quarter notes per minute",
+    "settingsTranspose": "Transpose",
+    "transposeUnit": "semitones",
     "settingsTools": "Tools",
     "toolsRepeats": "Repeats",
     "toolsDynamics": "Dynamics",

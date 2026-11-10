@@ -20,6 +20,7 @@ export function measurePitches(score, M, measure, mi) {
 
 export function soundingNotes(score, M, selectedVoices, voiceCount = 4) {
   const sounding = [];
+  const shift = M.transposeOf(score);
   // Cada pentagrama suena en su canal, para que dos notas iguales de los dos no se corten entre si.
   const staves = M.stavesOf(score);
   for (let staff = 0; staff < staves; staff += 1) {
@@ -33,7 +34,7 @@ export function soundingNotes(score, M, selectedVoices, voiceCount = 4) {
       measure.map((_, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
         const ev = measure[i];
         if (ev.rest || (included && !included.has(i))) return;
-        const midi = pitches[i].midi;
+        const midi = pitches[i].midi + shift;
         const start = origin + starts[i];
         const size = M.length(ev);
         let note = tied.get(midi);
