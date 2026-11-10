@@ -864,20 +864,32 @@
         "Create score folders to keep them organized."
       ],
       [
-        "Song lyrics",
-        "Add a line of lyrics below the melody."
+        "Songs with several voices",
+        "Choose how many voices the song has, from 1 to 4: each one gets its own staff."
       ],
       [
-        "Sharing",
-        "Share songs publicly with a link."
+        "Separate voices",
+        "Move the voices you choose from one staff onto a new one."
+      ],
+      [
+        "Join staves",
+        "Gather several staves into one, with each voice in its place."
+      ],
+      [
+        "Song lyrics",
+        "Add a line of lyrics below the melody."
       ],
       [
         "Duplicate scores",
         "Duplicate a score to try variations without losing the original."
       ],
       [
-        "Voice separation across multiple staves",
-        "Split each voice onto its own staff."
+        "Close tabs",
+        "Close the scores you are not using: they are not deleted and you can reopen them from the menu."
+      ],
+      [
+        "Sharing",
+        "Share songs publicly with a link."
       ]
     ],
     "plansTitle": "Choose your plan",

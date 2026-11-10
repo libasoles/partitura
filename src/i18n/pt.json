@@ -864,20 +864,32 @@
         "Crie pastas de partituras para mantê-las organizadas."
       ],
       [
-        "Letra de músicas",
-        "Adicione uma linha de letra abaixo da melodia."
+        "Músicas com várias vozes",
+        "Escolha quantas vozes a música tem, de 1 a 4: cada uma tem seu próprio pentagrama."
       ],
       [
-        "Compartilhar",
-        "Compartilhe músicas publicamente com um link."
+        "Separar vozes",
+        "Passe as vozes que escolher de um pentagrama para um novo."
+      ],
+      [
+        "Unir pentagramas",
+        "Reúna vários pentagramas em um só, com cada voz no seu lugar."
+      ],
+      [
+        "Letra de músicas",
+        "Adicione uma linha de letra abaixo da melodia."
       ],
       [
         "Duplicar partituras",
         "Duplique uma partitura para testar variações sem perder a original."
       ],
       [
-        "Separação de vozes em múltiplos pentagramas",
-        "Separe cada voz em seu próprio pentagrama."
+        "Fechar abas",
+        "Feche as partituras que não está usando: elas não são apagadas e você as abre de novo pelo menu."
+      ],
+      [
+        "Compartilhar",
+        "Compartilhe músicas publicamente com um link."
       ]
     ],
     "plansTitle": "Escolha seu plano",

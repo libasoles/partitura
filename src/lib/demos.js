@@ -1276,3 +1276,149 @@ function lyricMergeDemo(s, aria, id, count) {
 
 export const lyricMerge = (s, aria) => lyricMergeDemo(s, aria, 'lyric-merge', 2);
 export const lyricMergeThree = (s, aria) => lyricMergeDemo(s, aria, 'lyric-merge3', 3);
+
+// ----- Pro: closing tabs, duplicating, voices on several staves -------------------------------------------------------------
+
+/** The tab strip of the editor: grey tabs and the active one as an open page. */
+function tabStrip(d, { W = 74, x0 = 8, baseline = 30 } = {}) {
+  d.base(`<path d="M${x0} ${baseline}H${d.w - x0}" stroke="var(--rule)" stroke-width="1" fill="none"/>`);
+  const frame = `<path d="M0 ${baseline + 0.5}V8H${W - 9}a9 9 0 0 1 9 9V${baseline + 0.5}" fill="var(--paper)" stroke="var(--rule)" stroke-width="1"/><path d="M1 ${baseline}H${W - 1}" stroke="var(--paper)" stroke-width="2"/>`;
+  const label = (n, active) => `<text class="d-text" x="${W / 2 - 5}" y="19" text-anchor="middle" font-size="${active ? 8.6 : 8.2}" font-weight="${active ? 700 : 400}" style="fill:${active ? 'var(--ink)' : 'var(--ink-soft)'}">${n}</text>`;
+  const cross = `<g transform="translate(${W - 10} 15) scale(0.4) translate(-12 -12)" fill="none" stroke="var(--ink-soft)" stroke-width="2.6" stroke-linecap="round">${tutorialIconPaths('x')}</g>`;
+  return { W, tabX: (i) => x0 + i * (W + 3), frame, label, cross };
+}
+
+/** Visible between the given [on, off] spans of the loop. */
+function spans(d, ...list) {
+  const stops = [[0, { o: 0 }]];
+  list.forEach(([on, off]) => stops.push([on, { o: 0 }], [on + 0.2, { o: 1 }], [off ?? d.T - 0.7, { o: 1 }], [(off ?? d.T - 0.7) + 0.2, { o: 0 }]));
+  return stops;
+}
+
+/** Closing a tab: the X of a tab is pressed and the tab goes away (the score is kept; only its tab closes). */
+export function closeTab(s, aria) {
+  const d = stage({ id: 'pro-close-tab', T: 10, h: 110, bottom: 96, staff: false });
+  const { W, tabX, frame, label, cross } = tabStrip(d);
+  const name = (n) => `${s.scoreH1} ${n}`;
+  d.add(tabX(0), 0, frame + label(name(1), true) + cross, spans(d, [0]));
+  d.add(tabX(1), 0, label(name(2), false) + cross, spans(d, [0, 4.4]));
+  d.base(d.lines(18, d.x1 - 12, d.bottom - 4 * SP));
+  ['E4', 'G4', 'A4', 'G4'].forEach((n, i) => d.note(48 + i * 36, pitch(n), 'q', d.life(0.05)));
+  const cx = tabX(1) + W - 10;
+  d.click(3.4, cx, 15);
+  d.pointer([[0.6, d.w - 40, d.h - 20], ...visit(3.4, cx, 15), [6.8, d.w - 40, d.h - 20]]);
+  return d.html(aria);
+}
+
+/** Duplicating a score: the button under the trash opens a copy of the open score in a new tab. */
+export function duplicateScore(s, aria) {
+  const d = stage({ id: 'pro-duplicate-score', T: 12, h: 116, bottom: 96, staff: false });
+  const { tabX, frame, label } = tabStrip(d, { W: 96 });
+  const first = `${s.scoreH1} 1`;
+  const copy = `${first} ${s.scoreUiStrings.duplicateSuffix}`;
+  // Tab 1 is active until the copy opens at 4.2; then it turns grey and the copy takes the page.
+  d.add(tabX(0), 0, frame + label(first, true), spans(d, [0, 4.2]));
+  d.add(tabX(0), 0, label(first, false), spans(d, [4.2]), { keep: false });
+  d.add(tabX(1), 0, frame + label(copy, true), spans(d, [4.2]), { keep: false });
+  d.base(d.lines(18, d.x1 - 46, d.bottom - 4 * SP));
+  const names = ['E4', 'G4', 'A4', 'G4'];
+  names.forEach((n, i) => d.note(48 + i * 36, pitch(n), 'q', d.life(0.05, 4.2)));
+  names.forEach((n, i) => d.note(48 + i * 36, pitch(n), 'q', d.life(4.2), { keep: false }));
+  // The duplicate button, a Lucide copy icon in the toolbar on the right.
+  const btn = { x: d.w - 20, y: 62 };
+  d.base(`<rect class="d-panel" x="${btn.x - 15}" y="${btn.y - 20}" width="30" height="34" rx="6"/><rect class="d-toolbtn" x="${btn.x - 13}" y="${btn.y - 18}" width="26" height="26" rx="5"/>` +
+    `<g transform="translate(${btn.x} ${btn.y - 5})" style="color:var(--ink)">${ico('copy', 13)}</g>`);
+  d.click(3.4, btn.x, btn.y - 5);
+  d.pointer([[0.8, d.w - 60, d.h - 18], ...visit(3.4, btn.x, btn.y - 5), [8, d.w - 60, d.h - 18]]);
+  return d.html(aria);
+}
+
+/**
+ * Join or split staves. Join: two staves become one staff with both voices. Split: the reverse. The button opens its
+ * popup, a box is ticked and the action button applies it.
+ */
+function restructure(s, aria, join) {
+  const u = s.scoreUiStrings;
+  const d = stage({ id: join ? 'pro-join-staves' : 'pro-split-voices', T: 13, h: 156, bottom: 52, staff: false });
+  const top = d.bottom - 4 * SP;
+  const lowTop = top + 54;
+  const lowBottom = lowTop + 4 * SP;
+  const lowY = (p) => lowBottom - (p * SP) / 2;
+  const APPLY = 7.2;
+  const melody = ['G4', 'A4', 'B4', 'A4'];
+  const bass = ['E4', 'E4', 'F4', 'E4'];
+  const xs = [0, 1, 2, 3].map((i) => d.firstX - 24 + i * 40);
+  const staffBase = (t) => d.lines(d.x0, d.x1, t) + glyph('E050', d.x0 + 18, t + 3 * SP) + `<path class="d-bar" d="M${d.x0} ${t}V${t + 4 * SP}M${d.x1} ${t}V${t + 4 * SP}" stroke-width="1.1"/>`;
+  d.base(staffBase(top));
+  xs.forEach((x, i) => d.note(x, pitch(melody[i]), 'q', S(d.life(0.05), [[0, { c: VOICE[0] }]]), { stemDown: false }));
+  // The lower voice lives on its own staff before the join / after the split, and on the top staff otherwise.
+  const apart = join ? d.life(0.05, APPLY, 0.2) : d.pop(APPLY + 0.1);
+  const together = join ? d.pop(APPLY + 0.1) : d.life(0.05, APPLY, 0.2);
+  d.add(0, 0, staffBase(lowTop), apart, { keep: join });
+  xs.forEach((x, i) => {
+    d.add(x, lowY(pitch(bass[i])), noteInner(pitch(bass[i]), 'q', { stemDown: false }), S(apart, [[0, { c: VOICE[1] }]]), { keep: join });
+    d.note(x, pitch(bass[i]), 'q', S(together, [[0, { c: VOICE[1] }]]), { stemDown: true, keep: !join });
+  });
+  // The button and its popup, with one check box per staff (join) or per voice (split).
+  const label = join ? u.restructureJoin : u.restructureSplit;
+  const action = join ? u.restructureJoinAction : u.restructureSplitAction;
+  const row = (n) => (join ? u.restructureStaff : u.restructureVoice).replace('{n}', n);
+  const btn = { x: 66, y: 142 };
+  d.add(btn.x, btn.y, pillInner(label, { size: 8, icon: tutorialIcon(join ? 'merge' : 'split') }), [[0, { o: 1 }]]);
+  const pop = { x: 150, y: 58 };
+  const rows = [1, 2];
+  // Join starts with every staff ticked; split starts with no voice ticked and the reader ticks one.
+  const checked = join ? [0, 1] : [1];
+  const tickAt = join ? 2.6 : 4.3;
+  const popLife = d.life(2.4, APPLY - 0.2, 0.2);
+  const popH = 24 + rows.length * 15 + 20;
+  d.add(pop.x, pop.y, `<rect class="d-panel" width="128" height="${popH}" rx="6"/>`, popLife, { keep: false });
+  rows.forEach((n, i) => {
+    const y = pop.y + 20 + i * 15;
+    d.add(pop.x + 12, y, `<rect class="d-field" x="-5" y="-5" width="10" height="10" rx="2"/><text class="d-menutext" x="10" y="3.5" font-size="9">${row(n)}</text>`, popLife, { keep: false });
+    if (checked.includes(i)) {
+      d.add(pop.x + 12, y, '<path d="M-3 0l2.4 2.6L3.4-2.6" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+        [[0, { o: 0 }], [tickAt, { o: 0 }], [tickAt + 0.15, { o: 1 }], [APPLY - 0.2, { o: 1 }], [APPLY + 0.05, { o: 0 }]], { keep: false });
+    }
+  });
+  const go = { x: pop.x + 100, y: pop.y + popH - 11 };
+  d.add(go.x, go.y, pillInner(action, { size: 8 }), popLife, { keep: false });
+  const tick = { x: pop.x + 12, y: pop.y + 20 + 15 };
+  d.click(2.2, btn.x, btn.y);
+  d.click(6.8, go.x, go.y);
+  if (!join) d.click(4.3, tick.x, tick.y);
+  d.pointer([[0.6, d.w - 30, d.h - 14], ...visit(2.2, btn.x, btn.y), ...(join ? [] : visit(4.3, tick.x, tick.y)), ...visit(6.8, go.x, go.y), [9.6, d.w - 30, d.h - 14]]);
+  return d.html(aria);
+}
+
+export const joinStaves = (s, aria) => restructure(s, aria, true);
+export const splitVoices = (s, aria) => restructure(s, aria, false);
+
+/** The voices slider in Ajustes goes from 1 to 3 and a staff with its own voice appears for each step. */
+export function multiVoice(s, aria) {
+  const u = s.scoreUiStrings;
+  const d = stage({ id: 'pro-multi-voice', T: 14, h: 240, bottom: 42, staff: false });
+  const tops = [26, 88, 150];
+  const lines = [['B4', 'C5', 'D5', 'C5'], ['G4', 'A4', 'B4', 'A4'], ['E4', 'E4', 'F4', 'E4']];
+  const xs = [0, 1, 2, 3].map((i) => d.firstX - 24 + i * 40);
+  const times = [0.05, 3.2, 6.4];
+  tops.forEach((top, v) => {
+    const bottom = top + 4 * SP;
+    d.add(0, 0, d.lines(d.x0, d.x1, top) + glyph('E050', d.x0 + 18, top + 3 * SP) + `<path class="d-bar" d="M${d.x0} ${top}V${bottom}M${d.x1} ${top}V${bottom}" stroke-width="1.1"/>`, d.life(times[v]), { keep: v === 0 });
+    lines[v].forEach((n, i) => {
+      const p = pitch(n);
+      d.add(xs[i], bottom - (p * SP) / 2, noteInner(p, 'q', { stemDown: v > 0 }), S(d.pop(times[v] + 0.3 + i * 0.25), [[0, { c: VOICE[v] }]]), { keep: v === 0 });
+    });
+  });
+  // The slider: a track with three steps and a thumb that goes from 1 to 3.
+  const sx = 170;
+  const sy = 224;
+  d.base(`<text class="d-menutext" x="${sx - 10}" y="${sy + 3}" text-anchor="end" font-size="9">${u.settingsParts}</text>` +
+    `<path d="M${sx} ${sy}H${sx + 80}" stroke="var(--rule)" stroke-width="3" stroke-linecap="round"/>` +
+    [0, 1, 2].map((i) => `<circle cx="${sx + i * 40}" cy="${sy}" r="2.4" fill="var(--ink-soft)"/>`).join(''));
+  d.add(sx, sy, '<circle r="6" fill="var(--accent)"/>', [[0, { x: 0 }], [2.6, { x: 0 }], [3.0, { x: 40 }], [5.8, { x: 40 }], [6.2, { x: 80 }]]);
+  d.click(3.0, sx + 40, sy);
+  d.click(6.2, sx + 80, sy);
+  d.pointer([[1.4, d.w - 24, d.h - 10], ...visit(3.0, sx + 40, sy), ...visit(6.2, sx + 80, sy), [10, d.w - 24, d.h - 10]]);
+  return d.html(aria);
+}
