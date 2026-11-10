@@ -2912,6 +2912,13 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   const refOf = (staff, mi, i) => (staff ? { s: staff, mi, i } : { mi, i });
   const sameRef = (a, b) => staffOf(a) === staffOf(b) && a.mi === b.mi && a.i === b.i;
 
+  // Misma altura que suena (diatonica y alteracion efectiva, tambien la arrastrada por el compas): solo asi hay prolongacion.
+  function samePitch(score, staff, a, b) {
+    const all = measures(score, staff);
+    if (all[a.mi][a.i].n !== all[b.mi][b.i].n) return false;
+    return pitchContexts(score, a.mi, staff)[a.i].alter === pitchContexts(score, b.mi, staff)[b.i].alter;
+  }
+
   function links(score) {
     const result = [];
     for (let staff = 0; staff < stavesOf(score); staff += 1) {
@@ -2928,7 +2935,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
           if (ev.rest || !(ev.tie || ev.slur)) return;
           const targetMi = following.has(i) ? mi : mi + 1;
           const candidates = following.get(i) || (last.includes(i) ? next : []);
-          const j = candidates.find((k) => !all[targetMi][k].rest && (!ev.tie || all[targetMi][k].n === ev.n));
+          const j = candidates.find((k) => !all[targetMi][k].rest && (!ev.tie || samePitch(score, staff, { mi, i }, { mi: targetMi, i: k })));
           if (j !== undefined) result.push({ type: ev.tie ? 'tie' : 'slur', from: refOf(staff, mi, i), to: refOf(staff, targetMi, j) });
         });
       });
@@ -3138,7 +3145,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       const ev = lane[from.mi][from.i];
       delete ev.tie;
       delete ev.slur;
-      if (action === 'link') ev[ev.n === lane[to.mi][to.i].n ? 'tie' : 'slur'] = true;
+      if (action === 'link') ev[samePitch(score, staff, from, to) ? 'tie' : 'slur'] = true;
       return true;
     }
     const r = beamRun(score, sel);
