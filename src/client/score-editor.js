@@ -496,14 +496,34 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function recordChange(before) {
     history.push(before);
     if (history.length > HISTORY_LIMIT) history.shift();
+    redoStacks.delete(history);
     save();
     render();
   }
 
+  // Rehacer: copias deshechas de cada documento (la clave es su arreglo de historial); una edicion nueva la vacia.
+  const redoStacks = new WeakMap();
+
   function undo() {
     if (!history.length) return;
+    const undone = M.clone(score);
+    M.pruneLower(undone);
+    travel(history.pop());
+    if (!redoStacks.has(history)) redoStacks.set(history, []);
+    redoStacks.get(history).push(undone);
+  }
+
+  function redo() {
+    const stack = redoStacks.get(history);
+    if (!stack || !stack.length) return;
+    const redone = M.clone(score);
+    M.pruneLower(redone);
+    travel(stack.pop());
+    history.push(redone);
+  }
+
+  function travel(restored) {
     const tabRefs = M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs);
-    const restored = history.pop();
     const previousTabs = restored.tabs;
     if (M.tuningOf(restored).id === M.tuningOf(score).id) M.restoreTabReferences(restored, tabRefs);
     if (previousTabs) restored.tabs = Object.assign({}, previousTabs, restored.tabs);
@@ -3976,7 +3996,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
       event.preventDefault();
-      undo();
+      if (event.shiftKey) redo();
+      else undo();
+    } else if (event.ctrlKey && !event.metaKey && event.key.toLowerCase() === 'y') {
+      event.preventDefault();
+      redo();
     }
   });
 
