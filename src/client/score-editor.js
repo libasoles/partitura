@@ -953,6 +953,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       trialInserts.get(destinationKey(p)).push([ev, p.at]);
     });
     trialInserts.forEach((list, key) => { M.insertMany(trial.get(key), list); });
+    // Una ligadura con los dos extremos en el grupo se mueve con él.
+    const carried = new Map();
+    M.links(score).forEach((l) => {
+      const a = stave(staffOf(l.from))[l.from.mi][l.from.i];
+      if (moving.has(a) && moving.has(stave(staffOf(l.to))[l.to.mi][l.to.i])) carried.set(a, l.type);
+    });
     change(() => {
       Array.from({ length: staves }, (_, staff) => staff).forEach((staff) => stave(staff).forEach((measure) => {
         for (let i = measure.length - 1; i >= 0; i -= 1) if (moving.has(measure[i])) measure.splice(i, 1);
@@ -964,6 +970,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         if (!p.ev.rest) p.ev.n += dn;
         delete p.ev.tie;
         delete p.ev.slur;
+        if (carried.has(p.ev) && p.toStaff === p.staff) p.ev[carried.get(p.ev)] = true;
         if (p.toStaff !== p.staff) delete p.ev.v;
         if (p.ev.tp) {
           const key = p.staff + ':' + p.mi + '-' + p.ev.tp;
