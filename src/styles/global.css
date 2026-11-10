@@ -383,7 +383,8 @@ a { color: var(--blue-france); }
 .pro-lead { margin: 0 0 1rem; font-size: 1.1rem; color: var(--ink-soft); }
 .pro-features { list-style: none; margin: 0 0 2.5rem; padding: 0; display: grid; gap: 0.7rem; }
 .pro-features li { display: flex; align-items: flex-start; gap: 0.7rem; }
-.pro-features svg { flex: none; margin-top: 0.15rem; color: var(--accent); }
+.pro-feature { display: grid; gap: 0.7rem; min-width: 0; flex: 1; }
+.pro-features li > svg { flex: none; margin-top: 0.15rem; color: var(--accent); }
 .pro-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem; margin-bottom: 0.75rem; }
 .pro-plan { display: flex; flex-direction: column; gap: 0.5rem; padding: 1.2rem; border: 1px solid var(--rule); border-radius: 0.6rem; }
 .pro-plan h3 { margin: 0; font-size: 1.05rem; }

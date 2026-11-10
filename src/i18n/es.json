@@ -861,20 +861,32 @@
         "Creá carpetas de partituras para mantenerlas organizadas."
       ],
       [
-        "Letra de canciones",
-        "Agregá una línea de letra debajo de la melodía."
+        "Canciones a varias voces",
+        "Elegí cuántas voces tiene la canción, de 1 a 4: cada una tiene su propio pentagrama."
       ],
       [
-        "Compartir",
-        "Compartí canciones públicamente con un enlace."
+        "Separar voces",
+        "Pasá las voces que elijas de un pentagrama a otro nuevo."
+      ],
+      [
+        "Unir pentagramas",
+        "Reuní varios pentagramas en uno, con cada voz en su lugar."
+      ],
+      [
+        "Letra de canciones",
+        "Agregá una línea de letra debajo de la melodía."
       ],
       [
         "Duplicar partituras",
         "Duplicá una partitura para probar variantes sin perder la original."
       ],
       [
-        "Separación de voces en múltiples pentagramas",
-        "Separá cada voz en su propio pentagrama."
+        "Cerrar pestañas",
+        "Cerrá las partituras que no estás usando: no se borran y las abrís de nuevo desde el menú."
+      ],
+      [
+        "Compartir",
+        "Compartí canciones públicamente con un enlace."
       ]
     ],
     "plansTitle": "Elegí tu plan",
