@@ -937,6 +937,30 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       });
       return;
     }
+    // Soltada a la izquierda de la primera columna, la nota se antepone en la voz mas cercana (como un silencio)
+    // en vez de sonar a la vez que ella; sin esto no habia como colocarla antes de la primera figura.
+    if (target.beforeFirst && others.length) {
+      const trial = others.map((o) => M.clone(o));
+      const starts = M.hints(trial);
+      trial.forEach((o, i) => { o.at = starts[i] * 2; });
+      const first = Math.min(...starts) * 2;
+      const leading = trial.filter((o) => o.at === first);
+      const lead = leading.reduce((a, b) => (!a || Math.abs((b.n ?? target.n) - target.n) < Math.abs((a.n ?? target.n) - target.n) ? b : a), null);
+      const front = M.clone(moved);
+      if (Number.isInteger(lead.v)) front.v = lead.v; else delete front.v;
+      leading.filter((o) => o.v === lead.v).forEach((o) => { o.at += 1; });
+      front.at = first;
+      trial.unshift(front);
+      M.settle(trial);
+      if (M.measureLength(trial) > M.capacity(score, target.mi)) return say(noRoom(moved, target.mi));
+      change(() => {
+        source[from.mi].splice(from.i, 1);
+        destination.splice(0, destination.length, ...trial);
+        selected = M.refOf(target.staff, target.mi, trial.indexOf(front));
+        group = [];
+      });
+      return true;
+    }
     // Una nota que no entra en lo que queda libre del compas se parte en la barra: lo que cabe va al final del
     // compas y el resto, ligado, abre el siguiente.
     const limit = M.capacity(score, target.mi);
