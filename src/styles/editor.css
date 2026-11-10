@@ -108,6 +108,8 @@
   gap: 0.25rem;
 }
 .score-barlines { align-items: center; }
+/* The buttons are all created at start-up and the saved tools hide some on the first render: stay invisible until then. */
+.score-barlines:not(.is-ready) { visibility: hidden; }
 
 .score-barlines .score-palette-item {
   min-height: 2.75rem;
