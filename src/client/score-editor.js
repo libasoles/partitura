@@ -3258,7 +3258,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const list = picks();
     if (!list.length || drag?.active) return;
     const actions = M.selectionActions(score, list, toolOn('voices', false) && !M.voicePerStaff(score) ? shownVoices : []).filter((action) => action !== 'mergeLyrics' || lyricsActive());
-    if (patternsOn() && M.patternFrom(score, list.filter((ref) => eventAt(ref)))) actions.push('savePattern');
     if (!actions.length) return;
     const origin = stage.getBoundingClientRect();
     let boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
@@ -4557,6 +4556,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- paleta -------------------------------------------------------------
 
   const ICONS = {
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
     'third-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17.5" y="19.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor" stroke="none">3</text>',
     'sixth-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17.5" y="19.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor" stroke="none">6</text>',
     merge: '<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
@@ -5453,13 +5453,35 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   libraryPanel.setAttribute('aria-label', t.patternsTitle);
   const libraryTitle = document.createElement('h2');
   libraryTitle.className = 'score-library-title';
-  libraryTitle.textContent = t.patternsTitle;
+  const libraryName = document.createElement('span');
+  libraryName.textContent = t.patternsTitle;
+  const libraryInfo = document.createElement('button');
+  libraryInfo.type = 'button';
+  libraryInfo.className = 'score-library-info';
+  libraryInfo.setAttribute('aria-label', t.patternsInfo);
+  libraryInfo.setAttribute('aria-expanded', 'false');
+  libraryInfo.innerHTML = lucide('info');
+  const libraryHelp = document.createElement('div');
+  libraryHelp.className = 'score-library-help';
+  libraryHelp.hidden = true;
+  const libraryHelpText = document.createElement('p');
+  libraryHelpText.innerHTML = t.patternsInfoText;
+  const libraryHelpLink = document.createElement('a');
+  libraryHelpLink.href = t.patternsTutorialUrl;
+  libraryHelpLink.target = '_blank';
+  libraryHelpLink.textContent = t.patternsTutorial;
+  libraryHelp.append(libraryHelpText, libraryHelpLink);
+  libraryInfo.addEventListener('click', () => {
+    libraryHelp.hidden = !libraryHelp.hidden;
+    libraryInfo.setAttribute('aria-expanded', String(!libraryHelp.hidden));
+  });
+  libraryTitle.append(libraryName, libraryInfo);
   const libraryEmpty = document.createElement('p');
   libraryEmpty.className = 'score-library-empty';
   libraryEmpty.textContent = t.patternsEmpty;
   const libraryList = document.createElement('ul');
   libraryList.className = 'score-library-list';
-  libraryPanel.append(libraryTitle, libraryEmpty, libraryList);
+  libraryPanel.append(libraryTitle, libraryHelp, libraryEmpty, libraryList);
   if (patterns && settings) {
     // Migracion: la biblioteca global anterior pasa a la partitura activa y se descarta.
     const legacy = getSetting('patternItems', null);

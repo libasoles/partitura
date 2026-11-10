@@ -2,7 +2,7 @@
 import Base from '../layouts/Base.astro';
 import { renderEmptyStaff } from '../lib/staff.js';
 import { renderDemo } from '../lib/published-demo.js';
-import { pathFor, strings, locales, type Locale } from '../i18n';
+import { pathFor, strings, locales, tutorialsPath, type Locale } from '../i18n';
 import MobileGate from './MobileGate.astro';
 import WelcomeBanner from './WelcomeBanner.astro';
 import { DEMOS, demoPath } from '../client/demos.js';
@@ -31,6 +31,7 @@ const descriptions = demo && {
 const clientStrings = Object.fromEntries([
   ...Object.entries(s.scoreUiStrings),
   ...Object.entries(s).filter(([key]) => key.startsWith('toast')),
+  ['patternsTutorialUrl', tutorialsPath(locale, 'patterns')],
 ]);
 ---
 
