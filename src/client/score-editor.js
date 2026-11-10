@@ -3903,6 +3903,26 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   document.addEventListener('pointerup', (event) => endMarquee(event, false));
   document.addEventListener('pointercancel', (event) => endMarquee(event, true));
 
+  // Un arrastre que empieza en un lugar neutro junto a la partitura (margen, hueco entre las barras) tambien es un marco de seleccion,
+  // en vez de arrastrar texto o la pagina; la seleccion se calcula igual, contra las figuras del pentagrama.
+  document.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0 || event.pointerType === 'touch' || event.defaultPrevented || marquee || activeItem) return;
+    const target = event.target;
+    if (!(target instanceof Element) || !target.isConnected || target.closest('.score-stage')) return;
+    const page = stage.closest('.score-page');
+    if (!page || !page.contains(target)) return;
+    if (!target.closest('.score-main, .score-library') && target !== page) return;
+    if (target.closest('button, a, input, select, textarea, label, summary, [contenteditable], [popover], [draggable="true"], .score-doc-tab, ascii-tabs')) return;
+    event.preventDefault();
+    stage.focus({ preventScroll: true });
+    const additive = event.shiftKey || event.ctrlKey || event.metaKey;
+    if (!additive) setPicks([]);
+    beginMarquee(event, additive);
+  });
+
+  // Mientras el marco esta activo el navegador no debe seleccionar texto de la pagina.
+  document.addEventListener('selectstart', (event) => { if (marquee) event.preventDefault(); });
+
   stage.addEventListener('keydown', (event) => {
     if (event.target !== stage) return;
     if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); removeSelected(); }
