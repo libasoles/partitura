@@ -913,6 +913,49 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       });
       return;
     }
+    // Una nota que no entra en lo que queda libre del compas se parte en la barra: lo que cabe va al final del
+    // compas y el resto, ligado, abre el siguiente.
+    const limit = M.capacity(score, target.mi);
+    const used = M.measureLength(others);
+    const free = limit - used;
+    const nextOf = M.measures(score, target.staff)[target.mi + 1];
+    if (!inPlace && nextOf && !moved.tp && free > 0 && free < M.length(moved) && target.t > limit - M.length(moved)) {
+      const pieces = (size) => {
+        const found = [];
+        for (let left = size; left > 0;) {
+          const d = ['w', 'h', 'q', 'e', 's', 'f'].find((k) => M.VALUES[k] <= left);
+          if (!d) return null;
+          found.push(d);
+          left -= M.VALUES[d];
+        }
+        return found;
+      };
+      const head = pieces(free);
+      const tail = pieces(M.length(moved) - free);
+      const rest = nextOf.filter((o) => o !== ev);
+      if (head && tail && M.measureLength(rest) + M.length(moved) - free <= M.capacity(score, target.mi + 1)) {
+        const cut = [...head.map((d) => [d, 0]), ...tail.map((d) => [d, 1])];
+        change(() => {
+          source[from.mi].splice(from.i, 1);
+          const next = M.measures(score, target.staff)[target.mi + 1];
+          const first = [];
+          const second = [];
+          cut.forEach(([d, bar], k) => {
+            const piece = Object.assign(M.clone(moved), { d });
+            delete piece.dot;
+            if (k < cut.length - 1) piece.tie = true;
+            (bar ? second : first).push(piece);
+          });
+          let at = used;
+          first.forEach((piece) => { M.insertAt(destination, piece, at); at += M.length(piece); });
+          at = 0;
+          second.forEach((piece) => { M.insertAt(next, piece, at); at += M.length(piece); });
+          selected = M.refOf(target.staff, target.mi, destination.indexOf(first[0]));
+          group = [];
+        });
+        return;
+      }
+    }
     if (inPlace && Number.isInteger(moved.v)) {
       const starts = M.onsets(destination);
       const kept = destination.flatMap((o, i) => o === ev ? [] : [{ ev: M.clone(o), at: starts[i] }]);
