@@ -6016,7 +6016,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
     function sync() {
       if (patternsCheck) patternsCheck.checked = libraryEnabled;
-      instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === instrumentIds[i]; });
+      instruments.forEach((radio, i) => {
+        radio.checked = M.instrumentOf(score) === instrumentIds[i];
+        radio.disabled = Boolean(score.demo);
+      });
       voicesCard.hidden = M.instrumentOf(score) !== 'voices';
       sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });
       intervalModes.forEach((radio) => { radio.checked = M.intervalModeOf(score) === radio.value; });
