@@ -929,6 +929,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       selected = M.refOf(target.staff, target.mi, M.insertAt(destination, moved, spot.at));
       group = [];
     });
+    return true;
   }
 
   // Mueve las figuras elegidas juntas: el mismo desplazamiento en tiempo, compas y altura que la figura agarrada.
@@ -3628,8 +3629,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const target = locate(at.clientX, at.clientY, d.group || d.from);
     if (!target) { markSelected(); return; }
     if (d.group) moveGroup(d.group, d.from, target);
-    else if (d.from) moveEvent(d.from, target);
-    else dropNew(d.item, target);
+    else if (d.from) {
+      // Soltar una nota suelta la hace sonar en su nueva altura, aunque la referencia seleccionada no cambie.
+      if (moveEvent(d.from, target)) { markSelected(); previewSelectedNote(); return; }
+    } else dropNew(d.item, target);
     markSelected();
   }
 
