@@ -10,6 +10,13 @@ async function open(page, instrument = 'piano', overrides = {}) {
     sessionStorage.setItem('playbackFixture', '1');
     const NativeAudioContext = window.AudioContext;
     window.audioStarts = [];
+    // Selecting a note auditions it; count only what starts after the play gesture.
+    let counting = false;
+    document.addEventListener('click', (event) => {
+      if (counting || !event.target.closest?.('#scorePlayback')) return;
+      counting = true;
+      window.audioStarts.length = 0;
+    }, true);
     window.AudioContext = class extends NativeAudioContext {
       constructor(...args) { super(...args); window.playbackContext = this; }
       createBufferSource() {

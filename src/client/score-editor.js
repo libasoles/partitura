@@ -8,6 +8,7 @@ import { getSetting, setSetting } from './settings.js';
 import { chordMarks, hasIntervals, parseTonic, scoreKey, spellTonic, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
+import { measurePitches } from './score-notes.js';
 import { applyUrlDefaults } from './url-defaults.js';
 
 export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, lyrics = false, patterns = false, urlDefaults = {}, initialDemo } = {}) {
@@ -4778,8 +4779,28 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const key = JSON.stringify([mi, selected, at]);
     if (playbackActivityDocument !== score || playbackMarkedSelection !== key) {
       playbackMarkedSelection = key;
+      previewSelectedNote();
       if (mi !== null) rememberPlaybackMeasure(mi, at ?? 0);
     }
+  }
+
+  // Selecting a single note sounds it, unless the score is playing.
+  let previewRequest = 0;
+  async function previewSelectedNote() {
+    const request = ++previewRequest;
+    const ref = group.length <= 1 && !lyricOnly && !selectedChords.length ? selected : null;
+    const event = ref && eventAt(ref);
+    if (!event || event.rest || playbackState === 'playing' || playbackState === 'loading') return;
+    const midi = measurePitches(score, M, laneOf(ref)[ref.mi], ref.mi)[ref.i]?.midi;
+    if (midi === undefined) return;
+    const seconds = Math.max(0.4, Math.min(1.5, M.length(event) * 60 / (score.tempo || 120) / M.DIVISIONS));
+    try {
+      audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+      const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
+      if (request !== previewRequest || playbackState === 'playing') return;
+      player ||= createPlayer(audioContext, vendorUrl, resetPlayback);
+      await player.preview(M.clone(score), M, midi, seconds, () => request === previewRequest && playbackState !== 'playing' && playbackState !== 'loading');
+    } catch (error) { /* a missing sample or blocked audio just stays silent */ }
   }
 
   function playbackOffset(mi, at = 0) {
