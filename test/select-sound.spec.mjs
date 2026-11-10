@@ -32,3 +32,20 @@ test('selecting a single note sounds it, and selecting a rest does not', async (
   await page.waitForTimeout(700);
   expect(await heard()).toBe(before);
 });
+
+test('dropping a dragged single note sounds it at its new pitch', async ({ page }) => {
+  const heard = () => page.evaluate(() => window.audioStarts.length);
+  await open(page);
+  const head = page.locator('[id="e0-0"] .notehead');
+  await head.click();
+  await expect.poll(heard, { intervals: [200] }).toBeGreaterThan(0);
+  await page.waitForTimeout(1800);
+  const before = await heard();
+  const box = await head.boundingBox();
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x, y - 20, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(heard, { intervals: [200] }).toBeGreaterThan(before);
+});
