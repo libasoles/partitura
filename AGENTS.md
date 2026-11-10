@@ -90,6 +90,8 @@ Con voces elegidas en la leyenda y la herramienta Voces activa, play reproduce s
 
 **Audición al seleccionar**: elegir una única nota (no un silencio, un grupo, un acorde ni una sílaba) la hace sonar, aunque Reproducción esté apagada (`previewSelectedNote` en `score-editor.js`, disparada desde `rememberPlaybackSelection`; `player.preview` en `score-playback.js`). Dura lo que la figura, entre 0,4 y 1,5 s; no toca el cronograma, no suena durante play y pulsar play la corta. **Espacio con figuras elegidas** las hace sonar (`playSelectedNotes`: juntas o en secuencia según su posición, máx. 4 s), también con Reproducción apagada; sin selección alterna play/pausa, y durante play sigue pausando. Test: `test/select-sound.spec.mjs`.
 
+**Mover una nota a un compás con poco lugar**: si al soltar una nota (no silencio, ni tresillo) tras el final del contenido de otro compás solo queda libre menos que su duración, `moveEvent` la parte en la barra: lo que cabe va al final del compás y el resto abre el siguiente, ligado (una negra en un hueco de corchea: dos corcheas ligadas). Si el siguiente no existe o no admite el resto, sigue el comportamiento anterior. Test: `test/move-split.spec.mjs`.
+
 ### Puntillo
 
 - Un doble click sobre una nota, sin herramienta activa, cicla el puntillo: uno, doble y ninguno (`applyModifier`, `kind: 'dot'`; si el doble no entra, vuelve a ninguno). Un click simple no puntúa; los silencios no se puntúan con doble click. La tecla <kbd>P</kbd> sigue aplicándolo con la herramienta.
