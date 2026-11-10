@@ -250,7 +250,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     document.getElementById('scoreDuplicate').hidden = !proTabs || Boolean(score.demo);
     tabsBar.querySelectorAll('.score-doc-tab').forEach((node) => node.remove());
     const add = document.getElementById('scoreNewTab');
-    const closable = proTabs && openCount() > 1;
+    const canClose = openCount() > 1; // demo tabs are closable without Pro; the rest only with it
+    const closableTab = (one) => canClose && (proTabs || Boolean(one.demo));
     docs.forEach((one, index) => {
       if (!isOpen(index)) return;
       if (index === active) {
@@ -277,7 +278,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           }
         });
         wrap.appendChild(tabTitle);
-        if (closable) {
+        if (closableTab(score)) {
           wrap.classList.add('has-close');
           wrap.appendChild(closeButton(index));
         }
@@ -286,7 +287,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         tabsBar.insertBefore(wrap, add);
       } else {
         let button;
-        if (closable) {
+        if (closableTab(one)) {
           // The close button cannot nest in a button: the tab becomes a box holding the label button and the close one.
           button = document.createElement('div');
           button.className = 'score-doc-tab has-close';
@@ -433,7 +434,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Closing only takes the tab off the strip: the score stays stored, and listed in the site menu.
   function closeTab(index) {
-    if (!proTabs || !isOpen(index) || openCount() < 2) return;
+    if (!isOpen(index) || openCount() < 2) return;
+    if (!proTabs && !docs[index].demo) return;
     // Demo copies have no entry in the scores menu to reopen them from.
     if (docs[index].demo) {
       if (index === active) switchTo(docs.findIndex((_, i) => i !== index && isOpen(i)));
