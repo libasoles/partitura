@@ -63,3 +63,13 @@ test('leaves the score untouched when nothing can be duplicated', () => {
   assert.equal(M.duplicateVoice(score), null);
   assert.equal(JSON.stringify(score), before);
 });
+
+test("in a choir the copy gets its own legend number instead of the original one", () => {
+  const C = createScoreModel({ grandStaff: true, choir: true });
+  const score = C.emptyScore();
+  C.setInstrument(score, "voices");
+  score.rows[0][0] = [37, 40, 39, 38].map((n) => ({ d: "q", n }));
+  C.duplicateVoice(score, null, 5);
+  const legends = C.voices(score.rows[0][0]).map((_, k) => C.legendOf(score, 0, k));
+  assert.deepEqual(legends, [1, 2]);
+});

@@ -516,8 +516,26 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     }
     const created = refs.length ? duplicateVertical(trial, refs, -1, true, steps) : null;
     if (!created?.length) return null;
+    if (voicePerStaff(trial)) legendForCopies(trial, created);
     Object.assign(score, trial);
     return created;
+  }
+
+  // En coro y guitarra con varios pentagramas la leyenda numera las voces: la copia no debe heredar la de su original
+  // (se veria como la misma voz), sino tomar un numero de leyenda libre. Si no queda ninguno, hereda como antes.
+  function legendForCopies(score, created) {
+    const staves = [...new Set(created.map(staffOf))];
+    const taken = new Set();
+    for (let staff = 0; staff < stavesOf(score); staff += 1) legendsOf(score, staff).forEach((n) => taken.add(n));
+    const ks = (staff) => [...new Set(created.filter((r) => staffOf(r) === staff).map((r) => measures(score, staff)[r.mi][r.i].v - 1))].sort((a, b) => a - b);
+    const maps = new Map(staves.map((staff) => [staff, Array.from({ length: MAX_VOICE }, (_, k) => legendOf(score, staff, k))]));
+    staves.forEach((staff) => ks(staff).forEach((k) => {
+      const free = [1, 2, 3, 4].find((n) => !taken.has(n));
+      if (!free) return;
+      taken.add(free);
+      maps.get(staff)[k] = free;
+    }));
+    withMaps(score, (all) => maps.forEach((map, staff) => { all[staff] = map; }));
   }
 
   // Duplica las figuras elegidas justo despues de la ultima de ellas, conservando su ritmo relativo. Lo que no entra
