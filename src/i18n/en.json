@@ -296,6 +296,7 @@
     "unbeam": "Separate",
     "joinChord": "Form chord",
     "mergeLyrics": "Merge syllables",
+    "savePattern": "Save as pattern (Shift+S)",
     "assignVoice": "Assign notes to voice {n}",
     "voicesUnavailable": "Cannot assign the notes to this voice without changing the rhythm.",
     "pdfError": "Could not generate the PDF.",
