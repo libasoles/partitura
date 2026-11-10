@@ -2094,6 +2094,16 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   function setInstrument(score, instrument) {
     if (!INSTRUMENTS.includes(instrument) || (instrument === 'voices' && !choir)) return false;
     const before = instrumentOf(score);
+    // En piano cada voz de notacion tiene su numero de leyenda (k + 1); en coro y guitarra con varios pentagramas, cada
+    // pentagrama es una voz. Al pasar de uno a otro se fija lo que se veia, para que las voces no se vuelvan una sola.
+    if (before === 'piano' && instrument !== 'piano') {
+      const frozen = [];
+      for (let staff = 0; staff < MAX_PARTS; staff += 1) {
+        const count = Math.max(0, ...measures(score, staff).map((m) => (m?.length ? voices(m).length : 0)));
+        if (count > 1) frozen[staff] = Array.from({ length: Math.min(count, MAX_VOICE) }, (_, k) => legendOf(score, staff, k));
+      }
+      if (frozen.length) withMaps(score, (maps) => frozen.forEach((map, staff) => { if (map && !maps[staff]) maps[staff] = map; }));
+    }
     score.instrument = instrument;
     if (instrument === 'voices') {
       delete score.showTabs;
