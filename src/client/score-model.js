@@ -2212,32 +2212,54 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   // Llena de silencios un compas vacio o completa sus voces, con los mas grandes que entren. Ninguno pasa de una blanca con puntillo (la
   // negra con puntillo marca el pulso de los compases compuestos), salvo que sea el compas entero y quepa una redonda.
+  function restPieces(from, to, voice) {
+    const sizes = [['h', 1], ['h', 0], ['q', 1], ['q', 0], ['e', 1], ['e', 0], ['s', 1], ['s', 0], ['f', 1], ['f', 0]]
+      .map(([d, dot]) => ({ d, dot, size: length({ d, dot }) }));
+    const pieces = [];
+    let at = from, left = to - from;
+    while (left > 0) {
+      const piece = at === 0 && left === VALUES.w ? { d: 'w', size: VALUES.w } : sizes.find((p) => p.size <= left);
+      if (!piece) return null;
+      const ev = { d: piece.d, rest: true, at };
+      if (piece.dot) ev.dot = true;
+      if (voice) ev.v = voice;
+      pieces.push(ev);
+      at += piece.size;
+      left -= piece.size;
+    }
+    return pieces;
+  }
+
   function fillWithRests(score, mi, staff = 0, complete = false) {
     const measure = measures(score, staff)[mi];
     if (!measure || (measure.length && !complete)) return false;
-    const sizes = [['h', 1], ['h', 0], ['q', 1], ['q', 0], ['e', 1], ['e', 0], ['s', 1], ['s', 0], ['f', 1], ['f', 0]]
-      .map(([d, dot]) => ({ d, dot, size: length({ d, dot }) }));
     const { lanes } = arrange(measure);
     const additions = [];
     for (const [k, lane] of lanes.entries()) {
       if (measure.length && !lane.groups.length) continue;
-      let at = lane.end, left = capacity(score, mi) - at;
-      if (left < 0) return false;
-      while (left > 0) {
-        const piece = at === 0 && left === VALUES.w ? { d: 'w', size: VALUES.w } : sizes.find((p) => p.size <= left);
-        if (!piece) return false;
-        const ev = { d: piece.d, rest: true, at };
-        if (piece.dot) ev.dot = true;
-        if (lanes.length > 1) ev.v = k + 1;
-        additions.push(ev);
-        at += piece.size;
-        left -= piece.size;
-      }
+      if (lane.end > capacity(score, mi)) return false;
+      const pieces = restPieces(lane.end, capacity(score, mi), lanes.length > 1 ? k + 1 : 0);
+      if (!pieces) return false;
+      additions.push(...pieces);
     }
     if (!additions.length) return false;
     settle(measure);
     measure.push(...additions);
     return true;
+  }
+
+  // Un compas que abre la partitura o una seccion (tras doble barra, final o repeticion, o con inicio de repeticion)
+  // no continua nada: una nota que no cae en su inicio (sincopa) supone silencios antes, no despues.
+  function opensSection(score, mi) {
+    const bar = score.barlines || {};
+    return mi === 0 || !!bar[mi]?.start || !!(bar[mi - 1] && (bar[mi - 1].double || bar[mi - 1].end));
+  }
+
+  // Silencios que llenan [0, at) de un compas vacio que abre una seccion; [] si no corresponde.
+  function leadingRests(score, mi, staff, at) {
+    const measure = measures(score, staff)[mi];
+    if (!measure || measure.length || !(at > 0) || !opensSection(score, mi)) return [];
+    return restPieces(0, at, 0) || [];
   }
 
   function capacity(score, mi) {
@@ -3404,7 +3426,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, voiceNumbers, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, voiceNumbers, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, leadingRests, opensSection, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, canJoinStaves, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
