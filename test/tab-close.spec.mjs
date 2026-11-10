@@ -59,3 +59,15 @@ test('Pro: closing a tab keeps the score, and the menu lists and reopens it', as
   await expect(page.locator('#menuScores [role=menuitem]')).toHaveText(['Uno', 'Dos']);
   expect(errors).toEqual([]);
 });
+
+test('without #pro only the demo tab has a close button, and closing it removes it', async ({ page }) => {
+  await page.goto('/es/demos/canto-en-la-rama/');
+  await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
+  await page.waitForFunction(() => window.scoreEditor && document.querySelector('.score-doc-tab-input'));
+  await page.locator('#scoreNewTab').click();
+  await expect(page.locator('.score-doc-tab')).toHaveCount(3);
+  await expect(page.locator('.score-doc-tab-close')).toHaveCount(1);
+  await expect(page.locator('.score-doc-tab.has-close')).toHaveCount(1);
+  await page.locator('.score-doc-tab.has-close .score-doc-tab-close').click();
+  await expect(page.locator('.score-doc-tab-close')).toHaveCount(0);
+});
