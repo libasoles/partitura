@@ -139,9 +139,9 @@ export function createPlayer(context, vendorUrl, onEnded) {
       sound(notes, samples, shape, origin, position);
       timer = setTimeout(() => { silence(); position = 0; onEnded(); }, Math.max(0, origin + duration - context.currentTime) * 1000);
     },
-    // A short audition of one pitch; it never touches the running schedule.
+    // A short audition of one pitch, or of several ({ midi, start, end } in seconds); it never touches the running schedule.
     async preview(score, M, midi, seconds, current = () => true) {
-      const notes = [{ midi, start: 0, end: seconds }];
+      const notes = Array.isArray(midi) ? midi : [{ midi, start: 0, end: seconds }];
       const { samples, shape } = await loadSamples(score, M, notes);
       if (current()) sound(notes, samples, shape, context.currentTime + 0.02, 0);
     },
