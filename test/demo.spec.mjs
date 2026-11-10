@@ -180,7 +180,7 @@ test('demo copies stay out of personal scores across edits, reloads and repeated
   await expect(page.locator('.score-doc-tab')).toHaveCount(1);
   await expect(page.locator('#scoreTitle')).toHaveValue('Mi canción');
   await page.locator('#siteMenuToggle').click();
-  await expect(page.locator('#menuScores [role=menuitem]')).toHaveText(['Mi canción']);
+  await expect(page.locator('#menuScores [role=menuitem]:not(#menuScoresMore)')).toHaveText(['Mi canción']);
   await page.locator('#siteMenuToggle').click();
   await openDemo();
   await expect(page.locator('.score-doc-tab')).toHaveCount(2);
@@ -190,7 +190,7 @@ test('demo copies stay out of personal scores across edits, reloads and repeated
   await expect(page.locator('#scoreTitle')).toHaveValue('Mi canción');
   await openDemo();
   await page.locator('#siteMenuToggle').click();
-  await expect(page.locator('#menuScores [role=menuitem]')).toHaveText(['Mi canción']);
+  await expect(page.locator('#menuScores [role=menuitem]:not(#menuScoresMore)')).toHaveText(['Mi canción']);
 });
 
 test('the published song imports its three choir staves and URL defaults without #pro', async ({ page }) => {

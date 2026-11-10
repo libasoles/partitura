@@ -33,7 +33,7 @@ test('Pro: closing a tab keeps the score, and the menu lists and reopens it', as
   await expect(page.locator('.score-doc-tab-close')).toHaveCount(0);
 
   await page.locator('#siteMenuToggle').click();
-  const items = page.locator('#menuScores [role=menuitem]');
+  const items = page.locator('#menuScores [role=menuitem]:not(#menuScoresMore)');
   await expect(page.locator('#menuScoresSection')).toBeVisible();
   await expect(items).toHaveText(['Uno', 'Dos']);
   const box = await page.locator('#siteMenuList').boundingBox();
@@ -56,7 +56,7 @@ test('Pro: closing a tab keeps the score, and the menu lists and reopens it', as
   await page.waitForFunction(() => window.scoreEditor && document.querySelector('.score-doc-tab-input'));
   await expect(page.locator('.score-doc-tab')).toHaveCount(1);
   await page.locator('#siteMenuToggle').click();
-  await expect(page.locator('#menuScores [role=menuitem]')).toHaveText(['Uno', 'Dos']);
+  await expect(page.locator('#menuScores [role=menuitem]:not(#menuScoresMore)')).toHaveText(['Uno', 'Dos']);
   expect(errors).toEqual([]);
 });
 

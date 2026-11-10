@@ -10,6 +10,7 @@ import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
 import { measurePitches } from './score-notes.js';
 import { applyUrlDefaults } from './url-defaults.js';
+import { createScoresDrawer } from './score-drawer.js';
 
 export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, lyrics = false, patterns = false, urlDefaults = {}, initialDemo } = {}) {
 
@@ -34,6 +35,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const tabsBar = document.getElementById('scoreTabs');
   const stored = loadAll();
   const docs = stored.scores; // una partitura por pestana
+  const folders = stored.folders; // carpetas de la lista de partituras (Pro): { id, name, collapsed? }
   if (initialDemo) {
     docs.push(Object.assign(M.sanitize(initialDemo.score), { demo: true, demoId: initialDemo.id }));
     stored.active = docs.length - 1;
@@ -103,15 +105,16 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (data && Array.isArray(data.scores)) data.scores = data.scores.filter((one) => !(one && one.demo === true));
       if (data && Array.isArray(data.scores) && data.scores.length) {
         // `closed` marks a score taken off the tab strip (Pro); it stays stored and listed in the site menu.
-        const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}, one && typeof one.uid === 'string' && /^[\w-]{4,32}$/.test(one.uid) ? { uid: one.uid } : {}, one && one.demo === true ? { demo: true, demoId: one.demoId } : {}));
+        const folders = Array.isArray(data.folders) ? data.folders.filter((f) => f && typeof f.id === 'string' && /^[\w-]{4,32}$/.test(f.id) && typeof f.name === 'string' && f.name.trim()).slice(0, 100).map((f) => Object.assign({ id: f.id, name: f.name.slice(0, 60) }, f.collapsed === true ? { collapsed: true } : {})) : [];
+        const scores = data.scores.map((one) => Object.assign(M.sanitize(one), one && one.closed === true ? { closed: true } : {}, one && typeof one.folder === 'string' && folders.some((f) => f.id === one.folder) ? { folder: one.folder } : {}, one && typeof one.uid === 'string' && /^[\w-]{4,32}$/.test(one.uid) ? { uid: one.uid } : {}, one && one.demo === true ? { demo: true, demoId: one.demoId } : {}));
         const active = Math.min(Math.max(data.active | 0, 0), scores.length - 1);
         delete scores[active].closed;
-        return { scores, active };
+        return { scores, active, folders };
       }
     } catch (e) {
       // Sin datos validos se parte de la partitura de antes, o de una vacia.
     }
-    return { scores: [loadOne()], active: 0 };
+    return { scores: [loadOne()], active: 0, folders: [] };
   }
 
   // The address of the open score: its own id plus the settings it shows now. Demos keep their path.
@@ -140,7 +143,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!kept.length) return;
     const saved = kept.indexOf(docs[active]);
     const before = docs.slice(0, active).filter((one) => !one.demo).length;
-    window.ScoreStore.save({ active: saved >= 0 ? saved : Math.min(before, kept.length - 1), scores: kept });
+    window.ScoreStore.save({ active: saved >= 0 ? saved : Math.min(before, kept.length - 1), scores: kept, folders });
   }
 
   // Messages are Radix alert toasts; an empty text leaves any toast to expire on its own.
@@ -220,10 +223,26 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return close;
   }
 
+  const MENU_SCORES = 7;
+  const scoresDrawer = createScoresDrawer({
+    t, lucide, docs: () => docs, folders, active: () => active, labelOf: tabLabel, open: (index) => openFromMenu(index),
+    changed: () => save(),
+  });
+
   function renderScoresMenu() {
     if (!proTabs || !scoresMenu) return;
-    scoresMenu.replaceChildren(...docs.flatMap((one, index) => {
-      if (one.demo) return [];
+    // The menu lists a few scores; the drawer has them all. The open one always shows.
+    let shown = docs.map((_, index) => index).filter((index) => !docs[index].demo);
+    if (shown.length > MENU_SCORES) {
+      shown = shown.slice(0, MENU_SCORES);
+      if (!shown.includes(active) && !docs[active].demo) shown[MENU_SCORES - 1] = active;
+    }
+    const more = document.createElement('li');
+    more.setAttribute('role', 'none');
+    more.innerHTML = '<button type="button" role="menuitem" id="menuScoresMore">' + lucide('library') + '<span class="menu-score-name"></span></button>';
+    more.querySelector('span').textContent = t.scoresMore;
+    scoresMenu.replaceChildren(...shown.flatMap((index) => {
+      const one = docs[index];
       const item = document.createElement('li');
       item.setAttribute('role', 'none');
       const button = document.createElement('button');
@@ -238,9 +257,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (index === active) button.insertAdjacentHTML('beforeend', lucide('check'));
       item.appendChild(button);
       return item;
-    }));
+    }).concat(more));
+    scoresDrawer.refresh();
   }
   scoresMenu?.addEventListener('click', (event) => {
+    if (event.target.closest('#menuScoresMore')) {
+      scoresDrawer.open(document.getElementById('siteMenuToggle'));
+      return;
+    }
     const button = event.target.closest('button[data-index]');
     if (button) openFromMenu(Number(button.dataset.index));
   });
@@ -4574,6 +4598,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     'file-text': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
     'file-code': '<path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
     check: '<path d="M20 6 9 17l-5-5"/>',
+    library: '<path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/>',
+    folder: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    'folder-open': '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+    'folder-plus': '<path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>',
+    pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+    'chevron-down': '<path d="m6 9 6 6 6-6"/>',
+    'chevrons-down-up': '<path d="m7 20 5-5 5 5"/><path d="m7 4 5 5 5-5"/>',
+    'grip-vertical': '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
     chevronLeft: '<path d="m15 18-6-6 6-6"/>',
     search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',
