@@ -820,7 +820,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       // Una vez: simple; dos: doble (## o bb); tres: sin alteracion. El becuadro solo se quita.
       const double = { '#': '##', b: 'bb' }[item.acc];
       if (ev.acc === item.acc) { if (double) ev.acc = double; else delete ev.acc; }
-      else if (ev.acc === double) delete ev.acc;
+      else if (double && ev.acc === double) delete ev.acc;
       else ev.acc = item.acc;
     });
   }
@@ -834,7 +834,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const double = { '#': '##', b: 'bb' }[item.acc];
     let next;
     if (base.acc === item.acc) next = double;
-    else if (base.acc === double) next = undefined;
+    else if (double && base.acc === double) next = undefined;
     else next = item.acc;
     change(() => notes.forEach((ev) => { if (next) ev.acc = next; else delete ev.acc; }));
   }
