@@ -6017,14 +6017,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     function sync() {
       if (patternsCheck) patternsCheck.checked = libraryEnabled;
       instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === instrumentIds[i]; });
-      voicesCard.hidden = M.instrumentOf(score) !== 'voices';
+      // Cantidad de voces y sonidos son Pro; sin #pro (p. ej. en una demo) no se ofrecen.
+      voicesCard.hidden = M.instrumentOf(score) !== 'voices' || !isPro();
       sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });
       intervalModes.forEach((radio) => { radio.checked = M.intervalModeOf(score) === radio.value; });
       refreshTonic();
       guitarCard.hidden = !M.choir || M.instrumentOf(score) !== 'guitar';
       partsSlider.value = String(M.partsOf(score));
-      // Cambiar la cantidad de voces es Pro; sin #pro (p. ej. en una demo) el control se ve pero no se mueve.
-      partsSlider.disabled = !isPro();
       showParts();
       guitarPartsSlider.value = String(M.guitarPartsOf(score));
       showGuitarParts();

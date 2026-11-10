@@ -215,7 +215,9 @@ for (const query of ['tools=voices,play', 'sound=oh', 'sound=uh']) {
     await expect(page.locator('#scoreTitle')).toHaveValue('Canto en la rama');
     expect(await page.evaluate(() => window.ScoreModel.stavesOf(window.scoreEditor.score))).toBe(3);
     await page.locator('#scoreSettingsToggle').click();
-    await expect(page.locator('input[name="scoreSound"][value="oh"]')).toBeVisible();
+    // Cantidad de voces y sonidos son Pro: no se ofrecen en una demo.
+    await expect(page.locator('input[name="scoreSound"][value="oh"]')).toBeHidden();
+    await expect(page.getByRole('slider', { name: 'Cantidad de voces' })).toHaveCount(0);
   });
 }
 
