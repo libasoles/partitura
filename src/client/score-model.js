@@ -1258,9 +1258,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return moved;
   }
 
-  // Agrega un compas vacio al final del renglon `row`, si cabe.
+  // Agrega un compas vacio al final del renglon `row`. Si el renglon esta lleno, queda al inicio del siguiente
+  // (o en un renglon nuevo) y empuja el resto.
   function addMeasure(score, row) {
-    if (!Number.isInteger(row) || row < 0 || row >= score.rows.length || score.rows[row].length >= PER_ROW) return false;
+    if (!Number.isInteger(row) || row < 0 || row >= score.rows.length) return false;
+    if (score.rows[row].length >= PER_ROW) return insertMeasure(score, rowStarts(score)[row] + score.rows[row].length);
     const at = rowStarts(score)[row] + score.rows[row].length;
     BY_MEASURE.forEach((name) => { if (score[name]) score[name] = shiftKeys(score[name], at, 1); });
     score.rows[row].push([]);
