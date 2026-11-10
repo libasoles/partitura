@@ -298,6 +298,7 @@
     "unbeam": "Separar",
     "joinChord": "Formar acorde",
     "mergeLyrics": "Unir sílabas",
+    "savePattern": "Salvar como padrão (Shift+S)",
     "assignVoice": "Atribuir notas à voz {n}",
     "voicesUnavailable": "Não é possível atribuir as notas a essa voz sem alterar o ritmo.",
     "pdfError": "Não foi possível gerar o PDF.",

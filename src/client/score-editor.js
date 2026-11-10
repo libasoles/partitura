@@ -1080,6 +1080,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function applyAction(action) {
+    if (action === 'savePattern') { savePattern(); stage.focus({ preventScroll: true }); return; }
     const list = picks();
     const result = change(() => M.applySelection(score, list, action));
     if (!result) say(action.startsWith('assignVoice') ? t.voicesUnavailable : action === 'mergeLyrics' ? t.lyricMergeLong : t.full);
@@ -3213,9 +3214,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (selectedNavigation.some((pick) => pick.first === Number(node.dataset.navigationFirst) && pick.mark === node.dataset.navigationMark)) node.classList.add('is-selected');
     });
     if (selectedLink && !selectedLink.node.isConnected) selectedLink = null;
+    const chosen = picks();
     stage.querySelectorAll('g.tie, g.slur').forEach((node) => {
       const refs = linkRefs.get(node);
-      if (selectedLink && refs && same(refs[0], selectedLink.refs[0])) node.classList.add('is-selected');
+      if (!refs) return;
+      // Una ligadura se resalta con sus notas: cuando se eligieron ambos extremos (y es lo que copian, duplican y guardan).
+      if ((selectedLink && same(refs[0], selectedLink.refs[0])) || refs.every((ref) => chosen.some((pick) => same(pick, ref)))) node.classList.add('is-selected');
     });
     if (selectedBeam && !selectedBeam.node.isConnected) selectedBeam = null;
     if (selectedHairpin && !M.findHairpin(score, selectedHairpin.mi, selectedHairpin.at)) selectedHairpin = null;
@@ -3246,6 +3250,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const list = picks();
     if (!list.length || drag?.active) return;
     const actions = M.selectionActions(score, list, toolOn('voices', false) && !M.voicePerStaff(score) ? shownVoices : []).filter((action) => action !== 'mergeLyrics' || lyricsActive());
+    if (patternsOn() && M.patternFrom(score, list.filter((ref) => eventAt(ref)))) actions.push('savePattern');
     if (!actions.length) return;
     const origin = stage.getBoundingClientRect();
     let boxes = list.map((p) => nodeOf(p).getBoundingClientRect());
@@ -4564,6 +4569,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     chevronLeft: '<path d="m15 18-6-6 6-6"/>',
     search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
     chevronRight: '<path d="m9 18 6-6-6-6"/>',
+    'bookmark-plus': '<path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/><path d="M12 7v6"/><path d="M9 10h6"/>',
     copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
     trash:'<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>',
     // Sin equivalente en Lucide: ligadura (arco entre dos notas) y ligadura quitada.
@@ -4582,7 +4588,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     download: '<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
   };
 
-  const ACTION_ICONS = { triplet: 'triplet', untriplet: 'untriplet', link: 'link', unlink: 'unlink', beam: 'beam', unbeam: 'unbeam', joinChord: 'link', mergeLyrics: 'merge' };
+  const ACTION_ICONS = { triplet: 'triplet', untriplet: 'untriplet', link: 'link', unlink: 'unlink', beam: 'beam', unbeam: 'unbeam', joinChord: 'link', mergeLyrics: 'merge', savePattern: 'bookmark-plus' };
   // Los demas grupos (2, 4 a 9 figuras) son el icono del tresillo con su numero.
   for (let n = 2; n <= 9; n += 1) {
     if (n === 3) continue;
