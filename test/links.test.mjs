@@ -10,6 +10,16 @@ function scoreWith(measure) {
   return score;
 }
 
+test('a carried accidental makes equal written notes differ: no stale tie, linking makes a slur', () => {
+  const score = scoreWith([{ d: 'q', n: 41, acc: 'b', at: 0 }, { d: 'q', n: 38, at: 24 }, { d: 'q', n: 41, tie: true, at: 48 }]);
+  score.rows[0][1] = [{ d: 'q', n: 41, at: 0 }];
+  assert.deepEqual(M.links(score), []);
+  const pair = [ref(2), ref(0, 1)];
+  assert.ok(M.selectionActions(score, pair).includes('link'));
+  assert.ok(M.applySelection(score, pair, 'link'));
+  assert.deepEqual(M.links(score), [{ type: 'slur', from: ref(2), to: ref(0, 1) }]);
+});
+
 test('a tie continues across a bar and within the measure, survives saving and exports both ends', () => {
   const score = scoreWith([{ d: 'w', n: 37, tie: true }]);
   score.rows[0][1] = [{ d: 'h', n: 37 }, { d: 'e', n: 37 }, { d: 'e', n: 36 }];
