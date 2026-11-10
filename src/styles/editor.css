@@ -2646,7 +2646,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 .score-restructure-go:disabled { background: var(--rule); color: var(--ink-soft); cursor: default; }
 
-/* Voces: cada registro se escribe sobre su pentagrama (el primero, tras el tempo) y abre un popup para cambiarlo. */
+/* Voces: cada registro se escribe sobre su pentagrama al inicio, sobre la armadura y abre un popup para cambiarlo. */
 .score-register-trigger {
   position: absolute;
   transform: translateY(-50%);
