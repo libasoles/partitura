@@ -502,10 +502,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // Duplica las voces `voices` (por defecto la superior) de toda la partitura `steps` pasos diatonicos abajo (2: una tercera; 5: una sexta). Con varias,
   // las copias quedan juntas bajo la mas grave de las elegidas en cada compas. Devuelve las figuras creadas, o null
   // (sin tocar la partitura) si alguna no entra.
-  function duplicateVoice(score, voices = null, steps = 2) {
+  // Con `only` (figuras elegidas) el alcance es esa seleccion y no la partitura entera.
+  function duplicateVoice(score, voices = null, steps = 2, only = null) {
     const trial = clone(score);
-    const refs = [];
-    for (let staff = 0; staff < stavesOf(trial); staff += 1) {
+    const refs = only ? only.slice() : [];
+    for (let staff = 0; staff < stavesOf(trial) && !only; staff += 1) {
       measures(trial, staff).forEach((measure, mi) => {
         if (!measure?.length) return;
         settleVoices(measure);

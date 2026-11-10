@@ -5920,10 +5920,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         pickerConfirm.textContent = t.voiceDuplicateConfirm;
         picker.append(pickerHeading, pickerList, pickerConfirm);
         document.querySelector('.score-page').appendChild(picker);
-        const duplicateVoices = (voices) => {
+        const duplicateVoices = (voices, only = null) => {
           const trial = M.clone(score);
-          if (!M.duplicateVoice(trial, voices, duplicateSteps)) { say(t.voiceDuplicateUnavailable); return; }
-          change(() => { Object.assign(score, trial); return true; });
+          const created = M.duplicateVoice(trial, voices, duplicateSteps, only);
+          if (!created) { say(t.voiceDuplicateUnavailable); return; }
+          change(() => {
+            Object.assign(score, trial);
+            if (only) { selected = created[created.length - 1]; group = created.length > 1 ? created : []; }
+            return true;
+          });
           say('');
           picker.hidePopover();
         };
@@ -5949,6 +5954,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           if (picker.matches(':popover-open') && duplicateAnchor === duplicate) { picker.hidePopover(); return; }
           duplicateSteps = steps;
           duplicateAnchor = duplicate;
+          // Con figuras elegidas, el alcance es la seleccion: sin selector de voces.
+          const chosen = picks().filter(eventAt);
+          if (chosen.length) { picker.hidePopover(); duplicateVoices(null, chosen); return; }
           const numbers = M.voiceNumbers(score);
           if (numbers.length < 2) { duplicateVoices(null); return; }
           pickerList.replaceChildren(...numbers.map((n) => {
