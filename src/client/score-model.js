@@ -516,8 +516,26 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     }
     const created = refs.length ? duplicateVertical(trial, refs, -1, true, steps) : null;
     if (!created?.length) return null;
+    if (voicePerStaff(trial)) legendForCopies(trial, created);
     Object.assign(score, trial);
     return created;
+  }
+
+  // En coro y guitarra con varios pentagramas la leyenda numera las voces: la copia no debe heredar la de su original
+  // (se veria como la misma voz), sino tomar un numero de leyenda libre. Si no queda ninguno, hereda como antes.
+  function legendForCopies(score, created) {
+    const staves = [...new Set(created.map(staffOf))];
+    const taken = new Set();
+    for (let staff = 0; staff < stavesOf(score); staff += 1) legendsOf(score, staff).forEach((n) => taken.add(n));
+    const ks = (staff) => [...new Set(created.filter((r) => staffOf(r) === staff).map((r) => measures(score, staff)[r.mi][r.i].v - 1))].sort((a, b) => a - b);
+    const maps = new Map(staves.map((staff) => [staff, Array.from({ length: MAX_VOICE }, (_, k) => legendOf(score, staff, k))]));
+    staves.forEach((staff) => ks(staff).forEach((k) => {
+      const free = [1, 2, 3, 4].find((n) => !taken.has(n));
+      if (!free) return;
+      taken.add(free);
+      maps.get(staff)[k] = free;
+    }));
+    withMaps(score, (all) => maps.forEach((map, staff) => { all[staff] = map; }));
   }
 
   // Duplica las figuras elegidas justo despues de la ultima de ellas, conservando su ritmo relativo. Lo que no entra
@@ -2076,6 +2094,16 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   function setInstrument(score, instrument) {
     if (!INSTRUMENTS.includes(instrument) || (instrument === 'voices' && !choir)) return false;
     const before = instrumentOf(score);
+    // En piano cada voz de notacion tiene su numero de leyenda (k + 1); en coro y guitarra con varios pentagramas, cada
+    // pentagrama es una voz. Al pasar de uno a otro se fija lo que se veia, para que las voces no se vuelvan una sola.
+    if (before === 'piano' && instrument !== 'piano') {
+      const frozen = [];
+      for (let staff = 0; staff < MAX_PARTS; staff += 1) {
+        const count = Math.max(0, ...measures(score, staff).map((m) => (m?.length ? voices(m).length : 0)));
+        if (count > 1) frozen[staff] = Array.from({ length: Math.min(count, MAX_VOICE) }, (_, k) => legendOf(score, staff, k));
+      }
+      if (frozen.length) withMaps(score, (maps) => frozen.forEach((map, staff) => { if (map && !maps[staff]) maps[staff] = map; }));
+    }
     score.instrument = instrument;
     if (instrument === 'voices') {
       delete score.showTabs;
