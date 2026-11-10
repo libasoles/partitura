@@ -42,6 +42,25 @@ test('Pro: with several voices a popup anchored to the button picks which to dup
   expect(voices).toEqual([[40], [34], [38], [32], [25]]);
 });
 
+test('Pro: with a voice chosen in the legend only that voice is duplicated, without the popup', async ({ page }) => {
+  await page.goto('/es/#pro');
+  await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
+  await page.waitForFunction(() => window.scoreEditor && document.querySelector('.score-doc-tab-input'));
+  await page.evaluate(() => {
+    window.scoreEditor.score.rows[0][0] = [{ n: 40, d: 'w', at: 0, v: 1 }, { n: 34, d: 'w', at: 0, v: 2 }, { n: 25, d: 'w', at: 0, v: 3 }];
+    window.scoreEditor.render();
+  });
+  await page.locator('#scoreStage g.note').first().waitFor();
+  await page.locator('#scoreSettingsToggle').click();
+  await page.locator('[data-category="voices"] input[type=checkbox]').check();
+  await page.locator('button[data-voice="2"]').first().click();
+  await page.locator('#scoreDuplicateVoice').click();
+  await expect(page.locator('#scoreVoicePicker')).toBeHidden();
+  await expect(page.locator('#scoreStage g.note')).toHaveCount(4);
+  const pitches = await page.evaluate(() => window.scoreEditor.score.rows[0][0].map((ev) => ev.n).sort((a, b) => a - b));
+  expect(pitches).toEqual([25, 32, 34, 40]);
+});
+
 test('Pro: the sixth button duplicates the top voice a sixth below, with its own icon', async ({ page }) => {
   await page.goto('/es/#pro');
   await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();

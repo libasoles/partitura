@@ -5927,13 +5927,26 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         pickerConfirm.textContent = t.voiceDuplicateConfirm;
         picker.append(pickerHeading, pickerList, pickerConfirm);
         document.querySelector('.score-page').appendChild(picker);
-        const duplicateVoices = (voices, only = null) => {
+        // Figuras de las voces elegidas en la leyenda (con Voces activo): el alcance es solo esas voces.
+        const legendRefs = () => {
+          if (!toolOn('voices', false) || !shownVoices.size) return [];
+          const refs = [];
+          for (let staff = 0; staff < M.stavesOf(score); staff++) {
+            M.measures(score, staff).forEach((measure, mi) => {
+              if (!measure?.length) return;
+              const keep = M.selectedEvents(score, staff, measure, shownVoices);
+              measure.forEach((_, i) => { if (keep.has(i)) refs.push(M.refOf(staff, mi, i)); });
+            });
+          }
+          return refs;
+        };
+        const duplicateVoices = (voices, only = null, select = true) => {
           const trial = M.clone(score);
           const created = M.duplicateVoice(trial, voices, duplicateSteps, only);
           if (!created) { say(t.voiceDuplicateUnavailable); return; }
           change(() => {
             Object.assign(score, trial);
-            if (only) { selected = created[created.length - 1]; group = created.length > 1 ? created : []; }
+            if (only && select) { selected = created[created.length - 1]; group = created.length > 1 ? created : []; }
             return true;
           });
           say('');
@@ -5964,6 +5977,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           // Con figuras elegidas, el alcance es la seleccion: sin selector de voces.
           const chosen = picks().filter(eventAt);
           if (chosen.length) { picker.hidePopover(); duplicateVoices(null, chosen); return; }
+          const legend = legendRefs();
+          if (legend.length) { picker.hidePopover(); duplicateVoices(null, legend, false); return; }
           const numbers = M.voiceNumbers(score);
           if (numbers.length < 2) { duplicateVoices(null); return; }
           pickerList.replaceChildren(...numbers.map((n) => {
