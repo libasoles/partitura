@@ -92,6 +92,8 @@ Con voces elegidas en la leyenda y la herramienta Voces activa, play reproduce s
 
 **Mover una nota a un compás con poco lugar**: si al soltar una nota (no silencio, ni tresillo) tras el final del contenido de otro compás solo queda libre menos que su duración, `moveEvent` la parte en la barra: lo que cabe va al final del compás y el resto abre el siguiente, ligado (una negra en un hueco de corchea: dos corcheas ligadas). Si el siguiente no existe o no admite el resto, sigue el comportamiento anterior. Test: `test/move-split.spec.mjs`.
 
+**Soltar una nota más a la derecha del final de su voz**: el compás es una sucesión de duraciones (`at` es solo orden), así que `moveEvent` llena el hueco entre el final de la voz y el lugar donde se soltó con silencios en esa voz, y la nota queda donde se ve. Test: `test/move-gap.spec.mjs`.
+
 ### Puntillo
 
 - Un doble click sobre una nota, sin herramienta activa, cicla el puntillo: uno, doble y ninguno (`applyModifier`, `kind: 'dot'`; si el doble no entra, vuelve a ninguno). Un click simple no puntúa; los silencios no se puntúan con doble click. La tecla <kbd>P</kbd> sigue aplicándolo con la herramienta.
