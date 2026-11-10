@@ -846,7 +846,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         const here = edits.filter((e) => measureKey(e.ref) === key);
         const measure = laneOf(here[0].ref)[here[0].ref.mi];
         M.settle(measure);
+        const groups = new Set(here.map((e) => laneOf(e.ref)[e.ref.mi][e.ref.i].tp).filter(Boolean));
         here.forEach((e) => place(measure, e));
+        M.dropBrokenTuplets(measure, groups);
+        M.settle(measure);
       });
     });
     say('');

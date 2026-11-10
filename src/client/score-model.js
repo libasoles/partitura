@@ -2340,6 +2340,15 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return found;
   }
 
+  // Un tresillo (o grupo irregular) al que le falta una figura ya no es valido: las que quedan vuelven a figuras comunes.
+  function dropBrokenTuplets(measure, ids) {
+    ids.forEach((id) => {
+      const rest = measure.filter((ev) => ev.tp === id);
+      if (rest.length && rest.length < tupletSize(rest[0])) rest.forEach((ev) => { delete ev.tp; delete ev.tn; });
+    });
+    return measure;
+  }
+
   function canDot(measure, index, score) {
     return dotPlan(measure, index, score) !== null;
   }
@@ -3449,7 +3458,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, voiceNumbers, duplicateSelection, length, gridOf, hints, onsets, settle, placement, fillWithRests, leadingRests, opensSection, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, voiceNumbers, duplicateSelection, length, tupletSize, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, leadingRests, opensSection, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, canJoinStaves, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, setTranspose, transposeOf, MAX_TRANSPOSE, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
