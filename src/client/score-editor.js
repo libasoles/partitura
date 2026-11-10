@@ -5259,6 +5259,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     intensities.hidden = !shown.dynamics;
     tabToggle.hidden = !guitar;
     alignBarlinesToFirstStaff();
+    barlines.classList.add('is-ready');
     playButton.hidden = !settings || !toolOn('playback', false);
     if (playButton.hidden) clearPlaybackHint();
     if (settings) stage.appendChild(playButton);
