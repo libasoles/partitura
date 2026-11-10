@@ -4484,24 +4484,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   window.addEventListener('scroll', placeRegisterPopup, { passive: true, capture: true });
   window.addEventListener('resize', placeRegisterPopup);
 
-  // Cada registro se escribe sobre su propio pentagrama, a la distancia que Verovio deja a la indicacion de tempo (si la hay, el primero va tras ella).
+  // Cada registro se escribe sobre su propio pentagrama, al inicio (sobre la clave y la armadura, antes de la metrica), donde no hay notas.
   function mountRegisterButtons() {
     if (!M.choir || M.instrumentOf(score) !== 'voices') return;
     const first = stage.querySelector('g.measure');
     const staves = first ? [...first.querySelectorAll(':scope > g.staff')] : [];
     if (!staves.length) return;
     const origin = stage.getBoundingClientRect();
-    const tempo = stage.querySelector('g.tempo');
-    const tempoBox = tempo && tempo.getBoundingClientRect();
     const lines = staves.map((node) => node.querySelectorAll(':scope > path'));
     if (!lines[0].length) return;
     const firstLine = lines[0][0].getBoundingClientRect();
     const space = lines[0].length > 1 ? lines[0][1].getBoundingClientRect().top - firstLine.top : 22;
-    const hasTempo = tempoBox && tempoBox.width && tempoBox.height;
-    const x = hasTempo ? tempoBox.right + 16 : firstLine.left + 4;
+    const x = firstLine.left + 4;
     for (let staff = 0; staff < Math.min(M.stavesOf(score), staves.length); staff += 1) {
       const top = lines[staff][0].getBoundingClientRect().top;
-      const y = staff === 0 && hasTempo ? (tempoBox.top + tempoBox.bottom) / 2 : top - space * 2.6;
+      const y = top - space * 2.6;
       const name = registerLabel(staff);
       const button = document.createElement('button');
       button.type = 'button';
