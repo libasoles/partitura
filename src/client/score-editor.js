@@ -1787,7 +1787,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       tools.dataset.row = row;
       tools.style.left = (last.right + 4) + 'px';
       tools.style.top = ((last.top + last.bottom) / 2) + 'px';
-      [['add', 'plus', t.addMeasure, size >= M.PER_ROW, t.noRoomForMeasure],
+      [['add', 'plus', t.addMeasure, false, t.noRoomForMeasure],
         ['remove', 'minus', t.deleteMeasure, size <= 1, t.deleteMeasure]].forEach(([action, icon, label, disabled, blocked]) => {
         const button = document.createElement('button');
         button.type = 'button';
