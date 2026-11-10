@@ -680,6 +680,16 @@
   color: var(--blue-france);
 }
 
+/* Botones que no se arrastran: solo se pulsan. */
+.score-settings-toggle,
+#scoreClear,
+#scoreDuplicate,
+.score-tab-toggle,
+.score-playback,
+.score-interval-toggle {
+  cursor: pointer;
+}
+
 .score-palette-item[aria-pressed="true"] {
   color: var(--accent-brand);
   background: color-mix(in srgb, var(--accent-brand) 14%, transparent);
