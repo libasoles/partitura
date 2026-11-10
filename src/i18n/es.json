@@ -151,6 +151,8 @@
     "settingsTempo": "Tempo",
     "tempoNone": "Sin indicación",
     "tempoUnit": "negras por minuto",
+    "settingsTranspose": "Transposición",
+    "transposeUnit": "semitonos",
     "settingsTools": "Herramientas",
     "toolsRepeats": "Repetición",
     "toolsDynamics": "Dinámica",
