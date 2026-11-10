@@ -2004,6 +2004,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 
 .score-settings-radio.is-icon:hover svg { color: var(--ink); }
+.score-settings-radio.is-icon:has(input:disabled) { opacity: 0.5; cursor: not-allowed; }
 
 .score-settings-radio.is-icon:has(input:checked) { font-weight: 600; color: var(--accent-brand); }
 

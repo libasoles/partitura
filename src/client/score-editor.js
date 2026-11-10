@@ -6037,7 +6037,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
     function sync() {
       if (patternsCheck) patternsCheck.checked = libraryEnabled;
-      instruments.forEach((radio, i) => { radio.checked = M.instrumentOf(score) === instrumentIds[i]; });
+      instruments.forEach((radio, i) => {
+        radio.checked = M.instrumentOf(score) === instrumentIds[i];
+        radio.disabled = Boolean(score.demo);
+      });
       // Cantidad de voces y sonidos son Pro; sin #pro (p. ej. en una demo) no se ofrecen.
       voicesCard.hidden = M.instrumentOf(score) !== 'voices' || !isPro();
       sounds.forEach((radio) => { radio.checked = M.soundOf(score) === radio.value; });
