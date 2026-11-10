@@ -5375,7 +5375,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   // Fila de un popup de unir/separar: casilla al inicio y el nombre a su lado.
-  function checkRow(text, checked, onChange) {
+  function checkRow(text, checked, onChange, voice = 0) {
     const row = document.createElement('label');
     row.className = 'score-restructure-row';
     const box = document.createElement('input');
@@ -5383,7 +5383,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     box.checked = checked;
     box.addEventListener('change', () => onChange(box.checked, box));
     const label = document.createElement('span');
-    label.textContent = text;
+    if (voice) {
+      // La voz se muestra como su circulo de la leyenda; el nombre queda como etiqueta accesible.
+      label.className = 'score-voice-swatch';
+      label.dataset.voice = String(voice);
+      label.textContent = String(voice);
+      box.setAttribute('aria-label', text);
+    } else label.textContent = text;
     row.append(box, label);
     return { row, box };
   }
@@ -5477,7 +5483,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           }
           if (on) selected.add(n); else selected.delete(n);
           split.disabled = !selected.size || selected.size >= legends.length;
-        });
+        }, n);
         row.dataset.voice = String(n);
         boxes.push(box);
         list.appendChild(row);
