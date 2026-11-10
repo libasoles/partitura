@@ -406,6 +406,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     save();
     renderTabs();
     render();
+    applyLibrary();
   }
 
   function newTab() {
@@ -534,7 +535,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (score.showTabs) restored.showTabs = true;
     else delete restored.showTabs;
     if (intervalDocuments.has(score)) intervalDocuments.add(restored);
-    score = Object.assign(restored, { title: score.title }, score.author ? { author: score.author } : {}, score.uid ? { uid: score.uid } : {});
+    score = Object.assign(restored, { title: score.title }, score.author ? { author: score.author } : {}, score.uid ? { uid: score.uid } : {}, score.patterns ? { patterns: score.patterns } : {});
     clearBarSelection();
     selected = null;
     selectedNavigation = [];
@@ -5437,7 +5438,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const patternsOn = () => patternsAvailable() && libraryEnabled;
   // Una columna mas a la izquierda solo cabe sin quitarle ancho a la partitura en pantallas anchas; en tablet no se ofrece.
   const patternsAvailable = () => patterns && settings && LIBRARY_PAGE.matches;
-  let library = [];
+  // Cada partitura guarda sus patrones (`score.patterns`); el panel muestra los de la activa.
+  const libraryOf = () => score.patterns || (score.patterns = []);
   const libraryPanel = document.createElement('aside');
   libraryPanel.className = 'score-library';
   libraryPanel.hidden = true;
@@ -5452,8 +5454,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   libraryList.className = 'score-library-list';
   libraryPanel.append(libraryTitle, libraryEmpty, libraryList);
   if (patterns && settings) {
-    const saved = getSetting('patternItems', []);
-    library = (Array.isArray(saved) ? saved : []).map(M.cleanPattern).filter(Boolean).slice(0, LIBRARY_LIMIT);
+    // Migracion: la biblioteca global anterior pasa a la partitura activa y se descarta.
+    const legacy = getSetting('patternItems', null);
+    if (Array.isArray(legacy)) {
+      const items = legacy.map(M.cleanPattern).filter(Boolean).slice(0, LIBRARY_LIMIT);
+      if (items.length && !score.patterns) score.patterns = items;
+      setSetting('patternItems', null);
+    }
     document.querySelector('.score-workspace').prepend(libraryPanel);
   }
 
@@ -5507,6 +5514,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function renderLibrary() {
     libraryList.replaceChildren();
+    const library = libraryOf();
     libraryEmpty.hidden = library.length > 0;
     library.forEach((pattern, index) => {
       const item = document.createElement('li');
@@ -5540,11 +5548,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       remove.setAttribute('aria-label', t.patternRemove);
       remove.addEventListener('click', () => {
         // Se desvanece antes de salir de la lista; el patron se borra al empezar para que un segundo click no quite otro.
-        library.splice(index, 1);
+        libraryOf().splice(index, 1);
         saveLibrary();
         remove.disabled = true;
         item.classList.add('is-removing');
-        const done = () => { item.remove(); libraryEmpty.hidden = library.length > 0; renderLibrary(); };
+        const done = () => { item.remove(); libraryEmpty.hidden = libraryOf().length > 0; renderLibrary(); };
         item.addEventListener('transitionend', done, { once: true });
         setTimeout(done, 400);
       });
@@ -5555,7 +5563,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function saveLibrary() {
-    setSetting('patternItems', library);
+    save();
   }
 
   function applyLibrary() {
@@ -5571,6 +5579,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const pattern = refs.length ? M.patternFrom(score, refs) : selectedMeasure !== null ? M.patternFromMeasure(score, selectedMeasure, selectedMeasureStaff) : null;
     if (!pattern) return say(refs.length ? t.patternOneStaff : t.patternNothing);
     const key = JSON.stringify(pattern);
+    const library = libraryOf();
     if (library.some((other) => JSON.stringify(other) === key)) return;
     library.unshift(pattern);
     library.length = Math.min(library.length, LIBRARY_LIMIT);
@@ -6195,6 +6204,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       renderTabs();
       render();
     }
+    applyLibrary();
     button.focus();
   });
 

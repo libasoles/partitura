@@ -10,11 +10,14 @@ function source() {
   return score;
 }
 
-async function open(page, extra = {}) {
+// `patternItems` se guarda en la partitura (los patrones son por partitura); el resto son opciones del usuario.
+async function open(page, { patternItems, ...extra } = {}) {
+  const score = source();
+  if (patternItems) score.patterns = patternItems;
   await page.addInitScript(({ score, extra }) => {
     localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [score] }));
     localStorage.setItem('partitura.settings.v1', JSON.stringify(extra));
-  }, { score: source(), extra });
+  }, { score, extra });
   await page.goto('/es/#pro');
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
 }
@@ -39,8 +42,6 @@ test('the library is Pro only and preserves saved patterns without Pro', async (
   await expect(page.getByRole('checkbox', { name: 'Biblioteca de patrones', exact: true })).toHaveCount(0);
   await expect(page.locator('.score-library')).toBeHidden();
   await page.keyboard.press('Escape');
-  await page.keyboard.press('Shift+S');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('partitura.settings.v1')).patternItems)).toEqual([pattern]);
   await page.goto('/es/#pro');
   await page.reload();
   await expect(page.locator('.score-pattern')).toHaveCount(1);
@@ -141,4 +142,13 @@ test('a chosen measure is saved with Shift+S and a click on a pattern writes it 
   await page.locator('.score-pattern-notes').click();
   const count = await page.evaluate(() => window.scoreEditor.score.rows[0][1].length);
   expect(count).toBe(4);
+});
+
+test('patterns belong to each score and are not shared between tabs', async ({ page }) => {
+  const pattern = M.patternFromMeasure(source(), 0);
+  await open(page, { patterns: true, patternItems: [pattern] });
+  await expect(page.locator('.score-pattern')).toHaveCount(1);
+  await page.locator('#scoreNewTab').first().click();
+  await expect(page.locator('.score-library-empty')).toBeVisible();
+  await expect(page.locator('.score-pattern')).toHaveCount(0);
 });
