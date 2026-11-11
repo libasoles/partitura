@@ -33,6 +33,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const removeRow = document.getElementById('scoreRemoveRow');
 
   const tabsBar = document.getElementById('scoreTabs');
+  const editorSection = tabsBar.closest('.score-editor');
   const stored = loadAll();
   const docs = stored.scores; // una partitura por pestana
   const folders = stored.folders; // carpetas de la lista de partituras (Pro): { id, name, collapsed? }
@@ -275,8 +276,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     document.getElementById('scoreDuplicate').hidden = !proTabs || Boolean(score.demo);
     tabsBar.querySelectorAll('.score-doc-tab').forEach((node) => node.remove());
     const add = document.getElementById('scoreNewTab');
-    const canClose = openCount() > 1; // demo tabs are closable without Pro; the rest only with it
-    const closableTab = (one) => canClose && (proTabs || Boolean(one.demo));
+    // Pro can close even the last tab, leaving only "+"; demo tabs are closable without Pro, while another is open.
+    const closableTab = (one) => proTabs || (openCount() > 1 && Boolean(one.demo));
+    editorSection.classList.toggle('is-no-score', !isOpen(active));
     docs.forEach((one, index) => {
       if (!isOpen(index)) return;
       if (index === active) {
@@ -460,8 +462,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Closing only takes the tab off the strip: the score stays stored, and listed in the site menu.
   function closeTab(index) {
-    if (!isOpen(index) || openCount() < 2) return;
-    if (!proTabs && !docs[index].demo) return;
+    if (!isOpen(index)) return;
+    if (!proTabs && (!docs[index].demo || openCount() < 2)) return;
     // Demo copies have no entry in the scores menu to reopen them from.
     if (docs[index].demo) {
       if (index === active) switchTo(docs.findIndex((_, i) => i !== index && isOpen(i)));
@@ -474,6 +476,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     docs[active] = score;
     histories[active] = history;
+    if (index === active && openCount() === 1) {
+      // The last open tab: the score stays active but hidden, and only "+" remains.
+      docs[index].closed = true;
+      selected = null;
+      group = [];
+      save();
+      renderTabs();
+      return;
+    }
     if (index === active) {
       let next = index + 1;
       while (next < docs.length && !isOpen(next)) next += 1;
@@ -498,6 +509,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     if (index === active) {
       renderTabs();
+      render();
       return;
     }
     switchTo(index);

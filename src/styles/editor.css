@@ -2866,3 +2866,6 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .scores-drawer-heading { margin: 0.3rem 0.5rem 0.1rem; color: var(--ink-soft); font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; }
 .scores-drawer-empty { padding: 0.4rem 0.5rem; color: var(--ink-soft); font-size: 0.8rem; font-style: italic; }
 .scores-drawer-root { min-height: 3rem; }
+
+/* Pro: with every tab closed only the tab strip ("+") remains. */
+.score-editor.is-no-score :is(.score-toolbar, .score-status, .score-sheet, .score-side-track, .score-rows) { display: none; }

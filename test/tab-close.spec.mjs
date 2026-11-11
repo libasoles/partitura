@@ -19,7 +19,7 @@ test('Pro: closing a tab keeps the score, and the menu lists and reopens it', as
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await open(page, '/es/#pro');
-  await expect(page.locator('.score-doc-tab-close')).toHaveCount(0); // a single tab cannot be closed
+  await expect(page.locator('.score-doc-tab-close')).toHaveCount(1); // Pro can close even the last tab
   await page.locator('#scoreTitle').fill('Uno');
   await page.locator('#scoreNewTab').click();
   await page.locator('#scoreTitle').fill('Dos');
@@ -30,7 +30,7 @@ test('Pro: closing a tab keeps the score, and the menu lists and reopens it', as
   await page.locator('.score-doc-tab.is-active .score-doc-tab-close').click();
   await expect(page.locator('.score-doc-tab')).toHaveCount(1);
   await expect(page.locator('#scoreTitle')).toHaveValue('Uno');
-  await expect(page.locator('.score-doc-tab-close')).toHaveCount(0);
+  await expect(page.locator('.score-doc-tab-close')).toHaveCount(1);
 
   await page.locator('#siteMenuToggle').click();
   const items = page.locator('#menuScores [role=menuitem]:not(#menuScoresMore)');
@@ -48,6 +48,17 @@ test('Pro: closing a tab keeps the score, and the menu lists and reopens it', as
   await page.locator('.score-doc-tab:not(.is-active) .score-doc-tab-close').click();
   await expect(page.locator('.score-doc-tab')).toHaveCount(1);
   await expect(page.locator('#scoreTitle')).toHaveValue('Dos');
+
+  // Closing the last tab leaves only "+"; the menu reopens a score.
+  await page.locator('.score-doc-tab.is-active .score-doc-tab-close').click();
+  await expect(page.locator('.score-doc-tab')).toHaveCount(0);
+  await expect(page.locator('#scoreNewTab')).toBeVisible();
+  await expect(page.locator('#scoreStage')).toBeHidden();
+  await page.locator('#siteMenuToggle').click();
+  await page.locator('#menuScores [role=menuitem]:not(#menuScoresMore)').nth(1).click();
+  await expect(page.locator('.score-doc-tab')).toHaveCount(1);
+  await expect(page.locator('#scoreTitle')).toHaveValue('Dos');
+  await expect(page.locator('#scoreStage')).toBeVisible();
 
   // Closed tabs survive a reload.
   await page.waitForTimeout(500);
