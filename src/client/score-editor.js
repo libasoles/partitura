@@ -5192,7 +5192,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   }
 
   function playbackOffset(mi, at = 0) {
-    return (measureOffset(0, mi) + at) * 60 / (score.tempo || 120) / M.DIVISIONS;
+    // Con repeticiones, un compás suena más de una vez: se usa su primera aparición.
+    const slot = M.playSlots(score).find((s) => s.mi === mi);
+    return ((slot ? slot.start : measureOffset(0, mi)) + at) * 60 / (score.tempo || 120) / M.DIVISIONS;
   }
 
   function activePlaybackPosition() {
@@ -5306,10 +5308,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function drawPlaybackCursor() {
     if (!player || !playbackTrack) return;
     const time = player.position * playbackTrack.tempo * M.DIVISIONS / 60;
-    const mi = playbackLayout.findIndex((measure) => time < measure.end);
+    const slot = playbackTrack.slots?.find((s) => time < s.end);
+    const mi = slot ? slot.mi : playbackLayout.findIndex((measure) => time < measure.end);
     const measure = playbackLayout[mi];
     if (!measure) return;
-    const local = Math.max(0, time - measure.start);
+    const local = Math.max(0, time - (slot ? slot.start : measure.start));
     const { bounds, anchors } = measure;
     let x = anchors[anchors.length - 1].x;
     for (let i = 1; i < anchors.length; i += 1) {
