@@ -37,3 +37,13 @@ test('the displayed copy moves the notes without touching the score', () => {
   assert.deepEqual(s.rows[0][0].map((e) => e.n), [35, 37]);
   assert.equal(M.transposedForDisplay(M.sanitize(M.emptyScore())).transpose, undefined);
 });
+
+test('the displayed copy transposes the key signature too', () => {
+  const s = score();
+  s.fifths = 1; // G
+  M.setTranspose(s, 2);
+  assert.equal(M.transposedForDisplay(s).fifths, 3); // A
+  M.setTranspose(s, -1);
+  assert.equal(M.transposedForDisplay(s).fifths, -6); // G down a semitone: Gb (flats going down)
+  assert.equal(s.fifths, 1);
+});
