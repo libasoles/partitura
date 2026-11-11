@@ -1151,6 +1151,16 @@ body.score-dragging {
   background: #ececec;
 }
 
+.score-measure-number {
+  position: absolute;
+  transform: translateY(-100%);
+  font-size: 0.625rem;
+  line-height: 1;
+  color: #777;
+  pointer-events: none;
+  user-select: none;
+}
+
 .score-row-tools {
   position: absolute;
   display: flex;
