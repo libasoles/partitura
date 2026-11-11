@@ -91,7 +91,7 @@ test('MIDI export of a choir uses the choir program on every visible staff', () 
   const score = choir();
   const bytes = IO.toMidi(score, C);
   const programs = [];
-  for (let i = 22; i < bytes.length - 2; i += 1) if ((bytes[i] & 0xf0) === 0xc0 && bytes[i + 1] === 52) programs.push(bytes[i] & 0x0f);
+  for (let i = 22; i < bytes.length - 2; i += 1) if ((bytes[i] & 0xf0) === 0xc0 && bytes[i + 1] === 53) programs.push(bytes[i] & 0x0f);
   assert.deepEqual(programs, [0, 1, 2]);
 });
 
