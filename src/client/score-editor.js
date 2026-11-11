@@ -1390,7 +1390,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!width) return;
     renderedWidth = width;
     toolkit.setOptions(layoutOptions(width, score.showTabs && tabSpace ? { spacingSystem: Math.min(48, 12 + tabSpace), pageMarginBottom: 60 + tabSpace } : undefined));
-    const xml = M.toMusicXml(score);
+    const xml = M.toMusicXml(M.transposedForDisplay(score));
     toolkit.loadData(xml);
     tuningPopup.hidePopover();
     meterPopup.hidePopover();

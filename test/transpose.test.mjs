@@ -28,3 +28,12 @@ test('transposition is limited to an octave each way, 0 is not saved and it surv
   assert.equal('transpose' in s, false);
   assert.equal(M.transposeOf(M.sanitize({ ...s, transpose: 40 })), 0);
 });
+
+test('the displayed copy moves the notes without touching the score', () => {
+  const s = score();
+  M.setTranspose(s, 2);
+  const shown = M.transposedForDisplay(s);
+  assert.deepEqual(shown.rows[0][0].map((e) => e.n), [36, 38]);
+  assert.deepEqual(s.rows[0][0].map((e) => e.n), [35, 37]);
+  assert.equal(M.transposedForDisplay(M.sanitize(M.emptyScore())).transpose, undefined);
+});
