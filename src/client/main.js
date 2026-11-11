@@ -33,3 +33,26 @@ mobilePdf?.addEventListener('click', async () => {
     mobilePdf.disabled = false;
   }
 });
+
+// Phone demos: a play/pause button under the score. It starts the editor (once) and drives its own play button.
+const mobilePlay = document.getElementById('mobilePlay');
+mobilePlay?.addEventListener('click', async () => {
+  const label = mobilePlay.querySelector('span');
+  const sync = (button) => {
+    mobilePlay.setAttribute('aria-pressed', button.getAttribute('aria-pressed'));
+    mobilePlay.disabled = button.disabled;
+    label.textContent = button.getAttribute('aria-label');
+  };
+  const first = !mobilePlay.dataset.bound;
+  if (first) {
+    mobilePlay.dataset.bound = '1';
+    mobilePlay.disabled = true;
+    starting = starting || start();
+    await starting;
+    await siteActions.ready;
+    const button = document.getElementById('scorePlayback');
+    if (!button) return;
+    new MutationObserver(() => sync(button)).observe(button, { attributes: true });
+  }
+  document.getElementById('scorePlayback')?.click();
+});

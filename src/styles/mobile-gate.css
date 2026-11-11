@@ -2,7 +2,7 @@
    impractical), plus a short animated tour of what the editor does. Wide screens never see it. */
 
 .mobile-gate { display: none; }
-.mobile-pdf { display: none; }
+.mobile-pdf, .mobile-play { display: none; }
 
 @media (max-width: 899px) {
   .mobile-gate { display: block; margin-top: 1.5rem; }
@@ -23,6 +23,17 @@
     font: inherit; font-size: calc(1em - 2px); font-weight: 600;
   }
   .mobile-pdf:disabled { opacity: 0.6; }
+  .mobile-play {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    margin: 1rem auto 0; padding: 0.7rem 1.4rem;
+    border: 0; border-radius: 999px; background: var(--ink); color: var(--paper);
+    font: inherit; font-weight: 600;
+  }
+  .mobile-play:disabled { opacity: 0.6; }
+  .mobile-play .mobile-play__pause, .mobile-play[aria-pressed="true"] .mobile-play__play { display: none; }
+  .mobile-play[aria-pressed="true"] .mobile-play__pause { display: block; }
+  .mobile-play + .mobile-pdf { margin-top: 0.5rem; }
+  .score-editor[data-demo-id] .score-playback { display: none; }
 }
 
 .mobile-gate__hero {
