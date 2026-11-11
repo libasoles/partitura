@@ -1015,7 +1015,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const planned = M.onsets(trial);
       // Quitar una coincidencia vertical no debe adelantar otra parte para rellenar
       // el hueco. Hasta representar esas esperas explicitamente, conservar la escritura.
-      if (kept.some(item => item.ev.v !== moved.v && planned[trial.indexOf(item.ev)] !== item.at)) return say(t.keepVoiceTiming);
+      if (kept.some(item => item.ev.v !== moved.v && planned[trial.indexOf(item.ev)] !== item.at)) {
+        // Los huecos que solo se deducen del orden se colapsan al mover: escribirlos como silencios y reintentar.
+        if (M.fillGaps(M.clone(destination))) {
+          change(() => M.fillGaps(destination));
+          return moveEvent(from, target);
+        }
+        return say(t.keepVoiceTiming);
+      }
     }
     // Soltada mas a la derecha de donde terminaria su voz, la nota conserva ese lugar: el compas es una sucesion de
     // duraciones, asi que el hueco se llena con silencios (sin ellos la figura se pegaria a la anterior).
