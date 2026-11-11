@@ -341,16 +341,11 @@ input:where([type="text"], [type="search"], [type="email"], [type="url"], [type=
 .site-footer {
   max-width: var(--page);
   margin: 4rem auto 0;
-  padding: 1rem var(--gutter) 2rem;
+  padding: 1rem var(--gutter) 0.9rem; /* at the end of the page the link sits level with the beta badge */
   font-size: 0.85rem;
   text-align: right;
-  /* Sticks to the viewport bottom, level with the beta badge, once a long score pushes it below the fold. */
-  position: sticky;
-  bottom: -0.9rem;
-  z-index: 5;
-  pointer-events: none;
 }
-.site-footer a { pointer-events: auto; color: var(--ink-soft); text-decoration: none; }
+.site-footer a { color: var(--ink-soft); text-decoration: none; }
 .site-footer a:hover { color: var(--ink); }
 
 .legal {
