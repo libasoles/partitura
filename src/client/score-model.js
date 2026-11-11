@@ -2483,6 +2483,18 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const shift = transposeOf(score);
     if (!shift) return score;
     const copy = JSON.parse(JSON.stringify(score));
+    // La armadura sube 7 quintas por semitono; entre las equivalentes (±12) gana la de menos alteraciones.
+    const shiftKey = (fifths) => {
+      const base = fifths + 7 * shift;
+      let best = null;
+      for (let k = -4; k <= 4; k += 1) {
+        const f = base + 12 * k;
+        if (Math.abs(f) <= 7 && (best === null || Math.abs(f) < Math.abs(best) || (Math.abs(f) === Math.abs(best) && f > 0 === shift > 0))) best = f;
+      }
+      return best;
+    };
+    copy.fifths = shiftKey(fifthsOf(copy));
+    if (copy.keys) Object.keys(copy.keys).forEach((mi) => { copy.keys[mi] = shiftKey(copy.keys[mi]); });
     for (let staff = 0; staff < stavesOf(copy); staff += 1) {
       measures(copy, staff).forEach((measure, mi) => {
         const starts = onsets(measure);
