@@ -1429,6 +1429,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     mountBarlineButtons();
     markMeasureBars();
     mountRowTools();
+    mountMeasureNumbers();
     mountBarreInputs();
     mountChords();
     mountLyrics();
@@ -1965,6 +1966,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       // Los botones de renglones van bajo el escenario: que no tapen la ultima tablatura.
       const bottom = mounted[mounted.length - 1].tabs.getBoundingClientRect().bottom - stage.getBoundingClientRect().top;
       stage.style.minHeight = Math.ceil(bottom + 24) + 'px';
+    });
+  }
+
+  // Numero del primer compas de cada renglon, chico, sobre el pentagrama de arriba junto a la barra inicial.
+  function mountMeasureNumbers() {
+    M.rowStarts(score).forEach((first) => {
+      const head = layout[first];
+      if (first === 0 || !head || !head.lines.length) return;
+      const label = document.createElement('span');
+      label.className = 'score-measure-number';
+      label.textContent = first + 1;
+      label.style.left = head.left + 'px';
+      label.style.top = (head.lines[0] - 4) + 'px';
+      stage.appendChild(label);
     });
   }
 
