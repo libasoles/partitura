@@ -823,6 +823,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (isPlacing(item)) return;
     if (isModifier(item)) {
       if (item.kind === 'acc' && picks().length > 1) applyAccidentals(item, picks());
+      else if (item.kind === 'dot' && picks().length > 1) applyDots(picks());
       else if (eventAt(selected)) applyModifier(item, selected);
       return;
     }
@@ -890,6 +891,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       else ev.acc = item.acc;
     });
     previewNote(hit);
+  }
+
+  // Con varias figuras elegidas el puntillo se aplica a todas: el paso del ciclo (ninguno, uno, doble) lo marca la figura principal.
+  function applyDots(refs) {
+    const events = refs.map((ref) => ({ ref, ev: eventAt(ref) })).filter((o) => o.ev);
+    if (!events.length) return;
+    const lead = eventAt(selected) || events[0].ev;
+    const next = lead.dot === 2 ? 0 : lead.dot ? 2 : 1;
+    const targets = events.filter(({ ref, ev }) => {
+      if (!next) return !!ev.dot;
+      const measure = laneOf(ref)[ref.mi];
+      return next === 2 ? M.dotPlan(measure, ref.i, score) && ev.dot === true : !ev.dot && M.dotPlan(measure, ref.i, score);
+    });
+    if (!targets.length) return say(t.noDot);
+    change(() => targets.forEach(({ ev }) => { if (next) ev.dot = next === 2 ? 2 : true; else delete ev.dot; }));
   }
 
   // Con varias figuras elegidas la alteracion se aplica a todas: el paso del ciclo lo marca la nota principal.
