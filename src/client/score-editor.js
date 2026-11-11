@@ -6203,8 +6203,23 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     tempoNone.type = 'checkbox';
     tempoField.append(tempoNone, document.createTextNode(t.tempoNone));
     const showTempo = () => { tempoValue.textContent = '\u2669 = ' + tempoSlider.value; };
-    tempoSlider.addEventListener('input', () => { showTempo(); tempoNone.checked = false; });
-    tempoSlider.addEventListener('change', () => { change(() => M.setTempo(score, Number(tempoSlider.value))); sync(); });
+    // Con la reproduccion activa el tempo se aplica mientras se arrastra; el deshacer queda en una sola entrada al soltar.
+    let tempoBefore = null;
+    tempoSlider.addEventListener('input', () => {
+      showTempo();
+      tempoNone.checked = false;
+      if (playbackState === 'idle') return;
+      if (!tempoBefore) { tempoBefore = M.clone(score); M.pruneLower(tempoBefore); }
+      if (M.setTempo(score, Number(tempoSlider.value))) render();
+    });
+    tempoSlider.addEventListener('change', () => {
+      const before = tempoBefore;
+      tempoBefore = null;
+      if (before) {
+        if (before.tempo !== score.tempo) recordChange(before);
+      } else change(() => M.setTempo(score, Number(tempoSlider.value)));
+      sync();
+    });
     tempoNone.addEventListener('change', () => {
       change(() => M.setTempo(score, tempoNone.checked ? null : Number(tempoSlider.value)));
       sync();

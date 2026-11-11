@@ -516,6 +516,24 @@ for (const paused of [false, true]) test(`changing tempo preserves the musical p
   expect(advanced).toBeLessThan(10);
 });
 
+test('the tempo slider changes the sound while dragging, without waiting for release', async ({ page }) => {
+  await open(page, 'piano', {
+    rows: [[[{ d: 'q', n: 35 }, { d: 'q', n: 37 }, { d: 'h', n: 38 }]]], tools: { playback: true }, tempo: 60,
+  });
+  const play = page.locator('#scorePlayback');
+  await play.click();
+  await expect(play).toHaveAccessibleName('Pausar');
+  await page.locator('#scoreSettingsToggle').click();
+  await page.evaluate(() => { window.audioStarts = []; });
+  // Only `input` events (a drag in progress): no `change`.
+  await page.getByRole('slider', { name: /Tempo/ }).evaluate((slider) => {
+    slider.value = '200';
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect.poll(() => page.evaluate(() => window.audioStarts.length)).toBeGreaterThan(0);
+  await expect(play).toHaveAccessibleName('Pausar');
+});
+
 test('tempo changes while samples load use the latest tempo without cancelling play', async ({ page }) => {
   let release;
   const pending = new Promise((resolve) => { release = resolve; });
