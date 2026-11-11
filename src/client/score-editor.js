@@ -4405,9 +4405,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const button = document.createElement('button');
       button.type = 'button';
       const name = durationName(problem.extra);
+      const title = document.createElement('strong');
+      title.className = 'score-problems-name';
+      title.textContent = t.problemsMeasure.replace('{n}', problem.mi + 1);
       const label = document.createElement('span');
-      label.textContent = (name ? t.problemsItem.replace('{extra}', name) : t.problemsItemShort).replace('{n}', problem.mi + 1);
-      button.append(label);
+      label.className = 'score-problems-reason';
+      label.textContent = name ? t.problemsItem.replace('{extra}', name) : t.problemsItemShort;
+      button.append(title, label);
       const sketch = problemSketch(problem);
       if (sketch) button.append(sketch);
       button.addEventListener('click', () => {
