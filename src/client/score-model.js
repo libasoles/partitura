@@ -2359,17 +2359,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return true;
   }
 
-  // Un compas que abre la partitura o una seccion (tras doble barra, final o repeticion, o con inicio de repeticion)
-  // no continua nada: una nota que no cae en su inicio (sincopa) supone silencios antes, no despues.
-  function opensSection(score, mi) {
-    const bar = score.barlines || {};
-    return mi === 0 || !!bar[mi]?.start || !!(bar[mi - 1] && (bar[mi - 1].double || bar[mi - 1].end));
-  }
-
-  // Silencios que llenan [0, at) de un compas vacio que abre una seccion; [] si no corresponde.
+  // Silencios que llenan [0, at) de un compas vacio: una nota que no cae en su inicio (sincopa, anacrusa) supone
+  // silencios antes, sin que haya que escribirlos; [] si no corresponde.
   function leadingRests(score, mi, staff, at) {
     const measure = measures(score, staff)[mi];
-    if (!measure || measure.length || !(at > 0) || !opensSection(score, mi)) return [];
+    if (!measure || measure.length || !(at > 0)) return [];
     return restPieces(0, at, 0) || [];
   }
 
@@ -3639,7 +3633,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, leadingRests, opensSection, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, leadingRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, canJoinStaves, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, setTranspose, transposeOf, transposedForDisplay, MAX_TRANSPOSE, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, playOrder, playSlots, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,

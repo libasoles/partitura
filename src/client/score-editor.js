@@ -767,7 +767,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         return;
       }
       change(() => {
-        // Una sincopa al abrir la partitura o una seccion tiene silencios antes de la nota.
+        // Una sincopa en un compas vacio tiene silencios antes de la nota.
         measure.push(...M.leadingRests(score, target.mi, target.staff, spot.at));
         const index = M.insertNote(measure, ev, spot.at);
         // Con una herramienta activa la figura nueva no queda seleccionada: seleccion y herramienta no conviven.
