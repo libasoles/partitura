@@ -3058,6 +3058,34 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return { from, to, existing, staff };
   }
 
+  // Dos acordes (grupos apilados) consecutivos de una voz, o en los extremos de compases vecinos, cuyas notas mantienen la altura:
+  // cada nota del primero se liga con la de igual altura del segundo.
+  function chordLinkPair(score, sel) {
+    if (!sel.length) return null;
+    const staff = staffOf(sel[0]);
+    const all = measures(score, staff);
+    if (sel.some((s) => staffOf(s) !== staff || !all[s.mi]?.[s.i])) return null;
+    const notes = sel.filter((s, k) => sel.findIndex((o) => sameRef(o, s)) === k);
+    if (notes.length < 3 || notes.some((s) => all[s.mi][s.i].rest)) return null;
+    const column = new Map();
+    notes.forEach((s) => {
+      const key = s.mi + ':' + onsets(all[s.mi])[s.i];
+      column.set(key, (column.get(key) || []).concat(s));
+    });
+    if (column.size !== 2) return null;
+    const [left, right] = [...column.values()].sort((a, b) => a[0].mi - b[0].mi || onsets(all[a[0].mi])[a[0].i] - onsets(all[b[0].mi])[b[0].i]);
+    const covers = (indices, refs) => indices.length === refs.length && indices.every((i) => refs.some((r) => r.i === i));
+    if (left[0].mi === right[0].mi) {
+      const r = run(score, notes);
+      if (!r || r.groups.length !== 2 || !covers(r.groups[0].indices, left) || !covers(r.groups[1].indices, right)) return null;
+    } else {
+      if (right[0].mi !== left[0].mi + 1) return null;
+      if (!covers(edge(all[left[0].mi], 'last'), left) || !covers(edge(all[right[0].mi], 'first'), right)) return null;
+    }
+    if (!left.every((from) => right.some((to) => samePitch(score, staff, from, to)))) return null;
+    return { refs: left, staff, existing: links(score).some((l) => left.some((from) => sameRef(l.from, from))) };
+  }
+
   function beamRun(score, sel) {
     const r = run(score, sel);
     if (!r || r.groups.length < 2 || !r.groups.every((g) => g.indices.every((i) => isBeamable(r.measure[i])))) return null;
@@ -3139,7 +3167,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     if (group) actions.push(tupletAction(group.groups.length));
     const loose = untripletRun(score, sel);
     if (loose) actions.push('un' + tupletAction(loose.size));
-    const pair = linkPair(score, sel);
+    const pair = linkPair(score, sel) || chordLinkPair(score, sel);
     if (pair) actions.push(pair.existing ? 'unlink' : 'link');
     const beams = beamRun(score, sel);
     if (beams && beams.joins.some((j) => !j)) actions.push('beam');
@@ -3199,6 +3227,17 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       return true;
     }
     if (action === 'link' || action === 'unlink') {
+      const chord = linkPair(score, sel) ? null : chordLinkPair(score, sel);
+      if (chord) {
+        const lane = measures(score, chord.staff);
+        chord.refs.forEach((ref) => {
+          const ev = lane[ref.mi][ref.i];
+          delete ev.tie;
+          delete ev.slur;
+          if (action === 'link') ev.tie = true;
+        });
+        return true;
+      }
       const { from, to, staff } = linkPair(score, sel);
       const lane = measures(score, staff);
       const ev = lane[from.mi][from.i];
