@@ -71,3 +71,12 @@ test('dropping a dragged single note sounds it at its new pitch', async ({ page 
   await page.mouse.up();
   await expect.poll(heard, { intervals: [200] }).toBeGreaterThan(before);
 });
+
+test('writing a note with a tool sounds it', async ({ page }) => {
+  const heard = () => page.evaluate(() => window.audioStarts.length);
+  await open(page);
+  await page.keyboard.press('4');
+  const rest = await page.locator('[id="e0-1"]').first().boundingBox();
+  await page.mouse.click(rest.x + rest.width / 2, rest.y + rest.height / 2);
+  await expect.poll(heard, { intervals: [200] }).toBeGreaterThan(0);
+});
