@@ -2477,6 +2477,41 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   const SEMITONES = [0, 2, 4, 5, 7, 9, 11];
+  // Copia para dibujar con la transposicion aplicada (mismos indices de compas y figura): cada nota se vuelve a escribir
+  // `transposeOf` semitonos mas arriba/abajo, con la ortografia que pida menos alteraciones segun la armadura.
+  function transposedForDisplay(score) {
+    const shift = transposeOf(score);
+    if (!shift) return score;
+    const copy = JSON.parse(JSON.stringify(score));
+    for (let staff = 0; staff < stavesOf(copy); staff += 1) {
+      measures(copy, staff).forEach((measure, mi) => {
+        const starts = onsets(measure);
+        const accidentals = new Map();
+        measure.map((_, i) => i).sort((a, b) => starts[a] - starts[b]).forEach((i) => {
+          const ev = measure[i];
+          if (ev.rest) return;
+          const from = ev.acc ? ACCIDENTALS[ev.acc].alter : accidentals.has(ev.n) ? accidentals.get(ev.n) : keyAlter(ev.n, copy, mi);
+          if (ev.acc) accidentals.set(ev.n, from);
+          const midi = 12 * Math.floor(ev.n / 7) + SEMITONES[ev.n % 7] + from + shift;
+          let best = null;
+          for (let n = Math.floor(midi / 12) * 7 - 7; n < Math.floor(midi / 12) * 7 + 14; n += 1) {
+            const alter = midi - (12 * Math.floor(n / 7) + SEMITONES[((n % 7) + 7) % 7]);
+            if (Math.abs(alter) > 1) continue;
+            const current = accidentals.has(n) ? accidentals.get(n) : keyAlter(n, copy, mi);
+            const cost = (alter === current ? 0 : 2) + Math.abs(alter) + (alter === (shift > 0 ? -1 : 1) ? 0.5 : 0);
+            if (!best || cost < best.cost) best = { n, alter, cost, current };
+          }
+          if (!best) return;
+          ev.n = best.n;
+          delete ev.acc;
+          if (best.alter !== best.current) ev.acc = accidentalFor(best.alter);
+          accidentals.set(best.n, best.alter);
+        });
+      });
+    }
+    return copy;
+  }
+
   const accidentalFor = (alter) => alter === 2 ? '##' : alter === -2 ? 'bb' : alter === 1 ? '#' : alter === -1 ? 'b' : 'n';
 
   // Altura efectiva de cada figura, incluso si su alteracion viene de una nota no seleccionada.
@@ -3593,7 +3628,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, leadingRests, opensSection, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, canJoinStaves, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
-    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, setTranspose, transposeOf, MAX_TRANSPOSE, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, playOrder, playSlots, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, setTranspose, transposeOf, transposedForDisplay, MAX_TRANSPOSE, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, playOrder, playSlots, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }
