@@ -4361,6 +4361,22 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return key && t[{ w: 'whole', h: 'half', q: 'quarter', e: 'eighth', s: 'sixteenth', f: 'thirtySecond' }[key]]?.toLowerCase();
   };
 
+  // El compas tal como esta, dibujado por el mismo grabador: sola su clave, armadura y metrica, con lo que se pasa.
+  function problemSketch({ mi, staff }) {
+    if (!toolkit) return null;
+    const sample = {
+      clef: M.clefAt(score, mi, staff), fifths: M.keyAt(score, mi), meter: M.meterAt(score, mi), instrument: 'guitar',
+      rows: [[M.clone(M.measures(score, staff)[mi])]],
+    };
+    if (!previewToolkit) previewToolkit = newToolkit();
+    previewToolkit.setOptions(layoutOptions(420, { breaks: 'none', pageMarginLeft: 10, pageMarginRight: 10, pageMarginTop: 10, pageMarginBottom: 10 }));
+    previewToolkit.loadData(M.toMusicXml(sample));
+    const svg = document.importNode(new DOMParser().parseFromString(previewToolkit.renderToSVG(1), 'image/svg+xml').documentElement, true);
+    svg.setAttribute('aria-hidden', 'true');
+    svg.classList.add('score-problems-sketch');
+    return svg;
+  }
+
   renderProblems = () => {
     const found = M.problems(score);
     problemsDot.hidden = !found.length;
@@ -4373,7 +4389,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const button = document.createElement('button');
       button.type = 'button';
       const name = durationName(problem.extra);
-      button.textContent = (name ? t.problemsItem.replace('{extra}', name) : t.problemsItemShort).replace('{n}', problem.mi + 1);
+      const label = document.createElement('span');
+      label.textContent = (name ? t.problemsItem.replace('{extra}', name) : t.problemsItemShort).replace('{n}', problem.mi + 1);
+      button.append(label);
+      const sketch = problemSketch(problem);
+      if (sketch) button.append(sketch);
       button.addEventListener('click', () => {
         clearBarSelection();
         selectedMeasure = problem.mi;
