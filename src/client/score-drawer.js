@@ -104,6 +104,7 @@ export function createScoresDrawer({ t, lucide, docs, folders, active, labelOf, 
         else if (event.key === 'Escape') { event.stopPropagation(); finish(false); }
       });
       input.addEventListener('blur', () => finish(true));
+      toggle.classList.add('is-renaming');
       head.append(toggle, input);
       queueMicrotask(() => { input.focus(); input.select(); });
     } else {
@@ -193,10 +194,13 @@ export function createScoresDrawer({ t, lucide, docs, folders, active, labelOf, 
   }
 
   function close(focus) {
-    if (!root || root.hidden) return;
-    root.hidden = true;
+    if (!root || root.hidden || root.classList.contains('is-closing')) return;
     renaming = null;
     if (focus && opener) opener.focus();
+    const done = () => { root.hidden = true; root.classList.remove('is-closing'); };
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return done();
+    root.classList.add('is-closing');
+    root.querySelector('.scores-drawer-panel').addEventListener('animationend', done, { once: true });
   }
 
   return {

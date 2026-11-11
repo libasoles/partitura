@@ -7,6 +7,7 @@ let siteActions;
 let starting;
 
 async function start() {
+  import('./tooltip-bounds.js');
   const { startEditor } = await import('./runtime.js');
   const { bindSiteActions } = await import('./site-actions.js');
   const { readUrlDefaults } = await import('./url-defaults.js');

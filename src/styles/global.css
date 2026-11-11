@@ -195,6 +195,22 @@ a { color: var(--blue-france); }
   white-space: nowrap;
 }
 
+/* Every text field in the app: only a bottom border. */
+input:where([type="text"], [type="search"], [type="email"], [type="url"], [type="number"], :not([type])) {
+  padding: 0.25rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--ink-soft);
+  border-radius: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+}
+input:where([type="text"], [type="search"], [type="email"], [type="url"], [type="number"], :not([type])):focus {
+  border-bottom-color: var(--accent-brand, var(--ink));
+  box-shadow: 0 1px 0 var(--accent-brand, var(--ink));
+}
+
 .score-editor { margin-top: 0.6rem; }
 .noscript { padding: 1rem; border: 1px dashed var(--rule); color: var(--ink-soft); }
 
@@ -215,7 +231,7 @@ a { color: var(--blue-france); }
 .tooltip::after {
   content: attr(data-tooltip);
   bottom: calc(100% + 0.45rem);
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + var(--tooltip-shift, 0px)));
   padding: 0.3rem 0.6rem;
   border-radius: 0.3rem;
   background: #000;
