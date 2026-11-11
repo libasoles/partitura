@@ -876,6 +876,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       else if (double && ev.acc === double) delete ev.acc;
       else ev.acc = item.acc;
     });
+    previewNote(hit);
   }
 
   // Con varias figuras elegidas la alteracion se aplica a todas: el paso del ciclo lo marca la nota principal.
@@ -890,6 +891,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     else if (double && base.acc === double) next = undefined;
     else next = item.acc;
     change(() => notes.forEach((ev) => { if (next) ev.acc = next; else delete ev.acc; }));
+    playSelectedNotes();
   }
 
   function moveEvent(from, target) {
@@ -4968,9 +4970,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Selecting a single note sounds it, unless the score is playing.
   let previewRequest = 0;
-  async function previewSelectedNote() {
+  function previewSelectedNote() {
+    return previewNote(group.length <= 1 && !lyricOnly && !selectedChords.length ? selected : null);
+  }
+
+  async function previewNote(ref) {
     const request = ++previewRequest;
-    const ref = group.length <= 1 && !lyricOnly && !selectedChords.length ? selected : null;
     const event = ref && eventAt(ref);
     if (!event || event.rest || playbackState === 'playing' || playbackState === 'loading') return;
     const midi = measurePitches(score, M, laneOf(ref)[ref.mi], ref.mi)[ref.i]?.midi;
