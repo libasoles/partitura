@@ -3508,8 +3508,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const space = (lines[4] - lines[0]) / 4;
       const dx = Math.max(m.left - x, 0, x - m.right);
       const dy = Math.abs(y - lines[2]);
-      if (dy > space * 7 || dx > space * 3) return;
-      const cost = dy + dx * 2;
+      // La celda de la letra queda unos espacios mas abajo: con esa herramienta sigue contando como el mismo pentagrama.
+      if (dy > space * (activeItem && activeItem.kind === 'lyric' ? 11 : 7) || dx > space * 3) return;
+      // Bajo un pentagrama con letra, entre dos pentagramas, gana ese: es donde se dibuja su celda.
+      const inCell = activeItem && activeItem.kind === 'lyric' && staff < M.lyricStaves(score) && y > lines[4] && y < lines[4] + space * 6;
+      const cost = inCell ? dx * 2 : dy + dx * 2;
       if (best && cost >= best.cost) return;
       best = { mi, m, staff, lines, space, cost };
     }));
@@ -3861,7 +3864,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       event.preventDefault();
       stage.focus({ preventScroll: true });
       // Con la herramienta de letra, arrastrar desde un espacio vacio hace el marco de seleccion (para unir silabas).
-      if (activeItem.kind === 'lyric' && event.pointerType !== 'touch' && !eventUnder(event.clientX, event.clientY)) {
+      // La celda resaltada bajo la nota tambien es un destino: clic ahi empieza a escribir.
+      const cell = activeItem.kind === 'lyric' && marker && !marker.hidden && marker.querySelector('.score-marker-cell');
+      const overCell = cell && (() => { const b = cell.getBoundingClientRect(); return event.clientX >= b.left && event.clientX <= b.right && event.clientY >= b.top - 4 && event.clientY <= b.bottom + 4; })();
+      if (activeItem.kind === 'lyric' && !overCell && event.pointerType !== 'touch' && !eventUnder(event.clientX, event.clientY)) {
         beginMarquee(event, event.shiftKey || event.ctrlKey || event.metaKey);
         return;
       }
