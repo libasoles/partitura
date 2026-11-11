@@ -5042,20 +5042,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // sounds at the pitch it would land on, each time the aim changes.
   function dragSound(d, target) {
     if (!target || d.insert || d.pattern || d.item) return;
-    const key = [target.mi, target.staff, target.n, target.t].join(':');
-    if (d.soundKey === key) return;
-    d.soundKey = key;
     const refs = (d.group?.length > 1 ? d.group : [d.from]).filter((ref) => { const ev = ref && eventAt(ref); return ev && !ev.rest; });
     if (!refs.length) return;
     const start = (ref) => measureOffset(0, ref.mi) + M.onsets(laneOf(ref)[ref.mi])[ref.i];
     const first = Math.min(...refs.map(start));
-    const anchor = eventAt(d.from);
-    const dn = target.n - anchor.n;
-    const midis = refs.filter((ref) => start(ref) === first).map((ref) => {
+    const column = refs.filter((ref) => start(ref) === first);
+    const pitches = (dn, mi) => [...new Set(column.map((ref) => {
       const ev = eventAt(ref);
-      return pitchMidi(score, M, Math.max(M.LOWEST, Math.min(M.HIGHEST, ev.n + dn)), ev.acc, target.mi);
-    });
-    auditionPitches([...new Set(midis)]);
+      return pitchMidi(score, M, Math.max(M.LOWEST, Math.min(M.HIGHEST, ev.n + dn)), ev.acc, mi ?? ref.mi);
+    }))].sort((a, b) => a - b);
+    // Only a change of pitch sounds, once; the pitches the notes started with count as already heard.
+    d.soundKey ??= pitches(0).join();
+    const midis = pitches(target.n - eventAt(d.from).n, target.mi);
+    if (midis.join() === d.soundKey) return;
+    d.soundKey = midis.join();
+    auditionPitches(midis);
   }
 
   // Space with figures selected sounds them (together or in sequence, as written) instead of toggling playback.
