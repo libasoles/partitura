@@ -1334,9 +1334,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return true;
   }
 
-  // Quita el ultimo compas del renglon `row` (con sus figuras), salvo que sea el unico.
+  // Quita el ultimo compas del renglon `row` (con sus figuras); si era el unico del renglon, este desaparece (salvo que sea el ultimo compas de la partitura).
   function removeMeasure(score, row) {
-    if (!Number.isInteger(row) || row < 0 || row >= score.rows.length || score.rows[row].length <= 1) return false;
+    if (!Number.isInteger(row) || row < 0 || row >= score.rows.length || !score.rows[row].length) return false;
     return removeMeasureAt(score, rowStarts(score)[row] + score.rows[row].length - 1);
   }
 
