@@ -28,9 +28,8 @@ test('gesture examples show a drop, a prepend, rest filling and rejection toast'
   expect(await opacity(page.locator('.d-drag-ghost'))).toBe(0);
   expect(await opacity(page.locator('.d-prepended'))).toBe(1);
   expect(await opacity(page.locator('.d-filled-rest').first())).toBe(1);
-  expect(await opacity(page.locator('.d-rejected-note'))).toBe(0);
-  expect(await opacity(page.locator('.d-toast-example'))).toBe(1);
-  await expect(page.locator('.d-toast-example')).toContainText('La figura no cabe en lo que queda del compás.');
+  expect(await opacity(page.locator('.d-overfull-note'))).toBe(1);
+  expect(await opacity(page.locator('.d-problems-example'))).toBe(1);
   await page.screenshot({ path: testInfo.outputPath('notes-rests.png'), fullPage: true });
 });
 

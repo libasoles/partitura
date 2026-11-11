@@ -744,7 +744,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (item.dead) ev.dead = true;
       if (Number.isFinite(target.beforeAt)) {
         const placed = M.placeBefore(measure, ev, target.beforeAt, target.n, score, target.mi, target.staff);
-        if (!placed.measure) return say(t.full);
+        if (!placed.measure) return say('');
         change(() => {
           measure.splice(0, measure.length, ...placed.measure);
           selected = activeItem ? null : M.refOf(target.staff, target.mi, placed.index);
@@ -758,7 +758,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (spot.dot) ev.dot = true;
       if (item.kind === 'rest') {
         const placed = M.placeRest(measure, ev, spot.at, target.n, score, target.mi, target.beforeFirst, target.staff);
-        if (!placed.measure) return say(placed.full ? t.full : fullVoice(placed.voice));
+        if (!placed.measure) return say(placed.full ? '' : fullVoice(placed.voice));
         change(() => {
           measure.splice(0, measure.length, ...placed.measure);
           selected = activeItem ? null : M.refOf(target.staff, target.mi, placed.index);
@@ -877,7 +877,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (ev.dot === 2) return change(() => { delete ev.dot; });
       const plan = M.dotPlan(measure, hit.i, score);
       if (!plan && ev.dot) return change(() => { delete ev.dot; });
-      if (!plan) return say(ev.d === 'w' || ev.d === 's' || ev.d === 'f' || ev.tp ? t.noDot : t.full);
+      if (!plan) return say(ev.d === 'w' || ev.d === 's' || ev.d === 'f' || ev.tp ? t.noDot : '');
       const moves = plan.moves.map(([i, at]) => [measure[i], at]);
       return change(() => { M.settle(measure); ev.dot = plan.dot; moves.forEach(([o, at]) => { o.at = at; }); });
     }
@@ -943,7 +943,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (ev.rest) {
       // Un silencio se acomoda segun las notas que suenan a la vez: arrastrarlo arriba o abajo cambia su voz y su altura.
       const placed = M.placeRest(others, moved, spot.at, target.n, score, target.mi, target.beforeFirst, target.staff);
-      if (!placed.measure) return say(placed.full ? t.full : fullVoice(placed.voice));
+      if (!placed.measure) return say(placed.full ? '' : fullVoice(placed.voice));
       // Solo, el silencio queda a la altura donde se soltó: se puede bajar para escribir una nota en el centro.
       const landed = placed.measure[placed.index];
       if (!Number.isInteger(landed.n)) landed.n = M.clampPitch(target.n);
@@ -1077,7 +1077,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const staves = M.stavesOf(score);
     // La nota agarrada puede estar en medio del grupo. Ajustar el desplazamiento
     // al espacio disponible para todo el grupo, tambien al soltar cerca de una barra.
-    if (items.some((x) => !stave(0)[x.mi + dmi] || x.staff + dstaff < 0 || x.staff + dstaff >= staves)) return say(t.full);
+    if (items.some((x) => !stave(0)[x.mi + dmi] || x.staff + dstaff < 0 || x.staff + dstaff >= staves)) return say('');
     const minDt = Math.ceil(Math.max(...items.map((x) => -x.at)) / grid) * grid;
     const maxDt = Math.max(minDt, Math.floor(Math.min(...items.map((x) => M.capacity(score, x.mi + dmi) - x.at - M.length(x.ev))) / grid) * grid);
     const dt = Math.max(minDt, Math.min(maxDt, Math.round((target.t - anchorAt) / grid) * grid));
@@ -1096,7 +1096,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       return p.at < 0 ||
         (!p.ev.rest && rest.some((o, i) => !o.rest && starts[i] === p.at && o.n === p.ev.n + dn && o.acc === p.ev.acc));
     };
-    if (plan.some(clash)) return say(t.full);
+    if (plan.some(clash)) return say('');
     // Contado en orden, cada compas de destino tiene que seguir entrando.
     const trial = new Map();
     const trialOf = (p) => {
@@ -1238,7 +1238,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (action === 'savePattern') { savePattern(); stage.focus({ preventScroll: true }); return; }
     const list = picks();
     const result = change(() => M.applySelection(score, list, action));
-    if (!result) say(action.startsWith('assignVoice') ? t.voicesUnavailable : action === 'mergeLyrics' ? t.lyricMergeLong : t.full);
+    if (!result) say(action.startsWith('assignVoice') ? t.voicesUnavailable : action === 'mergeLyrics' ? t.lyricMergeLong : '');
     else { say(''); if (action === 'mergeLyrics') setPicks([]); }
     stage.focus({ preventScroll: true });
   }
@@ -4200,7 +4200,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const trial = M.clone(score);
     M.restoreTabReferences(trial, M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs));
     const created = M.duplicateSelection(trial, refs);
-    if (!created) return say(t.full);
+    if (!created) return say('');
     change(() => {
       Object.assign(score, trial);
       selected = created[created.length - 1];
@@ -4240,7 +4240,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const trial = M.clone(score);
     M.restoreTabReferences(trial, M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs));
     const refs = M.pasteSelection(trial, fragment, destinationMeasure, { preserveSignatures: !pasteWithoutSignatures, staff: destinationStaff, at: cursorAt });
-    if (!refs) return say(t.full);
+    if (!refs) return say('');
     change(() => {
       Object.assign(score, trial);
       selected = refs[refs.length - 1];
@@ -5947,7 +5947,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const trial = M.clone(score);
     M.restoreTabReferences(trial, M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs));
     const created = M.applyPattern(trial, pattern, { mi, staff, at, n, flat });
-    if (!created) return say(t.full);
+    if (!created) return say('');
     change(() => {
       Object.assign(score, trial);
       selected = created[created.length - 1];
