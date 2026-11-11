@@ -67,3 +67,20 @@ test('links reject rests, skipped notes, simultaneous notes, different voices an
     assert.equal(M.applySelection(score, pair, 'link'), false);
   }
 });
+
+test('two stacked chords keep their pitches: link ties every note, in a bar and across bars', () => {
+  const score = scoreWith([{ d: 'q', n: 37, at: 0, v: 1 }, { d: 'q', n: 39, at: 0, v: 1 }, { d: 'q', n: 37, at: 24, v: 1 }, { d: 'q', n: 39, at: 24, v: 1 }]);
+  score.rows[0][1] = [{ d: 'q', n: 37, at: 0, v: 1 }, { d: 'q', n: 39, at: 0, v: 1 }];
+  const inBar = [ref(0), ref(1), ref(2), ref(3)];
+  assert.ok(M.selectionActions(score, inBar).includes('link'));
+  assert.ok(M.applySelection(score, inBar, 'link'));
+  assert.deepEqual(M.links(score).map((l) => l.type), ['tie', 'tie']);
+  assert.ok(M.selectionActions(score, inBar).includes('unlink'));
+  assert.ok(M.applySelection(score, inBar, 'unlink'));
+  assert.deepEqual(M.links(score), []);
+  const across = [ref(2), ref(3), ref(0, 1), ref(1, 1)];
+  assert.ok(M.applySelection(score, across, 'link'));
+  assert.equal(M.links(score).length, 2);
+  const changed = scoreWith([{ d: 'q', n: 37, at: 0, v: 1 }, { d: 'q', n: 39, at: 0, v: 1 }, { d: 'q', n: 37, at: 24, v: 1 }, { d: 'q', n: 40, at: 24, v: 1 }]);
+  assert.ok(!M.selectionActions(changed, inBar).includes('link'));
+});
