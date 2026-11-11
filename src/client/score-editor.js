@@ -6695,7 +6695,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // The host connects its own controls; their position and layout belong to the site.
   const actions = {
     loadUrl: withExporter((tools, demo, options) => tools.loadUrl(demo.url, { ...options, demoId: demo.id }), t.importFailed || t.loadError),
+    // A `?score=` that names a stored score wins over the demo in the path (the demo tab stays open behind it).
     restoreDemo: (id) => {
+      if (sharedIndex >= 0) return true;
       const matches = (one) => one.demo && one.demoId === id;
       const index = matches(score) ? active : docs.findIndex(matches);
       if (index < 0) return false;

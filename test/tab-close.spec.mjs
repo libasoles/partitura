@@ -82,3 +82,15 @@ test('without #pro only the demo tab has a close button, and closing it removes 
   await page.locator('.score-doc-tab.has-close .score-doc-tab-close').click();
   await expect(page.locator('.score-doc-tab-close')).toHaveCount(0);
 });
+
+test('Pro: a demo URL with ?score= opens that score, not the demo, after a reload', async ({ page }) => {
+  await open(page, '/es/demos/canto-en-la-rama/#pro');
+  await page.locator('#scoreNewTab').click();
+  await page.locator('#scoreTitle').fill('Mi obra');
+  await expect.poll(() => new URL(page.url()).searchParams.get('score')).toBeTruthy();
+  await page.waitForTimeout(600); // the debounced write to IndexedDB
+  await page.reload();
+  await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
+  await page.waitForTimeout(500); // restoreDemo runs once the editor is ready
+  await expect(page.locator('#scoreTitle')).toHaveValue('Mi obra');
+});
