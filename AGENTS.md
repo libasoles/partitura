@@ -3,7 +3,8 @@
 ## Flujo de trabajo
 
 - Al terminar los cambios solicitados, ejecutar las verificaciones pertinentes y hacer commit en la rama de trabajo.
-- **Ningún agente hace push**, nunca. Es obligatorio terminar: mergear la rama a `main` local (`--no-ff`, resolviendo conflictos) y borrar la rama y el worktree. Sin push ni rama remota.
+- Es obligatorio terminar: mergear la rama a `main` local (`--no-ff`, resolviendo conflictos) y borrar la rama y el worktree.
+- **Todo commit y todo merge a `main` debe ir seguido de un `git push`** (la rama de trabajo tras su commit; `main` tras el merge). Nunca force-push.
 - Revisar el diff antes del commit y conservar los cambios previos del usuario.
 - Mantener las instrucciones compartidas en este archivo. `CLAUDE.md` debe cargarlas mediante `@AGENTS.md`, sin duplicarlas.
 
