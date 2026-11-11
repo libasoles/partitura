@@ -29,7 +29,11 @@ test('syncopation after a double bar, final bar or repeat start is preceded by r
   }
 });
 
-test('an empty measure after a plain bar and an on-beat note get no rests', () => {
-  assert.deepEqual(place(twoMeasures(), 1, 12), [[false, 0]]);
+test('syncopation in an empty measure after a plain bar is preceded by rests', () => {
+  assert.deepEqual(place(twoMeasures(), 1, 12), [[true, 0], [false, 12]]);
+});
+
+test('an on-beat note gets no rests', () => {
   assert.deepEqual(place({ ...M.emptyScore(), meter: '6/8' }, 0, 0), [[false, 0]]);
+  assert.deepEqual(place(twoMeasures(), 1, 0), [[false, 0]]);
 });
