@@ -2869,3 +2869,54 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 
 /* Pro: with every tab closed only the tab strip ("+") remains. */
 .score-editor.is-no-score :is(.score-toolbar, .score-status, .score-sheet, .score-side-track, .score-rows) { display: none; }
+
+/* Compases con problemas: punto rojo discreto y listado lateral; no bloquean la escritura. */
+.score-problems-dot {
+  position: fixed;
+  right: 1rem;
+  bottom: 2.5rem;
+  z-index: 6;
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0;
+  border: 2px solid var(--paper, #fff);
+  border-radius: 50%;
+  background: #d92d20;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 30%);
+  cursor: pointer;
+}
+.score-problems-dot[hidden], .score-problems-drawer[hidden] { display: none; }
+.score-problems-drawer {
+  position: fixed;
+  right: 1rem;
+  bottom: 4rem;
+  z-index: 7;
+  width: min(20rem, calc(100vw - 2rem));
+  max-height: 50vh;
+  overflow: auto;
+  padding: 0.75rem;
+  border: 1px solid var(--line, #ddd);
+  border-radius: 0.75rem;
+  background: var(--paper, #fff);
+  color: var(--ink, #111);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+}
+.score-problems-drawer header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+.score-problems-drawer h2 { margin: 0; font-size: 0.9rem; }
+.score-problems-close { display: inline-flex; padding: 0.2rem; border: 0; background: none; color: inherit; cursor: pointer; }
+.score-problems-close svg { width: 1rem; height: 1rem; }
+.score-problems-drawer ul { margin: 0; padding: 0; list-style: none; }
+.score-problems-drawer li button {
+  width: 100%;
+  padding: 0.45rem 0.5rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.score-problems-drawer li button:hover { background: rgb(217 45 32 / 10%); }
+@media print { .score-problems-dot, .score-problems-drawer { display: none; } }

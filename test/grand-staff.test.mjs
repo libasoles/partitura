@@ -33,13 +33,14 @@ test('saved scores without a second staff load unchanged, and an explicit lower 
   assert.equal(G.clefAt(explicit, 3, 1), 'alto');
 });
 
-test('sanitize cleans the second staff like the first and drops what does not fit', () => {
+test('sanitize cleans the second staff like the first and keeps an overlong measure', () => {
   const score = piano();
   assert.deepEqual(Object.keys(score.lower), ['0', '1']);
   const dirty = G.sanitize({ ...score, lower: { 0: [{ d: 'zz', n: 1 }, { d: 'q', n: 25 }], 1: [], 99: [{ d: 'q', n: 25 }], 2: 'x' } });
   assert.deepEqual(dirty.lower, { 0: [{ d: 'q', n: 25, at: 0 }] });
   const tooLong = G.sanitize({ ...score, lower: { 0: [{ d: 'w', n: 25 }, { d: 'w', n: 27 }] } });
-  assert.equal(G.measureLength(tooLong.lower[0]), 96);
+  assert.equal(G.measureLength(tooLong.lower[0]), 192);
+  assert.deepEqual(G.problems(tooLong), [{ mi: 0, staff: 1, extra: 96 }]);
   assert.deepEqual(G.sanitize(JSON.parse(JSON.stringify(score))), score);
 });
 
@@ -220,10 +221,11 @@ test('switching instrument keeps the hidden staff and the shared signatures', ()
   assert.equal(G.clefAt(score, 0, 1), 'bass');
 });
 
-test('a meter that does not fit the lower staff is refused', () => {
+test('a meter shorter than the lower staff content is allowed and reported as a problem', () => {
   const score = piano();
-  assert.equal(G.setMeter(score, '2/4'), false);
-  assert.equal(score.meter, '4/4');
+  assert.equal(G.setMeter(score, '2/4'), true);
+  assert.equal(score.meter, '2/4');
+  assert.ok(G.problems(score).length > 0);
 });
 
 test('changing a clef pins the inferred instrument so the number of staves does not change', () => {

@@ -2335,8 +2335,6 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // no entra, el compas no cambia. Las figuras no se tocan: sus inicios musicales no dependen del compas.
   function setMeter(score, meter) {
     if (!METERS.includes(meter)) return false;
-    const limit = capacity({ meter });
-    if (everyMeasure(score).some((m) => measureLength(m) > limit)) return false;
     score.meter = meter;
     delete score.meters;
     Object.keys(score.measureDurations || {}).forEach((mi) => {
@@ -2576,14 +2574,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         if (Number.isInteger(raw.v) && raw.v >= 1 && raw.v <= MAX_VOICE) ev.v = raw.v;
         if (raw.beam === 'join' || raw.beam === 'break') ev.beam = raw.beam;
         if (Number.isInteger(raw.at) && raw.at >= 0) ev.at = raw.at * factor;
-        if (length(ev) > limit) return;
         // `at` sigue siendo la pista guardada (sin `at`, la figura sigue a la anterior); los huecos se quitan al final.
         ev.at = hints(events.concat(ev))[events.length];
         if (!ev.rest && events.some((o) => !o.rest && o.at === ev.at && o.n === ev.n && o.acc === ev.acc)) return;
         events.push(ev);
       });
       if (measureLength(events) > limit) legacyVoices(events);
-      while (measureLength(events) > limit) events.pop();
       // En el orden de la pista, como se guardaban; despues `at` pasa a ser el inicio musical, sin huecos.
       events.sort((a, b) => a.at - b.at);
       return settle(events);
@@ -2704,7 +2700,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const measureDurations = {};
     Object.entries(data.measureDurations || {}).forEach(([index, duration]) => {
       const size = duration * factor;
-      if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isInteger(size) && size > 0 && size < capacity(meterContext, +index) && measureLength(rows.flat()[+index]) <= size && lowers.every((lane) => measureLength(lane[index] || []) <= size)) measureDurations[index] = size;
+      if (/^(0|[1-9]\d*)$/.test(index) && +index < total && Number.isInteger(size) && size > 0 && size < capacity(meterContext, +index) ) measureDurations[index] = size;
     });
     const hairpinContext = Object.assign({}, meterContext, { measureDurations, hairpins: {} });
     Object.entries(data.hairpins || {}).forEach(([index, list]) => {
@@ -2823,9 +2819,10 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const saved = measure.map((ev) => Object.assign({}, ev));
     const starts = onsets(measure);
     const previous = [];
+    const before = measureLength(measure);
     voices(measure).forEach((voice, k) => voice.groups.forEach(g => g.indices.forEach(i => { previous[i] = k + 1; })));
     measure.forEach((ev) => { delete ev.v; });
-    if (voices(measure).length > MAX_VOICE || measureLength(measure) > limit || onsets(measure).some((at, i) => at !== starts[i])) {
+    if (voices(measure).length > MAX_VOICE || measureLength(measure) > Math.max(limit, before) || onsets(measure).some((at, i) => at !== starts[i])) {
       measure.forEach((ev, i) => { Object.keys(ev).forEach((key) => delete ev[key]); Object.assign(ev, saved[i]); });
       return false;
     }
