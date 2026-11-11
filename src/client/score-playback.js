@@ -127,7 +127,9 @@ export function createPlayer(context, vendorUrl, onEnded) {
       for (let staff = 0; staff < M.stavesOf(score); staff += 1) {
         M.measures(score, staff).forEach((measure, mi) => { if (measure.length) last = Math.max(last, mi); });
       }
-      const duration = measures.slice(0, last + 1).reduce((sum, _, mi) => sum + M.capacity(score, mi) * seconds, 0);
+      // Un compás excedido (se permite) llega más allá de su capacidad: el reloj no debe cortar lo que sobra.
+      const written = measures.slice(0, last + 1).reduce((sum, _, mi) => sum + M.capacity(score, mi) * seconds, 0);
+      const duration = notes.reduce((end, note) => Math.max(end, note.end), written);
       return { notes, samples, duration, shape };
     },
     play({ notes, samples, duration, shape }, from) {
