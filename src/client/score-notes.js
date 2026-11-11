@@ -3,6 +3,12 @@ const SEMITONES = [0, 2, 4, 5, 7, 9, 11];
 
 // Sounding midi pitch and alteration of every event of one measure (null for rests), in event order.
 // Accidentals carry through the measure by start time, like in the engraved score.
+// Midi pitch of scale step `n` with a written accidental (or the key's) in measure `mi`.
+export function pitchMidi(score, M, n, acc, mi) {
+  const alter = acc ? M.ACCIDENTALS[acc].alter : M.keyAlter(n, score, mi);
+  return 12 * Math.floor(n / 7) + SEMITONES[n % 7] + alter;
+}
+
 export function measurePitches(score, M, measure, mi) {
   const starts = M.onsets(measure);
   const accidentals = new Map();
