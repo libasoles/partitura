@@ -342,7 +342,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     // al medio del compas y desordenaba las voces; puede quedar hasta donde empieza la ultima figura.
     const ceiling = measureLength(others) > limit ? Math.max(limit - size, ...starts) : limit - size;
     const at = Math.max(0, Math.min(Math.max(0, ceiling), tidy(Math.round(t / grid) * grid)));
-    if (!ev.rest && others.some((o, i) => !o.rest && starts[i] === at && o.n === ev.n && o.acc === ev.acc)) return null;
+    // Al mover no se bloquea: la nota puede quedar sobre otra igual (el editor no restringe lo que se escribe).
+    if (!preserveVoice && !ev.rest && others.some((o, i) => !o.rest && starts[i] === at && o.n === ev.n && o.acc === ev.acc)) return null;
     if (!ev.rest) {
       const trial = clone(others);
       // Al mover se conserva la voz; al agregar se busca una linea independiente.

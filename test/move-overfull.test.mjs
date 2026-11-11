@@ -12,6 +12,14 @@ const bar = () => [
   { d: 'q', n: 37, v: 1, at: 60 }, { d: 'q', n: 35, v: 2, at: 60 },
 ];
 
+test('moving a note onto an equal note at the same time is allowed', () => {
+  const score = M.emptyScore();
+  const others = [{ d: 'q', n: 37, v: 1, at: 0 }, { d: 'q', n: 35, v: 2, at: 0 }];
+  const spot = M.placement(others, { d: 'q', n: 37, v: 2 }, 0, score, 0, true);
+  assert.ok(spot);
+  assert.equal(spot.at, 0);
+});
+
 test('moving the last quarter of an overfull bar keeps its slot and voice', () => {
   const score = { ...M.emptyScore(), meter: '6/8', fifths: 1 };
   score.rows[0][0] = bar();
