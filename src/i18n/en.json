@@ -261,7 +261,6 @@
     "meter": "Time signature",
     "meterFull": "The existing notes do not fit in that time signature. Remove or move some before changing it.",
     "scoreLabel": "Sheet music",
-    "full": "The figure does not fit in the rest of the measure.",
     "problemsTitle": "Measures with problems",
     "problemsOne": "{n} measure has problems",
     "problemsMany": "{n} measures have problems",
@@ -544,7 +543,7 @@
           "Press <kbd>A</kbd> or <kbd>Esc</kbd> to drop the tool and go back to selecting figures.",
           "To fill an empty measure with rests, click to select it and press <kbd>Tab</kbd>. The largest values that complete its duration are used; in piano mode, only the selected staff is filled."
         ],
-        "tip": "If a figure does not fit in what is left of the measure, the editor tells you and does not place it."
+        "tip": "If a figure does not fit in what is left of the measure, the editor places it anyway and flags the measure with a red dot at the bottom right; open it to see which measures run over and fix them whenever you like."
       },
       "accidentals": {
         "steps": [
@@ -696,7 +695,7 @@
           "Select figures from a single staff and press <kbd>Shift</kbd> + <kbd>S</kbd>. With no figures selected, click a measure and use the same shortcut to save it. Saving the same pattern again does not add a duplicate.",
           "Each pattern shows scale degrees and figures. Drag the left area, with the degrees, onto the staff: the first note takes the destination pitch and the others keep their distance in scale steps. Ghost figures preview the result.",
           "Drag the right area, with the figures, to apply only the rhythm: all notes use the same pitch. Rests, durations, dots, tuplets, and internal ties and slurs are preserved.",
-          "You can also select a measure and click either area: the pattern starts at the beginning of the measure on the middle line. If it does not fit, the editor does not apply it.",
+          "You can also select a measure and click either area: the pattern starts at the beginning of the measure on the middle line. If it runs over the measure, it is still written and the measure is flagged in the problems list.",
           "Use <em>Remove pattern</em> to delete an item from the library. The library keeps up to 60 patterns and is available across scores in this browser."
         ],
         "tip": "Patterns store relationships between notes, not the original key, accidentals or voices. The library is local and is not included when you export a score; clearing site data also clears the library."

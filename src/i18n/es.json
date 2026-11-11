@@ -257,7 +257,6 @@
     "meter": "Compás",
     "meterFull": "Las figuras existentes no caben en ese compás. Quitá o mové algunas antes de cambiarlo.",
     "scoreLabel": "Partitura",
-    "full": "La figura no cabe en lo que queda del compás.",
     "problemsTitle": "Compases con problemas",
     "problemsOne": "Hay {n} compás con problemas",
     "problemsMany": "Hay {n} compases con problemas",
@@ -540,7 +539,7 @@
           "Apretá <kbd>A</kbd> o <kbd>Esc</kbd> para soltar la herramienta y volver a seleccionar figuras.",
           "Para llenar un compás vacío con silencios, seleccionalo con un clic y presioná <kbd>Tab</kbd>. Se usan los valores más grandes que completan su duración; en piano se llena solo el pentagrama elegido."
         ],
-        "tip": "Si una figura no cabe en lo que queda del compás, el editor te avisa y no la coloca."
+        "tip": "Si una figura no cabe en lo que queda del compás, el editor la coloca igual y marca el compás con un punto rojo abajo a la derecha; al abrirlo ves qué compases se pasan y los resolvés cuando quieras."
       },
       "accidentals": {
         "steps": [
@@ -692,7 +691,7 @@
           "Seleccioná las figuras de un solo pentagrama y presioná <kbd>Mayús</kbd> + <kbd>S</kbd>. Sin figuras seleccionadas, elegí un compás con un clic y usá el mismo atajo para guardarlo. Guardar otra vez el mismo patrón no lo agrega dos veces.",
           "Cada patrón muestra sus grados y sus figuras. Arrastrá la zona izquierda, la de grados, al pentagrama: la primera nota toma la altura de destino y las demás conservan su distancia en pasos de escala. Las figuras fantasma anticipan dónde quedará.",
           "Arrastrá la zona derecha, la de figuras, para aplicar solo el ritmo: todas las notas se escriben a la misma altura. Se conservan los silencios, las duraciones, los puntillos, los grupos irregulares y las ligaduras internas.",
-          "También podés elegir un compás y hacer clic en una de las dos zonas: el patrón se escribe desde el inicio del compás, sobre la línea del medio. Si no cabe, el editor no lo aplica.",
+          "También podés elegir un compás y hacer clic en una de las dos zonas: el patrón se escribe desde el inicio del compás, sobre la línea del medio. Si se pasa del compás, se escribe igual y el compás queda marcado en la lista de problemas.",
           "Usá <em>Quitar patrón</em> para eliminarlo de la biblioteca. La biblioteca conserva hasta 60 patrones y está disponible entre las partituras de este navegador."
         ],
         "tip": "Los patrones guardan relaciones entre notas, no la tonalidad, las alteraciones ni las voces originales. La biblioteca es local y no viaja al exportar una partitura; borrar los datos del sitio también la borra."

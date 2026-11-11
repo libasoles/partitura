@@ -257,6 +257,7 @@ button.tutorial-voice { cursor: pointer; width: 1.6rem; height: 1.6rem; padding:
   white-space: nowrap;
 }
 .tutorial-list > li > .tutorial-demo { margin: 0.9rem 0 1.5rem; }
+.d-problems-dot { fill: #d33; }
 .d-toast { fill: #fff; stroke: #ddd; stroke-width: 0.8; filter: drop-shadow(0 2px 3px #0002); }
 .d-toast-text { fill: #222; font-family: var(--sans); }
 .d-toast-close { stroke: #666; stroke-width: 0.8; fill: none; }

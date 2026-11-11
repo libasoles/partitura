@@ -727,13 +727,12 @@ export function fullMeasure(s, aria) {
   const d = stage({ id: 'full-measure', T: 11, h: 190, bottom: 104 });
   ['E4', 'G4', 'A4', 'G4'].forEach((n, i) => d.note(d.firstX + i * 43, pitch(n), 'q', d.life(0.05)));
   const x = d.firstX + 4 * 43;
-  d.note(x, pitch('F4'), 'q', d.life(2.2, 3.4), { keep: false, cls: 'd-rejected-note' });
+  d.note(x, pitch('F4'), 'q', d.life(2.2), { cls: 'd-overfull-note' });
   figureBar(d).on('4', 1, 10.3);
   d.keycap('4', 26, 0.5, 1, 3.5, { ky: 126 });
   d.pointer([[0.5, 280, 95], ...visit(3.5, x + 5, d.y(1)), [5, 280, 95]]);
   d.click(3.5, x + 5, d.y(1));
-  const message = s.scoreUiStrings.full;
-  d.add(20, 148, `<rect class="d-toast" width="280" height="30" rx="5"/><text class="d-toast-text" x="12" y="19" font-size="9">${message}</text><path d="M263 11l8 8m0-8-8 8" class="d-toast-close"/>`, d.life(3.6, 9.5), { cls: 'd-toast-example' });
+  d.add(266, 172, '<circle class="d-problems-dot" r="6"/>', d.pop(3.6), { cls: 'd-problems-example' });
   return d.html(aria);
 }
 

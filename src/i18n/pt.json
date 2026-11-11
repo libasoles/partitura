@@ -261,7 +261,6 @@
     "meter": "Compasso",
     "meterFull": "As figuras existentes não cabem nesse compasso. Remova ou mova algumas antes de mudá-lo.",
     "scoreLabel": "Partitura",
-    "full": "A figura não cabe no que resta do compasso.",
     "problemsTitle": "Compassos com problemas",
     "problemsOne": "{n} compasso com problemas",
     "problemsMany": "{n} compassos com problemas",
@@ -544,7 +543,7 @@
           "Aperte <kbd>A</kbd> ou <kbd>Esc</kbd> para soltar a ferramenta e voltar a selecionar figuras.",
           "Para preencher um compasso vazio com pausas, selecione-o com um clique e pressione <kbd>Tab</kbd>. São usados os maiores valores que completam sua duração; no piano, apenas a pauta escolhida é preenchida."
         ],
-        "tip": "Se uma figura não cabe no que sobra do compasso, o editor avisa e não a coloca."
+        "tip": "Se uma figura não cabe no que sobra do compasso, o editor a coloca mesmo assim e marca o compasso com um ponto vermelho embaixo à direita; abra-o para ver quais compassos passam da duração e resolva quando quiser."
       },
       "accidentals": {
         "steps": [
@@ -696,7 +695,7 @@
           "Selecione figuras de uma só pauta e pressione <kbd>Shift</kbd> + <kbd>S</kbd>. Sem figuras selecionadas, escolha um compasso com um clique e use o mesmo atalho para salvá-lo. Salvar o mesmo padrão novamente não cria uma duplicata.",
           "Cada padrão mostra graus e figuras. Arraste a área esquerda, dos graus, para a pauta: a primeira nota recebe a altura de destino e as outras mantêm a distância em passos da escala. As figuras fantasma mostram onde ficará.",
           "Arraste a área direita, das figuras, para aplicar apenas o ritmo: todas as notas ficam na mesma altura. Pausas, durações, pontos, grupos irregulares e ligaduras internas são mantidos.",
-          "Você também pode escolher um compasso e clicar em uma das áreas: o padrão é escrito desde o início do compasso, na linha do meio. Se não couber, o editor não o aplica.",
+          "Você também pode escolher um compasso e clicar em uma das áreas: o padrão é escrito desde o início do compasso, na linha do meio. Se passar do compasso, é escrito mesmo assim e o compasso fica marcado na lista de problemas.",
           "Use <em>Remover padrão</em> para excluir um item da biblioteca. Ela guarda até 60 padrões e fica disponível entre as partituras deste navegador."
         ],
         "tip": "Os padrões guardam relações entre notas, não a tonalidade, as alterações ou as vozes originais. A biblioteca é local e não acompanha a exportação de uma partitura; apagar os dados do site também a apaga."
