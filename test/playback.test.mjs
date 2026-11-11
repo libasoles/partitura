@@ -86,13 +86,13 @@ test('choir and plucked sounds have twice the gain in Voices and as direct instr
   };
   try {
     const player = createPlayer(context, (path) => path, () => {});
-    for (const id of ['ah', 'oh', 'mm', 'guitar', 'piano']) {
+    for (const id of ['ah', 'oh', 'mm', 'chorale', 'guitar', 'piano']) {
       C.setSound(score, id);
       const track = await player.prepare(score, C);
       peaks.length = 0;
       player.play(track);
       player.stop();
-      assert.deepEqual(peaks, [2]);
+      assert.deepEqual(peaks, [id === 'chorale' ? 4 : 2]);
       assert.equal(Boolean(track.shape.within), id === 'guitar' || id === 'piano');
     }
     for (const id of ['guitar', 'piano']) {

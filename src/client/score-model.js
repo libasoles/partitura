@@ -1218,7 +1218,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // Timbre del coro (por partitura): Ah por defecto, que no se guarda.
-  const CHOIR_SOUNDS = ['ah', 'oh', 'mm', ...ARCHIVE_CHOIRS.map(({ id }) => id), 'guitar', 'piano'];
+  const CHOIR_SOUNDS = ['ah', 'oh', 'mm', 'chorale', ...ARCHIVE_CHOIRS.map(({ id }) => id), 'guitar', 'piano'];
   const soundOf = (score) => (score && CHOIR_SOUNDS.includes(score.sound) ? score.sound : CHOIR_SOUNDS[0]);
   function setSound(score, sound) {
     if (!CHOIR_SOUNDS.includes(sound)) return false;

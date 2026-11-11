@@ -7,5 +7,7 @@ Source: https://github.com/gleitz/midi-js-soundfonts/tree/gh-pages/FluidR3_GM
 License: Creative Commons Attribution 3.0 (CC BY 3.0)
 https://creativecommons.org/licenses/by/3.0/
 
+`choir-chorale` is the Voice Oohs render served by Klang Studio's soundfont CDN (`cdn.klang.io/soundfonts/voice_oohs-mp3.js`), the same FluidR3 instrument mixed differently.
+
 Modification: the original MIDI.js JavaScript assignments were converted to JSON;
 the embedded MP3 data is unchanged. No samples are downloaded until Play is pressed.

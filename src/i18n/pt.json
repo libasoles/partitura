@@ -160,6 +160,7 @@
     "soundAh": "Ah",
     "soundOh": "Oh",
     "soundMm": "Uh",
+    "soundChorale": "Chorale",
     "registerTitle": "Registro",
     "registerButton": "Registro da voz {n}: {name}. Alterar",
     "registers": {"soprano":"Soprano","mezzo":"Mezzo-soprano","alto":"Contralto","tenor":"Tenor","baritone":"Barítono","bass":"Baixo","none":"Sem"},
