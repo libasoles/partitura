@@ -1,6 +1,6 @@
 ---
 import { strings } from '../i18n';
-import { scores, ties } from '../lib/demos.js';
+import { scores, ties, transpose, multiVoice, intervals, closeTab } from '../lib/demos.js';
 import { renderEmptyStaff } from '../lib/staff.js';
 import ScoreModel from '../client/score-model.js';
 import { tutorialIcon } from '../lib/tutorial-icons.js';
@@ -15,12 +15,12 @@ const score = {...ScoreModel.emptyScore(), instrument:'guitar', clef:'guitar', m
 let svg = await renderEmptyStaff(undefined, score);
 svg = svg.replace(/<g\b([^>]*\bid="e(\d+)-(\d+)"[^>]*)>/g, (_, attrs, mi, i) => `<g ${attrs} data-example-voice="${measures[+mi][+i].v}">`);
 const voiceIcons = '<span class="tutorial-voice" data-number="1" aria-hidden="true">1</span> <span class="tutorial-voice" data-number="2" aria-hidden="true">2</span>';
-const icons = [tutorialIcon('plus'), tutorialIcon('settings'), voiceIcons, '', tutorialIcon('download')];
+const icons = [tutorialIcon('plus'), tutorialIcon('settings'), voiceIcons, '', tutorialIcon('download'), tutorialIcon('play'), tutorialIcon('lyric'), tutorialIcon('settings'), tutorialIcon('split'), '', tutorialIcon('copy')];
 ---
 
 {s.scoreFeatures.map((text, i) => (
   <section class="tutorial-feature">
-    <p set:html={text.replace('<strong>', `<strong>${icons[i]} `)
+    <p set:html={text.replace('<strong>', `<strong>${icons[i] ?? ''} `)
       .replace('ligaduras, tresillos', `${tutorialIcon('link')} ligaduras, ${tutorialIcon('triplet')} tresillos`)
       .replace('asignación de voces', `${voiceIcons} asignación de voces`)} />
     {i === 0 && <div class="tutorial-demo" set:html={scores(s, 'Crear una partitura con + y cambiar de pestaña')} />}
@@ -34,6 +34,10 @@ const icons = [tutorialIcon('plus'), tutorialIcon('settings'), voiceIcons, '', t
       </figure>
     )}
     {i === 3 && <div class="tutorial-demo" set:html={ties(s, 'Seleccionar notas y usar la ligadura del menú contextual')} />}
+    {i === 7 && <div class="tutorial-demo" set:html={transpose(s, 'Mover el deslizador de transposición a +5 semitonos: lo escrito no cambia y lo que suena sube')} />}
+    {i === 8 && <div class="tutorial-demo" set:html={multiVoice(s, 'Subir la cantidad de voces de 1 a 3: cada una tiene su pentagrama')} />}
+    {i === 9 && <div class="tutorial-demo" set:html={intervals(s, 'Activar Intervalos: cada columna muestra la distancia entre las voces')} />}
+    {i === 10 && <div class="tutorial-demo" set:html={closeTab(s, 'Cerrar una pestaña sin borrar la partitura')} />}
   </section>
 ))}
 

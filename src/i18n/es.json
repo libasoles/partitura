@@ -35,7 +35,13 @@
     "<strong>Ajustes:</strong> elegí piano con gran pentagrama o guitarra con tablatura, cambiá el tempo y activá las herramientas que necesitás.",
     "<strong>Voces independientes:</strong> distinguí las líneas musicales por color. Activá o desactivá cada voz en la leyenda para seguirla sin perder de vista las demás notas.",
     "<strong>Menús contextuales:</strong> seleccioná figuras para ver las acciones disponibles junto a ellas: ligaduras, tresillos o asignación de voces, según la selección.",
-    "<strong>Descarga:</strong> exportá en PDF para imprimir o en MusicXML para continuar en otro editor."
+    "<strong>Descarga:</strong> exportá en PDF para imprimir o en MusicXML para continuar en otro editor.",
+    "<strong>Reproducción:</strong> escuchá la partitura con piano, guitarra o coro, siguiendo repeticiones y saltos, y empezá desde donde hagas clic.",
+    "<strong>Letra de canto:</strong> escribí o pegá sílabas bajo las notas; salen en el PDF y en el MusicXML.",
+    "<strong>Transposición (Pro):</strong> hacé sonar la partitura más aguda o más grave, de −12 a +12 semitonos, sin cambiar lo escrito.",
+    "<strong>Varias voces (Pro):</strong> hasta 4 pentagramas, duplicá una voz a una tercera o una sexta, y uní o separá pentagramas.",
+    "<strong>Intervalos y acordes (Pro):</strong> mostrá la distancia entre las voces y el nombre de cada acorde.",
+    "<strong>Pestañas y carpetas (Pro):</strong> cerrá pestañas sin borrar, ordená tus partituras en carpetas y duplicalas para probar variantes."
   ],
   "scoreHowH2": "Cómo escribir una partitura online",
   "scoreHow": [
@@ -159,7 +165,15 @@
     "soundChorale": "Chorale",
     "registerTitle": "Registro",
     "registerButton": "Registro de la voz {n}: {name}. Cambiar",
-    "registers": {"soprano":"Soprano","mezzo":"Mezzosoprano","alto":"Contralto","tenor":"Tenor","baritone":"Barítono","bass":"Bajo","none":"Sin"},
+    "registers": {
+      "soprano": "Soprano",
+      "mezzo": "Mezzosoprano",
+      "alto": "Contralto",
+      "tenor": "Tenor",
+      "baritone": "Barítono",
+      "bass": "Bajo",
+      "none": "Sin"
+    },
     "voiceStaff": "Voz {n}",
     "settingsTempo": "Tempo",
     "tempoNone": "Sin indicación",
@@ -517,6 +531,22 @@
       "lyrics": [
         "Letra de canto",
         "Escribí sílabas bajo las notas, pegá una letra entera, movelas y unílas."
+      ],
+      "transpose": [
+        "Transposición",
+        "Hacé sonar la partitura más aguda o más grave sin cambiar lo escrito."
+      ],
+      "staves": [
+        "Varias voces y pentagramas",
+        "Elegí cuántas voces tiene la partitura, duplicalas a una tercera o sexta y uní o separá pentagramas."
+      ],
+      "intervals": [
+        "Intervalos y nombres de acorde",
+        "Mostrá la distancia entre las voces y el nombre de cada acorde."
+      ],
+      "workspace": [
+        "Pestañas, carpetas y copias",
+        "Cerrá pestañas sin borrar, ordená tus partituras en carpetas y duplicá una partitura."
       ]
     },
     "stepsHeading": "Paso a paso",
@@ -528,7 +558,8 @@
       "editing": "Editar figuras",
       "structure": "Compases y signos",
       "guitar": "Guitarra y tablatura",
-      "files": "Archivos y guardado"
+      "files": "Archivos y guardado",
+      "pro": "Funciones Pro"
     },
     "bodies": {
       "notes-rests": {
@@ -599,7 +630,8 @@
           "Al final de cada renglón, los botones <strong>+</strong> y <strong>−</strong> agregan o quitan un compás. Para agregar otro renglón usá el botón de debajo de la partitura.",
           "Mantené <kbd>Mayús</kbd> y arrastrá un compás para llevarlo a otro lugar.",
           "Arrastrá una barra de compás hacia los lados para ensanchar un compás o achicarlo.",
-          "Para eliminar un compás, seleccionalo con un clic en un espacio vacío y presioná <kbd>Delete</kbd>: los siguientes ocupan su lugar."
+          "Para eliminar un compás, seleccionalo con un clic en un espacio vacío y presioná <kbd>Delete</kbd>: los siguientes ocupan su lugar.",
+          "Cada renglón, salvo el primero, muestra en gris, junto a la barra inicial, el número de su primer compás."
         ]
       },
       "repeats": {
@@ -638,6 +670,7 @@
           "Abrí los <strong>Ajustes</strong> con el engranaje {{icon:settings}}, la primera herramienta de la barra derecha. Salvo la biblioteca de patrones, valen para la partitura que estás viendo, se guardan con ella y se pueden deshacer con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
           "<strong>Instrumento:</strong> con <em>Piano</em> {{icon:piano}} cada renglón es un gran pentagrama, con clave de Sol arriba y de Fa abajo unidos por una llave, y se ocultan TAB y cejilla. Con <em>Guitarra</em> {{icon:guitar}} hay un solo pentagrama en clave de Sol de guitarra y aparecen el botón TAB y la cejilla. Cambiar de uno a otro no borra nada: lo que no se ve queda guardado.",
           "<strong>Tempo:</strong> el deslizador va de 20 a 300 negras por minuto. Se escribe como indicación metronómica sobre el primer compás y define la velocidad del MIDI exportado. <em>Sin indicación</em> la quita.",
+          "<strong>Transposición</strong> (Pro): un deslizador de −12 a +12 semitonos que cambia solo lo que suena —la reproducción y el MIDI—, no lo escrito. Mirá la guía de <em>Transposición</em>.",
           "<strong>Herramientas:</strong> activá o desactivá <em>Repetición</em>, <em>Dinámica</em> y <em>Voces</em> para mostrar u ocultar sus controles en las barras del editor. Ocultar un grupo no borra lo que ya escribiste. Con <em>Voces</em> activo cada voz se pinta de un color (1 a 4) y aparece una leyenda a la izquierda de la llave, donde elegís qué voces colorear; nunca se oculta una figura.",
           "<strong>Gran pentagrama:</strong> cada pentagrama tiene sus propias figuras, silencios, voces y clave (el menú de clave dice a cuál afecta). Los compases, la armadura, la métrica, las barras, las repeticiones y el tempo son comunes a los dos. Las dinámicas y reguladores se escriben entre ambos.",
           "<strong>Reproducción:</strong> {{icon:play}}{{icon:pause}} activala para mostrar reproducir/pausar a la izquierda del pentagrama. Usa el instrumento y el tempo de esta partitura. Con Voces activo, los números elegidos en la leyenda también filtran lo que escuchás; sin ninguno elegido suenan todas.",
@@ -650,6 +683,7 @@
         "steps": [
           "Abrí el menú <strong>☰</strong> arriba a la derecha.",
           "<em>Cargar archivo…</em> abre un MusicXML (<code>.musicxml</code>, <code>.xml</code>) o un MIDI (<code>.mid</code>) y lo convierte en una partitura nueva.",
+          "También podés <strong>arrastrar</strong> uno o varios archivos desde tu carpeta hasta la página: aparece un recuadro punteado, verde para MusicXML y MIDI y naranja para otros tipos. Cada archivo aceptado abre una pestaña nueva, conservando título y autor.",
           "<em>Exportar</em> descarga la partitura: <strong>PDF</strong> para imprimir, <strong>MusicXML</strong> para MuseScore, Finale, Sibelius o Dorico y <strong>MIDI</strong> para escucharla en cualquier programa.",
           "Si el PDF ocupa varias páginas, se numeran automáticamente; un PDF de una sola página no lleva número."
         ]
@@ -658,7 +692,8 @@
         "steps": [
           "Las partituras abiertas son las pestañas de arriba. El botón <strong>+</strong> crea una nueva, vacía, y un clic en una pestaña vuelve a la que dejaste.",
           "Todo se guarda solo, en tu navegador, apenas lo escribís: al volver otro día, todo sigue ahí. No se sube nada a ningún servidor.",
-          "El botón de la papelera borra la partitura que estás viendo, y antes te pide confirmación."
+          "El botón de la papelera borra la partitura que estás viendo, y antes te pide confirmación.",
+          "Con Pro también podés cerrar pestañas sin borrar, duplicar una partitura y ordenarlas en carpetas: mirá <em>Pestañas, carpetas y copias</em>."
         ],
         "tip": "Si borrás los datos del navegador se pierden las partituras: exportá en MusicXML las que quieras conservar."
       },
@@ -682,8 +717,10 @@
           "Elegí <em>Piano</em> {{icon:piano}} o <em>Guitarra</em> {{icon:guitar}} y ajustá el tempo. Se escuchan las notas escritas con sonido de piano o guitarra de nylon; en piano suenan ambos pentagramas. La primera vez puede aparecer <em>Cargando sonidos…</em>.",
           "Pulsá {{icon:play}} <em>Reproducir</em> o la barra espaciadora. Una barra vertical sigue la posición de la música y pasa al renglón siguiente. Empieza desde el último punto donde hiciste clic, sobre una figura o en una zona vacía, aunque después deselecciones. Sin un clic previo, empieza desde el principio. Al hacer clic en una zona vacía, la línea se reposiciona y queda visible para señalar ese punto. Durante la reproducción, hacé clic para saltar allí inmediatamente.",
           "Pulsá {{icon:pause}} <em>Pausar</em> o la barra espaciadora para conservar la posición y volvé a reproducir para continuar. Si hacés clic en otra posición durante la pausa, la siguiente reproducción arranca allí.",
-          "Para escuchar una línea por separado, activá <em>Voces</em> y elegí sus números en la leyenda: el filtro se aplica a los dos pentagramas. Sin ninguna voz elegida se escuchan todas. Cambiar esa selección detiene y reinicia la reproducción.",
-          "Editar la música, cambiar de partitura u ocultar la página detiene la reproducción y reinicia su posición. Volvé a pulsar reproducir cuando quieras escuchar el resultado."
+          "Para escuchar una línea por separado, activá <em>Voces</em> y elegí sus números en la leyenda: el filtro se aplica a los dos pentagramas. Sin ninguna voz elegida se escuchan todas. Cambiar la selección mientras suena no corta: sigue desde la misma posición con las voces nuevas.",
+          "Pausar, cambiar de partitura o cerrar la página detienen la reproducción. Editar la música, cambiar las voces, el tempo o el timbre mantiene la posición y sigue sonando; ocultar la pestaña tampoco la corta.",
+          "<strong>Repeticiones y saltos:</strong> la reproducción sigue el orden escrito: barras de repetición, casas 1./2. (la primera se omite en la segunda vuelta) y <em>D.C.</em>/<em>D.S.</em>, que saltan una sola vez. La barra vertical vuelve al compás repetido. El MIDI exportado no repite.",
+          "<strong>Escuchar mientras editás:</strong> al seleccionar una nota suena, aunque la reproducción esté apagada; al arrastrarla o moverla con <kbd>↑</kbd>/<kbd>↓</kbd> suena en cada cambio de altura. Con figuras seleccionadas, <kbd>Espacio</kbd> las toca; sin selección alterna play y pausa. <kbd>Enter</kbd> vuelve la posición al inicio."
         ],
         "tip": "El filtro de voces solo afecta a lo que escuchás en el editor: el archivo MIDI exportado incluye todas las voces. El tempo elegido también se usa en el MIDI."
       },
@@ -732,6 +769,44 @@
           "Apretá <kbd>Mayús</kbd> + <kbd>↓</kbd> (o <kbd>↑</kbd>): el editor busca la próxima digitación de esa nota en las cuerdas siguientes y ajusta el traste para que suene igual. Si volvés a apretar, pasa a la cuerda que sigue, siempre que el traste no supere el máximo."
         ],
         "tip": "Solo cambia la digitación: la nota del pentagrama y el sonido siguen igual."
+      },
+      "transpose": {
+        "steps": [
+          "Abrí los <strong>Ajustes</strong> con el engranaje {{icon:settings}} y buscá <strong>Transposición</strong>: el deslizador corto que está bajo el tempo. Es una función Pro.",
+          "Movelo de −12 a +12 semitonos: cada paso sube o baja un semitono lo que suena y 12 es una octava. En 0 no hay transposición.",
+          "Cambia solo el sonido: la reproducción {{icon:play}} y el MIDI exportado suenan transpuestos. La notación que ves, el MusicXML y el PDF quedan como los escribiste.",
+          "Sirve, por ejemplo, para cantar una canción en otra tonalidad o para ensayar con un instrumento transpositor sin reescribir las notas. Se guarda con la partitura y se deshace con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>."
+        ],
+        "tip": "Si querés que la partitura quede escrita en otra tonalidad, cambiá la armadura y mové las notas: la transposición solo afecta a lo que escuchás."
+      },
+      "staves": {
+        "steps": [
+          "En los Ajustes {{icon:settings}}, con <em>Guitarra</em> o con <em>Voces</em> (coro), el deslizador <strong>Cantidad de voces</strong> va de 1 a 4: cada voz tiene su propio pentagrama. Bajar la cantidad solo oculta pentagramas; al subirla reaparece lo que habías escrito. Con guitarra hay una sola tablatura, bajo el último pentagrama, que digita todas las voces juntas.",
+          "<strong>Duplicar voz:</strong> con <em>Voces</em> activo, los botones <em>↓3</em> y <em>↓6</em> de la barra izquierda copian una voz una tercera o una sexta diatónica abajo, en todos los compases. Con figuras seleccionadas copian solo esas figuras; con voces elegidas en la leyenda, solo esas voces; sin selección y con varias voces, un panel te deja elegir cuáles. Si alguna nota no entra, no cambia nada, y se deshace de una vez.",
+          "<strong>Separar voces</strong> {{icon:split}}: pasa las voces que marques de un pentagrama a uno nuevo debajo. Elegilas en el panel y apretá <em>Separar</em>; siempre queda alguna voz en el pentagrama original.",
+          "<strong>Unir pentagramas</strong> {{icon:merge}}: reúne dos o más pentagramas en uno, cada voz con su número, y los de abajo suben. El panel los trae todos marcados.",
+          "Cada voz conserva su color y su lugar en la leyenda, así que después podés volver a separarlas. Ambas acciones son de todo o nada: si dos voces tuvieran la misma nota a la vez, o el resultado superara los 4 pentagramas o las 16 voces, no se hace y se avisa. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> las deshace."
+        ],
+        "tip": "Unir y separar son funciones Pro y se ofrecen con guitarra y con Voces; los silencios se copian al otro pentagrama para que ninguno quede con huecos."
+      },
+      "intervals": {
+        "steps": [
+          "En los Ajustes {{icon:settings}} activá <em>Voces</em> y, en esa misma sección, <em>Intervalos</em>: sobre cada columna de notas simultáneas aparece su intervalo en números romanos. Se calculan entre las voces elegidas en la leyenda; con menos de dos no hay marcas.",
+          "Debajo, tres opciones eligen el cálculo: <em>En relación al bajo</em> (por defecto: cada nota contra la más grave del acorde), <em>Voces entre sí</em> y <em>En relación a la tónica</em>, que muestra cada nota como un grado de I a VII de la tónica. Con la tónica aparece un selector: la primera opción es la detectada y las demás son las 30 tonalidades; elegir una la fija y se deshace con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
+          "El botón <strong>G⁷</strong> de la barra izquierda, con Voces e Intervalos activos, escribe sobre cada columna de tres o más notas distintas el nombre del acorde, con sus inversiones (por ejemplo <em>C/E</em>). Si hay otras lecturas posibles, las ves al pasar el mouse («También podría ser:»).",
+          "El nombre se elige mirando el contexto: se estima la tonalidad de toda la partitura (o se usa la tónica que fijaste) y se prefiere el acorde que mejor encaja con los vecinos. Con piano se miden por pentagrama; con Voces, entre todos los pentagramas."
+        ],
+        "tip": "Los intervalos y los nombres de acorde son una ayuda de estudio: se muestran en pantalla y dependen de la selección de voces, pero no cambian la música escrita."
+      },
+      "workspace": {
+        "steps": [
+          "Con más de una partitura abierta, cada pestaña tiene una <strong>X</strong> {{icon:x}}: cerrar no borra la partitura, solo la saca de las pestañas. También se puede cerrar la última; la reabrís con + o desde el menú. Borrar de verdad sigue siendo la papelera.",
+          "Bajo la papelera, <strong>Duplicar la partitura</strong> {{icon:copy}} abre en una pestaña nueva una copia de la activa, con «(copia)» en el título: sirve para probar variantes sin perder la original.",
+          "El menú <strong>☰</strong> lista tus partituras (hasta 7, siempre con la abierta); elegir una la abre en su pestaña. <em>Ver más…</em> abre el panel con todas.",
+          "En ese panel podés crear carpetas, renombrarlas o eliminarlas (las partituras vuelven a «Sin carpeta»), plegarlas o desplegarlas todas, y arrastrar partituras a una carpeta para ordenarlas.",
+          "Cada partitura tiene su propio enlace (<code>?score=…</code>): al recargar la página o abrir esa dirección en el mismo navegador, vuelve la misma partitura."
+        ],
+        "tip": "Todo sigue guardado en tu navegador: cerrar una pestaña no borra nada y las carpetas solo ordenan."
       }
     },
     "seo": {
@@ -846,6 +921,22 @@
       "lyrics": [
         "Cómo escribir la letra de una canción bajo las notas",
         "Escribí sílabas bajo cada nota, pegá una letra completa para repartirla, movela entre notas, uní sílabas y respetá las ligaduras en el editor de partituras Partitura."
+      ],
+      "transpose": [
+        "Transponer una partitura: cambiar lo que suena",
+        "Subí o bajá hasta 12 semitonos lo que suena en la reproducción y en el MIDI, sin tocar la notación, con el editor de partituras Partitura."
+      ],
+      "staves": [
+        "Varias voces, duplicar a tercera o sexta, unir y separar pentagramas",
+        "Elegí de 1 a 4 voces, duplicá una voz a una tercera o una sexta, separá voces en otro pentagrama o reuní varios en uno con el editor de partituras Partitura."
+      ],
+      "intervals": [
+        "Intervalos entre voces y nombres de acorde en la partitura",
+        "Mostrá los intervalos en relación al bajo, entre voces o a la tónica, y poné el nombre a cada acorde con el editor de partituras Partitura."
+      ],
+      "workspace": [
+        "Cerrar pestañas, carpetas y duplicar partituras",
+        "Cerrá pestañas sin borrar la partitura, ordená todo en carpetas y duplicá una partitura para probar variantes en el editor Partitura."
       ]
     },
     "related": "Tutoriales relacionados",
@@ -896,6 +987,18 @@
       [
         "Unir pentagramas",
         "Reuní varios pentagramas en uno, con cada voz en su lugar."
+      ],
+      [
+        "Duplicar voz",
+        "Copiá una voz una tercera o una sexta abajo con un solo botón."
+      ],
+      [
+        "Transposición",
+        "Hacé sonar la partitura más aguda o más grave, de −12 a +12 semitonos, sin cambiar lo escrito."
+      ],
+      [
+        "Intervalos y acordes",
+        "Mostrá la distancia entre las voces y el nombre de cada acorde."
       ],
       [
         "Letra de canciones",

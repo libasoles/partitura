@@ -14,7 +14,7 @@ const t = s.pro;
 const paths = Object.fromEntries(locales.map((l) => [l, proPath(l)])) as Record<Locale, string>;
 // Argentina pays in ARS (the markup); everywhere else the script below swaps in the USD price. The number is sent to Analytics as the event value.
 // One animation per feature, in the order of `pro.features` (none for the ones with nothing to show).
-const featureDemos = [null, null, demos.multiVoice, demos.splitVoices, demos.joinStaves, demos.lyricType, demos.duplicateScore, demos.closeTab, null];
+const featureDemos = [null, null, demos.multiVoice, demos.splitVoices, demos.joinStaves, demos.duplicateButtons, demos.transpose, demos.intervals, demos.lyricType, demos.duplicateScore, demos.closeTab, null];
 const plans = [
   { id: 'monthly', name: t.monthly, price: t.monthlyPrice, usd: t.monthlyPriceUsd, period: t.monthlyPeriod, value: 2000, valueUsd: 1 },
   { id: 'yearly', name: t.yearly, price: t.yearlyPrice, usd: t.yearlyPriceUsd, period: t.yearlyPeriod, value: 16000, valueUsd: 9 },

@@ -1421,3 +1421,80 @@ export function multiVoice(s, aria) {
   d.pointer([[1.4, d.w - 24, d.h - 10], ...visit(3.0, sx + 40, sy), ...visit(6.2, sx + 80, sy), [10, d.w - 24, d.h - 10]]);
   return d.html(aria);
 }
+
+// ----- Pro: transposition, intervals, chord names and duplicating a voice with the buttons --------------------------------
+
+/** Transposition changes only what sounds: the written notes stay, the slider moves to +5 and the sounding names shift. */
+export function transpose(s, aria) {
+  const u = s.scoreUiStrings;
+  const names = u.tonicNotes.split(',');
+  const d = stage({ id: 'pro-transpose', T: 12, h: 150, bottom: 52 });
+  [5, 6, 7].forEach((p, i) => d.note(d.firstX + 20 + i * 45, p, 'q', d.life(0.05), { stemDown: true }));
+  const sound = (list) => list.map((n) => names[n]).join(' · ');
+  d.text(d.w / 2, 82, `♪ ${sound([0, 1, 2])}`, d.life(0.05, 3.6), { size: 10, keep: false });
+  d.text(d.w / 2, 82, `♪ ${sound([3, 4, 5])}`, d.pop(3.7), { size: 10 });
+  const sx = 120;
+  const sy = 116;
+  d.base(`<text class="d-menutext" x="${sx - 10}" y="${sy + 3}" text-anchor="end" font-size="9">${u.settingsTranspose}</text>` +
+    `<path d="M${sx} ${sy}H${sx + 120}" stroke="var(--rule)" stroke-width="3" stroke-linecap="round"/><circle cx="${sx + 60}" cy="${sy}" r="2.4" fill="var(--ink-soft)"/>`);
+  d.add(sx + 60, sy, '<circle r="6" fill="var(--accent)"/>', [[0, { x: 0 }], [2.8, { x: 0 }], [3.4, { x: 25 }]]);
+  d.text(sx + 130, sy + 3, '0', d.life(0.05, 3.4), { size: 9, anchor: 'start', weight: 400, keep: false });
+  d.text(sx + 130, sy + 3, `+5 ${u.transposeUnit}`, d.pop(3.5), { size: 9, anchor: 'start', weight: 400 });
+  d.click(3.4, sx + 85, sy);
+  d.pointer([[1.4, d.w - 30, d.h - 14], ...visit(3.4, sx + 85, sy), [8, d.w - 30, d.h - 14]]);
+  return d.html(aria);
+}
+
+/** Intervals: with the box on, each column of two voices gets its interval over the staff. */
+export function intervals(s, aria) {
+  const u = s.scoreUiStrings;
+  const d = stage({ id: 'pro-intervals', T: 12, h: 130, bottom: 88 });
+  const xs = [0, 1, 2, 3].map((i) => d.firstX + 14 + i * 40);
+  const top = ['G4', 'A4', 'A4', 'G4'];
+  const low = ['E4', 'E4', 'F4', 'E4'];
+  const marks = ['III', 'V', 'III', 'III'];
+  xs.forEach((x, i) => {
+    d.note(x, pitch(top[i]), 'q', S(d.life(0.05), [[0, { c: VOICE[0] }]]), { stemDown: false });
+    d.note(x, pitch(low[i]), 'q', S(d.life(0.05), [[0, { c: VOICE[2] }]]), { stemDown: true });
+    d.text(x + 4, 40, marks[i], d.pop(3.2 + i * 0.3), { size: 9 });
+  });
+  d.add(176, 4, '<rect class="d-panel" width="140" height="30" rx="6"/>', d.life(0.9, 5.4));
+  checkRow(d, 190, 19, u.toolsIntervals, 2.4, 5.4, d.life(0.9, 5.4));
+  d.click(2.3, 190, 19);
+  d.pointer([[0.5, 200, 112], ...visit(2.3, 190, 19), [5, 200, 112]]);
+  return d.html(aria);
+}
+
+/** Chord names: the G⁷ button names every column of three or more voices, inversions included. */
+export function chordNames(s, aria) {
+  const d = stage({ id: 'pro-chord-names', T: 12, h: 140, bottom: 100 });
+  const xs = [0, 1, 2].map((i) => d.firstX + 14 + i * 55);
+  const cols = [['E4', 'G4', 'C5'], ['D4', 'G4', 'B4'], ['E4', 'A4', 'C5']];
+  const names = ['C/E', 'G', 'Am'];
+  cols.forEach((col, i) => col.forEach((n, k) => d.note(xs[i], pitch(n), 'q', S(d.life(0.05), [[0, { c: VOICE[2 - k] }]]), { stemDown: k === 0, bare: k === 1 })));
+  xs.forEach((x, i) => d.text(x + 4, 50, names[i], d.pop(3.2 + i * 0.4), { size: 10, weight: 700 }));
+  const btn = { x: d.w - 30, y: 16 };
+  d.add(btn.x, btn.y, pillInner('G⁷', { size: 9 }), [[0, { o: 1 }]]);
+  d.click(2.4, btn.x, btn.y);
+  d.pointer([[0.5, d.w - 30, d.h - 14], ...visit(2.4, btn.x, btn.y), [6, d.w - 30, d.h - 14]]);
+  return d.html(aria);
+}
+
+/** The ↓3 and ↓6 buttons of the left bar copy the whole voice a third or a sixth below. */
+export function duplicateButtons(s, aria) {
+  const d = stage({ id: 'pro-duplicate-buttons', T: 14, h: 120 });
+  const xs = [0, 1, 2].map((i) => d.firstX + 30 + i * 55);
+  const top = [5, 6, 7];
+  xs.forEach((x, i) => {
+    d.note(x, top[i], 'q', S(d.life(0.05), [[0, { c: VOICE[0] }]]), { stemDown: false });
+    d.note(x, top[i] - 2, 'q', S(d.pop(3.4), [[0, { c: VOICE[1] }]]), { bare: true, keep: false });
+    d.note(x, top[i] - 5, 'q', S(d.pop(8.4), [[0, { c: VOICE[2] }]]), { stemDown: true, keep: false });
+  });
+  const bx = d.w - 24;
+  [['↓3', 30, 3.2], ['↓6', 62, 8.2]].forEach(([text, y, t]) => {
+    d.base(`<g transform="translate(${bx} ${y})"><rect class="d-toolbtn" x="-13" y="-11" width="26" height="22" rx="5"/><text class="d-menutext" text-anchor="middle" y="3.5" font-size="9">${text}</text></g>`);
+    d.click(t, bx, y);
+  });
+  d.pointer([[0.5, d.w - 24, d.h - 12], ...visit(3.2, bx, 30), ...visit(8.2, bx, 62), [11, d.w - 24, d.h - 12]]);
+  return d.html(aria);
+}

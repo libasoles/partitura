@@ -12,6 +12,7 @@ export const categories = [
   { id: 'structure', slugs: ['signatures', 'measures', 'delete-barline', 'repeats', 'dynamics'] },
   { id: 'guitar', slugs: ['tab-toggle', 'edit-tab', 'move-tab', 'chords', 'barre'] },
   { id: 'files', slugs: ['files', 'scores'] },
+  { id: 'pro', slugs: ['transpose', 'staves', 'intervals', 'workspace'] },
 ] as const;
 
 export type Category = (typeof categories)[number]['id'];
@@ -44,6 +45,10 @@ const animated: Partial<Record<Slug, Demo>> = {
   barre: demos.barre,
   files: demos.files,
   scores: demos.scores,
+  transpose: demos.transpose,
+  staves: demos.multiVoice,
+  intervals: demos.intervals,
+  workspace: demos.closeTab,
 };
 
 const demo = (draw: Demo, s: Strings, label: string) => `<div class="tutorial-demo">${draw(s, label.replace(/<[^>]*>|\{\{icon:[\w-]+\}\}/g, ''))}</div>`;
@@ -57,7 +62,7 @@ const illustrations: Partial<Record<Slug, Record<number, Demo | Demo[]>>> = {
   'notes-rests': { 1: demos.dragFigure, 2: demos.prepend, 6: demos.fillRests },
   accidentals: { 2: demos.selectedAccidental, 3: demos.doubleDot },
   settings: {
-    0: settingItem('open'), 1: settingItem('instrument'), 2: settingItem('tempo'), 3: settingItem('tools'), 4: demos.grandStaff, 5: settingItem('playback'), 6: settingItem('library'),
+    0: settingItem('open'), 1: settingItem('instrument'), 2: settingItem('tempo'), 3: settingItem('transpose'), 4: settingItem('tools'), 5: demos.grandStaff, 6: settingItem('playback'), 7: settingItem('library'),
   },
   playback: { 0: demos.playbackEnable, 1: demos.playbackSetup, 2: demos.playbackPlay, 4: demos.playbackVoices },
   files: { 1: demos.loadFile },
@@ -71,6 +76,10 @@ const illustrations: Partial<Record<Slug, Record<number, Demo | Demo[]>>> = {
   measures: { 4: demos.measureDelete },
   'move-tab': { 0: (s) => renderTabMove(s), 2: demos.refinger },
   lyrics: { 0: demos.lyricTool, 1: demos.lyricType, 2: demos.lyricHyphen, 3: demos.lyricPaste, 4: demos.lyricTies, 6: demos.lyricMove, 8: demos.lyricMerge, 9: demos.lyricMergeThree },
+  transpose: { 0: settingItem('transpose') },
+  staves: { 0: settingItem('parts'), 1: demos.duplicateButtons, 2: demos.splitVoices, 3: demos.joinStaves },
+  intervals: { 2: demos.chordNames },
+  workspace: { 1: demos.duplicateScore },
   chords: { 0: demos.chordTool, 1: demos.chordType, 2: demos.chordPopup, 4: demos.chordMove, 5: demos.chordDelete },
 };
 
@@ -148,4 +157,8 @@ export const related: Record<Slug, Slug[]> = {
   files: ['scores', 'faq', 'start'],
   scores: ['files', 'faq', 'start'],
   faq: ['start', 'features', 'files'],
+  transpose: ['settings', 'playback', 'staves'],
+  staves: ['voices', 'transpose', 'intervals'],
+  intervals: ['staves', 'voices', 'playback'],
+  workspace: ['scores', 'files', 'staves'],
 };

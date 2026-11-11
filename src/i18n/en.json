@@ -37,7 +37,13 @@
     "<strong>Special barlines:</strong> double barlines, repeat signs and guitar barre marks.",
     "<strong>Settings:</strong> piano with a grand staff or guitar with tablature, tempo in the score and the MIDI, and colors to tell voices apart.",
     "<strong>Download:</strong> export the score as a PDF to print, or as MusicXML to open in MuseScore, Finale, Sibelius or Dorico.",
-    "<strong>Autosave:</strong> your score is kept in your browser, so you can pick it up another day."
+    "<strong>Autosave:</strong> your score is kept in your browser, so you can pick it up another day.",
+    "<strong>Playback:</strong> listen to the score with piano, guitar or choir, following repeats and jumps, starting wherever you click.",
+    "<strong>Song lyrics:</strong> type or paste syllables under the notes; they appear in the PDF and the MusicXML.",
+    "<strong>Transposition (Pro):</strong> make the score sound higher or lower, from −12 to +12 semitones, without changing what is written.",
+    "<strong>Several voices (Pro):</strong> up to 4 staves, duplicate a voice a third or a sixth below, and join or split staves.",
+    "<strong>Intervals and chords (Pro):</strong> show the distance between voices and the name of each chord.",
+    "<strong>Tabs and folders (Pro):</strong> close tabs without deleting, sort your scores into folders and duplicate them to try variations."
   ],
   "scoreHowH2": "How to write sheet music online",
   "scoreHow": [
@@ -163,7 +169,15 @@
     "soundChorale": "Chorale",
     "registerTitle": "Register",
     "registerButton": "Register of voice {n}: {name}. Change",
-    "registers": {"soprano":"Soprano","mezzo":"Mezzo-soprano","alto":"Alto","tenor":"Tenor","baritone":"Baritone","bass":"Bass","none":"None"},
+    "registers": {
+      "soprano": "Soprano",
+      "mezzo": "Mezzo-soprano",
+      "alto": "Alto",
+      "tenor": "Tenor",
+      "baritone": "Baritone",
+      "bass": "Bass",
+      "none": "None"
+    },
     "voiceStaff": "Voice {n}",
     "settingsTempo": "Tempo",
     "tempoNone": "None",
@@ -521,6 +535,22 @@
       "lyrics": [
         "Lyrics",
         "Write syllables under the notes, paste a whole lyric, move them and merge them."
+      ],
+      "transpose": [
+        "Transposition",
+        "Make the score sound higher or lower without changing what is written."
+      ],
+      "staves": [
+        "Several voices and staves",
+        "Choose how many voices the score has, duplicate them a third or a sixth below, and join or split staves."
+      ],
+      "intervals": [
+        "Intervals and chord names",
+        "Show the distance between voices and the name of each chord."
+      ],
+      "workspace": [
+        "Tabs, folders and copies",
+        "Close tabs without deleting, sort your scores into folders and duplicate a score."
       ]
     },
     "stepsHeading": "Step by step",
@@ -532,7 +562,8 @@
       "editing": "Editing notes",
       "structure": "Measures and signs",
       "guitar": "Guitar and tablature",
-      "files": "Files and saving"
+      "files": "Files and saving",
+      "pro": "Pro features"
     },
     "bodies": {
       "notes-rests": {
@@ -603,7 +634,8 @@
           "At the end of each system, the <strong>+</strong> and <strong>−</strong> buttons add or remove a measure. To add another system use the button under the score.",
           "Hold <kbd>Shift</kbd> and drag a measure to move it elsewhere.",
           "Drag a barline sideways to make a measure wider or narrower.",
-          "To delete a measure, click an empty part of it to select it and press <kbd>Delete</kbd>: the following measures move up to fill the gap."
+          "To delete a measure, click an empty part of it to select it and press <kbd>Delete</kbd>: the following measures move up to fill the gap.",
+          "Every system except the first shows, in gray beside the opening barline, the number of its first measure."
         ]
       },
       "repeats": {
@@ -642,6 +674,7 @@
           "Open <strong>Settings</strong> with the cog {{icon:settings}}, the first tool in the right toolbar. Except for the pattern library, they apply to the score you are looking at, are saved with it, and can be undone with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
           "<strong>Instrument:</strong> with <em>Piano</em> {{icon:piano}} every system is a grand staff, treble clef above and bass clef below joined by a brace, and TAB and barre are hidden. With <em>Guitar</em> {{icon:guitar}} there is a single staff in guitar treble clef, and the TAB button and barre appear. Switching between them deletes nothing: whatever is hidden stays saved.",
           "<strong>Tempo:</strong> the slider goes from 20 to 300 quarter notes per minute. It is written as a metronome mark above the first measure and sets the speed of the exported MIDI. <em>No marking</em> removes it.",
+          "<strong>Transpose</strong> (Pro): a slider from −12 to +12 semitones that changes only what you hear —playback and MIDI—, not what is written. See the <em>Transposition</em> guide.",
           "<strong>Tools:</strong> turn <em>Repeats</em>, <em>Dynamics</em> and <em>Voices</em> on or off to show or hide their controls in the editor toolbars. Hiding a group does not delete what you already wrote. With <em>Voices</em> on, each voice gets a color (1 to 4) and a legend appears to the left of the brace, where you choose which voices to color; no note is ever hidden.",
           "<strong>Grand staff:</strong> each staff has its own notes, rests, voices and clef (the clef menu says which one it changes). Measures, key signature, time signature, barlines, repeats and tempo are shared by both. Dynamics and hairpins are written between the two.",
           "<strong>Playback:</strong> {{icon:play}}{{icon:pause}} enable it to show play/pause to the left of the staff. It uses this score’s instrument and tempo. With Voices enabled, the selected legend numbers also filter what you hear; with none selected, all voices play.",
@@ -654,6 +687,7 @@
         "steps": [
           "Open the <strong>☰</strong> menu at the top right.",
           "<em>Load file…</em> opens a MusicXML (<code>.musicxml</code>, <code>.xml</code>) or a MIDI (<code>.mid</code>) file and turns it into a new score.",
+          "You can also <strong>drag</strong> one or more files from your folder onto the page: a dotted box appears, green for MusicXML and MIDI and orange for other types. Each accepted file opens a new tab, keeping title and author.",
           "<em>Export</em> downloads the score: <strong>PDF</strong> to print, <strong>MusicXML</strong> for MuseScore, Finale, Sibelius or Dorico, and <strong>MIDI</strong> to play it in any program.",
           "Multi-page PDFs are numbered automatically; a single-page PDF has no page number."
         ]
@@ -662,7 +696,8 @@
         "steps": [
           "Open scores are the tabs at the top. The <strong>+</strong> button creates a new empty one, and clicking a tab takes you back to the one you left.",
           "Everything saves itself in your browser as you write: come back another day and it is all there. Nothing is uploaded to any server.",
-          "The trash button clears the score you are looking at, and asks for confirmation first."
+          "The trash button clears the score you are looking at, and asks for confirmation first.",
+          "With Pro you can also close tabs without deleting, duplicate a score and sort them into folders: see <em>Tabs, folders and copies</em>."
         ],
         "tip": "Clearing your browser data loses the scores: export as MusicXML the ones you want to keep."
       },
@@ -686,8 +721,10 @@
           "Choose <em>Piano</em> {{icon:piano}} or <em>Guitar</em> {{icon:guitar}} and set the tempo. The written notes play with a piano or nylon guitar sound; both staves play in piano mode. You may see <em>Loading sounds…</em> the first time.",
           "Press {{icon:play}} <em>Play</em> or the space bar. A vertical bar follows the music and moves to the next system. Playback starts at the last position you clicked, on a figure or in empty space, even after deselecting. With no previous click, it starts at the beginning. Clicking empty space repositions the line and keeps it visible to mark that position. During playback, click to jump there immediately.",
           "Press {{icon:pause}} <em>Pause</em> or the space bar to keep your position, then play again to continue. If you click another position while paused, playback starts there.",
-          "To hear a line separately, enable <em>Voices</em> and select its numbers in the legend: the filter applies to both staves. With no voices selected, all voices play. Changing this selection stops playback and resets its position.",
-          "Editing the music, switching scores or hiding the page stops playback and resets its position. Press play again when you want to hear the result."
+          "To hear one line on its own, turn on <em>Voices</em> and choose its numbers in the legend: the filter applies to both staves. With no voice chosen you hear them all. Changing the selection while it plays does not cut it: it continues from the same position with the new voices.",
+          "Pausing, switching scores or closing the page stops playback. Editing the music, changing the voices, the tempo or the sound keeps the position and keeps playing; hiding the tab does not cut it either.",
+          "<strong>Repeats and jumps:</strong> playback follows the written order: repeat barlines, 1st/2nd endings (the first is skipped on the second pass) and <em>D.C.</em>/<em>D.S.</em>, which jump only once. The vertical bar returns to the repeated measure. The exported MIDI does not repeat.",
+          "<strong>Listen while you edit:</strong> selecting a note sounds it, even with playback off; dragging it or moving it with <kbd>↑</kbd>/<kbd>↓</kbd> sounds it at each change of pitch. With figures selected, <kbd>Space</kbd> plays them; with nothing selected it toggles play and pause. <kbd>Enter</kbd> returns the position to the start."
         ],
         "tip": "The voice filter only affects playback in the editor: exported MIDI includes all voices. MIDI also uses the selected tempo."
       },
@@ -736,6 +773,44 @@
           "Press <kbd>Shift</kbd> + <kbd>↓</kbd> (or <kbd>↑</kbd>): the editor looks for the next fingering of that note on the following strings and adjusts the fret so it sounds the same. Press again to move on to the next string, as long as the fret stays within the maximum."
         ],
         "tip": "Only the fingering changes: the note on the staff and the sound stay the same."
+      },
+      "transpose": {
+        "steps": [
+          "Open <strong>Settings</strong> with the cog {{icon:settings}} and find <strong>Transpose</strong>: the short slider under the tempo. It is a Pro feature.",
+          "Move it from −12 to +12 semitones: each step raises or lowers what you hear by a semitone and 12 is an octave. At 0 nothing is transposed.",
+          "Only the sound changes: playback {{icon:play}} and the exported MIDI sound transposed. The notation on screen, the MusicXML and the PDF stay as you wrote them.",
+          "It is handy to sing a song in another key or to rehearse with a transposing instrument without rewriting the notes. It is saved with the score and undone with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>."
+        ],
+        "tip": "If you want the score written in another key, change the key signature and move the notes: transposition only affects what you hear."
+      },
+      "staves": {
+        "steps": [
+          "In Settings {{icon:settings}}, with <em>Guitar</em> or <em>Voices</em> (choir), the <strong>Number of voices</strong> slider goes from 1 to 4: each voice gets its own staff. Lowering the number only hides staves; raising it brings back what you wrote. With guitar there is a single tablature under the last staff that fingers all the voices together.",
+          "<strong>Duplicate voice:</strong> with <em>Voices</em> on, the <em>↓3</em> and <em>↓6</em> buttons of the left bar copy a voice a diatonic third or sixth below, in every measure. With figures selected they copy only those; with voices chosen in the legend, only those voices; with no selection and several voices, a panel lets you choose which. If a note does not fit nothing changes, and it undoes in one step.",
+          "<strong>Split voices</strong> {{icon:split}}: moves the voices you tick from one staff to a new staff below. Choose them in the panel and press <em>Split</em>; the original staff always keeps at least one voice.",
+          "<strong>Join staves</strong> {{icon:merge}}: gathers two or more staves into one, each voice keeping its number, and the staves below move up. The panel comes with all of them ticked.",
+          "Each voice keeps its color and its place in the legend, so you can split them again later. Both actions are all-or-nothing: if two voices would share the same note at the same time, or the result would exceed 4 staves or 16 voices, nothing happens and you are told. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes them."
+        ],
+        "tip": "Joining and splitting are Pro features offered with guitar and Voices; rests are copied to the other staff so that neither is left with gaps."
+      },
+      "intervals": {
+        "steps": [
+          "In Settings {{icon:settings}} turn on <em>Voices</em> and, in the same section, <em>Intervals</em>: above every column of simultaneous notes its interval appears in Roman numerals. They are computed between the voices chosen in the legend; with fewer than two there are no marks.",
+          "Below it, three options choose the calculation: <em>Relative to the bass</em> (the default: each note against the lowest of the chord), <em>Between voices</em> and <em>Relative to the tonic</em>, which shows every note as a degree from I to VII of the tonic. With the tonic a selector appears: the first option is the detected one and the others are the 30 keys; picking one fixes it and it undoes with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd>.",
+          "The <strong>G⁷</strong> button of the left bar, with Voices and Intervals on, writes above each column of three or more different notes the chord name, inversions included (for example <em>C/E</em>). If other readings are possible you see them on hover («It could also be:»).",
+          "The name is chosen by looking at the context: the key of the whole score is estimated (or the tonic you set is used) and the chord that best fits its neighbors is preferred. With piano they are measured per staff; with Voices, across all staves."
+        ],
+        "tip": "Intervals and chord names are a study aid: they are shown on screen and depend on the voice selection, but they do not change the written music."
+      },
+      "workspace": {
+        "steps": [
+          "With more than one score open, each tab has an <strong>X</strong> {{icon:x}}: closing does not delete the score, it only removes it from the tabs. The last one can be closed too; reopen it with + or from the menu. Deleting for real is still the trash can.",
+          "Under the trash can, <strong>Duplicate score</strong> {{icon:copy}} opens a copy of the active score in a new tab, with “(copy)” in the title: handy to try variations without losing the original.",
+          "The <strong>☰</strong> menu lists your scores (up to 7, always including the open one); choosing one opens it in its tab. <em>See more…</em> opens the panel with all of them.",
+          "In that panel you can create folders, rename or delete them (the scores go back to “No folder”), fold or unfold them all, and drag scores into a folder to sort them.",
+          "Each score has its own link (<code>?score=…</code>): reloading the page or opening that address in the same browser brings the same score back."
+        ],
+        "tip": "Everything is still stored in your browser: closing a tab deletes nothing and folders only organize."
       }
     },
     "seo": {
@@ -850,6 +925,22 @@
       "lyrics": [
         "How to write song lyrics under the notes",
         "Write a syllable under each note, paste a whole lyric to spread it, move syllables between notes, merge them and respect ties in the Partitura score editor."
+      ],
+      "transpose": [
+        "Transpose a score: change what you hear",
+        "Raise or lower what plays back and exports to MIDI by up to 12 semitones without touching the notation, in the Partitura score editor."
+      ],
+      "staves": [
+        "Several voices, duplicate a third or sixth below, join and split staves",
+        "Pick 1 to 4 voices, duplicate a voice a third or a sixth below, split voices onto a new staff or join several staves into one in the Partitura score editor."
+      ],
+      "intervals": [
+        "Intervals between voices and chord names on the score",
+        "Show intervals relative to the bass, between voices or to the tonic, and name every chord in the Partitura score editor."
+      ],
+      "workspace": [
+        "Close tabs, folders and duplicate scores",
+        "Close tabs without deleting the score, sort everything into folders and duplicate a score to try variations in the Partitura editor."
       ]
     },
     "related": "Related tutorials",
@@ -899,6 +990,18 @@
       [
         "Join staves",
         "Gather several staves into one, with each voice in its place."
+      ],
+      [
+        "Duplicate voice",
+        "Copy a voice a third or a sixth below with a single button."
+      ],
+      [
+        "Transposition",
+        "Make the score sound higher or lower, from −12 to +12 semitones, without changing what is written."
+      ],
+      [
+        "Intervals and chords",
+        "Show the distance between voices and the name of each chord."
       ],
       [
         "Song lyrics",
