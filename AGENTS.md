@@ -52,7 +52,7 @@
 
 - Google Analytics 4 (`G-YX99KJ1Q99`, gtag.js) lo carga `src/components/Analytics.astro`, incluido en el `<head>` de `Base.astro`, `404.astro` e `index.astro`. Toda página nueva debe usar `Base.astro` (o incluir ese componente) para quedar medida.
 
-- **Embudo Pro** (`src/components/ProPage.astro`, `/es/pro/`, `/en/pro/`, `/pt/pro/`): el enlace del menú se oculta en español por ahora (solo se descubre por buscadores). Eventos GA4 `pro_menu_click` (enlace del menú en en/pt, en `Base.astro`) → `pro_page_view` → `pro_plan_click` (`plan`: monthly | yearly, `value` en ARS) → `pro_waitlist_shown`. Precio: ARS (2000 / 16000) en el HTML; el script lo cambia a USD (1 / 9) si la zona horaria del navegador no es de Argentina, y `pro_plan_click` envía `currency` y `value` de la moneda mostrada. Cada función de la lista lleva una demo animada (`featureDemos` en `ProPage.astro`, en el orden de `pro.features`; funciones al final de `src/lib/demos.js`: `multiVoice`, `splitVoices`, `joinStaves`, `closeTab`, `duplicateScore`, y `lyricType` para la letra). Al agregar o reordenar funciones, mantener ambos arreglos alineados. El botón de plan no cobra: muestra el aviso de que la función aún no está disponible. Precios y textos en `src/i18n/*.json` (`pro`).
+- **Embudo Pro** (`src/components/ProPage.astro`, `/es/pro/`, `/en/pro/`, `/pt/pro/`): el enlace del menú se oculta en español por ahora (solo se descubre por buscadores). Eventos GA4 `pro_menu_click` (enlace del menú en en/pt, en `Base.astro`) → `pro_page_view` → `pro_plan_click` (`plan`: monthly | yearly, `value` en ARS) → `pro_waitlist_shown`. Precio: ARS (2000 / 16000) en el HTML; el script lo cambia a USD (1 / 9) si la zona horaria del navegador no es de Argentina, y `pro_plan_click` envía `currency` y `value` de la moneda mostrada. Cada función de la lista lleva una demo animada (`featureDemos` en `ProPage.astro`, en el orden de `pro.features`; funciones al final de `src/lib/demos.js`: `multiVoice`, `splitVoices`, `joinStaves`, `duplicateButtons`, `transpose`, `intervals`, `closeTab`, `duplicateScore`, y `lyricType` para la letra). Al agregar o reordenar funciones, mantener ambos arreglos alineados. El botón de plan no cobra: muestra el aviso de que la función aún no está disponible. Precios y textos en `src/i18n/*.json` (`pro`).
 
 ### Estructura
 
@@ -214,6 +214,7 @@ No es una PWA: no hay manifest ni service worker.
 - Toda tecla o combinación de teclado mencionada en un tutorial debe resaltarse con `<kbd>`, también en las introducciones, los tips y los textos heredados. Las demos deben mostrar una acción por gesto y acompañar la explicación de ese gesto.
 
 - Al mencionar una herramienta, acompañar el texto con el icono que usa el editor (por ejemplo, el engranaje de Ajustes), alineado con la línea de texto.
+- **Funciones Pro**: la categoría `pro` de `src/lib/tutorials.ts` (`transpose`, `staves`, `intervals`, `workspace`) documenta cada función Pro con sus demos. Al agregar o cambiar una función, actualizar su tutorial, `scoreFeatures` (y `TutorialFeatures.astro`, cuyos iconos y demos van por índice, solo en español) y `pro.features` en los tres idiomas.
 - «Qué podés hacer» destaca los diferenciales: crear partituras con + en el menú superior, ajustes, voces y menús contextuales. El guardado automático se explica en «Primeros pasos».
 
 ## Pendiente

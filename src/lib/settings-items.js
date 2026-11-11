@@ -16,6 +16,8 @@ export function settingsItem(name, s) {
     open: `<span class="ts-cog" aria-hidden="true">${tutorialIcon('settings')}</span><span class="ts-heading">${u.settings}</span>`,
     instrument: `<p class="ts-title">${u.settingsInstrument}</p><div class="ts-row">${radio('piano', u.instrumentPiano, true)}${radio('guitar', u.instrumentGuitar, false)}</div>`,
     tempo: `<p class="ts-title">${u.settingsTempo}</p><div class="ts-slider"><input type="range" min="20" max="300" value="120" disabled aria-label="${u.tempoUnit}"><output>♩ = 120</output></div>${check(u.tempoNone)}`,
+    transpose: `<p class="ts-title">${u.settingsTranspose}</p><div class="ts-slider"><input type="range" min="-12" max="12" value="3" disabled aria-label="${u.transposeUnit}"><output>+3 ${u.transposeUnit}</output></div>`,
+    parts: `<p class="ts-title">${u.settingsParts}</p><div class="ts-slider"><input type="range" min="1" max="4" value="3" disabled aria-label="${u.settingsParts}"><output>3</output></div>`,
     tools: `<p class="ts-title">${u.settingsTools}</p>${check(u.toolsRepeats, { on: true })}${check(u.toolsDynamics, { on: true })}${check(u.toolsVoices, { on: true, extra: swatches() })}`,
     voices: `${check(u.toolsVoices, { on: true, extra: swatches() })}`,
     playback: `${check(u.toolsPlayback, { on: true, extra: tutorialIcon('play') + tutorialIcon('pause') })}`,
