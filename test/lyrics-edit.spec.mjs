@@ -146,3 +146,20 @@ test('the draft input has the size of the drawn syllable and sits on its line', 
   expect(Math.abs(inputFs - verseFs)).toBeLessThan(1);
   expect(Math.abs(input - verse)).toBeLessThan(3);
 });
+
+test('clicking the highlighted cell under a note starts writing', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => {
+    const { score, render } = window.scoreEditor;
+    [0, 1, 2, 3].forEach((k) => window.ScoreModel.insertNote(window.ScoreModel.measures(score)[0], { d: 'q', n: 33 }, k * 24));
+    render();
+  });
+  await page.locator('[data-tool="lyric"]').click({ position: { x: 5, y: 5 } });
+  const head = await page.locator('#scoreStage g.measure').first().locator('.notehead').nth(1).boundingBox();
+  await page.mouse.move(head.x + head.width / 2, head.y + head.height / 2);
+  const cell = page.locator('.score-marker-cell');
+  await expect(cell).toBeVisible();
+  const b = await cell.boundingBox();
+  await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  await expect(page.locator('.score-lyric-draft')).toBeFocused();
+});
