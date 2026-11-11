@@ -1,6 +1,6 @@
 import { ARCHIVE_CHOIRS } from './choir-sounds.js';
 import { readSoundFont } from './soundfont.js';
-import { soundingNotes } from './score-notes.js';
+import { expandRepeats, soundingNotes } from './score-notes.js';
 
 // Per-sound envelope: `attack` fades in, `release` rings past the note's end so consecutive notes overlap (legato).
 const PLUCKED = { volume: 2, attack: 0.005, release: 0.03, within: true };
@@ -121,18 +121,14 @@ export function createPlayer(context, vendorUrl, onEnded) {
     get position() { return playing ? Math.max(position, context.currentTime - origin) : position; },
     async prepare(score, M, selectedVoices, voiceCount = 4) {
       const seconds = 60 / (score.tempo || 120) / M.DIVISIONS;
-      const notes = soundingNotes(score, M, selectedVoices, voiceCount).map((note) => ({ ...note, start: note.start * seconds, end: note.end * seconds }));
+      // The editor reserves blank rows for writing; finish at the last written measure, following repeats and jumps.
+      const slots = M.playSlots(score);
+      const notes = expandRepeats(score, M, soundingNotes(score, M, selectedVoices, voiceCount), slots).map((note) => ({ ...note, start: note.start * seconds, end: note.end * seconds }));
       const { samples, shape } = await loadSamples(score, M, notes);
-      // The editor reserves blank rows for writing; finish at the last written measure.
-      const measures = M.measures(score);
-      let last = -1;
-      for (let staff = 0; staff < M.stavesOf(score); staff += 1) {
-        M.measures(score, staff).forEach((measure, mi) => { if (measure.length) last = Math.max(last, mi); });
-      }
       // Un compás excedido (se permite) llega más allá de su capacidad: el reloj no debe cortar lo que sobra.
-      const written = measures.slice(0, last + 1).reduce((sum, _, mi) => sum + M.capacity(score, mi) * seconds, 0);
+      const written = (slots.at(-1)?.end ?? 0) * seconds;
       const duration = notes.reduce((end, note) => Math.max(end, note.end), written);
-      return { notes, samples, duration, shape };
+      return { notes, samples, duration, shape, slots };
     },
     play({ notes, samples, duration, shape }, from) {
       silence();

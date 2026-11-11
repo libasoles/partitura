@@ -1530,6 +1530,49 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return endings;
   }
 
+  // Orden en que suenan los compases: repeticiones (|: :|), casas 1./2. y saltos D.C./D.S. Los saltos no vuelven a tomar repeticiones.
+  function playOrder(score, count = measures(score).length) {
+    const endings = navigationEndings(score);
+    const segno = Array.from({ length: count }, (_, mi) => mi).find((mi) => score.navigation?.[mi]?.segno);
+    const order = [], taken = new Set();
+    let mi = 0, loopStart = 0, pass = 1, jumped = false;
+    for (let steps = 0; mi < count && steps < count * 8 + 16; steps += 1) {
+      const bar = score.barlines?.[mi];
+      if (bar?.start) loopStart = mi;
+      const ending = endings.find((e) => e.first <= mi && mi <= e.last);
+      if (ending?.mark === 'first' && pass > 1) { mi = ending.last + 1; loopStart = mi; pass = 1; continue; }
+      order.push(mi);
+      if (bar?.end && !jumped && !taken.has(mi)) {
+        taken.add(mi);
+        mi = loopStart;
+        pass = 2;
+        continue;
+      }
+      if (bar?.end) { loopStart = mi + 1; pass = 1; }
+      const nav = score.navigation?.[mi];
+      if (!jumped && (nav?.dc || (nav?.ds && segno !== undefined))) {
+        jumped = true;
+        pass = 2;
+        mi = nav.dc ? 0 : segno;
+        continue;
+      }
+      mi += 1;
+    }
+    return order;
+  }
+
+  // Compases tocados en orden, con su tiempo de inicio y fin en divisiones; termina en el ultimo compas escrito.
+  function playSlots(score) {
+    let last = -1;
+    for (let staff = 0; staff < stavesOf(score); staff += 1) measures(score, staff).forEach((measure, mi) => { if (measure.length) last = Math.max(last, mi); });
+    let start = 0;
+    return playOrder(score, last + 1).map((mi) => {
+      const slot = { mi, start, end: start + capacity(score, mi) };
+      start = slot.end;
+      return slot;
+    });
+  }
+
   // Una barra interior crea dos compases incompletos sin cambiar la indicacion de compas.
   function splitMeasure(score, mi, at) {
     const all = measures(score);
@@ -3550,7 +3593,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
     captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, leadingRests, opensSection, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, canJoinStaves, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
-    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, setTranspose, transposeOf, MAX_TRANSPOSE, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
+    TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, setTranspose, transposeOf, MAX_TRANSPOSE, tuningOf, tuningLabels, meterOf, meterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, playOrder, playSlots, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,
   };
 }

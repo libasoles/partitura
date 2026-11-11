@@ -58,3 +58,25 @@ export function soundingNotes(score, M, selectedVoices, voiceCount = 4) {
   }
   return sounding;
 }
+
+// Repite las notas segun el orden de los compases (repeticiones, casas, saltos); sin saltos las deja como estan.
+export function expandRepeats(score, M, notes, slots) {
+  if (slots.every((slot, k) => slot.mi === k)) return notes;
+  const origin = [];
+  let at = 0;
+  slots.length && M.measures(score).forEach((_, mi) => { origin[mi] = at; at += M.capacity(score, mi); });
+  const expanded = [];
+  for (const note of notes) {
+    let piece = null, previous = -2;
+    slots.forEach((slot, k) => {
+      const from = origin[slot.mi], to = from + (slot.end - slot.start);
+      if (note.start >= to || note.end <= from) return;
+      const start = slot.start + Math.max(note.start, from) - from, end = slot.start + Math.min(note.end, to) - from;
+      // Una nota que sigue en el compas siguiente de la partitura (ligadura) sigue sonando sin volver a atacar.
+      if (piece && previous === k - 1 && slots[k - 1].mi + 1 === slot.mi && piece.end === start) piece.end = end;
+      else expanded.push(piece = { ...note, start, end });
+      previous = k;
+    });
+  }
+  return expanded;
+}
