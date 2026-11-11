@@ -9,6 +9,8 @@ const CHOIR = {
   piano: { ...PLUCKED, file: 'piano' },
   ah: { file: 'choir-ah', volume: 2, attack: 0.09, release: 0.14 },
   oh: { file: 'choir-oh', volume: 2, attack: 0.09, release: 0.14 },
+  // Chorale: the Voice Oohs render Klang plays (a different, quieter mix than `oh`, so it gets more gain).
+  chorale: { file: 'choir-chorale', volume: 4, attack: 0.09, release: 0.14 },
   // Uh keeps the saved `mm` ID and uses a closed-mouth hum from the Oh samples.
   mm: { file: 'choir-oh', volume: 2, attack: 0.1, release: 0.16, tone: 550 },
   'zj-phil-s-voice-solo': { file: 'zj-phil-s-voice-solo', volume: 0.5, attack: 0.09, release: 0.14 },
