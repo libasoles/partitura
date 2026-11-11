@@ -8,7 +8,7 @@ import { getSetting, setSetting } from './settings.js';
 import { chordMarks, hasIntervals, parseTonic, scoreKey, spellTonic, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
-import { measurePitches } from './score-notes.js';
+import { measurePitches, pitchMidi } from './score-notes.js';
 import { applyUrlDefaults } from './url-defaults.js';
 import { createScoresDrawer } from './score-drawer.js';
 
@@ -3707,7 +3707,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (hit) nodeOf(hit).classList.add('is-target');
     } else {
       const at = aimed(event);
-      showMarker(locate(at.clientX, at.clientY, drag.group || drag.from));
+      const target = locate(at.clientX, at.clientY, drag.group || drag.from);
+      showMarker(target);
+      dragSound(drag, target);
     }
   }, { passive: false });
 
@@ -4997,6 +4999,42 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     } catch (error) { /* a missing sample or blocked audio just stays silent */ }
   }
 
+  // Sounds a short chord of midi pitches while a note is dragged, so the ear finds the drop point.
+  function auditionPitches(midis) {
+    if (!midis.length || playbackState === 'playing' || playbackState === 'loading') return;
+    const request = ++previewRequest;
+    const heard = midis.map((midi) => ({ midi, start: 0, end: 0.35 }));
+    (async () => {
+      try {
+        audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+        const [{ createPlayer }] = await Promise.all([import('./score-playback.js'), audioContext.resume()]);
+        if (request !== previewRequest || playbackState === 'playing') return;
+        player ||= createPlayer(audioContext, vendorUrl, resetPlayback);
+        await player.preview(M.clone(score), M, heard, 0, () => request === previewRequest && playbackState !== 'playing' && playbackState !== 'loading');
+      } catch (error) { /* silent */ }
+    })();
+  }
+
+  // While dragging notes: the first column of the dragged selection (all its vertical notes, none of the later ones)
+  // sounds at the pitch it would land on, each time the aim changes.
+  function dragSound(d, target) {
+    if (!target || d.insert || d.pattern || d.item) return;
+    const key = [target.mi, target.staff, target.n, target.t].join(':');
+    if (d.soundKey === key) return;
+    d.soundKey = key;
+    const refs = (d.group?.length > 1 ? d.group : [d.from]).filter((ref) => { const ev = ref && eventAt(ref); return ev && !ev.rest; });
+    if (!refs.length) return;
+    const start = (ref) => measureOffset(0, ref.mi) + M.onsets(laneOf(ref)[ref.mi])[ref.i];
+    const first = Math.min(...refs.map(start));
+    const anchor = eventAt(d.from);
+    const dn = target.n - anchor.n;
+    const midis = refs.filter((ref) => start(ref) === first).map((ref) => {
+      const ev = eventAt(ref);
+      return pitchMidi(score, M, Math.max(M.LOWEST, Math.min(M.HIGHEST, ev.n + dn)), ev.acc, target.mi);
+    });
+    auditionPitches([...new Set(midis)]);
+  }
+
   // Space with figures selected sounds them (together or in sequence, as written) instead of toggling playback.
   function playSelectedNotes() {
     const refs = picks().filter((ref) => { const event = eventAt(ref); return event && !event.rest; });
@@ -5272,6 +5310,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (playbackState !== 'playing' && playbackState !== 'loading' && picks().length && !event.repeat) {
       event.preventDefault();
       if (playSelectedNotes()) return;
+    }
+    if (playButton.hidden) {
+      // Playback is off in Ajustes: Space turns it on and starts playing.
+      if (!settings || event.repeat) return;
+      event.preventDefault();
+      M.setTool(score, 'playback', true);
+      save();
+      applyTools();
     }
     if (playButton.hidden) return;
     event.preventDefault();
