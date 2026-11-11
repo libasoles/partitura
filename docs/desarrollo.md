@@ -37,3 +37,7 @@ El editor también se consume durante el build de guitar-chords, desde una revis
 ## Capturas del README
 
 `docs/editor.png` y `docs/ajustes.png` se generan con Playwright a 1440×1100 (factor 2) sobre `/es/demos/canto-en-la-rama/?tools=voices,play,intervals&sound=uh&banner=hide`, con Repetición y Dinámica activadas en Ajustes, las voces 1–3 elegidas en la leyenda e Intervalos activado. La biblioteca de patrones queda apagada. La segunda captura tiene el panel de Ajustes abierto.
+
+## Deploy
+
+El build y los tests corren en GitHub Actions (`.github/workflows/deploy.yml`, en cada push a `main`) y Netlify solo recibe `dist/` con `netlify deploy --prod --no-build`, así no consume minutos de build de Netlify. Secrets del repo: `NETLIFY_AUTH_TOKEN` y `NETLIFY_SITE_ID`. En Netlify los builds automáticos están desactivados (Stop builds); no hay deploy previews.
