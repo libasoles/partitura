@@ -14,8 +14,9 @@ test('an overfull measure shows a red dot and lists it; fixing it removes it fro
   const items = page.locator('#scoreProblemsDrawer li button');
   await expect(items).toHaveCount(1);
   await expect(items.first()).toContainText('Compás 1');
+  await expect(items.first().locator('svg.score-problems-sketch g.note')).toHaveCount(2);
   // Quitar la figura que sobra resuelve el problema solo.
-  await page.locator('[id="e0-1"] .notehead').click();
+  await page.locator('#scoreStage [id="e0-1"] .notehead').click();
   await page.keyboard.press('Delete');
   await expect(dot).toBeHidden();
   await expect(page.locator('#scoreProblemsDrawer')).toBeHidden();

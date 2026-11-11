@@ -2920,3 +2920,5 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 .score-problems-drawer li button:hover { background: rgb(217 45 32 / 10%); }
 @media print { .score-problems-dot, .score-problems-drawer { display: none; } }
+.score-problems-drawer li button { display: flex; flex-direction: column; gap: 0.4rem; }
+.score-problems-sketch { display: block; width: 100%; height: auto; max-height: 9rem; }
