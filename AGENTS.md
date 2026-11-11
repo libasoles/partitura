@@ -94,6 +94,8 @@ Con voces elegidas en la leyenda y la herramienta Voces activa, play reproduce s
 
 **Soltar una nota más a la derecha del final de su voz**: el compás es una sucesión de duraciones (`at` es solo orden), así que `moveEvent` llena el hueco entre el final de la voz y el lugar donde se soltó con silencios en esa voz, y la nota queda donde se ve. Test: `test/move-gap.spec.mjs`.
 
+**Compases excedidos (sin bloqueo)**: el editor no impide que un compás se pase de su duración (figuras, mover, cambiar duración o compás, pegar; `sanitize` tampoco recorta). `M.problems(score)` los calcula en cada render y `renderProblems` (`score-editor.js`) muestra un punto rojo abajo a la derecha (`#scoreProblemsDot`) que abre un drawer (`#scoreProblemsDrawer`) con los compases afectados; al resolverlos salen solos de la lista. Clic en un ítem elige y lleva al compás. Test: `test/problems-drawer.spec.mjs`.
+
 ### Puntillo
 
 - Un doble click sobre una nota, sin herramienta activa, cicla el puntillo: uno, doble y ninguno (`applyModifier`, `kind: 'dot'`; si el doble no entra, vuelve a ninguno). Un click simple no puntúa; los silencios no se puntúan con doble click. La tecla <kbd>P</kbd> sigue aplicándolo con la herramienta.
