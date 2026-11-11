@@ -26,6 +26,7 @@ export function measurePitches(score, M, measure, mi) {
 
 export function soundingNotes(score, M, selectedVoices, voiceCount = 4) {
   const sounding = [];
+  const barEnds = new Map(); // nota ligada -> fin del compas donde esta su ligadura
   const shift = M.transposeOf(score);
   // Cada pentagrama suena en su canal, para que dos notas iguales de los dos no se corten entre si.
   const staves = M.stavesOf(score);
@@ -44,10 +45,13 @@ export function soundingNotes(score, M, selectedVoices, voiceCount = 4) {
         const start = origin + starts[i];
         const size = M.length(ev);
         let note = tied.get(midi);
-        if (note && note.end === start) note.end = start + size;
+        // Una ligadura sigue en el compas siguiente aunque este no estuviera lleno: ese resto vacio no la corta.
+        if (note && (note.end === start || (note.end <= start && start === barEnds.get(note)))) note.end = start + size;
         else sounding.push(note = { midi, start, end: start + size, channel: staff });
-        if (ev.tie) tied.set(midi, note);
-        else tied.delete(midi);
+        if (ev.tie) {
+          barEnds.set(note, origin + M.capacity(score, mi));
+          tied.set(midi, note);
+        } else tied.delete(midi);
       });
       origin += M.capacity(score, mi);
     });

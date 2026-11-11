@@ -108,3 +108,11 @@ test('choir and plucked sounds have twice the gain in Voices and as direct instr
     assert.ok(files.some((url) => url.endsWith('/piano.json')));
   } finally { globalThis.fetch = previousFetch; }
 });
+
+test('a tie into the next bar keeps sounding as one note when the bar is not full', () => {
+  const s = M.emptyScore();
+  s.meter = '6/8';
+  s.rows[0][0] = [{ d: 'e', rest: true }, { d: 'e', n: 35, tie: true }];
+  s.rows[0][1] = [{ d: 'h', n: 35 }];
+  assert.equal(soundingNotes(M.sanitize(s), M).length, 1);
+});
