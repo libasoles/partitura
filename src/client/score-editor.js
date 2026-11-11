@@ -71,6 +71,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
   });
   let toolkit = null;
+  let renderProblems = () => {}; // se define con el resto de la interfaz de problemas, mas abajo
   let selectedMeasure = null; // destino de pegar, independiente de las figuras
   let selectedMeasureStaff = 0; // pentagrama donde se eligio ese compas
   let selectedNavigation = []; // { first, last, mark }: selected return signs or ending spans
@@ -853,17 +854,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     };
     const measureKey = (ref) => staffOf(ref) + ':' + ref.mi;
     const touched = [...new Set(edits.map((e) => measureKey(e.ref)))];
-    // Todo o nada: si alguna figura alargada ya no entra en su compas (una voz se saldria de la barra), no cambia nada.
-    const overflows = touched.some((key) => {
-      const here = edits.filter((e) => measureKey(e.ref) === key);
-      const { mi } = here[0].ref;
-      const trial = M.settle(M.clone(laneOf(here[0].ref)[mi]));
-      const before = M.measureLength(trial);
-      here.forEach((e) => place(trial, { ref: e.ref, replacement: M.clone(e.replacement) }));
-      const after = M.measureLength(trial);
-      return after > before && after > M.capacity(score, mi);
-    });
-    if (overflows) return say(t.full);
     change(() => {
       touched.forEach((key) => {
         const here = edits.filter((e) => measureKey(e.ref) === key);
@@ -980,7 +970,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       front.at = first;
       trial.unshift(front);
       M.settle(trial);
-      if (M.measureLength(trial) > M.capacity(score, target.mi)) return say(noRoom(moved, target.mi));
       change(() => {
         source[from.mi].splice(from.i, 1);
         destination.splice(0, destination.length, ...trial);
@@ -1438,6 +1427,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     markSelected();
     drawPlaybackHint();
     updateHoverGhost();
+    renderProblems();
     removeRow.hidden = score.rows.length <= M.MIN_ROWS;
   }
 
@@ -4341,6 +4331,65 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   meterPopup.addEventListener('toggle', (event) => {
     stage.querySelector('.score-meter-trigger')?.setAttribute('aria-expanded', String(event.newState === 'open'));
   });
+
+  // Los compases que se pasan de su duracion no se impiden: se recopilan sin avisar (`M.problems`, recalculado en cada
+  // render, asi que uno resuelto sale solo de la lista). Un punto rojo abajo a la derecha abre el listado.
+  const problemsDot = document.createElement('button');
+  problemsDot.type = 'button';
+  problemsDot.id = 'scoreProblemsDot';
+  problemsDot.className = 'score-problems-dot';
+  problemsDot.hidden = true;
+  const problemsDrawer = document.createElement('aside');
+  problemsDrawer.id = 'scoreProblemsDrawer';
+  problemsDrawer.className = 'score-problems-drawer';
+  problemsDrawer.hidden = true;
+  problemsDrawer.setAttribute('aria-label', t.problemsTitle);
+  const problemsHead = document.createElement('header');
+  const problemsHeading = document.createElement('h2');
+  problemsHeading.textContent = t.problemsTitle;
+  const problemsClose = document.createElement('button');
+  problemsClose.type = 'button';
+  problemsClose.className = 'score-problems-close';
+  problemsClose.setAttribute('aria-label', t.problemsClose);
+  problemsHead.append(problemsHeading, problemsClose);
+  const problemsList = document.createElement('ul');
+  problemsDrawer.append(problemsHead, problemsList);
+  document.querySelector('.score-page').append(problemsDot, problemsDrawer);
+
+  const durationName = (extra) => {
+    const key = Object.keys(M.VALUES).find((k) => M.VALUES[k] === extra);
+    return key && t[{ w: 'whole', h: 'half', q: 'quarter', e: 'eighth', s: 'sixteenth', f: 'thirtySecond' }[key]]?.toLowerCase();
+  };
+
+  renderProblems = () => {
+    const found = M.problems(score);
+    problemsDot.hidden = !found.length;
+    if (!found.length) problemsDrawer.hidden = true;
+    problemsDot.setAttribute('aria-label', (found.length === 1 ? t.problemsOne : t.problemsMany).replace('{n}', found.length));
+    if (problemsDrawer.hidden) return;
+    if (!problemsClose.firstChild) problemsClose.innerHTML = lucide('x');
+    problemsList.replaceChildren(...found.map((problem) => {
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      const name = durationName(problem.extra);
+      button.textContent = (name ? t.problemsItem.replace('{extra}', name) : t.problemsItemShort).replace('{n}', problem.mi + 1);
+      button.addEventListener('click', () => {
+        clearBarSelection();
+        selectedMeasure = problem.mi;
+        selectedMeasureStaff = problem.staff;
+        markMeasureBars();
+        const box = layout[problem.mi];
+        if (box) window.scrollTo({ top: Math.max(0, window.scrollY + stage.getBoundingClientRect().top + box.top - 120), behavior: 'smooth' });
+      });
+      item.appendChild(button);
+      return item;
+    }));
+  }
+
+  problemsDot.addEventListener('click', () => { problemsDrawer.hidden = !problemsDrawer.hidden; renderProblems(); });
+  problemsClose.addEventListener('click', () => { problemsDrawer.hidden = true; problemsDot.focus({ preventScroll: true }); });
+  renderProblems();
 
   function mountMeterButton() {
     const meter = stage.querySelector('g.meterSig');
