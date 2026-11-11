@@ -1981,7 +1981,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       tools.style.left = (last.right + 4) + 'px';
       tools.style.top = ((last.top + last.bottom) / 2) + 'px';
       [['add', 'plus', t.addMeasure, false, t.noRoomForMeasure],
-        ['remove', 'minus', t.deleteMeasure, size <= 1, t.deleteMeasure]].forEach(([action, icon, label, disabled, blocked]) => {
+        ['remove', 'minus', t.deleteMeasure, size <= 1 && score.rows.length <= 1, t.deleteMeasure]].forEach(([action, icon, label, disabled, blocked]) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'score-row-tool tooltip';
