@@ -750,6 +750,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           selected = activeItem ? null : M.refOf(target.staff, target.mi, placed.index);
           group = [];
         });
+        if (item.kind === 'note') previewNote(M.refOf(target.staff, target.mi, placed.index));
         return;
       }
       const spot = M.placement(measure, ev, target.t, score, target.mi);
@@ -766,6 +767,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         });
         return;
       }
+      let placedRef = null;
       change(() => {
         // Una sincopa al abrir la partitura o una seccion tiene silencios antes de la nota.
         measure.push(...M.leadingRests(score, target.mi, target.staff, spot.at));
@@ -773,7 +775,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         // Con una herramienta activa la figura nueva no queda seleccionada: seleccion y herramienta no conviven.
         selected = activeItem ? null : M.refOf(target.staff, target.mi, index);
         group = [];
+        placedRef = M.refOf(target.staff, target.mi, index);
       });
+      // Escribir una nota la hace sonar (con herramienta activa no queda seleccionada, asi que no pasa por la seleccion).
+      if (placedRef) previewNote(placedRef);
     }
   }
 
