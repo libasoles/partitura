@@ -2921,4 +2921,6 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-problems-drawer li button:hover { background: rgb(217 45 32 / 10%); }
 @media print { .score-problems-dot, .score-problems-drawer { display: none; } }
 .score-problems-drawer li button { display: flex; flex-direction: column; gap: 0.4rem; }
+.score-problems-name { display: block; font-size: 0.95rem; font-weight: 700; }
+.score-problems-reason { display: block; margin-top: -0.25rem; font-size: 0.8rem; opacity: 0.75; }
 .score-problems-sketch { display: block; width: 100%; height: auto; max-height: 9rem; }
