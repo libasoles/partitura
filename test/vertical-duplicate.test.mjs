@@ -110,6 +110,19 @@ for (const staff of [0, 1]) {
   });
 }
 
+test('a voice longer than its measure does not shift the voices written after it', () => {
+  const score = M.emptyScore();
+  score.meter = '6/8';
+  score.rows[0][0] = [
+    { d: 'q', n: 34, v: 1, at: 0 }, { d: 'q', n: 32, v: 2, at: 0 },
+    { d: 'q', n: 35, v: 1, at: 24 }, { d: 'q', n: 33, v: 2, at: 24 },
+    { d: 'q', n: 36, v: 1, at: 48 }, { d: 'q', n: 34, v: 2, at: 48 },
+    { d: 'q', n: 37, v: 1, at: 72 }, { d: 'q', n: 35, v: 2, at: 72 },
+  ];
+  const backups = [...M.toMusicXml(score).matchAll(/<backup><duration>(\d+)<\/duration>/g)].map((m) => +m[1]);
+  assert.equal(backups[0], 96);
+});
+
 test('duplicating earlier notes into a voice with a later entry does not renumber that entry', () => {
   const score = M.emptyScore();
   score.meter = '6/8';
