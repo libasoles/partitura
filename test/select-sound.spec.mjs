@@ -44,6 +44,17 @@ test('selecting a single note sounds it, and selecting a rest does not', async (
   expect(await heard()).toBe(before);
 });
 
+test('moving a selected note with the arrow keys sounds it at its new pitch', async ({ page }) => {
+  const heard = () => page.evaluate(() => window.audioStarts.length);
+  await open(page);
+  await page.locator('[id="e0-0"] .notehead').click();
+  await expect.poll(heard, { intervals: [200] }).toBeGreaterThan(0);
+  await page.waitForTimeout(1800);
+  const before = await heard();
+  await page.keyboard.press('ArrowUp');
+  await expect.poll(heard, { intervals: [200] }).toBeGreaterThan(before);
+});
+
 test('dropping a dragged single note sounds it at its new pitch', async ({ page }) => {
   const heard = () => page.evaluate(() => window.audioStarts.length);
   await open(page);

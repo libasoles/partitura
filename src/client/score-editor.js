@@ -1219,6 +1219,19 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     // Un silencio sin altura propia esta en el centro del pentagrama.
     change(() => { list.forEach((p) => { const ev = eventAt(p); ev.n = M.clampPitch((Number.isInteger(ev.n) ? ev.n : M.bottomLine(score, p.mi, staffOf(p)) + 4) + delta); }); });
+    auditionColumn(list);
+  }
+
+  // After moving notes with the arrows: the first column of the selection sounds at its new pitch, as when dragging.
+  function auditionColumn(list) {
+    const refs = list.filter((ref) => { const ev = eventAt(ref); return ev && !ev.rest; });
+    if (!refs.length) return;
+    const start = (ref) => measureOffset(0, ref.mi) + M.onsets(laneOf(ref)[ref.mi])[ref.i];
+    const first = Math.min(...refs.map(start));
+    const midis = [...new Set(refs.filter((ref) => start(ref) === first)
+      .map((ref) => measurePitches(score, M, laneOf(ref)[ref.mi], ref.mi)[ref.i]?.midi)
+      .filter((midi) => midi !== undefined))].sort((a, b) => a - b);
+    auditionPitches(midis);
   }
 
   function applyAction(action) {
