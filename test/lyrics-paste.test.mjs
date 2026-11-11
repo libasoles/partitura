@@ -13,9 +13,10 @@ test('a pasted lyric is split into syllables, hyphenating inside words only', ()
   assert.deepEqual(syllables.map((s) => s.text), ['Ca', 'mi', 'no,', 'a', 'mor', 'Y', 'pa', 'ca', 'ra', 'í']);
 });
 
-test('hyphens already typed split the word and dashes alone are ignored', () => {
-  const syllables = lyricSyllables('glo-ria - in ex-cel-sis', lib);
-  assert.deepEqual(syllables.map((s) => s.text), ['glo', 'ria', 'in', 'ex', 'cel', 'sis']);
+test('hyphens already typed join the syllables into one tied syllable and dashes alone are ignored', () => {
+  const syllables = lyricSyllables('can-tan-do-en la - no-che', lib);
+  assert.deepEqual(syllables.map((s) => s.text), ['can tan do en', 'la', 'no che']);
+  assert.deepEqual(lyricSyllables('Sa le can tan do-en la', lib).map((s) => s.text), ['Sa', 'le', 'can', 'tan', 'do en', 'la']);
 });
 
 test('without the syllabifier each word is one syllable', () => {
