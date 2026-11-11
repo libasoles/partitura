@@ -96,6 +96,7 @@ const api = (function () {
     // Pentagramas de abajo (<staff>2..4</staff>), solo los que tiene el sitio; si no, todo va al primero.
     const lowers = Array.from({ length: staves - 1 }, () => ({}));
     const barlines = {};
+    const navigation = {};
     const meters = {};
     const keys = {};
     const clefs = {};
@@ -156,11 +157,16 @@ const api = (function () {
           const repeat = child(node, 'repeat');
           const style = text(node, 'bar-style');
           const at = node.getAttribute('location') === 'left' ? 'start' : 'end';
+          const ending = child(node, 'ending');
+          if (ending?.getAttribute('type') === 'start') {
+            const mark = ending.getAttribute('number')?.split(',')[0].trim() === '1' ? 'first' : 'second';
+            navigation[mi] = Object.assign(navigation[mi] || {}, { [mark]: true });
+          }
           if (repeat) {
             const bar = barlines[mi] = barlines[mi] || {};
             if (repeat.getAttribute('direction') === 'forward') bar.start = true;
             else bar.end = true;
-          } else if (at === 'end' && style === 'light-light') {
+          } else if (at === 'end' && (style === 'light-light' || style === 'light-heavy')) {
             barlines[mi] = Object.assign(barlines[mi] || {}, { double: true });
           }
         } else if (name === 'note') {
@@ -242,6 +248,7 @@ const api = (function () {
       score.rows.push(row);
     }
     if (Object.keys(barlines).length) score.barlines = barlines;
+    if (Object.keys(navigation).length) score.navigation = navigation;
     if (Object.keys(meters).length) score.meters = meters;
     if (Object.keys(keys).length) score.keys = keys;
     if (Object.keys(clefs).length) score.clefs = clefs;
