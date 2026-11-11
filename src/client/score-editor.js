@@ -853,6 +853,17 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     };
     const measureKey = (ref) => staffOf(ref) + ':' + ref.mi;
     const touched = [...new Set(edits.map((e) => measureKey(e.ref)))];
+    // Todo o nada: si alguna figura alargada ya no entra en su compas (una voz se saldria de la barra), no cambia nada.
+    const overflows = touched.some((key) => {
+      const here = edits.filter((e) => measureKey(e.ref) === key);
+      const { mi } = here[0].ref;
+      const trial = M.settle(M.clone(laneOf(here[0].ref)[mi]));
+      const before = M.measureLength(trial);
+      here.forEach((e) => place(trial, { ref: e.ref, replacement: M.clone(e.replacement) }));
+      const after = M.measureLength(trial);
+      return after > before && after > M.capacity(score, mi);
+    });
+    if (overflows) return say(t.full);
     change(() => {
       touched.forEach((key) => {
         const here = edits.filter((e) => measureKey(e.ref) === key);

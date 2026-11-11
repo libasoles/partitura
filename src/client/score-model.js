@@ -3321,6 +3321,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       if (nav.segno) xml += `<direction id="nav-segno-${mi}" placement="above"><direction-type><segno/></direction-type><sound segno="segno"/></direction>`;
 
       // El segundo pentagrama se escribe despues del primero, rebobinando el compas; sus voces siguen a las del primero.
+      let written = 0; // duracion de la ultima voz escrita, para volver al inicio del compas
       const writeStaff = (staff) => {
         const lane = staff ? all.map((_, k) => (score[laneKey(staff)] && score[laneKey(staff)][k]) || []) : all;
         const voiceBase = staff * MAX_VOICE;
@@ -3361,7 +3362,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         let barreClosed = false;
         const lanes = voices(measure);
         lanes.forEach((voice, vi, all) => {
-          if (vi > 0) xml += `<backup><duration>${capacity(score, mi) * mult}</duration></backup>`;
+          // Una voz mas larga que el compas (no entra) no debe correr a las siguientes: se retrocede lo que se escribio.
+          if (vi > 0) xml += `<backup><duration>${Math.max(capacity(score, mi), all[vi - 1].end) * mult}</duration></backup>`;
+          written = Math.max(capacity(score, mi), voice.end);
           const indices = voice.groups.flatMap((g) => g.indices);
           const events = indices.map((i) => Object.assign({}, measure[i], { at: starts[i] }));
           const beams = beamStates(events, { meter: meterAt(score, mi) });
@@ -3415,7 +3418,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       };
       let wrote = writeStaff(0);
       for (let staff = 1; staff < staves; staff += 1) {
-        if (wrote) xml += `<backup><duration>${capacity(score, mi) * mult}</duration></backup>`;
+        if (wrote) xml += `<backup><duration>${written * mult}</duration></backup>`;
         wrote = writeStaff(staff);
       }
       if (nav.dc || nav.ds) xml += `<direction id="nav-jump-${mi}" placement="above"><direction-type><words justify="right">${nav.dc ? 'D.C.' : 'D.S.'}</words></direction-type><sound ${nav.dc ? 'dacapo="yes"' : 'dalsegno="segno"'}/></direction>`;
