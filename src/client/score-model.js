@@ -772,6 +772,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         if (ev.n < LOWEST || ev.n > HIGHEST) return null;
         desired.set(ev, pitch);
         if (pitch.alter !== keyAlter(ev.n, trial, mi + offset)) ev.acc = accidentalFor(pitch.alter);
+        else if (ev.acc === 'n') delete ev.acc; // el becuadro que el destino no necesita se descarta
       }
       // Con un punto de inicio (el cursor), el primer compas del fragmento empieza ahi y no al comienzo del compas.
       if (offset === 0 && start > 0) {
