@@ -337,8 +337,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const limit = capacity(score, mi);
     const size = length(ev);
     const grid = gridOf([ev]);
-    const at = Math.max(0, Math.min(Math.max(0, limit - size), tidy(Math.round(t / grid) * grid)));
     const starts = hints(others);
+    // En un compás ya excedido no hay "ultimo lugar que entra": anclar al final de la capacidad mandaba la figura
+    // al medio del compas y desordenaba las voces; puede quedar hasta donde empieza la ultima figura.
+    const ceiling = measureLength(others) > limit ? Math.max(limit - size, ...starts) : limit - size;
+    const at = Math.max(0, Math.min(Math.max(0, ceiling), tidy(Math.round(t / grid) * grid)));
     if (!ev.rest && others.some((o, i) => !o.rest && starts[i] === at && o.n === ev.n && o.acc === ev.acc)) return null;
     if (!ev.rest) {
       const trial = clone(others);

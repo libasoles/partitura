@@ -95,7 +95,7 @@ Con voces elegidas en la leyenda y la herramienta Voces activa, play reproduce s
 
 **Soltar una nota más a la derecha del final de su voz**: el compás es una sucesión de duraciones (`at` es solo orden), así que `moveEvent` llena el hueco entre el final de la voz y el lugar donde se soltó con silencios en esa voz, y la nota queda donde se ve. Test: `test/move-gap.spec.mjs`.
 
-**Compases excedidos (sin bloqueo)**: el editor no impide que un compás se pase de su duración (figuras, mover, cambiar duración o compás, pegar; `sanitize` tampoco recorta). `M.problems(score)` los calcula en cada render y `renderProblems` (`score-editor.js`) muestra un punto rojo abajo a la derecha (`#scoreProblemsDot`) que abre un drawer (`#scoreProblemsDrawer`) con los compases afectados; al resolverlos salen solos de la lista. Clic en un ítem elige y lleva al compás. Test: `test/problems-drawer.spec.mjs`.
+**Compases excedidos (sin bloqueo)**: el editor no impide que un compás se pase de su duración (figuras, mover, cambiar duración o compás, pegar; `sanitize` tampoco recorta). `M.problems(score)` los calcula en cada render y `renderProblems` (`score-editor.js`) muestra un punto rojo abajo a la derecha (`#scoreProblemsDot`) que abre un drawer (`#scoreProblemsDrawer`) con los compases afectados; al resolverlos salen solos de la lista. Clic en un ítem elige y lleva al compás. En un compás ya excedido, `placement` no ancla la figura a `capacidad − duración` (la mandaba al medio y reordenaba las voces al cambiar la altura de la última nota): puede quedar hasta donde empieza la última figura. Tests: `test/problems-drawer.spec.mjs` y `test/move-overfull.test.mjs`.
 
 ### Puntillo
 
