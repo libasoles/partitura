@@ -1722,7 +1722,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       button.setAttribute('aria-label', label);
       button.innerHTML = lucide('plus');
       button.style.left = x + 'px';
-      button.style.top = (m.top - 18) + 'px';
+      button.style.top = (m.top - 28) + 'px';
       button.addEventListener('click', () => {
         // El compas nuevo queda elegido para poder seguir insertando.
         if (!change(() => { selected = null; return M.insertMeasure(score, at); })) return;
