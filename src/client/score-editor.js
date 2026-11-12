@@ -4951,8 +4951,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   function glyphFor(item) {
     const svg = document.createElementNS(SVG_NS, 'svg');
-    // Las banderas superan x=30 y la fusa sube por encima de y=-16.
-    const tall = item.kind === 'note' && item.d !== 'w';
+    // Las banderas superan x=30 y la fusa sube por encima de y=-16. La redonda comparte el marco para que su cabeza quede a la altura de las demás.
+    const tall = item.kind === 'note';
     // Los silencios usan la escala de la partitura; la fusa necesita espacio vertical extra.
     const rest = item.kind === 'rest';
     svg.setAttribute('viewBox', tall ? '0 -24 36 56' : rest ? '0 -12 30 56' : '0 0 30 32');
