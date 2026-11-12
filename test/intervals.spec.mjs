@@ -33,7 +33,7 @@ test('interval toggle sits below voices and engraves stacked intervals on both s
   await page.screenshot({ path: '/tmp/partitura-intervals.png', fullPage: true });
   await expect(directions).toHaveCount(3, { timeout: 5000 });
   await expect(directions.first().locator('tspan[font-size]').first()).toHaveAttribute('font-size', '243px');
-  expect(await directions.evaluateAll(nodes => nodes.map(node => node.textContent.replace(/\s/g, '')))).toEqual(['IIIVI', 'IVV', 'V']);
+  expect(await directions.evaluateAll(nodes => nodes.map(node => node.textContent.replace(/\s/g, '')))).toEqual(['VIIIVI', 'VIIIV', 'V']);
   const levels = await directions.first().locator('tspan.text').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().top));
   expect(new Set(levels).size).toBeGreaterThan(1);
   await page.screenshot({ path: '/tmp/partitura-intervals.png', fullPage: true });
@@ -62,7 +62,7 @@ test('interval toggle explains that it needs simultaneous voices when there are 
   await expect(button).toHaveAttribute('aria-pressed', 'false');
 });
 
-test('choir intervals follow the selected staves and depend on the Voices tool', async ({ page }) => {
+test('choir intervals follow the selected staves and only filter by legend voices while the Voices tool is on', async ({ page }) => {
   await page.addInitScript(() => {
     localStorage.setItem('scoreEditor.tabs.v1', JSON.stringify({ active: 0, scores: [{
       instrument: 'voices', parts: 3, meter: '4/4', clef: 'treble', fifths: 0,
@@ -78,7 +78,7 @@ test('choir intervals follow the selected staves and depend on the Voices tool',
   for (const voice of [0, 1, 2]) await legend.nth(voice).click();
   await page.locator('#scoreIntervals').click();
   const directions = page.locator('#scoreStage g.dir');
-  await expect(directions).toHaveText([/III\s*III/]);
+  await expect(directions).toHaveText([/V\s*III/]);
   await legend.nth(1).click();
   await expect(directions).toHaveText(['V']);
   await legend.nth(0).click();
@@ -87,6 +87,6 @@ test('choir intervals follow the selected staves and depend on the Voices tool',
   await expect(directions).toHaveText(['V']);
   await page.locator('#scoreSettingsToggle').click();
   await page.getByRole('checkbox', { name: 'Voces', exact: true }).uncheck();
-  await expect(page.locator('#scoreIntervals')).toHaveCount(0);
-  await expect(directions).toHaveCount(0);
+  await expect(page.locator('#scoreIntervals')).toHaveCount(1);
+  await expect(directions).toHaveText([/V\s*III/]);
 });

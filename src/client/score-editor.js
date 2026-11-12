@@ -1415,8 +1415,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     toolbarStaffTop = Math.max(0, stage.querySelector('g.staff > path').getBoundingClientRect().top - stage.getBoundingClientRect().top);
     const showIntervals = intervalDocuments.has(score);
     const showChords = proChordNames && chordNameDocuments.has(score);
-    if (settings && toolOn('voices', false) && toolOn('intervals', false) && (showIntervals || showChords)) {
-      toolkit.loadData(withIntervals(xml, score, M, shownVoices.size ? shownVoices : null, { intervals: showIntervals, chords: showChords }));
+    if (settings && toolOn('intervals', false) && (showIntervals || showChords)) {
+      toolkit.loadData(withIntervals(xml, score, M, analysisVoices(), { intervals: showIntervals, chords: showChords }));
       // Verovio drops MusicXML words' font-size. Set MEI's supported relative size
       // on the marked interval text before engraving so spacing uses the smaller labels too.
       toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="60%"').replace(/fontfam="PartituraChordNames"/g, 'fontsize="75%"'));
@@ -2333,7 +2333,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function placeChordNames(svg) {
     if (!proChordNames || !chordNameDocuments.has(score)) return;
     const origin = svg.getBoundingClientRect();
-    const marks = chordMarks(score, M, shownVoices.size ? shownVoices : null);
+    const marks = chordMarks(score, M, analysisVoices());
     const dirs = [...svg.querySelectorAll('g.measure g.dir')].filter((node) => !isIntervalDir(node) && !isChordDir(node));
     const used = new Set();
     const placed = [];
@@ -5094,6 +5094,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Los grupos de herramientas son de cada partitura; sin elegir, repeticion y dinamica se ven y las voces no.
   const toolOn = (name, fallback = true) => !settings || (score.tools && name in score.tools ? score.tools[name] : fallback);
+  // Voces de la leyenda que filtran intervalos y acordes; sin la herramienta Voces (o sin elegir ninguna) cuentan todas.
+  const analysisVoices = () => (toolOn('voices', false) && shownVoices.size ? shownVoices : null);
 
   let player = null, audioContext = null, playbackState = 'idle', playbackRequest = 0, playbackTrack = null;
   let playbackDocument = null, playbackSnapshot = null;
@@ -5517,6 +5519,29 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     drawPlaybackHint();
   });
   window.addEventListener('pagehide', resetPlayback);
+  // V alterna la herramienta de intervalos: apagada pasa a encendida (en Ajustes y en la barra) mostrando los intervalos; encendida y visible, la apaga.
+  document.addEventListener('keydown', (event) => {
+    if (event.code !== 'KeyV' || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.defaultPrevented || event.repeat || !settings) return;
+    if (event.target.closest('input, textarea, select, [contenteditable], ascii-tabs, [popover]:popover-open, [role="dialog"], button, a')) return;
+    if (activeItem) return;
+    if (!toolOn('intervals', false)) {
+      if (!hasIntervals(score, M, analysisVoices())) return say(t.intervalsNeedVoices);
+      event.preventDefault();
+      M.setTool(score, 'intervals', true);
+      intervalDocuments.add(score);
+    } else if (intervalDocuments.has(score)) {
+      event.preventDefault();
+      M.setTool(score, 'intervals', false);
+      intervalDocuments.delete(score);
+    } else {
+      if (!hasIntervals(score, M, analysisVoices())) return say(t.intervalsNeedVoices);
+      event.preventDefault();
+      intervalDocuments.add(score);
+    }
+    save();
+    applyTools();
+    render();
+  });
 
   // The analysis toggle is a view preference for each open document.
   const intervalDocuments = new WeakSet();
@@ -5531,7 +5556,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   intervalButton.setAttribute('aria-pressed', 'false');
   intervalButton.addEventListener('click', () => {
     if (intervalDocuments.has(score)) intervalDocuments.delete(score);
-    else if (hasIntervals(score, M, shownVoices.size ? shownVoices : null)) intervalDocuments.add(score);
+    else if (hasIntervals(score, M, analysisVoices())) intervalDocuments.add(score);
     else return say(t.intervalsNeedVoices);
     render();
   });
@@ -5550,7 +5575,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   chordNamesButton.setAttribute('aria-pressed', 'false');
   chordNamesButton.addEventListener('click', () => {
     if (chordNameDocuments.has(score)) chordNameDocuments.delete(score);
-    else if (chordMarks(score, M, shownVoices.size ? shownVoices : null).length) chordNameDocuments.add(score);
+    else if (chordMarks(score, M, analysisVoices()).length) chordNameDocuments.add(score);
     else return say(t.chordNamesNeedVoices);
     render();
   });
@@ -5723,6 +5748,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const { button: splitButton, popup: splitPopup } = restructureTool('Split', 'split', t.restructureSplit, fillSplitPopup);
 
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
+  let sidebarShown = new Set();
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
     const shown = { repeats: !settings || toolOn('repeats'), dynamics: !settings || toolOn('dynamics'), barre: guitar, lyrics: toolOn('lyrics') };
@@ -5734,24 +5760,33 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     playButton.hidden = !settings || !toolOn('playback', false);
     if (playButton.hidden) clearPlaybackHint();
     if (settings) stage.appendChild(playButton);
-    intervalButton.remove();
-    if (settings && toolOn('voices', false) && toolOn('intervals', false)) stage.appendChild(intervalButton);
+    // Las herramientas de la barra izquierda solo se muestran u ocultan; las que acaban de aparecer entran con un fade de arriba hacia abajo.
+    const shownNow = new Set();
+    const place = (button, show) => {
+      button.remove();
+      if (!show) return;
+      stage.appendChild(button);
+      shownNow.add(button);
+      if (!sidebarShown.has(button)) {
+        button.style.setProperty('--fade-order', String(fadeOrder++));
+        button.classList.remove('is-fading-in');
+        void button.offsetWidth;
+        button.classList.add('is-fading-in');
+      }
+    };
+    let fadeOrder = 0;
+    place(intervalButton, settings && toolOn('intervals', false));
     intervalButton.setAttribute('aria-pressed', String(intervalDocuments.has(score)));
-    chordNamesButton.remove();
-    if (proChordNames && toolOn('voices', false) && toolOn('intervals', false)) stage.appendChild(chordNamesButton);
+    place(chordNamesButton, proChordNames && toolOn('intervals', false));
     chordNamesButton.setAttribute('aria-pressed', String(chordNameDocuments.has(score)));
     [[splitButton, splitPopup], [joinButton, joinPopup]].forEach(([button, popup]) => {
-      button.remove();
-      if (settings && isPro() && toolOn('voices', false) && M.restructurable(score)) stage.appendChild(button);
-      else if (popup.matches(':popover-open')) popup.hidePopover();
+      const show = settings && isPro() && toolOn('voices', false) && M.restructurable(score);
+      place(button, show);
+      if (!show && popup.matches(':popover-open')) popup.hidePopover();
     });
-    if (duplicateVoiceButtons.length) {
-      duplicateVoiceButtons.forEach((button) => {
-        button.remove();
-        if (toolOn('voices', false)) stage.appendChild(button);
-      });
-      if (!toolOn('voices', false)) document.getElementById('scoreVoicePicker')?.hidePopover();
-    }
+    duplicateVoiceButtons.forEach((button) => place(button, toolOn('voices', false)));
+    if (duplicateVoiceButtons.length && !toolOn('voices', false)) document.getElementById('scoreVoicePicker')?.hidePopover();
+    sidebarShown = shownNow;
     alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
