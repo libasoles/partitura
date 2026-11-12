@@ -16,6 +16,12 @@ test('a closing repeat bar plays from the start again', () => {
   assert.deepEqual(M.playOrder(score), [0, 1, 0, 1]);
 });
 
+test('a closing repeat without an opening one returns to the start, even after another closing repeat', () => {
+  const score = bar(4);
+  score.barlines = { 0: { start: true }, 1: { end: true }, 3: { end: true } };
+  assert.deepEqual(M.playOrder(score), [0, 1, 0, 1, 2, 3, 0, 1, 2, 3]);
+});
+
 test('start repeat, first and second endings', () => {
   const score = bar(4);
   score.barlines = { 0: { start: true }, 1: { end: true } };

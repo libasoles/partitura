@@ -1532,6 +1532,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // Orden en que suenan los compases: repeticiones (|: :|), casas 1./2. y saltos D.C./D.S. Los saltos no vuelven a tomar repeticiones.
+  // Un :| vuelve al |: anterior o, si no hay, al inicio: otro :| previo no abre una seccion.
   function playOrder(score, count = measures(score).length) {
     const endings = navigationEndings(score);
     const segno = Array.from({ length: count }, (_, mi) => mi).find((mi) => score.navigation?.[mi]?.segno);
@@ -1549,7 +1550,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         pass = 2;
         continue;
       }
-      if (bar?.end) { loopStart = mi + 1; pass = 1; }
+      if (bar?.end) pass = 1;
       const nav = score.navigation?.[mi];
       if (!jumped && (nav?.dc || (nav?.ds && segno !== undefined))) {
         jumped = true;
