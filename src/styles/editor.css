@@ -2623,6 +2623,11 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 .score-interval-toggle svg { display: block; width: 18px; height: 18px; margin: auto; }
 
+/* Las herramientas de la barra izquierda aparecen con un fade de arriba hacia abajo, escalonado por su orden. */
+@keyframes score-tool-fade-in { from { opacity: 0; transform: translateY(-0.5rem); } to { opacity: 1; transform: none; } }
+.score-stage .is-fading-in { animation: score-tool-fade-in 0.28s ease-out both; animation-delay: calc(var(--fade-order, 0) * 60ms); }
+@media (prefers-reduced-motion: reduce) { .score-stage .is-fading-in { animation: none; } }
+
 /* Unir pentagramas y separar voces: popups anclados a sus botones de la barra izquierda, con los circulos de la leyenda. */
 .score-restructure-popup { box-sizing: border-box; width: 16rem; padding: 0.9rem 1rem; }
 .score-restructure-popup p { margin: 0 0 0.5rem; font-weight: 600; }
