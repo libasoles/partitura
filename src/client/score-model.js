@@ -1818,7 +1818,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   function parseLyric(text) {
     // Un guion o un espacio dentro de la silaba son lo mismo: dos sonidos en una nota, unidos por una ligadura al dibujarla.
-    text = typeof text === 'string' ? text.replace(/-/g, ' ').replace(/\s+/g, ' ').trim() : '';
+    text = typeof text === 'string' ? text.replace(/[-‿]/g, ' ').replace(/\s+/g, ' ').trim() : '';
     return text && text.length <= MAX_LYRIC ? { text } : null;
   }
 

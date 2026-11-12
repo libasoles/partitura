@@ -63,6 +63,25 @@ const api = (function () {
     return null;
   }
 
+  const KIND_SUFFIX = {
+    major: '', minor: 'm', augmented: 'aug', diminished: 'dim', dominant: '7', 'major-seventh': 'maj7', 'minor-seventh': 'm7',
+    'diminished-seventh': 'dim7', 'augmented-seventh': 'aug7', 'half-diminished': 'm7b5', 'major-minor': 'm(maj7)',
+    'major-sixth': '6', 'minor-sixth': 'm6', 'dominant-ninth': '9', 'major-ninth': 'maj9', 'minor-ninth': 'm9',
+    'dominant-11th': '11', 'dominant-13th': '13', 'suspended-second': 'sus2', 'suspended-fourth': 'sus4', power: '5',
+  };
+
+  // <harmony> -> nombre ("C#m7", "Bmaj7/D#"). El texto de <kind> (p. ej. "7(b9)") manda sobre el tipo.
+  function harmonyName(node) {
+    const root = child(node, 'root');
+    if (!root || !text(root, 'root-step')) return '';
+    const alter = (n, tag) => { const a = parseInt(text(n, tag), 10); return a > 0 ? '#'.repeat(a) : a < 0 ? 'b'.repeat(-a) : ''; };
+    const kind = child(node, 'kind');
+    const label = kind && kind.getAttribute('text');
+    const suffix = label !== null && label !== undefined ? label : (kind && KIND_SUFFIX[kind.textContent.trim()]) || '';
+    const bass = child(node, 'bass');
+    return text(root, 'root-step') + alter(root, 'root-alter') + suffix + (bass && text(bass, 'bass-step') ? '/' + text(bass, 'bass-step') + alter(bass, 'bass-alter') : '');
+  }
+
   function parseMusicXml(source, M, parser = new DOMParser()) {
     const doc = parser.parseFromString(source, 'application/xml');
     if (doc.querySelector('parsererror')) throw new Error('xml');
@@ -92,6 +111,7 @@ const api = (function () {
     let divisions = 1;
     const flat = [];
     const syllables = [];
+    const chordMarks = [];
     const staves = M.stavesOf(score);
     // Pentagramas de abajo (<staff>2..4</staff>), solo los que tiene el sitio; si no, todo va al primero.
     const lowers = Array.from({ length: staves - 1 }, () => ({}));
@@ -149,6 +169,15 @@ const api = (function () {
             } else if (mi === 0) currentClef = score.clef = name2;
             else if (name2 !== currentClef) { clefs[mi] = name2; currentClef = name2; }
           });
+        } else if (name === 'harmony') {
+          const chordName = harmonyName(node);
+          const offset = parseInt(text(node, 'offset'), 10) || 0;
+          if (chordName) chordMarks.push({ mi, at: Math.round((cursor + offset) * M.DIVISIONS / divisions), name: chordName });
+        } else if (name === 'direction') {
+          // Los nombres de acorde que escribe el editor (negrita sobre el pentagrama de arriba).
+          const words = children(node, 'direction-type').flatMap((type) => children(type, 'words')).find((w) => /bold/.test(w.getAttribute('font-weight') || ''));
+          const label = words && words.textContent.trim();
+          if (label && /^[A-G]/.test(label)) chordMarks.push({ mi, at: Math.round(cursor * M.DIVISIONS / divisions), name: label });
         } else if (name === 'backup') {
           cursor -= parseInt(text(node, 'duration'), 10) || 0;
         } else if (name === 'forward') {
@@ -256,6 +285,7 @@ const api = (function () {
     lowers.forEach((lane, k) => { if (Object.keys(lane).length) score[M.LANE_KEYS[k]] = lane; });
     M.sanitize(score);
     syllables.forEach(({ mi, at, staff, text }) => M.setLyric(score, mi, at, text, staff));
+    chordMarks.forEach(({ mi, at, name }) => M.setChord(score, mi, at, name));
     return score;
   }
 
