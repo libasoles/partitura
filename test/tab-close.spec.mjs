@@ -88,6 +88,17 @@ test('Pro: a demo URL with ?score= opens that score, not the demo, after a reloa
   await page.locator('#scoreNewTab').click();
   await page.locator('#scoreTitle').fill('Mi obra');
   await expect.poll(() => new URL(page.url()).searchParams.get('score')).toBeTruthy();
+  // The score leaves the demo path: it lives in the editor of the same language.
+  expect(new URL(page.url()).pathname).toBe('/es/');
+  expect(new URL(page.url()).searchParams.has('banner')).toBe(false);
+
+  // Back on the demo tab, the address is the demo's own again, without `score`.
+  await page.locator('.score-doc-tab-label', { hasText: 'Canto en la rama' }).click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/es/demos/canto-en-la-rama/');
+  expect(new URL(page.url()).searchParams.has('score')).toBe(false);
+  await page.locator('.score-doc-tab-label', { hasText: 'Mi obra' }).click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/es/');
+
   await page.waitForTimeout(600); // the debounced write to IndexedDB
   await page.reload();
   await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();

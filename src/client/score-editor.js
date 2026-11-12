@@ -11,6 +11,7 @@ import { lyricSyllables } from './lyrics-text.js';
 import { measurePitches, pitchMidi } from './score-notes.js';
 import { applyUrlDefaults } from './url-defaults.js';
 import { createScoresDrawer } from './score-drawer.js';
+import { DEMOS, demoLink } from './demos.js';
 
 export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, lyrics = false, patterns = false, urlDefaults = {}, initialDemo } = {}) {
 
@@ -119,15 +120,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return { scores: [loadOne()], active: 0, folders: [] };
   }
 
-  // The address of the open score: its own id plus the settings it shows now. Demos keep their path.
+  // The address of the open score: its own id plus the settings it shows now. A demo goes back to its own path
+  // (no `score`); any other score leaves the demo path for the editor of the same language, so the two never mix.
   function syncUrl() {
     if (score.demo) {
-      const url = new URL(location.href);
-      if (url.searchParams.has('score')) { url.searchParams.delete('score'); window.history.replaceState(window.history.state, '', url); }
+      const demo = DEMOS.find((one) => one.id === score.demoId);
+      if (!demo) return;
+      const url = demoLink(demo, location.href);
+      url.searchParams.delete('score');
+      if (url.href !== location.href) window.history.replaceState(window.history.state, '', url);
       return;
     }
     if (!score.uid) score.uid = Math.random().toString(36).slice(2, 10).padEnd(8, '0');
     const url = new URL(location.href);
+    if (/^\/[a-z]{2}\/demos\//.test(url.pathname)) url.pathname = `/${url.pathname.split('/')[1]}/`;
+    url.searchParams.delete('banner');
     url.searchParams.set('score', score.uid);
     const tools = ['repeats', 'dynamics', 'voices', 'playback', 'intervals'].filter((name) => score.tools && score.tools[name]);
     if (tools.length) url.searchParams.set('tools', tools.join(',').replace('playback', 'play')); else url.searchParams.delete('tools');
