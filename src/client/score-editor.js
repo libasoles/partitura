@@ -19,6 +19,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const STORAGE_KEY = 'scoreEditor.v2';
   const LEGACY_KEY = 'scoreEditor.v1'; // guardada con 8 divisiones por negra
   const SCALE = 60;
+  const MOBILE_LAYOUT_WIDTH = 940; // same as WIDTH in src/lib/staff.js
   // From here the page has side margins (see editor.css) wide enough for the voices legend; the pattern library needs more.
   const WIDE_PAGE = window.matchMedia('(min-width: 900px)');
   const LIBRARY_PAGE = window.matchMedia('(min-width: 1560px)');
@@ -1401,7 +1402,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const width = stage.clientWidth;
     if (!width) return;
     renderedWidth = width;
-    toolkit.setOptions(layoutOptions(width, score.showTabs && tabSpace ? { spacingSystem: Math.min(48, 12 + tabSpace), pageMarginBottom: 60 + tabSpace } : undefined));
+    // On a phone the demo keeps the layout the server drew (a wide page scaled down by CSS), not a cramped one at screen width.
+    toolkit.setOptions(layoutOptions(WIDE_PAGE.matches ? width : Math.max(width, MOBILE_LAYOUT_WIDTH), score.showTabs && tabSpace ? { spacingSystem: Math.min(48, 12 + tabSpace), pageMarginBottom: 60 + tabSpace } : undefined));
     const xml = M.toMusicXml(M.transposedForDisplay(score));
     toolkit.loadData(xml);
     tuningPopup.hidePopover();
@@ -5479,7 +5481,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     if (playButton.hidden) {
       // Playback is off in Ajustes: Space turns it on and starts playing.
-      if (!settings || event.repeat) return;
+      if (!settings || event.repeat || !WIDE_PAGE.matches) return;
       event.preventDefault();
       M.setTool(score, 'playback', true);
       save();
