@@ -117,6 +117,7 @@ const api = (function () {
     const lowers = Array.from({ length: staves - 1 }, () => ({}));
     const barlines = {};
     const navigation = {};
+    const shorter = {};
     const meters = {};
     const keys = {};
     const clefs = {};
@@ -132,6 +133,7 @@ const api = (function () {
       const lowerEvents = Array.from({ length: staves - 1 }, () => []);
       let cursor = 0; // en divisiones del archivo
       let last = 0; // inicio de la ultima nota (para los acordes)
+      let reach = 0; // hasta donde llega lo escrito en el compas (en divisiones del archivo)
       let tuplet = 0;
       let tupletLeft = 0;
       const voices = Array.from({ length: staves }, () => new Map()); // una numeracion de voces por pentagrama
@@ -205,6 +207,7 @@ const api = (function () {
           const start = chord ? last : cursor;
           if (!chord) last = cursor;
           if (!chord && !grace) cursor += duration;
+          reach = Math.max(reach, cursor);
           if (grace) return;
           const size = duration * M.DIVISIONS / divisions;
           const rest = !!child(node, 'rest');
@@ -265,6 +268,9 @@ const api = (function () {
         }
       });
       // Conservar tambien la voz unica: los <chord> importados son decisiones explicitas de notacion.
+      // Una anacrusa (primer compas, o implicito, mas corto que el compas) conserva su duracion.
+      const size = Math.round(reach * M.DIVISIONS / divisions);
+      if ((mi === 0 || measureNode.getAttribute('implicit') === 'yes') && size > 0 && size < M.capacity({ meter })) shorter[mi] = size;
       flat.push(events);
       lowerEvents.forEach((list, k) => { if (list.length) lowers[k][mi] = list; });
     });
@@ -283,6 +289,7 @@ const api = (function () {
     if (Object.keys(clefs).length) score.clefs = clefs;
     lowerClefs.forEach((changes, k) => { if (Object.keys(changes).length) score[M.CLEF_KEYS[k + 1][1]] = changes; });
     lowers.forEach((lane, k) => { if (Object.keys(lane).length) score[M.LANE_KEYS[k]] = lane; });
+    if (Object.keys(shorter).length) score.measureDurations = shorter;
     M.sanitize(score);
     syllables.forEach(({ mi, at, staff, text }) => M.setLyric(score, mi, at, text, staff));
     chordMarks.forEach(({ mi, at, name }) => M.setChord(score, mi, at, name));
