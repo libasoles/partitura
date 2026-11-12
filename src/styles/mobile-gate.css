@@ -25,15 +25,17 @@
   .mobile-pdf:disabled { opacity: 0.6; }
   .mobile-play {
     display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-    margin: 1rem auto 0; padding: 0.7rem 1.4rem;
-    border: 0; border-radius: 999px; background: var(--ink); color: var(--paper);
-    font: inherit; font-weight: 600;
+    margin: 0.75rem auto 0; width: 2.5rem; height: 2.5rem; padding: 0;
+    border: 1px solid var(--rule); border-radius: 999px; background: none; color: var(--ink);
+    font: inherit;
   }
+  .mobile-play span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .mobile-play:disabled { opacity: 0.6; }
   .mobile-play .mobile-play__pause, .mobile-play[aria-pressed="true"] .mobile-play__play { display: none; }
   .mobile-play[aria-pressed="true"] .mobile-play__pause { display: block; }
   .mobile-play + .mobile-pdf { margin-top: 0.5rem; }
-  .score-editor[data-demo-id] .score-playback { display: none; }
+  /* The phone only views the demo: the editor's side tools (play, voices, intervals…) stay out. */
+  .score-editor[data-demo-id] :is(.score-playback, .score-voice-legend, .score-interval-toggle) { display: none; }
 }
 
 .mobile-gate__hero {
