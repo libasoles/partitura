@@ -3562,8 +3562,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     // Sobre una nota o un silencio se alinea con su columna; entre columnas se puede intercalar.
     let near = null;
+    // Con la letra, la celda subrayada (3 espacios de ancho) es la zona: hover y clic valen en todo su ancho.
+    const reach = activeItem && activeItem.kind === 'lyric' ? 1.5 : 0.8;
     centers.forEach((c, i) => {
-      if (isOwn(i) || Math.abs(c - x) > space * 0.8) return;
+      if (isOwn(i) || Math.abs(c - x) > space * reach) return;
       if (!near || Math.abs(c - x) < Math.abs(near.c - x)) near = { c, i };
     });
     if (near) {
@@ -3602,6 +3604,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- arrastre -----------------------------------------------------------
 
   let marker = null;
+  let markerHit = null; // el destino que resalta el marcador: la celda de letra es mas ancha que la tolerancia de locate
   function showMarker(hit) {
     if (!marker) {
       marker = document.createElement('div');
@@ -3610,6 +3613,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       stage.appendChild(marker);
     }
     marker.querySelectorAll('.score-marker-ledger, .score-marker-cell').forEach((node) => node.remove());
+    markerHit = hit;
     if (!hit) { marker.hidden = true; return; }
     marker.hidden = false;
     const line = marker.firstChild;
@@ -3798,7 +3802,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       else if (d.from && isModifier(activeItem)) applyModifier(activeItem, d.from);
       else if (d.insert) {
         const at = aimed(event);
-        const target = locate(at.clientX, at.clientY);
+        const target = d.cellHit || locate(at.clientX, at.clientY);
         // El lienzo lejos de todo compas es un lugar neutro: suelta la herramienta como un click fuera de la partitura.
         if (!target) deactivateTool();
         else if (activeItem) dropNew(activeItem, target);
@@ -3898,7 +3902,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         beginMarquee(event, event.shiftKey || event.ctrlKey || event.metaKey);
         return;
       }
-      beginDrag(event, { insert: true });
+      beginDrag(event, { insert: true, cellHit: overCell ? markerHit : null });
       return;
     }
     // Verovio groups the notes and beam polygons together. Only the polygons

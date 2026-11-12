@@ -163,3 +163,23 @@ test('clicking the highlighted cell under a note starts writing', async ({ page 
   await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
   await expect(page.locator('.score-lyric-draft')).toBeFocused();
 });
+
+test('clicking the edge of the highlighted cell, away from the note column, starts the field', async ({ page }) => {
+  await open(page);
+  await page.evaluate(() => {
+    const { score, render } = window.scoreEditor;
+    [0, 1, 2, 3].forEach((k) => window.ScoreModel.insertNote(window.ScoreModel.measures(score)[0], { d: 'q', n: 33 }, k * 24));
+    render();
+  });
+  await page.locator('[data-tool="lyric"]').click({ position: { x: 5, y: 5 } });
+  const head = await page.locator('#scoreStage g.measure').first().locator('.notehead').nth(1).boundingBox();
+  await page.mouse.move(head.x + head.width / 2, head.y + head.height / 2);
+  const cell = page.locator('.score-marker-cell');
+  await expect(cell).toBeVisible();
+  const b = await cell.boundingBox();
+  const x = b.x + b.width - 2, y = b.y + b.height / 2;
+  await page.mouse.move(x, y);
+  await expect(cell).toBeVisible();
+  await page.mouse.click(x, y);
+  await expect(page.locator('.score-lyric-draft')).toBeFocused();
+});
