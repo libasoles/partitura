@@ -42,7 +42,7 @@
     "sharp": "^0.35.5",
     "typescript": "^5.9.0"
   },
-  "version": "0.2.1",
+  "version": "0.2.2",
   "exports": {
     "./editor": "./src/client/runtime.js",
     "./build": "./scripts/build-editor.mjs",

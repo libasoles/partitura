@@ -4703,7 +4703,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function mountKeyButtons() {
     const origin = stage.getBoundingClientRect();
     // La armadura es de ambos pentagramas: un solo control por compas, sobre el de arriba.
-    stage.querySelectorAll('g.measure > g.staff:first-of-type g.keySig').forEach((key) => {
+    // No usar :first-of-type: Verovio antepone un g.mNum al abrir cada renglon.
+    [...stage.querySelectorAll('g.measure')].map((m) => m.querySelector(':scope > g.staff g.keySig')).filter(Boolean).forEach((key) => {
       const box = key.getBoundingClientRect();
       if (!box.width) return;
       const mi = Number(key.closest('g.measure').id.slice(1));
