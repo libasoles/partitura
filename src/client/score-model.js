@@ -737,6 +737,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const trial = clone(score);
     while (measures(trial).length < mi + clean.length) trial.rows.push(emptyRow());
     const all = measures(trial);
+    // Las alturas del destino se leen antes de cambiar armadura o compas: pegar no debe mover las notas que ya estaban.
+    const destinationContexts = new Map(lanes.map(({ staff }) => [staff, measures(trial, staff).map((_, index) => pitchContexts(trial, index, staff))]));
     if (preserveSignatures) {
       const end = mi + clean.length;
       const after = { meter: meterAt(trial, end), fifths: keyAt(trial, end) };
@@ -763,7 +765,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const refs = [];
     for (const { staff, clean, pitches } of lanes) for (let offset = 0; offset < clean.length; offset += 1) {
       const destination = measures(trial, staff)[mi + offset];
-      const destinationPitches = pitchContexts(trial, mi + offset, staff);
+      const destinationPitches = destinationContexts.get(staff)[mi + offset];
       const desired = new Map(destination.map((ev, i) => [ev, destinationPitches[i]]));
       const octave = CLEFS[clefAt(trial, mi + offset, staff)].octave || 0;
       for (let i = 0; i < clean[offset].length; i += 1) {
