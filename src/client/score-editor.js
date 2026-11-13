@@ -5,6 +5,7 @@ import { ARCHIVE_CHOIRS } from './choir-sounds.js';
 // Nothing runs until main.js calls this, once the globals and the saved scores are ready: the file itself can be fetched
 // in parallel with them instead of after them.
 import { getSetting, setSetting } from './settings.js';
+import { createToolState } from './tool-state.js';
 import { chordMarks, hasIntervals, parseTonic, scoreKey, spellTonic, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
@@ -13,7 +14,7 @@ import { applyUrlDefaults } from './url-defaults.js';
 import { createScoresDrawer } from './score-drawer.js';
 import { DEMOS, demoLink } from './demos.js';
 
-export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, chords = false, lyrics = false, patterns = false, urlDefaults = {}, initialDemo } = {}) {
+export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, tools = {}, chords = false, lyrics = false, patterns = false, urlDefaults = {}, initialDemo } = {}) {
 
   const M = window.ScoreModel;
   const STORAGE_KEY = 'scoreEditor.v2';
@@ -213,8 +214,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return one.title || t.untitledScore.replace('{n}', index + 1);
   }
 
+  // What the host offers (`tools`) and what the user turned on (`score.tools`); Ajustes is only the UI to change the latter.
+  const toolState = createToolState({ settings, tools, scoreTools: () => score.tools });
+
   // Pro: a tab can be closed without deleting its score, which the site menu keeps listing so it can be reopened.
-  const proTabs = settings && isPro();
+  const proTabs = toolState.available('tabs') && isPro();
   const isOpen = (index) => !proTabs || !docs[index].closed;
   const openCount = () => docs.filter((_, index) => isOpen(index)).length;
   const scoresMenu = document.getElementById('menuScores');
@@ -1415,7 +1419,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     toolbarStaffTop = Math.max(0, stage.querySelector('g.staff > path').getBoundingClientRect().top - stage.getBoundingClientRect().top);
     const showIntervals = intervalDocuments.has(score);
     const showChords = proChordNames && chordNameDocuments.has(score);
-    if (settings && toolOn('intervals', false) && (showIntervals || showChords)) {
+    if (toolOn('intervals', false) && (showIntervals || showChords)) {
       toolkit.loadData(withIntervals(xml, score, M, analysisVoices(), { intervals: showIntervals, chords: showChords }));
       // Verovio drops MusicXML words' font-size. Set MEI's supported relative size
       // on the marked interval text before engraving so spacing uses the smaller labels too.
@@ -2274,6 +2278,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // guitar-chords, que el build publica como JSON (scripts/lib/chords-data.mjs) y se pide la primera vez que se usa.
 
   const chordsOn = chords && Boolean(__CHORDS_FILE__);
+  // The instrument is chosen in Ajustes; a host without it is fixed to the guitar.
   const guitarOn = () => !settings || M.instrumentOf(score) === 'guitar';
   let chordLib = null;
   let chordLoading = null;
@@ -5096,7 +5101,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   barlines.prepend(tabToggle);
 
   // Los grupos de herramientas son de cada partitura; sin elegir, repeticion y dinamica se ven y las voces no.
-  const toolOn = (name, fallback = true) => !settings || (score.tools && name in score.tools ? score.tools[name] : fallback);
+  const toolOn = (name, fallback = true) => toolState.on(name, fallback);
   // Voces de la leyenda que filtran intervalos y acordes; sin la herramienta Voces (o sin elegir ninguna) cuentan todas.
   const analysisVoices = () => (toolOn('voices', false) && shownVoices.size ? shownVoices : null);
 
@@ -5486,7 +5491,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     if (playButton.hidden) {
       // Playback is off in Ajustes: Space turns it on and starts playing.
-      if (!settings || event.repeat || !WIDE_PAGE.matches) return;
+      if (!toolState.available('playback') || event.repeat || !WIDE_PAGE.matches) return;
       event.preventDefault();
       M.setTool(score, 'playback', true);
       save();
@@ -5524,7 +5529,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   window.addEventListener('pagehide', resetPlayback);
   // V alterna la herramienta de intervalos: apagada pasa a encendida (en Ajustes y en la barra) mostrando los intervalos; encendida y visible, la apaga.
   document.addEventListener('keydown', (event) => {
-    if (event.code !== 'KeyV' || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.defaultPrevented || event.repeat || !settings) return;
+    if (event.code !== 'KeyV' || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.defaultPrevented || event.repeat || !toolState.available('intervals')) return;
     if (event.target.closest('input, textarea, select, [contenteditable], ascii-tabs, [popover]:popover-open, [role="dialog"], button, a')) return;
     if (activeItem) return;
     if (!toolOn('intervals', false)) {
@@ -5566,7 +5571,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   ['pointerdown', 'mousedown', 'click'].forEach((type) => intervalButton.addEventListener(type, (event) => event.stopPropagation()));
 
   // Pro: possible chord name above each column of three or more voices (the first one fits best; the others go in the tooltip).
-  const proChordNames = Boolean(settings) && isPro();
+  const proChordNames = toolState.available('chordNames') && isPro();
   const chordNameDocuments = new WeakSet();
   const chordNamesButton = document.createElement('button');
   chordNamesButton.id = 'scoreChordNames';
@@ -5754,15 +5759,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   let sidebarShown = new Set();
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
-    const shown = { repeats: !settings || toolOn('repeats'), dynamics: !settings || toolOn('dynamics'), barre: guitar, lyrics: toolOn('lyrics') };
+    const shown = { repeats: toolOn('repeats'), dynamics: toolOn('dynamics'), barre: guitar, lyrics: toolOn('lyrics') };
     barlines.querySelectorAll('[data-group]').forEach((button) => { if (button.dataset.group) button.hidden = !shown[button.dataset.group]; });
     intensities.hidden = !shown.dynamics;
     tabToggle.hidden = !guitar;
     alignBarlinesToFirstStaff();
     barlines.classList.add('is-ready');
-    playButton.hidden = !settings || !toolOn('playback', false);
+    playButton.hidden = !toolOn('playback', false);
     if (playButton.hidden) clearPlaybackHint();
-    if (settings) stage.appendChild(playButton);
+    stage.appendChild(playButton);
     // Las herramientas de la barra izquierda solo se muestran u ocultan; las que acaban de aparecer entran con un fade de arriba hacia abajo.
     const shownNow = new Set();
     const place = (button, show) => {
@@ -5778,12 +5783,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       }
     };
     let fadeOrder = 0;
-    place(intervalButton, settings && toolOn('intervals', false));
+    place(intervalButton, toolOn('intervals', false));
     intervalButton.setAttribute('aria-pressed', String(intervalDocuments.has(score)));
     place(chordNamesButton, proChordNames && toolOn('intervals', false));
     chordNamesButton.setAttribute('aria-pressed', String(chordNameDocuments.has(score)));
     [[splitButton, splitPopup], [joinButton, joinPopup]].forEach(([button, popup]) => {
-      const show = settings && isPro() && toolOn('voices', false) && M.restructurable(score);
+      const show = isPro() && toolOn('voices', false) && M.restructurable(score);
       place(button, show);
       if (!show && popup.matches(':popover-open')) popup.hidePopover();
     });
@@ -5867,10 +5872,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // es del usuario y no de una partitura, asi que vive con las opciones y no viaja en el documento.
   const LIBRARY_LIMIT = 60;
   // URL tools only override the initial state; the library remains available in settings.
-  let libraryEnabled = !urlDefaults.tools && getSetting('patterns', false) === true;
+  // Without Ajustes there is no checkbox: a host that offers the library has it on.
+  let libraryEnabled = !urlDefaults.tools && getSetting('patterns', !settings) === true;
   const patternsOn = () => patternsAvailable() && libraryEnabled;
   // Una columna mas a la izquierda solo cabe sin quitarle ancho a la partitura en pantallas anchas; en tablet no se ofrece.
-  const patternsAvailable = () => patterns && settings && LIBRARY_PAGE.matches;
+  const patternsAvailable = () => patterns && LIBRARY_PAGE.matches;
   // Cada partitura guarda sus patrones (`score.patterns`); el panel muestra los de la activa.
   const libraryOf = () => score.patterns || (score.patterns = []);
   const libraryPanel = document.createElement('aside');
@@ -5908,7 +5914,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const libraryList = document.createElement('ul');
   libraryList.className = 'score-library-list';
   libraryPanel.append(libraryTitle, libraryHelp, libraryEmpty, libraryList);
-  if (patterns && settings) {
+  if (patterns) {
     // Migracion: la biblioteca global anterior pasa a la partitura activa y se descarta.
     const legacy = getSetting('patternItems', null);
     if (Array.isArray(legacy)) {
@@ -6325,7 +6331,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     content.appendChild(toolsGrid);
     let intervalModes = [];
     let refreshTonic = () => {};
-    const checks = categories.map(([name, label, belongs, fallback = true]) => {
+    const checks = categories.filter(([name]) => toolState.available(name)).map(([name, label, belongs, fallback = true]) => {
       const wrap = document.createElement('div');
       wrap.className = 'score-settings-section score-settings-category';
       wrap.dataset.category = name;
