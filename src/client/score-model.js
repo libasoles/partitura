@@ -545,8 +545,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // Duplica las figuras elegidas justo despues de la ultima de ellas, conservando su ritmo relativo. Lo que no entra
   // en el compas sigue en los siguientes (se agregan los que falten; una figura partida queda ligada) y convive con
   // lo que ya hay: misma altura y duracion se ignora, misma altura y otra duracion actualiza la duracion.
-  // Devuelve las figuras resultantes, o null (sin tocar la partitura) si algo no se puede colocar.
-  function duplicateSelection(score, refs) {
+  // Con `before` la copia queda justo antes de la primera figura elegida. Devuelve las figuras resultantes, o null (sin tocar la partitura) si algo no se puede colocar.
+  function duplicateSelection(score, refs, before = false) {
     const trial = clone(score);
     const laneOf = (staff) => measures(trial, staff);
     // Duplicar continua las partes originales; no debe reinterpretar las copias
@@ -568,6 +568,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       return { ev, staff, abs: origin[mi] + onsets(laneOf(staff)[mi])[i], pitch: pitchContexts(trial, mi, staff)[i], clef: CLEFS[clefAt(trial, mi, staff)].octave || 0 };
     }).sort((a, b) => a.abs - b.abs);
     const offset = Math.max(...sources.map((s) => s.abs + length(s.ev))) - sources[0].abs;
+    if (before && sources[0].abs - offset < 0) return null;
     const needed = Math.max(...sources.map((s) => s.abs + offset + length(s.ev)));
     while (starts().total < needed) trial.rows.push(emptyRow());
     const { list: first } = starts();
@@ -589,7 +590,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const partStaff = new Map();
     for (const source of sources) {
       const { ev } = source;
-      let pos = source.abs + offset, remaining = length(ev);
+      let pos = before ? source.abs - offset : source.abs + offset, remaining = length(ev);
       partsOf.set(ev, []);
       while (remaining > 0) {
         const mi = first.findLastIndex((at) => at <= pos);

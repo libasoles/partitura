@@ -949,7 +949,7 @@ export function voicesSelect(s, aria) {
   return d.html(aria);
 }
 
-/** Shift+↑/↓ writes a third above or below; `notesList` is the melody, `dir` is +2 (above) or -2 (below). */
+/** Cmd+↑/↓ writes a third above or below; `notesList` is the melody, `dir` is +2 (above) or -2 (below). */
 function thirds(s, aria, id, names, steps) {
   const d = stage({ id, T: 15 });
   names.forEach((name, i) => {
@@ -964,7 +964,7 @@ function thirds(s, aria, id, names, steps) {
     });
   });
   steps.forEach(({ dir, show, hide }) => {
-    d.keycap('Shift', 30, show - 1.6, show - 0.9, show + 1.4, { hold: 1.5 });
+    d.keycap('Cmd', 30, show - 1.6, show - 0.9, show + 1.4, { hold: 1.5 });
     d.keycap(dir > 0 ? '↑' : '↓', 70, show - 1.6, show - 0.4, show + 1.4);
   });
   return d.html(aria);

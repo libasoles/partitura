@@ -4169,11 +4169,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   stage.addEventListener('keydown', (event) => {
     if (event.target !== stage) return;
+    const cmd = event.metaKey || event.ctrlKey;
     if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault(); removeSelected(); }
-    else if (event.key === 'ArrowUp') { event.preventDefault(); if (!event.shiftKey || !event.repeat) shiftSelected(1, event.shiftKey); }
-    else if (event.key === 'ArrowDown') { event.preventDefault(); if (!event.shiftKey || !event.repeat) shiftSelected(-1, event.shiftKey); }
+    else if (event.key === 'ArrowUp') { event.preventDefault(); if (!cmd || !event.repeat) shiftSelected(1, cmd); }
+    else if (event.key === 'ArrowDown') { event.preventDefault(); if (!cmd || !event.repeat) shiftSelected(-1, cmd); }
     else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault();
+      if (cmd) { if (!event.repeat) duplicateSelected(event.key === 'ArrowLeft'); return; }
       stepSelection(event.key === 'ArrowRight' ? 1 : -1, event.shiftKey);
     } else if (event.key === 'Escape') setPicks([]);
   });
@@ -4249,12 +4251,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   });
 
   // Copia las figuras elegidas justo despues de la ultima, siguiendo en los compases que vengan.
-  function duplicateSelected() {
+  function duplicateSelected(before = false) {
     const refs = picks().filter((ref) => eventAt(ref));
     if (!refs.length) return;
     const trial = M.clone(score);
     M.restoreTabReferences(trial, M.captureTabReferences(score, score.showTabs ? tabColumns : score.tabs));
-    const created = M.duplicateSelection(trial, refs);
+    const created = M.duplicateSelection(trial, refs, before);
     if (!created) return say('');
     change(() => {
       Object.assign(score, trial);

@@ -15,7 +15,7 @@
   "scoreSeoH1": "Editor de partituras online, gratis y sin registro",
   "scoreAboutLead": "Arrastrá una figura directamente en el pentagrama, o elegí la figura, hacé clic donde va la nota y listo. Es gratis, funciona en el navegador y no pide crear usuario ni instalar nada.",
   "scoreShortcutsH2": "Atajos de teclado y gestos",
-  "scoreShortcutsIntro": "Apretá la tecla de una figura para elegirla y hacé clic en el pentagrama para colocarla. Apretá A para deseleccionar la herramienta actual. Con figuras seleccionadas, Mayús+D las duplica justo después de la última seleccionada, siguiendo en los compases que vengan. Mayús+↑ o Mayús+↓ duplica la selección una tercera diatónica arriba o abajo, en una voz independiente y en el mismo tiempo. La copia queda seleccionada; usá ↑ y ↓ para ajustar su altura. Estas son las teclas de cada una:",
+  "scoreShortcutsIntro": "Apretá la tecla de una figura para elegirla y hacé clic en el pentagrama para colocarla. Apretá A para deseleccionar la herramienta actual. Con figuras seleccionadas, Mayús+D las duplica justo después de la última seleccionada, siguiendo en los compases que vengan. Cmd+↑ o Cmd+↓ duplica la selección una tercera diatónica arriba o abajo, en una voz independiente y en el mismo tiempo. La copia queda seleccionada; usá ↑ y ↓ para ajustar su altura. Estas son las teclas de cada una:",
   "scoreShortcutsLinks": "Con dos notas seleccionadas, presioná <kbd>(</kbd> o <kbd>)</kbd> para agregar o quitar la ligadura, si se pueden ligar. Es la misma acción que el botón contextual de ligadura. El atajo reconoce el carácter: usá la combinación que escriba el paréntesis en tu teclado, en cualquier sistema operativo.",
   "scoreShortcutsNotes": "Notas",
   "scoreShortcutsRests": "Silencios",
@@ -586,7 +586,7 @@
         "steps": [
           "Hacé clic en una figura para seleccionarla. Con <kbd>Mayús</kbd>, <kbd>Ctrl</kbd> o <kbd>Cmd</kbd> sumás más. Arrastrando desde un lugar vacío del pentagrama las encerrás con un rectángulo.",
           "<kbd>↑</kbd> y <kbd>↓</kbd> suben o bajan la selección un paso del pentagrama; <kbd>←</kbd> y <kbd>→</kbd> pasan a la figura de al lado. También podés arrastrar las figuras a otro lugar.",
-          "Con <kbd>Mayús</kbd> + <kbd>←</kbd>/<kbd>→</kbd> ampliás la selección a las figuras vecinas. Con <kbd>Mayús</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> creás una copia en otra voz, una tercera diatónica arriba o abajo y en el mismo tiempo; las copias quedan seleccionadas.",
+          "Con <kbd>Mayús</kbd> + <kbd>←</kbd>/<kbd>→</kbd> ampliás la selección a las figuras vecinas. Con <kbd>Cmd</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> creás una copia en otra voz, una tercera diatónica arriba o abajo y en el mismo tiempo; las copias quedan seleccionadas.",
           "<kbd>Delete</kbd> o <kbd>Retroceso</kbd> las borra. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> deshace el último cambio y <kbd>Esc</kbd> suelta la selección."
         ]
       },
@@ -594,7 +594,7 @@
         "steps": [
           "Seleccioná una o más figuras y apretá <kbd>Mayús</kbd> + <kbd>D</kbd>: se copian justo después de la última seleccionada, siguiendo en los compases que vengan.",
           "Para llevarlas a otro lugar, copialas con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, hacé clic en el compás de destino y pegá con <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. Funciona también entre partituras abiertas.",
-          "Para escribir una segunda voz, usá <kbd>Mayús</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd>: la copia queda una tercera diatónica arriba o abajo, con los mismos tiempos y duraciones. Soltá Mayús y ajustá su altura con las flechas. Funciona en cualquiera de los dos pentagramas del piano.",
+          "Para escribir una segunda voz, usá <kbd>Cmd</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd>: la copia queda una tercera diatónica arriba o abajo, con los mismos tiempos y duraciones. Soltá Cmd y ajustá su altura con las flechas. Funciona en cualquiera de los dos pentagramas del piano.",
           "Copiar, pegar y duplicar conserva las ligaduras de prolongación y de expresión cuando sus dos extremos están incluidos. Para reutilizar el motivo en otras alturas o conservar solo su ritmo, guardalo en la biblioteca de patrones con <kbd>Mayús</kbd> + <kbd>S</kbd>."
         ],
         "tip": "Si mantenés <kbd>Mayús</kbd> al pegar, se copian solo las figuras, sin los cambios de clave, armadura o compás."
@@ -700,9 +700,9 @@
       "voices": {
         "steps": [
           "Seleccioná una nota o una frase en el pentagrama. Para ampliar la selección, usá <kbd>Mayús</kbd>+clic o <kbd>Mayús</kbd> + <kbd>←</kbd>/<kbd>→</kbd>.",
-          "Presioná <kbd>Mayús</kbd> + <kbd>↑</kbd> para duplicarla una tercera diatónica más arriba, o <kbd>Mayús</kbd> + <kbd>↓</kbd> para hacerlo más abajo. Las copias empiezan en los mismos tiempos y conservan las duraciones, los puntillos, los grupos irregulares y las ligaduras cuyos dos extremos estén seleccionados.",
-          "Las copias quedan seleccionadas. Soltá <kbd>Mayús</kbd> y usá <kbd>↑</kbd>/<kbd>↓</kbd> para ajustar solo su altura. Por ejemplo, duplicá hacia abajo para escribir una tercera diatónica bajo la melodía; las flechas sin Mayús permiten ajustar el intervalo de a un paso. También podés seleccionar y editar cada nota de la nueva línea.",
-          "<strong>Ejemplo de duplicación:</strong> en do mayor, escribí do–re–mi en negras, seleccioná las tres notas y presioná <kbd>Mayús</kbd> + <kbd>↑</kbd>. Se agrega mi–fa–sol en otra voz, al mismo tiempo que do–re–mi. Si usás <kbd>Mayús</kbd> + <kbd>↓</kbd> sobre la frase original, obtenés la–si–do por debajo. Las terceras siguen la armadura: no son siempre la misma cantidad de semitonos.",
+          "Presioná <kbd>Cmd</kbd> + <kbd>↑</kbd> para duplicarla una tercera diatónica más arriba, o <kbd>Cmd</kbd> + <kbd>↓</kbd> para hacerlo más abajo. Las copias empiezan en los mismos tiempos y conservan las duraciones, los puntillos, los grupos irregulares y las ligaduras cuyos dos extremos estén seleccionados.",
+          "Las copias quedan seleccionadas. Soltá <kbd>Cmd</kbd> y usá <kbd>↑</kbd>/<kbd>↓</kbd> para ajustar solo su altura. Por ejemplo, duplicá hacia abajo para escribir una tercera diatónica bajo la melodía; las flechas sin Cmd permiten ajustar el intervalo de a un paso. También podés seleccionar y editar cada nota de la nueva línea.",
+          "<strong>Ejemplo de duplicación:</strong> en do mayor, escribí do–re–mi en negras, seleccioná las tres notas y presioná <kbd>Cmd</kbd> + <kbd>↑</kbd>. Se agrega mi–fa–sol en otra voz, al mismo tiempo que do–re–mi. Si usás <kbd>Cmd</kbd> + <kbd>↓</kbd> sobre la frase original, obtenés la–si–do por debajo. Las terceras siguen la armadura: no son siempre la misma cantidad de semitonos.",
           "Cada voz seleccionada se duplica en una voz independiente del mismo pentagrama. Funciona arriba y abajo en el piano; la copia no pasa al otro pentagrama. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> deshace la duplicación.",
           "Activá <em>Voces</em> en los ajustes para ver la leyenda de colores a la izquierda. Elegí los números de las voces que querés colorear: las demás figuras siguen visibles. Si también activás <em>Reproducción</em>, podés escuchar solo las voces elegidas.",
           "<strong>Corregir la voz de notas existentes:</strong> el cálculo automático de voces puede fallar, por ejemplo cuando dos líneas se cruzan o comparten ritmo. Si una nota de la melodía quedó en la voz del acompañamiento, podés reasignarla sin duplicarla ni cambiar su altura, inicio o duración.",
@@ -904,7 +904,7 @@
       ],
       "voices": [
         "Cómo escribir una segunda voz en una partitura",
-        "Creá una segunda voz con Mayús y las flechas arriba o abajo, conservando el ritmo. Ajustá las notas y escuchá cada voz en el editor Partitura."
+        "Creá una segunda voz con Cmd y las flechas arriba o abajo, conservando el ritmo. Ajustá las notas y escuchá cada voz en el editor Partitura."
       ],
       "playback": [
         "Cómo reproducir una partitura de piano o guitarra online",
@@ -948,7 +948,7 @@
       "Para llenar un compás vacío con silencios, seleccionalo con un clic y apretá <kbd>Tab</kbd>. En piano se llena solo el pentagrama elegido.",
       "Si el compás ya tiene figuras, <kbd>Mayús</kbd> + <kbd>Tab</kbd> completa con silencios lo que le falta a cada voz.",
       "Con figuras seleccionadas, <kbd>Mayús</kbd> + <kbd>D</kbd> las duplica justo después de la última seleccionada, siguiendo en los compases que vengan.",
-      "<kbd>Mayús</kbd> + <kbd>↑</kbd> o <kbd>Mayús</kbd> + <kbd>↓</kbd> duplica la selección una tercera diatónica arriba o abajo, en una voz independiente y en el mismo tiempo.",
+      "<kbd>Cmd</kbd> + <kbd>↑</kbd> o <kbd>Cmd</kbd> + <kbd>↓</kbd> duplica la selección una tercera diatónica arriba o abajo, en una voz independiente y en el mismo tiempo. <kbd>Cmd</kbd> + <kbd>←</kbd> o <kbd>Cmd</kbd> + <kbd>→</kbd> duplican la selección justo antes o justo después, conservando el ritmo.",
       "La copia queda seleccionada; usá <kbd>↑</kbd> y <kbd>↓</kbd> para ajustar su altura.",
       "Con dos notas seleccionadas, presioná <kbd>(</kbd> o <kbd>)</kbd> para agregar o quitar la ligadura, si se pueden ligar. Es la misma acción que el botón contextual de ligadura. El atajo reconoce el carácter: usá la combinación que escriba el paréntesis en tu teclado, en cualquier sistema operativo.",
       "<kbd>←</kbd> y <kbd>→</kbd> pasan a la figura de al lado; <kbd>Mayús</kbd> + <kbd>←</kbd> o <kbd>Mayús</kbd> + <kbd>→</kbd> amplían la selección. <kbd>↑</kbd> y <kbd>↓</kbd> suben o bajan lo seleccionado un paso.",
