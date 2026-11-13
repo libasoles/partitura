@@ -15,7 +15,7 @@
   "scoreSeoH1": "Free online sheet music editor, no sign-up",
   "scoreAboutLead": "Write your score straight onto the staff: pick a note value, click where the note goes, done. It is free, runs in your browser and needs no account or install.",
   "scoreShortcutsH2": "Keyboard shortcuts and gestures",
-  "scoreShortcutsIntro": "Press a figure’s key to pick it, then click on the staff to place it. Press A to deselect the current tool. With figures selected, Shift+D duplicates them right after the last selected one, carrying on into the following measures. Shift+↑ or Shift+↓ duplicates the selection a diatonic third above or below, in a separate voice at the same time. The copy stays selected; use ↑ and ↓ to adjust its pitch. These are the keys:",
+  "scoreShortcutsIntro": "Press a figure’s key to pick it, then click on the staff to place it. Press A to deselect the current tool. With figures selected, Shift+D duplicates them right after the last selected one, carrying on into the following measures. Cmd+↑ or Cmd+↓ duplicates the selection a diatonic third above or below, in a separate voice at the same time. The copy stays selected; use ↑ and ↓ to adjust its pitch. These are the keys:",
   "scoreShortcutsLinks": "With two notes selected, press <kbd>(</kbd> or <kbd>)</kbd> to add or remove a tie or slur, if the notes can be linked. This is the same action as the contextual tie button. The shortcut follows the character: use whichever combination types the parenthesis on your keyboard, on any operating system.",
   "scoreShortcutsNotes": "Notes",
   "scoreShortcutsRests": "Rests",
@@ -590,7 +590,7 @@
         "steps": [
           "Click a figure to select it. <kbd>Shift</kbd>, <kbd>Ctrl</kbd> or <kbd>Cmd</kbd> adds more. Dragging from an empty spot on the staff encloses them in a rectangle.",
           "<kbd>↑</kbd> and <kbd>↓</kbd> raise or lower the selection by one staff step; <kbd>←</kbd> and <kbd>→</kbd> move to the next figure. You can also drag the figures elsewhere.",
-          "Use <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd> to extend the selection to neighboring figures. <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> creates a copy in another voice, a diatonic third above or below at the same time; the copies stay selected.",
+          "Use <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd> to extend the selection to neighboring figures. <kbd>Cmd</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> creates a copy in another voice, a diatonic third above or below at the same time; the copies stay selected.",
           "<kbd>Delete</kbd> or <kbd>Backspace</kbd> removes them. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes the last change and <kbd>Esc</kbd> clears the selection."
         ]
       },
@@ -598,7 +598,7 @@
         "steps": [
           "Select one or more figures and press <kbd>Shift</kbd> + <kbd>D</kbd>: they are copied right after the last selected one, carrying on into the measures that follow.",
           "To bring them somewhere else, copy with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>C</kbd>, click the destination measure and paste with <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>V</kbd>. It works between open scores too.",
-          "To write a second voice, use <kbd>Shift</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd>: the copy sits a diatonic third above or below with the same timing and durations. Release Shift and adjust its pitch with the arrows. This works in either piano staff.",
+          "To write a second voice, use <kbd>Cmd</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd>: the copy sits a diatonic third above or below with the same timing and durations. Release Cmd and adjust its pitch with the arrows. This works in either piano staff.",
           "Copying, pasting and duplicating preserve ties and slurs when both ends are included. To reuse a motif at other pitches or keep only its rhythm, save it to the pattern library with <kbd>Shift</kbd> + <kbd>S</kbd>."
         ],
         "tip": "Hold <kbd>Shift</kbd> while pasting to paste only the figures, without clef, key or meter changes."
@@ -704,9 +704,9 @@
       "voices": {
         "steps": [
           "Select a note or phrase on the staff. Extend the selection with <kbd>Shift</kbd>+click or <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd>.",
-          "Press <kbd>Shift</kbd> + <kbd>↑</kbd> to duplicate it a diatonic third above, or <kbd>Shift</kbd> + <kbd>↓</kbd> to duplicate it below. The copies start at the same times and keep durations, dots, tuplets, and ties or slurs whose two ends are selected.",
-          "The copies stay selected. Release <kbd>Shift</kbd> and use <kbd>↑</kbd>/<kbd>↓</kbd> to adjust only their pitch. For example, duplicate below to write a diatonic third below the melody; the arrows without Shift let you adjust the interval one staff step at a time. You can also select and edit individual notes in the new line.",
-          "<strong>Duplication example:</strong> in C major, write C–D–E as quarter notes, select all three and press <kbd>Shift</kbd> + <kbd>↑</kbd>. This adds E–F–G in another voice, at the same times as C–D–E. Using <kbd>Shift</kbd> + <kbd>↓</kbd> on the original phrase gives A–B–C below it. The thirds follow the key signature; they do not always span the same number of semitones.",
+          "Press <kbd>Cmd</kbd> + <kbd>↑</kbd> to duplicate it a diatonic third above, or <kbd>Cmd</kbd> + <kbd>↓</kbd> to duplicate it below. The copies start at the same times and keep durations, dots, tuplets, and ties or slurs whose two ends are selected.",
+          "The copies stay selected. Release <kbd>Cmd</kbd> and use <kbd>↑</kbd>/<kbd>↓</kbd> to adjust only their pitch. For example, duplicate below to write a diatonic third below the melody; the arrows without Cmd let you adjust the interval one staff step at a time. You can also select and edit individual notes in the new line.",
+          "<strong>Duplication example:</strong> in C major, write C–D–E as quarter notes, select all three and press <kbd>Cmd</kbd> + <kbd>↑</kbd>. This adds E–F–G in another voice, at the same times as C–D–E. Using <kbd>Cmd</kbd> + <kbd>↓</kbd> on the original phrase gives A–B–C below it. The thirds follow the key signature; they do not always span the same number of semitones.",
           "Each selected voice gets an independent copy on the same staff. This works in either piano staff; the copy does not move to the other staff. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes the duplication.",
           "Enable <em>Voices</em> in settings to show the color legend on the left. Select the voice numbers to color; the other figures stay visible. With <em>Playback</em> enabled too, you can listen only to the selected voices.",
           "<strong>Correcting the voice of existing notes:</strong> automatic voice calculation can fail, for example when two lines cross or share a rhythm. If a melody note ends up in the accompaniment voice, you can reassign it without duplicating it or changing its pitch, onset or duration.",
@@ -908,7 +908,7 @@
       ],
       "voices": [
         "How to write a second voice in a score",
-        "Create a second voice with Shift and the up or down arrow, keeping the rhythm. Adjust the notes and listen to individual voices in Partitura."
+        "Create a second voice with Cmd and the up or down arrow, keeping the rhythm. Adjust the notes and listen to individual voices in Partitura."
       ],
       "playback": [
         "How to play a piano or guitar score online",
@@ -951,7 +951,7 @@
       "To fill an empty measure with rests, select it with a click and press <kbd>Tab</kbd>. On piano, only the chosen staff is filled.",
       "If the measure already has figures, <kbd>Shift</kbd> + <kbd>Tab</kbd> completes what each voice is missing with rests.",
       "With figures selected, <kbd>Shift</kbd> + <kbd>D</kbd> duplicates them right after the last selected one, carrying on into the following measures.",
-      "<kbd>Shift</kbd> + <kbd>↑</kbd> or <kbd>Shift</kbd> + <kbd>↓</kbd> duplicates the selection a diatonic third above or below, in a separate voice at the same time.",
+      "<kbd>Cmd</kbd> + <kbd>↑</kbd> or <kbd>Cmd</kbd> + <kbd>↓</kbd> duplicates the selection a diatonic third above or below, in a separate voice at the same time. <kbd>Cmd</kbd> + <kbd>←</kbd> or <kbd>Cmd</kbd> + <kbd>→</kbd> duplicate the selection right before or right after it, keeping the rhythm.",
       "The copy stays selected; use <kbd>↑</kbd> and <kbd>↓</kbd> to adjust its pitch.",
       "With two notes selected, press <kbd>(</kbd> or <kbd>)</kbd> to add or remove a tie or slur, if the notes can be linked. This is the same action as the contextual tie button. The shortcut follows the character: use whichever combination types the parenthesis on your keyboard, on any operating system.",
       "<kbd>←</kbd> and <kbd>→</kbd> move to the neighbouring figure; <kbd>Shift</kbd> + <kbd>←</kbd> or <kbd>Shift</kbd> + <kbd>→</kbd> extend the selection. <kbd>↑</kbd> and <kbd>↓</kbd> raise or lower the selection one step.",

@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 for (const staff of [0, 1]) {
-  test(`Shift+vertical arrows duplicate a melody by a third in staff ${staff}, select copies and undo`, async ({ page }) => {
+  test(`Cmd+vertical arrows duplicate a melody by a third in staff ${staff}, select copies and undo`, async ({ page }) => {
     await page.goto('/es/');
     await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
     await page.waitForFunction(() => window.scoreEditor && document.querySelector('.score-doc-tab-input'));
@@ -19,7 +19,7 @@ for (const staff of [0, 1]) {
     await expect(page.locator('#scoreStage g.note.is-selected')).toHaveCount(4);
 
     for (const [key, delta] of [['ArrowUp', 1], ['ArrowDown', -1]]) {
-      await page.keyboard.press(`Shift+${key}`);
+      await page.keyboard.press(`ControlOrMeta+${key}`);
       await expect(page.locator('#scoreStage g.note')).toHaveCount(8);
       await expect(page.locator('#scoreStage g.note.is-selected')).toHaveCount(4);
       const state = await page.evaluate((staff) => {
@@ -77,14 +77,35 @@ test('duplicating a melody in separate selections continues the existing second 
   await page.locator('[id="e0-1"] .notehead').click({ modifiers: ['ControlOrMeta'] });
   await expect(page.locator('#scoreStage g.note.is-selected')).toHaveCount(2);
   await page.locator('#scoreStage').focus();
-  await page.keyboard.press('Shift+ArrowDown');
+  await page.keyboard.press('ControlOrMeta+ArrowDown');
   for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowDown');
   const before = await page.evaluate(() => structuredClone(window.scoreEditor.score.rows[0][0]));
   await page.locator('[id="e0-4"] .notehead').click();
-  await page.keyboard.press('Shift+ArrowDown');
+  await page.keyboard.press('ControlOrMeta+ArrowDown');
   const expected = [...before, { d: 'e', n: 32, v: 2, at: 60 }];
   expect(await page.evaluate(() => window.scoreEditor.score.rows[0][0])).toEqual(expected);
   await expect(page.locator('#scoreStage g.tie')).toHaveCount(2);
   await page.keyboard.press('ControlOrMeta+z');
   expect(await page.evaluate(() => window.scoreEditor.score.rows[0][0])).toEqual(before);
+});
+
+test('Cmd+horizontal arrows duplicate the selection after and before it, and undo', async ({ page }) => {
+  await page.goto('/es/');
+  await page.locator('#scoreStage:not([aria-busy]) g.measure').first().waitFor();
+  await page.waitForFunction(() => window.scoreEditor && document.querySelector('.score-doc-tab-input'));
+  await page.evaluate(() => {
+    const score = window.scoreEditor.score;
+    score.rows[0][1] = [{ d: 'q', n: 37 }, { d: 'q', n: 40 }];
+    window.scoreEditor.render();
+  });
+  const notes = () => page.evaluate(() => window.scoreEditor.score.rows.flatMap((row) => row.flat()).filter((e) => !e.rest).map((e) => e.n));
+  await page.locator('[id="e1-0"] .notehead').click();
+  await page.locator('#scoreStage').focus();
+  await page.keyboard.press('ControlOrMeta+ArrowRight');
+  expect((await notes()).filter((n) => n === 37)).toHaveLength(2);
+  await page.keyboard.press('ControlOrMeta+z');
+  expect((await notes()).filter((n) => n === 37)).toHaveLength(1);
+  await page.locator('[id="e1-1"] .notehead').click();
+  await page.keyboard.press('ControlOrMeta+ArrowLeft');
+  expect((await notes()).filter((n) => n === 40)).toHaveLength(2);
 });
