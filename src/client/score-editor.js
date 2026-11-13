@@ -856,7 +856,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       const replacement = Object.assign(M.clone(ev), { d: item.d });
       delete replacement.tp;
       delete replacement.tn;
-      if (item.kind === 'rest') { replacement.rest = true; delete replacement.n; delete replacement.acc; delete replacement.dead; }
+      if (item.kind === 'rest') { replacement.rest = true; delete replacement.n; delete replacement.acc; delete replacement.dead; delete replacement.dot; }
       else { delete replacement.rest; replacement.n = ev.rest ? M.bottomLine(score, ref.mi, staffOf(ref)) : ev.n; }
       if (item.d === 'w' || item.d === 's' || item.d === 'f') delete replacement.dot;
       else if (replacement.dot === 2 && item.d !== 'h' && item.d !== 'q') replacement.dot = true;
