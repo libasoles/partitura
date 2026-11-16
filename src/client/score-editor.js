@@ -1782,6 +1782,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         button.style.height = Math.max(44, box.height) + 'px';
         mountBarResize(button, mi, side);
         button.addEventListener('click', (click) => {
+          if (activeItem?.kind === 'bar') {
+            const item = activeItem;
+            if (clefPopup.matches(':popover-open')) clefPopup.hidePopover();
+            clearBarSelection();
+            change(() => M.setBarline(score, mi, item.bar));
+            return;
+          }
           clearBarSelection();
           deactivateTool();
           setPicks([]);
@@ -4547,6 +4554,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     button.addEventListener('click', () => {
       if (field === 'clef') {
         if (M.clefAt(score, keyMeasure, clefStaff) !== value) change(() => M.setClef(score, keyMeasure, value, clefStaff));
+      } else if (field === 'meter') {
+        if (M.meterAt(score, keyMeasure) !== value) change(() => M.setMeterAt(score, keyMeasure, value));
       } else if (M.keyAt(score, keyMeasure) !== value) change(() => M.setKey(score, keyMeasure, value));
       openClefPopup(clefAnchor, keyMeasure, button);
     });
@@ -4573,6 +4582,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       button.appendChild(none);
     }
   });
+
+  const barMeterOptions = signatureGroup(t.meter, 'score-meter-options');
+  M.METERS.forEach((meter) => signatureButton(barMeterOptions, 'meter', meter, meter));
 
   // Nombre del pentagrama `staff` para etiquetas accesibles: el registro en Voces; arriba o abajo en el piano.
   function staffName(staff) {
@@ -4630,14 +4642,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       : stage.querySelector('.score-barline-trigger[data-measure="' + anchor.mi + '"][data-side="' + anchor.side + '"]');
   }
 
-  // Que secciones muestra el popup: clave y armadura juntas solo si se abre desde la clave y no hay armadura.
+  // Desde una barra se ofrecen clave, armadura y compas; desde los simbolos, su seccion correspondiente.
   // Se fija al abrir, para que elegir una armadura no cambie el popup que ya esta abierto.
   let popupSections = 'both';
 
   function showSections(sections) {
     popupSections = sections;
-    [[clefOptions, 'clef'], [keyOptions, 'key']].forEach(([group, name]) => {
-      const display = sections === 'both' || sections === name ? '' : 'none';
+    [[clefOptions, 'clef'], [keyOptions, 'key'], [barMeterOptions, 'bar']].forEach(([group, name]) => {
+      const display = sections === 'bar' || (sections === 'both' && name !== 'bar') || sections === name ? '' : 'none';
       group.style.display = display;
       group.previousElementSibling.style.display = display;
     });
@@ -4649,7 +4661,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     clefStaff = M.stavesOf(score) > 1 ? origin.staff || 0 : 0;
     clefOptions.previousElementSibling.textContent = M.stavesOf(score) > 1 ? t.clef + ' · ' + staffName(clefStaff) : t.clef;
     if (!clefPopup.matches(':popover-open')) {
-      showSections(origin.kind === 'key' ? 'key' : origin.kind === 'clef' && M.keyAt(score, measure) !== 0 ? 'clef' : 'both');
+      showSections(origin.kind === 'bar' ? 'bar' : origin.kind === 'key' ? 'key' : origin.kind === 'clef' && M.keyAt(score, measure) !== 0 ? 'clef' : 'both');
     }
     const anchorButton = anchorButtonOf(origin);
     clefOptions.querySelectorAll('button').forEach((button) => {
@@ -4658,7 +4670,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     keyOptions.querySelectorAll('button').forEach((button) => {
       button.setAttribute('aria-pressed', String(Number(button.dataset.fifths) === M.keyAt(score, keyMeasure)));
     });
+    barMeterOptions.querySelectorAll('button').forEach((button) => {
+      button.setAttribute('aria-pressed', String(button.dataset.meter === M.meterAt(score, keyMeasure)));
+    });
     if (!clefPopup.matches(':popover-open')) clefPopup.showPopover();
+    if (popupSections === 'bar') {
+      barMeterOptions.querySelectorAll('button').forEach((button) => {
+        if (!button.querySelector('svg')) signaturePreview(button, M.clefAt(score, keyMeasure, clefStaff), 0, 'meter', button.dataset.meter);
+      });
+    }
     // getBBox() devuelve cajas vacias dentro de una seccion con display:none.
     // Generar y guardar las muestras solo cuando su seccion ya esta visible.
     if (popupSections !== 'key') {
