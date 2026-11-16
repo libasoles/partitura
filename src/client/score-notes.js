@@ -59,9 +59,17 @@ export function soundingNotes(score, M, selectedVoices, voiceCount = 4) {
   return sounding;
 }
 
-// Repite las notas segun el orden de los compases (repeticiones, casas, saltos); sin saltos las deja como estan.
+// Ajusta la anacrusa y repite las notas segun el orden de los compases (repeticiones, casas, saltos).
 export function expandRepeats(score, M, notes, slots) {
-  if (slots.every((slot, k) => slot.mi === k)) return notes;
+  if (slots.every((slot, k) => slot.mi === k)) {
+    const first = slots[0];
+    if (!first) return notes;
+    const capacity = M.capacity(score, 0), offset = first.offset || 0;
+    const removed = capacity - first.end;
+    if (!removed && !offset) return notes;
+    const time = (at) => at < capacity ? Math.max(0, at - offset) : at - removed;
+    return notes.map((note) => ({ ...note, start: time(note.start), end: time(note.end) }));
+  }
   const origin = [];
   let at = 0;
   slots.length && M.measures(score).forEach((_, mi) => { origin[mi] = at; at += M.capacity(score, mi); });
@@ -69,7 +77,7 @@ export function expandRepeats(score, M, notes, slots) {
   for (const note of notes) {
     let piece = null, previous = -2;
     slots.forEach((slot, k) => {
-      const from = origin[slot.mi], to = from + (slot.end - slot.start);
+      const from = origin[slot.mi] + (slot.offset || 0), to = from + (slot.end - slot.start);
       if (note.start >= to || note.end <= from) return;
       const start = slot.start + Math.max(note.start, from) - from, end = slot.start + Math.min(note.end, to) - from;
       // Una nota que sigue en el compas siguiente de la partitura (ligadura) sigue sonando sin volver a atacar.

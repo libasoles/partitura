@@ -1569,10 +1569,21 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // Compases tocados en orden, con su tiempo de inicio y fin en divisiones; termina en el ultimo compas escrito.
   function playSlots(score) {
     let last = -1;
-    for (let staff = 0; staff < stavesOf(score); staff += 1) measures(score, staff).forEach((measure, mi) => { if (measure.length) last = Math.max(last, mi); });
+    let firstNote = Infinity, firstEnd = 0;
+    for (let staff = 0; staff < stavesOf(score); staff += 1) measures(score, staff).forEach((measure, mi) => {
+      if (measure.length) last = Math.max(last, mi);
+      if (mi !== 0) return;
+      const starts = onsets(measure);
+      firstEnd = Math.max(firstEnd, measureLength(measure));
+      measure.forEach((ev, i) => { if (!ev.rest) firstNote = Math.min(firstNote, starts[i]); });
+    });
+    // Anacrusa implícita: omitir el relleno anterior a la primera nota y el espacio sin escribir al final.
+    // Se calcula sobre todos los pentagramas, antes del filtro de voces, sin cambiar la partitura guardada.
+    const pickup = Number.isFinite(firstNote) && firstEnd <= capacity(score, 0);
     let start = 0;
     return playOrder(score, last + 1).map((mi) => {
-      const slot = { mi, start, end: start + capacity(score, mi) };
+      const slot = { mi, start, end: start + (mi === 0 && pickup ? firstEnd - firstNote : capacity(score, mi)) };
+      if (mi === 0 && pickup && firstNote) slot.offset = firstNote;
       start = slot.end;
       return slot;
     });
