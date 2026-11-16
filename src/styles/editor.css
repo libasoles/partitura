@@ -1044,7 +1044,8 @@ body.score-dragging {
 .score-clef-popup {
   box-sizing: border-box;
   width: min(36rem, calc(100vw - 1rem));
-  overflow: visible;
+  max-height: calc(100dvh - 1rem);
+  overflow: auto;
 }
 
 .score-clef-options,
