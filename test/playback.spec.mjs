@@ -37,6 +37,28 @@ async function enable(page) {
   await page.keyboard.press('Escape');
 }
 
+for (const leadingRests of [false, true]) {
+  test(`anacrusa ${leadingRests ? 'con silencios' : 'sin relleno'}: audio y cursor avanzan tras la corchea`, async ({ page }) => {
+    await open(page, 'piano', {
+      meter: '6/8', tempo: 30, tools: { playback: true }, lower: {},
+      rows: [[[
+        ...(leadingRests ? [{ d: 'q', dot: true, rest: true }, { d: 's', rest: true }] : []),
+        { d: 'e', n: 35 },
+      ], [{ d: 'h', dot: true, n: 37 }]]],
+    });
+    await page.locator('#scorePlayback').click();
+    await expect.poll(() => page.evaluate(() => window.audioStarts.length)).toBe(2);
+    const starts = await page.evaluate(() => window.audioStarts.map(({ args }) => args[0]));
+    expect(starts[1] - starts[0]).toBeCloseTo(1, 3);
+    const cursor = page.locator('.score-playback-cursor');
+    await expect(cursor).toHaveAttribute('data-measure', '0');
+    const head = await page.locator(`[id="e0-${leadingRests ? 2 : 0}"] .notehead`).boundingBox();
+    expect((await cursor.boundingBox()).x).toBeGreaterThanOrEqual(head.x);
+    await expect(cursor).toHaveAttribute('data-measure', '1', { timeout: 2000 });
+    expect(Number(await cursor.getAttribute('data-time'))).toBeLessThan(24);
+  });
+}
+
 for (const tools of [{ voices: true, playback: true }, { voices: true }, { playback: true }]) {
   test(`the left toolbar stays in the viewport while scrolling (${Object.keys(tools).join(', ')})`, async ({ page }) => {
     await open(page, 'piano', {
@@ -264,14 +286,10 @@ test('neutral clicks keep the cursor at the exact playback position after waitin
   expect(Number(await cursor.getAttribute('data-time'))).toBeLessThan(44);
 });
 
-test('space toggles playback only when enabled and outside text fields', async ({ page }) => {
+test('space enables playback and then toggles it outside text fields', async ({ page }) => {
   await open(page);
   const stage = page.locator('#scoreStage');
   const button = page.locator('#scorePlayback');
-  await stage.focus();
-  await page.keyboard.press('Space');
-  expect(await page.evaluate(() => window.audioStarts.length)).toBe(0);
-  await enable(page);
   await stage.focus();
   await page.keyboard.press('Space');
   await expect(button).toHaveAccessibleName('Pausar');
@@ -358,7 +376,7 @@ for (const [sound, file] of [[undefined, 'choir-chorale'], ['ah', 'choir-ah'], [
   expect(audioRequests[0]).toContain(`/${file}.json`);
 });
 
-test('voices: the Ajustes sound selector defaults to Ah, is voices-only and drives the samples', async ({ page }) => {
+test('voices: the Ajustes sound selector defaults to Chorale, is voices-only and drives the samples', async ({ page }) => {
   const audioRequests = [];
   page.on('request', (request) => { if (request.url().includes('/audio/')) audioRequests.push(request.url()); });
   await page.addInitScript(() => {
@@ -371,7 +389,7 @@ test('voices: the Ajustes sound selector defaults to Ah, is voices-only and driv
   await page.goto('/es/#pro');
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
   await page.locator('#scoreSettingsToggle').click();
-  await expect(page.getByRole('radio', { name: 'Ah', exact: true })).toBeChecked();
+  await expect(page.getByRole('radio', { name: 'Chorale', exact: true })).toBeChecked();
   await page.locator('label:has(input[name="scoreInstrument"][value="piano"])').click();
   await expect(page.getByRole('radio', { name: 'Oh', exact: true })).toBeHidden();
   await page.locator('.score-settings-radio').filter({ hasText: /^Voces$/ }).click();
@@ -447,7 +465,7 @@ test('changing choir sound keeps playing at the current position while new sampl
   await expect(button).toHaveAccessibleName('Pausar');
   await page.waitForFunction(() => Number(document.querySelector('.score-playback-cursor')?.dataset.time) > 2);
   await page.locator('#scoreSettingsToggle').click();
-  await expect(page.locator('input[name="scoreSound"]')).toHaveCount(10);
+  await expect(page.locator('input[name="scoreSound"]')).toHaveCount(11);
   await expect(page.getByRole('radio', { name: 'Uh', exact: true })).toHaveValue('mm');
   const before = await page.locator('.score-playback-cursor').getAttribute('data-time');
   await page.getByRole('radio', { name: 'Oh', exact: true }).check();

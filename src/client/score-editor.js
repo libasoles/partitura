@@ -5243,7 +5243,9 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function playbackOffset(mi, at = 0) {
     // Con repeticiones, un compás suena más de una vez: se usa su primera aparición.
     const slot = M.playSlots(score).find((s) => s.mi === mi);
-    return ((slot ? slot.start : measureOffset(0, mi)) + at) * 60 / (score.tempo || 120) / M.DIVISIONS;
+    const pickup = mi === 0 && slot && slot.end - slot.start < M.capacity(score, mi);
+    const local = pickup ? Math.max(0, Math.min(slot.end - slot.start, at - (slot.offset || 0))) : at;
+    return ((slot ? slot.start : measureOffset(0, mi)) + local) * 60 / (score.tempo || 120) / M.DIVISIONS;
   }
 
   function activePlaybackPosition() {
@@ -5361,7 +5363,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const mi = slot ? slot.mi : playbackLayout.findIndex((measure) => time < measure.end);
     const measure = playbackLayout[mi];
     if (!measure) return;
-    const local = Math.max(0, time - (slot ? slot.start : measure.start));
+    const local = Math.max(0, time - (slot ? slot.start : measure.start)) + (slot?.offset || 0);
     const { bounds, anchors } = measure;
     let x = anchors[anchors.length - 1].x;
     for (let i = 1; i < anchors.length; i += 1) {
