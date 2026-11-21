@@ -421,7 +421,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   }
 
   // Duplica a una tercera diatonica en una voz independiente, continuando la vecina si esta libre.
-  function duplicateVertical(score, refs, delta, stack = false, steps = 2) {
+  function duplicateVertical(score, refs, delta, stack = false, steps = 2, targets = null) {
     if (delta !== 1 && delta !== -1) return null;
     const trial = clone(score);
     const chosen = refs.filter((r, i) => measures(trial, staffOf(r))[r.mi]?.[r.i] &&
@@ -456,8 +456,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         if (!overlaps) reuse.set(source, target);
       }
       const inserted = sourceVoices.filter(source => !reuse.has(source));
-      const oldVoice = (v) => v + (stacked ? (v > lowest ? inserted.length : 0) : inserted.filter((s) => delta > 0 ? s <= v : s < v).length);
-      const newVoice = (v) => stacked ? lowest + 1 + sourceVoices.indexOf(v) : reuse.has(v) ? oldVoice(reuse.get(v)) : oldVoice(v) - delta;
+      const oldVoice = (v) => targets ? v : v + (stacked ? (v > lowest ? inserted.length : 0) : inserted.filter((s) => delta > 0 ? s <= v : s < v).length);
+      const newVoice = (v) => targets ? targets.get(staff).get(v) : stacked ? lowest + 1 + sourceVoices.indexOf(v) : reuse.has(v) ? oldVoice(reuse.get(v)) : oldVoice(v) - delta;
       if (Math.max(...measure.map(ev => oldVoice(ev.v)), ...sourceVoices.map(newVoice)) > MAX_VOICE) return null;
       // Insertar una voz desplaza las de notacion, pero conserva su identidad de leyenda.
       // Leer el mapa original evita desplazarlo de nuevo en cada compas.
@@ -511,8 +511,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return [...found].sort((x, y) => x - y);
   }
 
-  // Duplica las voces `voices` (por defecto la superior) de toda la partitura `steps` pasos diatonicos abajo (2: una tercera; 5: una sexta). Con varias,
-  // las copias quedan juntas bajo la mas grave de las elegidas en cada compas. Devuelve las figuras creadas, o null
+  // Duplica las voces `voices` (por defecto la superior) de toda la partitura `steps` pasos diatonicos abajo.
+  // Reserva voces nuevas bajo las existentes, iguales en todos los compases. Devuelve las figuras creadas, o null
   // (sin tocar la partitura) si alguna no entra.
   // Con `only` (figuras elegidas) el alcance es esa seleccion y no la partitura entera.
   function duplicateVoice(score, voices = null, steps = 2, only = null) {
@@ -526,28 +526,40 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         measure.forEach((ev, i) => { if (chosen.has(ev.v)) refs.push(refOf(staff, mi, i)); });
       });
     }
-    const created = refs.length ? duplicateVertical(trial, refs, -1, true, steps) : null;
+    // Reservar destinos para toda la operacion, sin reutilizar voces existentes.
+    const targets = new Map();
+    for (const staff of new Set(refs.map(staffOf))) {
+      const lane = measures(trial, staff);
+      lane.forEach(settleVoices);
+      let next = Math.max(0, ...lane.flatMap(measure => measure.map(ev => ev.v)));
+      const sources = [...new Set(refs.filter(r => staffOf(r) === staff).map(r => lane[r.mi]?.[r.i]?.v))].filter(Number.isInteger).sort((a, b) => a - b);
+      if (next + sources.length > MAX_VOICE) return null;
+      targets.set(staff, new Map(sources.map(v => [v, ++next])));
+    }
+    const created = refs.length ? duplicateVertical(trial, refs, -1, true, steps, targets) : null;
     if (!created?.length) return null;
-    if (voicePerStaff(trial)) legendForCopies(trial, created);
+    if (voicePerStaff(trial) && !legendForCopies(trial, created, score)) return null;
     Object.assign(score, trial);
     return created;
   }
 
   // En coro y guitarra con varios pentagramas la leyenda numera las voces: la copia no debe heredar la de su original
-  // (se veria como la misma voz), sino tomar un numero de leyenda libre. Si no queda ninguno, hereda como antes.
-  function legendForCopies(score, created) {
+  // (se veria como la misma voz), sino tomar un numero de leyenda libre. Sin uno, se rechaza la copia.
+  function legendForCopies(score, created, original) {
     const staves = [...new Set(created.map(staffOf))];
     const taken = new Set();
-    for (let staff = 0; staff < stavesOf(score); staff += 1) legendsOf(score, staff).forEach((n) => taken.add(n));
+    for (let staff = 0; staff < stavesOf(score); staff += 1) legendsOf(original, staff).forEach((n) => taken.add(n));
     const ks = (staff) => [...new Set(created.filter((r) => staffOf(r) === staff).map((r) => measures(score, staff)[r.mi][r.i].v - 1))].sort((a, b) => a - b);
-    const maps = new Map(staves.map((staff) => [staff, Array.from({ length: MAX_VOICE }, (_, k) => legendOf(score, staff, k))]));
-    staves.forEach((staff) => ks(staff).forEach((k) => {
-      const free = [1, 2, 3, 4].find((n) => !taken.has(n));
-      if (!free) return;
+    const maps = new Map(staves.map((staff) => [staff, Array.from({ length: MAX_VOICE }, (_, k) => legendOf(original, staff, k))]));
+    for (const staff of staves) for (const k of ks(staff)) {
+      const next = Math.max(0, ...taken) + 1;
+      const free = next <= 4 ? next : [1, 2, 3, 4].find(n => !taken.has(n));
+      if (!free) return false;
       taken.add(free);
       maps.get(staff)[k] = free;
-    }));
+    }
     withMaps(score, (all) => maps.forEach((map, staff) => { all[staff] = map; }));
+    return true;
   }
 
   // Duplica las figuras elegidas justo despues de la ultima de ellas, conservando su ritmo relativo. Lo que no entra
@@ -2952,6 +2964,32 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return measure.some((ev, i) => ev.v !== previous[i]);
   }
 
+  function recalculateVoices(score) {
+    const before = JSON.stringify(score);
+    for (let staff = 0; staff < stavesOf(score); staff++) {
+      measures(score, staff).forEach((measure, mi) => mergeVoices(measure, capacity(score, mi)));
+    }
+    if (voicePerStaff(score) || score.voiceMap) {
+      const sounding = new Set(), silent = new Set();
+      const maps = [];
+      for (let staff = 0; staff < stavesOf(score); staff++) {
+        let size = 0;
+        measures(score, staff).forEach(measure => voices(measure).forEach((voice, k) => {
+          if (!voice.groups.length) return;
+          size = Math.max(size, k + 1);
+          const soundingVoice = voice.groups.some(group => group.indices.some(i => !measure[i].rest));
+          (soundingVoice ? sounding : silent).add(legendOf(score, staff, k));
+        }));
+        maps[staff] = Array.from({ length: size }, (_, k) => legendOf(score, staff, k));
+      }
+      const order = [...sounding].sort((a, b) => a - b).concat([...silent].filter(n => !sounding.has(n)).sort((a, b) => a - b));
+      withMaps(score, all => maps.forEach((map, staff) => {
+        if (map.length) all[staff] = map.map(n => Math.max(1, order.indexOf(n) + 1));
+      }));
+    }
+    return before !== JSON.stringify(score);
+  }
+
   // Fija `v` en todas las figuras segun la voz en la que hoy suenan, para que agregar otra no las reparta distinto.
   function settleVoices(measure) {
     voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => { measure[i].v = k + 1; })));
@@ -3665,7 +3703,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, leadingRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, leadingRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, recalculateVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, canJoinStaves, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, setTranspose, transposeOf, transposedForDisplay, MAX_TRANSPOSE, tuningOf, tuningLabels, meterOf, meterAt, setMeterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, playOrder, playSlots, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,

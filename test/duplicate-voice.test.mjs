@@ -21,7 +21,7 @@ test('lists the voice numbers present in the score', () => {
   assert.deepEqual(M.voiceNumbers(score), [1, 2]);
 });
 
-test('several voices are duplicated a third below, stacked under the lowest chosen one', () => {
+test('several voices get fresh destinations below the existing voices', () => {
   const score = M.emptyScore();
   score.rows[0][0] = [
     { n: 40, d: 'w', at: 0, v: 1 }, { n: 34, d: 'w', at: 0, v: 2 }, { n: 25, d: 'w', at: 0, v: 3 },
@@ -29,15 +29,15 @@ test('several voices are duplicated a third below, stacked under the lowest chos
   const created = M.duplicateVoice(score, [1, 2]);
   assert.equal(created.length, 2);
   const byVoice = (v) => score.rows[0][0].filter((ev) => ev.v === v).map((ev) => ev.n);
-  assert.deepEqual([1, 2, 3, 4, 5].map(byVoice), [[40], [34], [38], [32], [25]]);
+  assert.deepEqual([1, 2, 3, 4, 5].map(byVoice), [[40], [34], [25], [38], [32]]);
 });
 
-test('a single chosen voice is copied right below itself', () => {
+test('a single chosen voice is copied into a new independent voice', () => {
   const score = M.emptyScore();
   score.rows[0][0] = [{ n: 40, d: 'w', at: 0, v: 1 }, { n: 30, d: 'w', at: 0, v: 2 }];
   M.duplicateVoice(score, [1]);
   const byVoice = (v) => score.rows[0][0].filter((ev) => ev.v === v).map((ev) => ev.n);
-  assert.deepEqual([1, 2, 3].map(byVoice), [[40], [38], [30]]);
+  assert.deepEqual([1, 2, 3].map(byVoice), [[40], [30], [38]]);
 });
 
 test('duplicates the top voice a sixth below (five diatonic steps)', () => {
@@ -97,8 +97,58 @@ for (const steps of [3, 4, 5]) {
     const only = measure.flatMap((ev, i) => ev.v === 1 ? [C.refOf(0, 0, i)] : []);
     const created = C.duplicateVoice(score, null, steps, only);
     assert.ok(created);
-    assert.equal(C.legendOf(score, 0, 2), originalCopyLegend, 'the existing third must keep its own voice');
+    assert.equal(C.legendOf(score, 0, 1), originalCopyLegend, 'the existing third must keep its own voice');
     assert.equal(new Set([0, 1, 2].map(k => C.legendOf(score, 0, k))).size, 3);
     assert.deepEqual(C.sanitize(score).voiceMap, score.voiceMap);
   });
 }
+
+test('a sixth uses a fresh choir voice across measures, preserving occupied voice 3', () => {
+  const C = createScoreModel({ grandStaff: true, choir: true });
+  const score = C.emptyScore();
+  C.setInstrument(score, 'voices');
+  C.setParts(score, 2);
+  score.voiceMap = [[1, 3], null, null, null];
+  score.rows[0][0] = [{ d: 'q', n: 40, v: 1, at: 0 }];
+  score.rows[0][1] = [{ d: 'q', n: 40, v: 1, at: 0 }, { d: 'q', n: 38, v: 2, at: 0 }];
+  const originals = structuredClone(score.rows);
+  const refs = [C.refOf(0, 0, 0), C.refOf(0, 1, 0)];
+  const created = C.duplicateVoice(score, null, 5, refs);
+  assert.ok(created);
+  for (const ref of created) {
+    const ev = score.rows[0][ref.mi][ref.i];
+    assert.equal(C.legendOf(score, 0, ev.v - 1), 4);
+    assert.equal(ev.n, 35);
+  }
+  assert.equal(C.legendOf(score, 0, 1), 3);
+  originals[0].forEach((measure, mi) => measure.forEach(ev => {
+    assert.ok(score.rows[0][mi].some(after => JSON.stringify(after) === JSON.stringify(ev)));
+  }));
+});
+
+test('recalculation compacts legend 1 and 3 to 1 and 2 despite a silent lower staff', () => {
+  const C = createScoreModel({ grandStaff: true, choir: true });
+  const score = C.emptyScore();
+  C.setInstrument(score, 'voices');
+  C.setParts(score, 2);
+  score.voiceMap = [[1, 3], null, null, null];
+  score.rows[0][0] = [{ d: 'e', n: 33, v: 1, at: 0 }, { d: 'e', n: 31, v: 2, at: 0 }];
+  score.lower = { 0: [{ d: 'e', rest: true, v: 1, at: 0 }, { d: 'e', rest: true, v: 2, at: 0 }] };
+  const before = structuredClone(score.rows);
+  assert.equal(C.recalculateVoices(score), true);
+  assert.deepEqual(C.voices(score.rows[0][0]).map((_, k) => C.legendOf(score, 0, k)), [1, 2]);
+  assert.deepEqual(score.rows, before);
+  assert.deepEqual(C.sanitize(score).voiceMap, score.voiceMap);
+});
+
+
+test('single-staff duplication reserves voice 4 when voice 3 already has notes', () => {
+  const score = M.emptyScore();
+  score.rows[0][0] = [{ d: 'e', n: 33, v: 1, at: 0 }, { d: 'e', n: 31, v: 3, at: 0 }];
+  score.rows[0][1] = [{ d: 'e', n: 34, v: 1, at: 0 }];
+  const refs = [M.refOf(0, 0, 0), M.refOf(0, 1, 0)];
+  const copies = M.duplicateVoice(score, null, 5, refs);
+  assert.ok(copies);
+  assert.deepEqual(copies.map(r => score.rows[0][r.mi][r.i].v), [4, 4]);
+  assert.equal(score.rows[0][0].find(ev => ev.n === 31).v, 3);
+});

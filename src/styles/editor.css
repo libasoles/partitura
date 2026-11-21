@@ -2949,14 +2949,3 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 /* Las acciones de Voces conservan una sola fila dentro de Ajustes. */
 .score-settings-category[data-category="voices"] .score-settings-icon { min-width: 1.6rem; }
 .score-settings-category[data-category="voices"] .score-settings-icon svg { width: 20px; height: 20px; }
-#scoreFixVoices {
-  align-self: center;
-  place-items: center;
-  padding: 0.25rem;
-  border: 0;
-  border-radius: 0.25rem;
-  background: transparent;
-  color: var(--ink-soft);
-  cursor: pointer;
-}
-#scoreFixVoices:hover, #scoreFixVoices:focus-visible { color: var(--ink); background: var(--rule); }
