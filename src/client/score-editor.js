@@ -12,6 +12,7 @@ import { lyricSyllables } from './lyrics-text.js';
 import { measurePitches, pitchMidi } from './score-notes.js';
 import { applyUrlDefaults } from './url-defaults.js';
 import { createScoresDrawer } from './score-drawer.js';
+import { createTabLayout } from './score-tab-layout.js';
 import { DEMOS, demoLink } from './demos.js';
 
 export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, tools = {}, chords = false, lyrics = false, patterns = false, urlDefaults = {}, initialDemo } = {}) {
@@ -36,6 +37,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const removeRow = document.getElementById('scoreRemoveRow');
 
   const tabsBar = document.getElementById('scoreTabs');
+  const refreshTabLayout = createTabLayout(tabsBar);
   const editorSection = tabsBar.closest('.score-editor');
   const stored = loadAll();
   const docs = stored.scores; // una partitura por pestana
@@ -349,6 +351,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       }
     });
     enteringTab = -1;
+    refreshTabLayout();
     renderScoresMenu();
   }
 
