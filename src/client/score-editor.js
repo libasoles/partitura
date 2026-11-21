@@ -1337,7 +1337,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const chordNamesHeight = chordNamesButton.isConnected ? chordNamesButton.offsetHeight : 0;
     const restructureButtons = [joinButton, splitButton].filter((button) => button.isConnected);
     const restructureHeight = restructureButtons.reduce((sum, button) => sum + button.offsetHeight + (sum ? 8 : 0), 0);
-    const duplicateShown = duplicateVoiceButtons.filter((button) => button.isConnected);
+    const duplicateShown = [...duplicateVoiceButtons, fixVoiceButton].filter(Boolean).filter((button) => button.isConnected);
     const duplicateHeight = duplicateShown.reduce((sum, button, k) => sum + button.offsetHeight + (k ? 8 : 0), 0);
     const legendEnd = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
     const restructureEnd = legendEnd + (restructureHeight ? restructureHeight + (legendEnd ? 8 : 0) : 0);
@@ -5616,6 +5616,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Pro (categoria Voces): unir pentagramas y separar voces son dos herramientas de la barra izquierda, cada una con su popup
   // anclado al boton y los mismos circulos 1-4 de la leyenda.
+  let fixVoiceButton = null;
   let duplicateVoiceButtons = []; // Pro: la crea el bloque de Ajustes; vive en la barra izquierda
   function restructureTool(id, icon, tooltip, fill) {
     const button = document.createElement('button');
@@ -5818,6 +5819,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       if (!show && popup.matches(':popover-open')) popup.hidePopover();
     });
     duplicateVoiceButtons.forEach((button) => place(button, toolOn('voices', false)));
+    if (fixVoiceButton) place(fixVoiceButton, toolOn('voices', false));
     if (duplicateVoiceButtons.length && !toolOn('voices', false)) document.getElementById('scoreVoicePicker')?.hidePopover();
     sidebarShown = shownNow;
     alignVoiceLegend();
@@ -6510,12 +6512,21 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         const fixButton = document.createElement('button');
         fixButton.id = 'scoreFixVoices';
         fixButton.type = 'button';
-        fixButton.className = 'score-settings-icon';
+        fixButton.className = 'score-palette-item score-interval-toggle score-recalculate-voices-toggle tooltip';
         fixButton.setAttribute('aria-label', t.voiceFix);
         fixButton.title = t.voiceFixTooltip;
+        fixButton.dataset.tooltip = t.voiceFix;
         fixButton.innerHTML = lucide('fix-voices');
         fixButton.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); fix(); });
-        icons.appendChild(fixButton);
+        ['pointerdown', 'mousedown'].forEach(type => fixButton.addEventListener(type, event => event.stopPropagation()));
+        fixVoiceButton = fixButton;
+        const fixInfo = document.createElement('span');
+        fixInfo.className = 'score-settings-icon';
+        fixInfo.setAttribute('role', 'img');
+        fixInfo.setAttribute('aria-label', t.voiceFix);
+        fixInfo.title = t.voiceFixTooltip;
+        fixInfo.innerHTML = lucide('fix-voices');
+        icons.appendChild(fixInfo);
       }
       if (name === 'playback') {
         for (const name of ['play', 'pause']) {
@@ -6838,13 +6849,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Para la consola: recalcula las voces sin fusionarlas ni cambiar sus tiempos. Se puede deshacer.
   function fix() {
-    return change(() => {
-      const before = JSON.stringify(score);
-      for (let staff = 0; staff < M.stavesOf(score); staff += 1) {
-        M.measures(score, staff).forEach((measure, mi) => M.mergeVoices(measure, M.capacity(score, mi)));
-      }
-      return before !== JSON.stringify(score);
-    });
+    return change(() => M.recalculateVoices(score));
   }
 
   window.scoreEditor = { get score() { return score; }, render, fix, get ghostOffset() { return ghostOffset; }, set ghostOffset(value) { ghostOffset = value; } };
