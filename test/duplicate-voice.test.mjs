@@ -83,3 +83,22 @@ test("switching from piano to voices keeps each notation voice on its own legend
   C.setInstrument(score, "voices");
   assert.deepEqual(C.voices(score.rows[0][0]).map((_, k) => C.legendOf(score, 0, k)), [1, 2]);
 });
+
+for (const steps of [3, 4, 5]) {
+  test(`choir: duplicating an upper voice by ${steps} steps preserves existing legend identities`, () => {
+    const C = createScoreModel({ grandStaff: true, choir: true });
+    const score = C.emptyScore();
+    C.setInstrument(score, 'voices');
+    C.setParts(score, 2);
+    score.rows[0][0] = [37, 40].map(n => ({ d: 'q', n }));
+    C.duplicateVoice(score, null, 2);
+    const originalCopyLegend = C.legendOf(score, 0, 1);
+    const measure = score.rows[0][0];
+    const only = measure.flatMap((ev, i) => ev.v === 1 ? [C.refOf(0, 0, i)] : []);
+    const created = C.duplicateVoice(score, null, steps, only);
+    assert.ok(created);
+    assert.equal(C.legendOf(score, 0, 2), originalCopyLegend, 'the existing third must keep its own voice');
+    assert.equal(new Set([0, 1, 2].map(k => C.legendOf(score, 0, k))).size, 3);
+    assert.deepEqual(C.sanitize(score).voiceMap, score.voiceMap);
+  });
+}

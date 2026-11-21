@@ -459,6 +459,14 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       const oldVoice = (v) => v + (stacked ? (v > lowest ? inserted.length : 0) : inserted.filter((s) => delta > 0 ? s <= v : s < v).length);
       const newVoice = (v) => stacked ? lowest + 1 + sourceVoices.indexOf(v) : reuse.has(v) ? oldVoice(reuse.get(v)) : oldVoice(v) - delta;
       if (Math.max(...measure.map(ev => oldVoice(ev.v)), ...sourceVoices.map(newVoice)) > MAX_VOICE) return null;
+      // Insertar una voz desplaza las de notacion, pero conserva su identidad de leyenda.
+      // Leer el mapa original evita desplazarlo de nuevo en cada compas.
+      if (voicePerStaff(trial) && legendMapOf(score, staff)) {
+        const size = Math.max(...measure.map(ev => oldVoice(ev.v)), ...sourceVoices.map(newVoice));
+        const map = Array.from({ length: size }, (_, k) => legendOf(score, staff, k));
+        measure.forEach(ev => { map[oldVoice(ev.v) - 1] = legendOf(score, staff, ev.v - 1); });
+        withMaps(trial, all => { all[staff] = map; });
+      }
       let nextTuplet = Math.max(0, ...measure.map((ev) => ev.tp || 0));
       const tuplets = new Map();
       const inserts = group.map((ref) => {

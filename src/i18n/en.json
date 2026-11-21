@@ -41,7 +41,7 @@
     "<strong>Playback:</strong> listen to the score with piano, guitar or choir, following repeats and jumps, starting wherever you click.",
     "<strong>Song lyrics:</strong> type or paste syllables under the notes; they appear in the PDF and the MusicXML.",
     "<strong>Transposition (Pro):</strong> make the score sound higher or lower, from −12 to +12 semitones, without changing what is written.",
-    "<strong>Several voices (Pro):</strong> up to 4 staves, duplicate a voice a third or a sixth below, and join or split staves.",
+    "<strong>Several voices (Pro):</strong> up to 4 staves, duplicate a voice a third, fourth, fifth or sixth below, and join or split staves.",
     "<strong>Intervals and chords (Pro):</strong> show the distance between voices and the name of each chord.",
     "<strong>Tabs and folders (Pro):</strong> close tabs without deleting, sort your scores into folders and duplicate them to try variations."
   ],
@@ -189,6 +189,12 @@
     "toolsDynamics": "Dynamics",
     "voiceDuplicate": "Duplicate voice a third below",
     "voiceDuplicateTooltip": "Creates a voice a third below the one you choose, across the whole score",
+    "voiceDuplicateFourth": "Duplicate voice a fourth below",
+    "voiceDuplicateFourthTooltip": "Creates a voice a fourth below the one you choose, across the whole score",
+    "voiceDuplicateFifth": "Duplicate voice a fifth below",
+    "voiceDuplicateFifthTooltip": "Creates a voice a fifth below the one you choose, across the whole score",
+    "voiceFix": "Recalculate voices",
+    "voiceFixTooltip": "Recalculates voices across the score, preserving onsets and durations. Can be undone.",
     "voiceDuplicateSixth": "Duplicate voice a sixth below",
     "voiceDuplicateSixthTooltip": "Creates a voice a sixth below the one you choose, across the whole score",
     "voiceDuplicatePick": "Voices to duplicate",
@@ -542,7 +548,7 @@
       ],
       "staves": [
         "Several voices and staves",
-        "Choose how many voices the score has, duplicate them a third or a sixth below, and join or split staves."
+        "Choose how many voices the score has, duplicate them a third, fourth, fifth or sixth below, and join or split staves."
       ],
       "intervals": [
         "Intervals and chord names",
@@ -786,7 +792,7 @@
       "staves": {
         "steps": [
           "In Settings {{icon:settings}}, with <em>Guitar</em> or <em>Voices</em> (choir), the <strong>Number of voices</strong> slider goes from 1 to 4: each voice gets its own staff. Lowering the number only hides staves; raising it brings back what you wrote. With guitar there is a single tablature under the last staff that fingers all the voices together.",
-          "<strong>Duplicate voice:</strong> with <em>Voices</em> on, the <em>↓3</em> and <em>↓6</em> buttons of the left bar copy a voice a diatonic third or sixth below, in every measure. With figures selected they copy only those; with voices chosen in the legend, only those voices; with no selection and several voices, a panel lets you choose which. If a note does not fit nothing changes, and it undoes in one step.",
+          "<strong>Duplicate voice:</strong> with <em>Voices</em> on, the <em>↓3</em>, <em>↓4</em>, <em>↓5</em> and <em>↓6</em> buttons of the left bar copy a voice a diatonic third, fourth, fifth or sixth below, in every measure. With figures selected they copy only those; with voices chosen in the legend, only those voices; with no selection and several voices, a panel lets you choose which. If a note does not fit nothing changes, and it undoes in one step. In the <em>Voices</em> category in Settings, <em>Recalculate voices</em> {{icon:fix-voices}} infers voices again without changing onsets or durations; it can be undone.",
           "<strong>Split voices</strong> {{icon:split}}: moves the voices you tick from one staff to a new staff below. Choose them in the panel and press <em>Split</em>; the original staff always keeps at least one voice.",
           "<strong>Join staves</strong> {{icon:merge}}: gathers two or more staves into one, each voice keeping its number, and the staves below move up. The panel comes with all of them ticked.",
           "Each voice keeps its color and its place in the legend, so you can split them again later. Both actions are all-or-nothing: if two voices would share the same note at the same time, or the result would exceed 4 staves or 16 voices, nothing happens and you are told. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes them."
@@ -931,8 +937,8 @@
         "Raise or lower what plays back and exports to MIDI by up to 12 semitones without touching the notation, in the Partitura score editor."
       ],
       "staves": [
-        "Several voices, duplicate a third or sixth below, join and split staves",
-        "Pick 1 to 4 voices, duplicate a voice a third or a sixth below, split voices onto a new staff or join several staves into one in the Partitura score editor."
+        "Several voices, duplicate a third, fourth, fifth or sixth below, join and split staves",
+        "Pick 1 to 4 voices, duplicate a voice a third, fourth, fifth or sixth below, split voices onto a new staff or join several staves into one in the Partitura score editor."
       ],
       "intervals": [
         "Intervals between voices and chord names on the score",
@@ -993,7 +999,7 @@
       ],
       [
         "Duplicate voice",
-        "Copy a voice a third or a sixth below with a single button."
+        "Copy a voice a third, fourth, fifth or sixth below with a single button."
       ],
       [
         "Transposition",
