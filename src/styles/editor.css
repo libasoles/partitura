@@ -2940,3 +2940,23 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-problems-name { display: block; font-size: 0.95rem; font-weight: 700; }
 .score-problems-reason { display: block; margin-top: -0.25rem; font-size: 0.8rem; opacity: 0.75; }
 .score-problems-sketch { display: block; width: 100%; height: auto; max-height: 9rem; }
+
+/* Elevar tambien el boton: el fade crea un contexto que encierra su tooltip. */
+.score-page .tooltip:hover,
+.score-page .tooltip:focus-visible { z-index: 20; }
+.score-chord-names-toggle svg { width: 28px; height: 28px; }
+
+/* Las acciones de Voces conservan una sola fila dentro de Ajustes. */
+.score-settings-category[data-category="voices"] .score-settings-icon { min-width: 1.6rem; }
+.score-settings-category[data-category="voices"] .score-settings-icon svg { width: 20px; height: 20px; }
+#scoreFixVoices {
+  align-self: center;
+  place-items: center;
+  padding: 0.25rem;
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+#scoreFixVoices:hover, #scoreFixVoices:focus-visible { color: var(--ink); background: var(--rule); }

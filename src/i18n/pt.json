@@ -41,7 +41,7 @@
     "<strong>Reprodução:</strong> ouça a partitura com piano, violão ou coro, seguindo repetições e saltos, começando de onde você clicar.",
     "<strong>Letra de canção:</strong> escreva ou cole sílabas sob as notas; saem no PDF e no MusicXML.",
     "<strong>Transposição (Pro):</strong> faça a partitura soar mais aguda ou mais grave, de −12 a +12 semitons, sem mudar o que está escrito.",
-    "<strong>Várias vozes (Pro):</strong> até 4 pautas, duplique uma voz uma terça ou sexta abaixo e una ou separe pautas.",
+    "<strong>Várias vozes (Pro):</strong> até 4 pautas, duplique uma voz uma terça, quarta, quinta ou sexta abaixo e una ou separe pautas.",
     "<strong>Intervalos e acordes (Pro):</strong> mostre a distância entre as vozes e o nome de cada acorde.",
     "<strong>Abas e pastas (Pro):</strong> feche abas sem apagar, organize suas partituras em pastas e duplique-as para testar variações."
   ],
@@ -189,6 +189,12 @@
     "toolsDynamics": "Dinâmica",
     "voiceDuplicate": "Duplicar voz uma terça abaixo",
     "voiceDuplicateTooltip": "Cria uma voz uma terça abaixo da que você escolher, em toda a partitura",
+    "voiceDuplicateFourth": "Duplicar voz uma quarta abaixo",
+    "voiceDuplicateFourthTooltip": "Cria uma voz uma quarta abaixo da que você escolher, em toda a partitura",
+    "voiceDuplicateFifth": "Duplicar voz uma quinta abaixo",
+    "voiceDuplicateFifthTooltip": "Cria uma voz uma quinta abaixo da que você escolher, em toda a partitura",
+    "voiceFix": "Recalcular vozes",
+    "voiceFixTooltip": "Recalcula as vozes de toda a partitura, preservando os tempos e as durações. Pode ser desfeito.",
     "voiceDuplicateSixth": "Duplicar voz uma sexta abaixo",
     "voiceDuplicateSixthTooltip": "Cria uma voz uma sexta abaixo da que você escolher, em toda a partitura",
     "voiceDuplicatePick": "Vozes a duplicar",
@@ -542,7 +548,7 @@
       ],
       "staves": [
         "Várias vozes e pautas",
-        "Escolha quantas vozes a partitura tem, duplique-as uma terça ou sexta abaixo e una ou separe pautas."
+        "Escolha quantas vozes a partitura tem, duplique-as uma terça, quarta, quinta ou sexta abaixo e una ou separe pautas."
       ],
       "intervals": [
         "Intervalos e nomes de acorde",
@@ -786,7 +792,7 @@
       "staves": {
         "steps": [
           "Nos Ajustes {{icon:settings}}, com <em>Violão</em> ou com <em>Vozes</em> (coro), o controle <strong>Quantidade de vozes</strong> vai de 1 a 4: cada voz tem a sua própria pauta. Diminuir a quantidade só oculta pautas; ao aumentar, volta o que você tinha escrito. Com violão há uma única tablatura, abaixo da última pauta, que digita todas as vozes juntas.",
-          "<strong>Duplicar voz:</strong> com <em>Vozes</em> ativo, os botões <em>↓3</em> e <em>↓6</em> da barra esquerda copiam uma voz uma terça ou sexta diatônica abaixo, em todos os compassos. Com figuras selecionadas copiam só elas; com vozes escolhidas na legenda, só essas vozes; sem seleção e com várias vozes, um painel deixa escolher quais. Se alguma nota não couber, nada muda, e desfaz de uma vez.",
+          "<strong>Duplicar voz:</strong> com <em>Vozes</em> ativo, os botões <em>↓3</em>, <em>↓4</em>, <em>↓5</em> e <em>↓6</em> da barra esquerda copiam uma voz uma terça, quarta, quinta ou sexta diatônica abaixo, em todos os compassos. Com figuras selecionadas copiam só elas; com vozes escolhidas na legenda, só essas vozes; sem seleção e com várias vozes, um painel deixa escolher quais. Se alguma nota não couber, nada muda, e desfaz de uma vez. Na categoria <em>Vozes</em> dos Ajustes, <em>Recalcular vozes</em> {{icon:fix-voices}} infere as vozes novamente sem alterar os tempos ou as durações; pode ser desfeito.",
           "<strong>Separar vozes</strong> {{icon:split}}: passa as vozes marcadas de uma pauta para uma nova abaixo. Escolha-as no painel e aperte <em>Separar</em>; sempre sobra alguma voz na pauta original.",
           "<strong>Unir pautas</strong> {{icon:merge}}: reúne duas ou mais pautas numa só, cada voz com seu número, e as de baixo sobem. O painel as traz todas marcadas.",
           "Cada voz mantém sua cor e seu lugar na legenda, então depois você pode separá-las de novo. As duas ações são tudo ou nada: se duas vozes tivessem a mesma nota ao mesmo tempo, ou o resultado passasse de 4 pautas ou 16 vozes, não é feito e você é avisado. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> as desfaz."
@@ -931,8 +937,8 @@
         "Suba ou desça até 12 semitons o que soa na reprodução e no MIDI, sem mexer na notação, no editor de partituras Partitura."
       ],
       "staves": [
-        "Várias vozes, duplicar em terça ou sexta, unir e separar pautas",
-        "Escolha de 1 a 4 vozes, duplique uma voz uma terça ou sexta abaixo, separe vozes em outra pauta ou reúna várias numa só no editor de partituras Partitura."
+        "Várias vozes, duplicar em terça, quarta, quinta ou sexta, unir e separar pautas",
+        "Escolha de 1 a 4 vozes, duplique uma voz uma terça, quarta, quinta ou sexta abaixo, separe vozes em outra pauta ou reúna várias numa só no editor de partituras Partitura."
       ],
       "intervals": [
         "Intervalos entre vozes e nomes de acorde na partitura",
@@ -993,7 +999,7 @@
       ],
       [
         "Duplicar voz",
-        "Copie uma voz uma terça ou sexta abaixo com um único botão."
+        "Copie uma voz uma terça, quarta, quinta ou sexta abaixo com um único botão."
       ],
       [
         "Transposição",

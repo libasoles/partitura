@@ -4871,11 +4871,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // ---- paleta -------------------------------------------------------------
 
   const ICONS = {
+    'fix-voices': '<path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 7a7 7 0 0 1 11.55-1.1L20 9M4 15l2.35 3.1A7 7 0 0 0 17.9 17"/>',
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
     'third-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17.5" y="19.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor" stroke="none">3</text>',
+    'fourth-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17.5" y="19.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor" stroke="none">4</text>',
+    'fifth-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17.5" y="19.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor" stroke="none">5</text>',
     'sixth-below': '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><text x="17.5" y="19.5" text-anchor="middle" font-size="17" font-weight="700" fill="currentColor" stroke="none">6</text>',
     merge: '<path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/>',
-    split: '<path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.828L3 3"/><path d="m15 9 6-6"/>',
+    split: '<g transform="rotate(180 12 12)"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.828L3 3"/><path d="m15 9 6-6"/></g>',
     play: '<polygon points="6 3 20 12 6 21 6 3"/>',
     pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
     x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
@@ -6395,9 +6398,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         }
       }
       if (name === 'voices' && proChordNames) {
-        // Dos botones, una tercera o una sexta abajo (pasos diatonicos 2 y 5), con un solo popup para elegir voces.
+        // Cuatro botones, de tercera a sexta abajo (pasos diatonicos 2 a 5), con un solo popup para elegir voces.
         const duplicateKinds = [
           { id: 'scoreDuplicateVoice', icon: 'third-below', steps: 2, label: t.voiceDuplicate, tip: t.voiceDuplicateTooltip },
+          { id: 'scoreDuplicateVoiceFourth', icon: 'fourth-below', steps: 3, label: t.voiceDuplicateFourth, tip: t.voiceDuplicateFourthTooltip },
+          { id: 'scoreDuplicateVoiceFifth', icon: 'fifth-below', steps: 4, label: t.voiceDuplicateFifth, tip: t.voiceDuplicateFifthTooltip },
           { id: 'scoreDuplicateVoiceSixth', icon: 'sixth-below', steps: 5, label: t.voiceDuplicateSixth, tip: t.voiceDuplicateSixthTooltip },
         ];
         let duplicateSteps = 2, duplicateAnchor = null;
@@ -6502,6 +6507,15 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         return duplicate;
         };
         duplicateVoiceButtons = duplicateKinds.map(buildDuplicate);
+        const fixButton = document.createElement('button');
+        fixButton.id = 'scoreFixVoices';
+        fixButton.type = 'button';
+        fixButton.className = 'score-settings-icon';
+        fixButton.setAttribute('aria-label', t.voiceFix);
+        fixButton.title = t.voiceFixTooltip;
+        fixButton.innerHTML = lucide('fix-voices');
+        fixButton.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); fix(); });
+        icons.appendChild(fixButton);
       }
       if (name === 'playback') {
         for (const name of ['play', 'pause']) {
@@ -6824,9 +6838,13 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Para la consola: recalcula las voces sin fusionarlas ni cambiar sus tiempos. Se puede deshacer.
   function fix() {
-    const before = JSON.stringify(score.rows);
-    change(() => { for (let staff = 0; staff < M.stavesOf(score); staff += 1) M.measures(score, staff).forEach((measure, mi) => { M.mergeVoices(measure, M.capacity(score, mi)); }); });
-    return before !== JSON.stringify(score.rows);
+    return change(() => {
+      const before = JSON.stringify(score);
+      for (let staff = 0; staff < M.stavesOf(score); staff += 1) {
+        M.measures(score, staff).forEach((measure, mi) => M.mergeVoices(measure, M.capacity(score, mi)));
+      }
+      return before !== JSON.stringify(score);
+    });
   }
 
   window.scoreEditor = { get score() { return score; }, render, fix, get ghostOffset() { return ghostOffset; }, set ghostOffset(value) { ghostOffset = value; } };

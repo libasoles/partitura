@@ -1480,21 +1480,22 @@ export function chordNames(s, aria) {
   return d.html(aria);
 }
 
-/** The ↓3 and ↓6 buttons of the left bar copy the whole voice a third or a sixth below. */
+/** Each button copies the voice at its chosen diatonic interval. */
 export function duplicateButtons(s, aria) {
-  const d = stage({ id: 'pro-duplicate-buttons', T: 14, h: 120 });
+  const d = stage({ id: 'pro-duplicate-buttons', T: 20, h: 170 });
   const xs = [0, 1, 2].map((i) => d.firstX + 30 + i * 55);
   const top = [5, 6, 7];
   xs.forEach((x, i) => {
     d.note(x, top[i], 'q', S(d.life(0.05), [[0, { c: VOICE[0] }]]), { stemDown: false });
-    d.note(x, top[i] - 2, 'q', S(d.pop(3.4), [[0, { c: VOICE[1] }]]), { bare: true, keep: false });
-    d.note(x, top[i] - 5, 'q', S(d.pop(8.4), [[0, { c: VOICE[2] }]]), { stemDown: true, keep: false });
+    [2, 3, 4, 5].forEach((steps, k) => {
+      d.note(x, top[i] - steps, 'q', S(d.life(3.4 + k * 4, 6.8 + k * 4), [[0, { c: VOICE[1] }]]), { stemDown: true, keep: false });
+    });
   });
   const bx = d.w - 24;
-  [['↓3', 30, 3.2], ['↓6', 62, 8.2]].forEach(([text, y, t]) => {
+  [['↓3', 30, 3.2], ['↓4', 62, 7.2], ['↓5', 94, 11.2], ['↓6', 126, 15.2]].forEach(([text, y, t]) => {
     d.base(`<g transform="translate(${bx} ${y})"><rect class="d-toolbtn" x="-13" y="-11" width="26" height="22" rx="5"/><text class="d-menutext" text-anchor="middle" y="3.5" font-size="9">${text}</text></g>`);
     d.click(t, bx, y);
   });
-  d.pointer([[0.5, d.w - 24, d.h - 12], ...visit(3.2, bx, 30), ...visit(8.2, bx, 62), [11, d.w - 24, d.h - 12]]);
+  d.pointer([[0.5, d.w - 24, d.h - 12], ...visit(3.2, bx, 30), ...visit(7.2, bx, 62), ...visit(11.2, bx, 94), ...visit(15.2, bx, 126), [19, d.w - 24, d.h - 12]]);
   return d.html(aria);
 }

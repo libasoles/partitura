@@ -39,7 +39,7 @@
     "<strong>Reproducción:</strong> escuchá la partitura con piano, guitarra o coro, siguiendo repeticiones y saltos, y empezá desde donde hagas clic.",
     "<strong>Letra de canto:</strong> escribí o pegá sílabas bajo las notas; salen en el PDF y en el MusicXML.",
     "<strong>Transposición (Pro):</strong> hacé sonar la partitura más aguda o más grave, de −12 a +12 semitonos, sin cambiar lo escrito.",
-    "<strong>Varias voces (Pro):</strong> hasta 4 pentagramas, duplicá una voz a una tercera o una sexta, y uní o separá pentagramas.",
+    "<strong>Varias voces (Pro):</strong> hasta 4 pentagramas, duplicá una voz a una tercera, cuarta, quinta o sexta, y uní o separá pentagramas.",
     "<strong>Intervalos y acordes (Pro):</strong> mostrá la distancia entre las voces y el nombre de cada acorde.",
     "<strong>Pestañas y carpetas (Pro):</strong> cerrá pestañas sin borrar, ordená tus partituras en carpetas y duplicalas para probar variantes."
   ],
@@ -185,6 +185,12 @@
     "toolsDynamics": "Dinámica",
     "voiceDuplicate": "Duplicar voz a una tercera abajo",
     "voiceDuplicateTooltip": "Crea una voz una tercera debajo de la que elijas, en toda la partitura",
+    "voiceDuplicateFourth": "Duplicar voz a una cuarta abajo",
+    "voiceDuplicateFourthTooltip": "Crea una voz una cuarta debajo de la que elijas, en toda la partitura",
+    "voiceDuplicateFifth": "Duplicar voz a una quinta abajo",
+    "voiceDuplicateFifthTooltip": "Crea una voz una quinta debajo de la que elijas, en toda la partitura",
+    "voiceFix": "Recalcular voces",
+    "voiceFixTooltip": "Recalcula las voces de toda la partitura conservando los tiempos y las duraciones. Se puede deshacer.",
     "voiceDuplicateSixth": "Duplicar voz a una sexta abajo",
     "voiceDuplicateSixthTooltip": "Crea una voz una sexta debajo de la que elijas, en toda la partitura",
     "voiceDuplicatePick": "Voces a duplicar",
@@ -538,7 +544,7 @@
       ],
       "staves": [
         "Varias voces y pentagramas",
-        "Elegí cuántas voces tiene la partitura, duplicalas a una tercera o sexta y uní o separá pentagramas."
+        "Elegí cuántas voces tiene la partitura, duplicalas a una tercera, cuarta, quinta o sexta y uní o separá pentagramas."
       ],
       "intervals": [
         "Intervalos y nombres de acorde",
@@ -782,7 +788,7 @@
       "staves": {
         "steps": [
           "En los Ajustes {{icon:settings}}, con <em>Guitarra</em> o con <em>Voces</em> (coro), el deslizador <strong>Cantidad de voces</strong> va de 1 a 4: cada voz tiene su propio pentagrama. Bajar la cantidad solo oculta pentagramas; al subirla reaparece lo que habías escrito. Con guitarra hay una sola tablatura, bajo el último pentagrama, que digita todas las voces juntas.",
-          "<strong>Duplicar voz:</strong> con <em>Voces</em> activo, los botones <em>↓3</em> y <em>↓6</em> de la barra izquierda copian una voz una tercera o una sexta diatónica abajo, en todos los compases. Con figuras seleccionadas copian solo esas figuras; con voces elegidas en la leyenda, solo esas voces; sin selección y con varias voces, un panel te deja elegir cuáles. Si alguna nota no entra, no cambia nada, y se deshace de una vez.",
+          "<strong>Duplicar voz:</strong> con <em>Voces</em> activo, los botones <em>↓3</em>, <em>↓4</em>, <em>↓5</em> y <em>↓6</em> de la barra izquierda copian una voz una tercera, cuarta, quinta o sexta diatónica abajo, en todos los compases. Con figuras seleccionadas copian solo esas figuras; con voces elegidas en la leyenda, solo esas voces; sin selección y con varias voces, un panel te deja elegir cuáles. Si alguna nota no entra, no cambia nada, y se deshace de una vez. En la categoría <em>Voces</em> de Ajustes, <em>Recalcular voces</em> {{icon:fix-voices}} vuelve a inferir las voces sin cambiar los tiempos ni las duraciones; se puede deshacer.",
           "<strong>Separar voces</strong> {{icon:split}}: pasa las voces que marques de un pentagrama a uno nuevo debajo. Elegilas en el panel y apretá <em>Separar</em>; siempre queda alguna voz en el pentagrama original.",
           "<strong>Unir pentagramas</strong> {{icon:merge}}: reúne dos o más pentagramas en uno, cada voz con su número, y los de abajo suben. El panel los trae todos marcados.",
           "Cada voz conserva su color y su lugar en la leyenda, así que después podés volver a separarlas. Ambas acciones son de todo o nada: si dos voces tuvieran la misma nota a la vez, o el resultado superara los 4 pentagramas o las 16 voces, no se hace y se avisa. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> las deshace."
@@ -927,8 +933,8 @@
         "Subí o bajá hasta 12 semitonos lo que suena en la reproducción y en el MIDI, sin tocar la notación, con el editor de partituras Partitura."
       ],
       "staves": [
-        "Varias voces, duplicar a tercera o sexta, unir y separar pentagramas",
-        "Elegí de 1 a 4 voces, duplicá una voz a una tercera o una sexta, separá voces en otro pentagrama o reuní varios en uno con el editor de partituras Partitura."
+        "Varias voces, duplicar a tercera, cuarta, quinta o sexta, unir y separar pentagramas",
+        "Elegí de 1 a 4 voces, duplicá una voz a una tercera, cuarta, quinta o sexta, separá voces en otro pentagrama o reuní varios en uno con el editor de partituras Partitura."
       ],
       "intervals": [
         "Intervalos entre voces y nombres de acorde en la partitura",
@@ -990,7 +996,7 @@
       ],
       [
         "Duplicar voz",
-        "Copiá una voz una tercera o una sexta abajo con un solo botón."
+        "Copiá una voz una tercera, cuarta, quinta o sexta abajo con un solo botón."
       ],
       [
         "Transposición",
