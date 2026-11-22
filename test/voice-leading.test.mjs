@@ -142,3 +142,48 @@ test('forming a chord cannot change durations or consume only part of an existin
   assert.equal(M.applySelection(continuation, refs, 'joinChord'), false, 'the remaining bass must not jump to time zero');
   assert.deepEqual(continuation, saved);
 });
+
+const crossingExamples = [
+  [[34, 32, 'e'], [33, 31, 'q'], [null, null, 'e'], [31, 29, 'e'], [31, 29, 'e']],
+  [[33, 31, 'e'], [31, 29, 'e'], [32, 30, 'q'], [null, null, 'e'], [30, 28, 'e']],
+];
+
+for (const [example, columns] of crossingExamples.entries()) {
+  test(`recalculation avoids unnecessary voice crossings in reported example ${example + 1}`, () => {
+    let at = 0;
+    const measure = columns.flatMap(([high, low, d], k) => {
+      const swapped = example === 0 ? k >= 3 : k === 1 || k === 2;
+      const pair = [high, low].map((n, j) => ({
+        d, ...(n === null ? { rest: true } : { n }),
+        v: swapped ? 2 - j : j + 1, at,
+      }));
+      at += d === 'q' ? 24 : 12;
+      return pair;
+    });
+    const score = scoreWith(measure);
+    if (example === 1) score.rows[0].unshift([
+      { d: 'e', n: 31, v: 1, at: 48 }, { d: 'e', n: 29, v: 2, at: 48 },
+      { d: 'e', n: 31, v: 1, at: 60 }, { d: 'e', n: 29, v: 2, at: 60 },
+    ]);
+    const target = example === 1 ? 1 : 0;
+    const before = M.onsets(score.rows[0][target]);
+    const original = structuredClone(score.rows[0][target]);
+    M.recalculateVoices(score);
+    const result = score.rows[0][target];
+    assert.deepEqual(result.filter(ev => !ev.rest).map(ev => ev.v),
+      result.filter(ev => !ev.rest).map((_, i) => i % 2 + 1));
+    assert.deepEqual(M.onsets(result), before);
+    assert.deepEqual(result.map(({ v, ...ev }) => ev), original.map(({ v, ...ev }) => ev));
+    const fixed = structuredClone(score);
+    M.recalculateVoices(score);
+    assert.deepEqual(score, fixed, 'repeated recalculation is stable');
+  });
+}
+
+test('equal total movement favors parallel steps independently of event order', () => {
+  for (const reverse of [false, true]) {
+    const measure = [[33, 31], [31, 29]].flatMap((notes, k) =>
+      (reverse ? notes.toReversed() : notes).map(n => ({ n, d: 'e', at: k * 12 })));
+    assert.deepEqual(lines(measure), [[[33], [31]], [[31], [29]]]);
+  }
+});

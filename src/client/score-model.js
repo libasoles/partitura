@@ -173,6 +173,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       const pitch = register[Math.round(k * (register.length - 1) / Math.max(1, count - 1))];
       return pitch === undefined ? [] : [pitch];
     });
+    // Desempatar por movimientos mas repartidos: una voz quieta y otra que salta
+    // no deben ganar a dos pasos paralelos. El movimiento total sigue teniendo prioridad.
+    const span = register.length ? register[0] - register[register.length - 1] : 0;
+    // Mayor que la suma maxima de cuadrados de toda la asignacion (dos anclas por voz).
+    const movementScale = 2 * count * span * span + 1;
     batches.forEach(({ at, units }) => {
       const taken = new Set();
       const unknown = [];
@@ -188,8 +193,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         // La siguiente decision explicita tambien informa la continuidad (entrada tardia, cruces).
         const after = batches.find((b) => b.at > at && b.units.some((u) => savedVoice(measure[u[0]]) === k + 1 && pitches(u).length));
         const next = after?.units.find((u) => savedVoice(measure[u[0]]) === k + 1 && pitches(u).length);
-        if (before || next) return (before ? distance(own, before) : 0) + (next ? distance(own, pitches(next)) : 0);
-        return distance(own, seedPitches[k]);
+        const steps = before || next
+          ? [before ? distance(own, before) : 0, next ? distance(own, pitches(next)) : 0]
+          : [distance(own, seedPitches[k])];
+        return steps.reduce((sum, step) => sum + step, 0) * movementScale
+          + steps.reduce((sum, step) => sum + step * step, 0);
       };
       // Asignacion conjunta: dos notas simultaneas no compiten codiciosamente por la misma linea.
       const assigned = minimumAssignment(unknown.map((unit) => free.map((k) => cost(unit, k))));
