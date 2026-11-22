@@ -4185,6 +4185,22 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   document.addEventListener('keydown', (event) => {
     if (event.target.closest('input, textarea, select, [contenteditable], ascii-tabs, .score-settings-popup')) return;
+    if ((event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'a' && isOpen(active)) {
+      event.preventDefault();
+      const refs = [];
+      const voices = toolOn('voices', false) && shownVoices.size ? shownVoices : null;
+      for (let staff = 0; staff < M.stavesOf(score); staff++) {
+        M.measures(score, staff).forEach((measure, mi) => {
+          const indices = voices ? M.selectedEvents(score, staff, measure, voices) : null;
+          measure.forEach((_, i) => { if (!indices || indices.has(i)) refs.push(M.refOf(staff, mi, i)); });
+        });
+      }
+      deactivateTool();
+      clearBarSelection();
+      setPicks(refs);
+      stage.focus({ preventScroll: true });
+      return;
+    }
     if (!event.metaKey && !event.ctrlKey && !event.altKey && (event.key === 'Delete' || event.key === 'Backspace')) {
       if (removeSelectedBars()) { event.preventDefault(); return; }
     }

@@ -594,7 +594,7 @@
       },
       "select-move": {
         "steps": [
-          "Clique numa figura para selecioná-la. Com <kbd>Shift</kbd>, <kbd>Ctrl</kbd> ou <kbd>Cmd</kbd> você soma mais. Arrastando a partir de um ponto vazio da pauta, você as cerca com um retângulo.",
+          "Clique numa figura para selecioná-la. Com <kbd>Shift</kbd>, <kbd>Ctrl</kbd> ou <kbd>Cmd</kbd> você soma mais. Arrastando a partir de um ponto vazio da pauta, você as cerca com um retângulo. Pressione <kbd>Cmd</kbd> + <kbd>A</kbd> no macOS ou <kbd>Ctrl</kbd> + <kbd>A</kbd> no Linux e Windows para selecionar todas as notas e pausas da partitura. Se houver vozes escolhidas na barra lateral e a ferramenta Vozes estiver ativa, apenas essas vozes serão selecionadas.",
           "<kbd>↑</kbd> e <kbd>↓</kbd> sobem ou descem a seleção um passo da pauta; <kbd>←</kbd> e <kbd>→</kbd> passam para a figura ao lado. Também dá para arrastar as figuras para outro lugar.",
           "Use <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd> para ampliar a seleção às figuras vizinhas. <kbd>Cmd</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> cria uma cópia em outra voz, uma terça diatônica acima ou abaixo no mesmo tempo; as cópias ficam selecionadas.",
           "<kbd>Delete</kbd> ou <kbd>Backspace</kbd> apaga. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> desfaz a última alteração e <kbd>Esc</kbd> solta a seleção."

@@ -594,7 +594,7 @@
       },
       "select-move": {
         "steps": [
-          "Click a figure to select it. <kbd>Shift</kbd>, <kbd>Ctrl</kbd> or <kbd>Cmd</kbd> adds more. Dragging from an empty spot on the staff encloses them in a rectangle.",
+          "Click a figure to select it. <kbd>Shift</kbd>, <kbd>Ctrl</kbd> or <kbd>Cmd</kbd> adds more. Dragging from an empty spot on the staff encloses them in a rectangle. Press <kbd>Cmd</kbd> + <kbd>A</kbd> on macOS or <kbd>Ctrl</kbd> + <kbd>A</kbd> on Linux and Windows to select all notes and rests in the score. If voices are selected in the sidebar and the Voices tool is enabled, only those voices are selected.",
           "<kbd>↑</kbd> and <kbd>↓</kbd> raise or lower the selection by one staff step; <kbd>←</kbd> and <kbd>→</kbd> move to the next figure. You can also drag the figures elsewhere.",
           "Use <kbd>Shift</kbd> + <kbd>←</kbd>/<kbd>→</kbd> to extend the selection to neighboring figures. <kbd>Cmd</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> creates a copy in another voice, a diatonic third above or below at the same time; the copies stay selected.",
           "<kbd>Delete</kbd> or <kbd>Backspace</kbd> removes them. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> undoes the last change and <kbd>Esc</kbd> clears the selection."
