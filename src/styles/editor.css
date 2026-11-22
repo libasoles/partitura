@@ -2950,5 +2950,5 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-chord-names-toggle svg { width: 22px; height: 22px; transform: translateX(1px); }
 
 /* Las acciones de Voces conservan una sola fila dentro de Ajustes. */
-.score-settings-category[data-category="voices"] .score-settings-icon { min-width: 1.6rem; }
+.score-settings-category[data-category="voices"] .score-settings-icon:not(.score-voice-swatch) { min-width: 1.6rem; }
 .score-settings-category[data-category="voices"] .score-settings-icon svg { width: 20px; height: 20px; }
