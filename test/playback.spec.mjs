@@ -29,6 +29,7 @@ async function open(page, instrument = 'piano', overrides = {}) {
   }, { instrument, overrides });
   await page.goto(instrument === 'voices' ? '/es/#pro' : '/es/');
   await expect(page.locator('#scoreStage[aria-busy="true"]')).toHaveCount(0);
+  await page.waitForFunction(() => !document.getAnimations().some(a => a.animationName === 'score-tool-fade-in' && a.playState !== 'finished'));
 }
 
 async function enable(page) {

@@ -1303,6 +1303,30 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // Both toolbars use the unannotated staff position so interval labels cannot move them.
   let toolbarStaffTop = 0;
+  function leftToolbarItems() {
+    return [playButton, voiceLegend, fixVoiceButton, joinButton, splitButton, ...duplicateVoiceButtons, chordNamesButton, intervalButton].filter(Boolean);
+  }
+
+  // Re-engrave the sheet without unmounting its independent toolbar controls.
+  function replaceStaff(markup) {
+    const controls = new Set(leftToolbarItems());
+    [...stage.childNodes].forEach(node => { if (!controls.has(node)) node.remove(); });
+    stage.insertAdjacentHTML('afterbegin', markup);
+  }
+
+  function revealToolbars() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const left = leftToolbarItems().flatMap(item => item === voiceLegend ? [...item.children] : [item]);
+    const right = [...(barlines.closest('.score-side') || barlines).querySelectorAll('button')];
+    for (const items of [left, right]) {
+      let order = 0;
+      items.filter(item => item.isConnected && item.getClientRects().length).forEach(item => {
+        item.style.setProperty('--fade-order', String(order++));
+        item.classList.add('is-fading-in');
+        item.addEventListener('animationend', () => item.classList.remove('is-fading-in'), { once: true });
+      });
+    }
+  }
   // The barlines sidebar starts level with the top line of the first staff instead of the top of the page.
   function alignBarlinesToFirstStaff() {
     const side = barlines.closest('.score-side');
@@ -1333,11 +1357,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const staffTop = toolbarStaffTop;
     // Left of the brace (grand staff) or of the first staff line, never over it.
     const edge = (stage.querySelector('g.grpSym') || line).getBoundingClientRect().left - origin.left;
-    const playbackShown = playButton.isConnected && !playButton.hidden;
-    const items = [
-      playbackShown ? playButton : null, voiceLegend, fixVoiceButton,
-      joinButton, splitButton, ...duplicateVoiceButtons, chordNamesButton, intervalButton,
-    ].filter((item) => item?.isConnected && !item.hidden);
+    const items = leftToolbarItems().filter((item) => item.isConnected && !item.hidden);
     const gapAfter = (item) => item === playButton && voiceLegend.isConnected ? 14 : 8;
     const height = items.reduce((sum, item, i) => sum + item.offsetHeight + (i < items.length - 1 ? gapAfter(item) : 0), 0);
     // Follow the right toolbar's sticky offset, stopping at the end of the sheet.
@@ -1395,7 +1415,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     clefPopup.hidePopover();
     registerPopup.hidePopover();
     dynamicsPopup.hidePopover();
-    stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
+    replaceStaff(M.refineTempo(toolkit.renderToSVG(1)));
     toolbarStaffTop = Math.max(0, stage.querySelector('g.staff > path').getBoundingClientRect().top - stage.getBoundingClientRect().top);
     const showIntervals = intervalDocuments.has(score);
     const showChords = proChordNames && chordNameDocuments.has(score);
@@ -1404,7 +1424,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       // Verovio drops MusicXML words' font-size. Set MEI's supported relative size
       // on the marked interval text before engraving so spacing uses the smaller labels too.
       toolkit.loadData(toolkit.getMEI().replace(/fontfam="PartituraIntervals"/g, 'fontsize="60%"').replace(/fontfam="PartituraChordNames"/g, 'fontsize="75%"'));
-      stage.innerHTML = M.refineTempo(toolkit.renderToSVG(1));
+      replaceStaff(M.refineTempo(toolkit.renderToSVG(1)));
     }
     applyMeasureWidths();
     // With TAB the height is set again once the tabs are measured; clearing it here would collapse and re-grow the stage on every pass.
@@ -5778,7 +5798,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   const { button: splitButton, popup: splitPopup } = restructureTool('Split', 'split', t.restructureSplit, fillSplitPopup);
 
   // Que herramientas muestra la barra lateral: TAB y cejilla son de guitarra; repeticion y dinamica se eligen en los ajustes.
-  let sidebarShown = new Set();
   function applyTools() {
     const guitar = !settings || M.instrumentOf(score) === 'guitar';
     const shown = { repeats: toolOn('repeats'), dynamics: toolOn('dynamics'), barre: guitar, lyrics: toolOn('lyrics') };
@@ -5789,22 +5808,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     barlines.classList.add('is-ready');
     playButton.hidden = !toolOn('playback', false);
     if (playButton.hidden) clearPlaybackHint();
-    stage.appendChild(playButton);
-    // Las herramientas de la barra izquierda solo se muestran u ocultan; las que acaban de aparecer entran con un fade de arriba hacia abajo.
-    const shownNow = new Set();
+    if (!playButton.isConnected) stage.appendChild(playButton);
+    // Keep mounted controls in place; tool changes only affect their visibility.
     const place = (button, show) => {
-      button.remove();
-      if (!show) return;
-      stage.appendChild(button);
-      shownNow.add(button);
-      if (!sidebarShown.has(button)) {
-        button.style.setProperty('--fade-order', String(fadeOrder++));
-        button.classList.remove('is-fading-in');
-        void button.offsetWidth;
-        button.classList.add('is-fading-in');
-      }
+      if (!show) { button.remove(); return; }
+      if (!button.isConnected) stage.appendChild(button);
     };
-    let fadeOrder = 0;
     intervalButton.setAttribute('aria-pressed', String(intervalDocuments.has(score)));
     chordNamesButton.setAttribute('aria-pressed', String(chordNameDocuments.has(score)));
     if (fixVoiceButton) place(fixVoiceButton, toolOn('voices', false));
@@ -5817,7 +5826,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     place(chordNamesButton, proChordNames && toolOn('intervals', false));
     place(intervalButton, toolOn('intervals', false));
     if (duplicateVoiceButtons.length && !toolOn('voices', false)) document.getElementById('scoreVoicePicker')?.hidePopover();
-    sidebarShown = shownNow;
     alignVoiceLegend();
     if (playButton.hidden && playbackState !== 'idle') resetPlayback();
     if (activeItem && barlines.querySelector('.score-palette-tool[aria-pressed="true"][hidden]')) deactivateTool();
@@ -5866,8 +5874,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   function applyVoices() {
     const on = toolOn('voices', false);
     stage.classList.toggle('has-voices', !!on);
-    voiceLegend.remove();
-    if (!on) return;
+    if (!on) { voiceLegend.remove(); return; }
     voiceButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(shownVoices.has(i + 1))));
     const upper = M.measures(score);
     const total = upper.length;
@@ -5898,7 +5905,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       beam.classList.toggle('is-voice-on', !!first && first.classList.contains('is-voice-on'));
       if (first) beam.dataset.voice = first.dataset.voice;
     });
-    stage.appendChild(voiceLegend);
+    if (!voiceLegend.isConnected) stage.appendChild(voiceLegend);
     alignVoiceLegend();
   }
 
@@ -6845,6 +6852,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     stage.removeAttribute('aria-busy');
     render();
     stage.classList.remove('is-loading');
+    revealToolbars();
     if (patternsOn()) renderLibrary(); // los patrones se dibujan con Verovio: recien ahora se puede
   }, () => {
     stage.removeAttribute('aria-busy');
