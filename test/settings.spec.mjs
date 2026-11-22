@@ -166,13 +166,21 @@ test('the cog is the first sidebar tool and the dialog switches instrument, temp
 });
 
 test('Voces is off by default; turning it on colours each voice and shows a 1-4 legend', async ({ page }) => {
-  await open(page);
+  await open(page, '/es/#pro');
   await expect(page.locator('.score-voice-legend')).toHaveCount(0);
   await page.locator('#scoreSettingsToggle').click();
   const popup = page.locator('#scoreSettingsPopup');
   const voices = popup.getByRole('checkbox', { name: 'Voces', exact: true });
   await expect(voices).not.toBeChecked();
   await expect(popup.locator('.score-voice-swatch')).toHaveCount(4);
+  const swatches = await popup.locator('.score-voice-swatch').evaluateAll((items) => items.map((item) => {
+    const { width, height } = item.getBoundingClientRect();
+    return { width, height, radius: getComputedStyle(item).borderRadius };
+  }));
+  for (const swatch of swatches) {
+    expect(swatch.width).toBe(swatch.height);
+    expect(swatch.radius).toBe('50%');
+  }
   await voices.check();
   const legend = page.locator('.score-voice-legend button');
   await expect(legend).toHaveText(['1', '2', '3', '4']);
