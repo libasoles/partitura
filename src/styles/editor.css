@@ -2108,7 +2108,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 .score-settings-icons:has(.score-voice-swatch) { padding: 0.6rem 0.5rem 0.4rem; }
 
 .score-settings-toggle svg, .score-playback svg { display: block; margin: auto; }
-.score-playback svg { width: 18px; height: 18px; }
+.score-playback svg { width: 20px; height: 20px; }
 .score-playback {
   position: absolute;
   width: 1.875rem;
@@ -2945,7 +2945,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 /* Elevar tambien el boton: el fade crea un contexto que encierra su tooltip. */
 .score-page .tooltip:hover,
 .score-page .tooltip:focus-visible { z-index: 20; }
-.score-chord-names-toggle svg { width: 20px; height: 20px; }
+.score-chord-names-toggle svg { width: 22px; height: 22px; }
 
 /* Las acciones de Voces conservan una sola fila dentro de Ajustes. */
 .score-settings-category[data-category="voices"] .score-settings-icon { min-width: 1.6rem; }
