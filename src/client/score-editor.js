@@ -1334,19 +1334,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // Left of the brace (grand staff) or of the first staff line, never over it.
     const edge = (stage.querySelector('g.grpSym') || line).getBoundingClientRect().left - origin.left;
     const playbackShown = playButton.isConnected && !playButton.hidden;
-    const playbackHeight = playbackShown ? playButton.offsetHeight : 0;
-    const legendHeight = voiceLegend.isConnected ? voiceLegend.offsetHeight : 0;
-    const intervalsHeight = intervalButton.isConnected ? intervalButton.offsetHeight : 0;
-    const chordNamesHeight = chordNamesButton.isConnected ? chordNamesButton.offsetHeight : 0;
-    const restructureButtons = [joinButton, splitButton].filter((button) => button.isConnected);
-    const restructureHeight = restructureButtons.reduce((sum, button) => sum + button.offsetHeight + (sum ? 8 : 0), 0);
-    const duplicateShown = [...duplicateVoiceButtons, fixVoiceButton].filter(Boolean).filter((button) => button.isConnected);
-    const duplicateHeight = duplicateShown.reduce((sum, button, k) => sum + button.offsetHeight + (k ? 8 : 0), 0);
-    const legendEnd = playbackHeight + (playbackShown && legendHeight ? 8 : 0) + legendHeight;
-    const restructureEnd = legendEnd + (restructureHeight ? restructureHeight + (legendEnd ? 8 : 0) : 0);
-    const above = restructureEnd + (duplicateHeight ? duplicateHeight + (restructureEnd ? 8 : 0) : 0);
-    const withChords = above + (chordNamesHeight ? chordNamesHeight + (above ? 8 : 0) : 0);
-    const height = withChords + (intervalsHeight ? intervalsHeight + (withChords ? 8 : 0) : 0);
+    const items = [
+      playbackShown ? playButton : null, voiceLegend, fixVoiceButton,
+      joinButton, splitButton, ...duplicateVoiceButtons, chordNamesButton, intervalButton,
+    ].filter((item) => item?.isConnected && !item.hidden);
+    const gapAfter = (item) => item === playButton && voiceLegend.isConnected ? 14 : 8;
+    const height = items.reduce((sum, item, i) => sum + item.offsetHeight + (i < items.length - 1 ? gapAfter(item) : 0), 0);
     // Follow the right toolbar's sticky offset, stopping at the end of the sheet.
     // Keep the natural position in short viewports, where the right toolbar also scrolls with the page.
     const side = barlines.closest('.score-side');
@@ -1354,30 +1347,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const top = Number.isFinite(stickyTop)
       ? Math.max(staffTop, Math.min(stickyTop - origin.top, origin.height - height))
       : staffTop;
-    const width = Math.max(playbackShown ? playButton.offsetWidth : 0, voiceLegend.isConnected ? voiceLegend.offsetWidth : 0, ...restructureButtons.map((button) => button.offsetWidth), ...duplicateShown.map((button) => button.offsetWidth), intervalButton.isConnected ? intervalButton.offsetWidth : 0, chordNamesButton.isConnected ? chordNamesButton.offsetWidth : 0);
+    const width = Math.max(...items.map((item) => item.offsetWidth), 0);
     const left = WIDE_PAGE.matches ? -(width + 16) : Math.max(0, edge - width - 6);
-    if (playbackShown) {
-      playButton.style.top = top + 'px';
-      playButton.style.left = (left + (width - playButton.offsetWidth) / 2) + 'px';
-    }
-    voiceLegend.style.top = (top + (playbackShown ? playButton.offsetHeight + 14 : 0)) + 'px';
-    voiceLegend.style.left = (left + (width - voiceLegend.offsetWidth) / 2) + 'px';
-    let restructureTop = top + (playbackShown ? playButton.offsetHeight + 14 : 0) + legendHeight + (legendHeight ? 8 : 0);
-    restructureButtons.forEach((button) => {
-      button.style.top = restructureTop + 'px';
-      button.style.left = (left + (width - button.offsetWidth) / 2) + 'px';
-      restructureTop += button.offsetHeight + 8;
+    let itemTop = top;
+    items.forEach((item) => {
+      item.style.top = itemTop + 'px';
+      item.style.left = (left + (width - item.offsetWidth) / 2) + 'px';
+      itemTop += item.offsetHeight + gapAfter(item);
     });
-    let duplicateTop = top + restructureEnd + (restructureEnd ? 8 : 0);
-    duplicateShown.forEach((button) => {
-      button.style.top = duplicateTop + 'px';
-      button.style.left = (left + (width - button.offsetWidth) / 2) + 'px';
-      duplicateTop += button.offsetHeight + 8;
-    });
-    intervalButton.style.top = (top + height - intervalsHeight) + 'px';
-    intervalButton.style.left = (left + (width - intervalButton.offsetWidth) / 2) + 'px';
-    chordNamesButton.style.top = (top + height - intervalsHeight - (intervalsHeight ? 8 : 0) - chordNamesHeight) + 'px';
-    chordNamesButton.style.left = (left + (width - chordNamesButton.offsetWidth) / 2) + 'px';
   }
 
   let leftToolbarFrame = 0;
@@ -5812,17 +5789,17 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       }
     };
     let fadeOrder = 0;
-    place(intervalButton, toolOn('intervals', false));
     intervalButton.setAttribute('aria-pressed', String(intervalDocuments.has(score)));
-    place(chordNamesButton, proChordNames && toolOn('intervals', false));
     chordNamesButton.setAttribute('aria-pressed', String(chordNameDocuments.has(score)));
-    [[splitButton, splitPopup], [joinButton, joinPopup]].forEach(([button, popup]) => {
+    if (fixVoiceButton) place(fixVoiceButton, toolOn('voices', false));
+    [[joinButton, joinPopup], [splitButton, splitPopup]].forEach(([button, popup]) => {
       const show = isPro() && toolOn('voices', false) && M.restructurable(score);
       place(button, show);
       if (!show && popup.matches(':popover-open')) popup.hidePopover();
     });
     duplicateVoiceButtons.forEach((button) => place(button, toolOn('voices', false)));
-    if (fixVoiceButton) place(fixVoiceButton, toolOn('voices', false));
+    place(chordNamesButton, proChordNames && toolOn('intervals', false));
+    place(intervalButton, toolOn('intervals', false));
     if (duplicateVoiceButtons.length && !toolOn('voices', false)) document.getElementById('scoreVoicePicker')?.hidePopover();
     sidebarShown = shownNow;
     alignVoiceLegend();
