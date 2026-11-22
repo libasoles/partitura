@@ -590,7 +590,7 @@
       },
       "select-move": {
         "steps": [
-          "Hacé clic en una figura para seleccionarla. Con <kbd>Mayús</kbd>, <kbd>Ctrl</kbd> o <kbd>Cmd</kbd> sumás más. Arrastrando desde un lugar vacío del pentagrama las encerrás con un rectángulo.",
+          "Hacé clic en una figura para seleccionarla. Con <kbd>Mayús</kbd>, <kbd>Ctrl</kbd> o <kbd>Cmd</kbd> sumás más. Arrastrando desde un lugar vacío del pentagrama las encerrás con un rectángulo. Con <kbd>Cmd</kbd> + <kbd>A</kbd> en macOS o <kbd>Ctrl</kbd> + <kbd>A</kbd> en Linux y Windows seleccionás todas las notas y silencios de la partitura. Si hay voces elegidas en la barra lateral y la herramienta Voces está activa, se seleccionan solo esas voces.",
           "<kbd>↑</kbd> y <kbd>↓</kbd> suben o bajan la selección un paso del pentagrama; <kbd>←</kbd> y <kbd>→</kbd> pasan a la figura de al lado. También podés arrastrar las figuras a otro lugar.",
           "Con <kbd>Mayús</kbd> + <kbd>←</kbd>/<kbd>→</kbd> ampliás la selección a las figuras vecinas. Con <kbd>Cmd</kbd> + <kbd>↑</kbd>/<kbd>↓</kbd> creás una copia en otra voz, una tercera diatónica arriba o abajo y en el mismo tiempo; las copias quedan seleccionadas.",
           "<kbd>Delete</kbd> o <kbd>Retroceso</kbd> las borra. <kbd>Ctrl</kbd>/<kbd>Cmd</kbd> + <kbd>Z</kbd> deshace el último cambio y <kbd>Esc</kbd> suelta la selección."
