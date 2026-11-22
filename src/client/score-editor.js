@@ -5845,7 +5845,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     button.dataset.voice = String(n);
     button.textContent = String(n);
     button.setAttribute('aria-pressed', 'false');
-    button.addEventListener('click', () => {
+    button.addEventListener('click', (event) => {
+      if (event.shiftKey) {
+        const refs = [], voices = new Set([n]);
+        for (let staff = 0; staff < M.stavesOf(score); staff++) {
+          M.measures(score, staff).forEach((measure, mi) => {
+            const indices = M.selectedEvents(score, staff, measure, voices);
+            measure.forEach((_, i) => { if (indices.has(i)) refs.push(M.refOf(staff, mi, i)); });
+          });
+        }
+        deactivateTool();
+        setPicks(refs);
+        stage.focus({ preventScroll: true });
+        return;
+      }
       if (shownVoices.has(n)) shownVoices.delete(n); else shownVoices.add(n);
       if (playbackTrack && playbackState !== 'loading') refreshPlaybackTrack();
       if (toolOn('intervals', false) && (intervalDocuments.has(score) || chordNameDocuments.has(score))) render();

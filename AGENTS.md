@@ -204,6 +204,7 @@ No es una PWA: no hay manifest ni service worker.
 
 ### Voces y conducción
 
+- **Seleccionar una voz completa**: Mayús+clic en un número de la leyenda selecciona todas sus notas y silencios en los pentagramas visibles y todos los compases, usando `M.selectedEvents` para respetar el mapa de voces. Reemplaza la selección y enfoca el pentagrama para borrar con Suprimir; no cambia el filtro de color/audio. Test: `test/voice-select.spec.mjs`.
 - Fundamentación, fuentes, reglas y límites: `docs/voice-leading.md`.
 - No inferir una única voz porque dos notas coincidan en inicio y duración. Conservar la continuidad de las líneas y las voces explícitas, incluidos cruces de registro.
 - Formar un acorde de notación es una decisión explícita; no equivale a analizar las voces contrapuntísticas del acorde.
