@@ -17,7 +17,7 @@ import { createTabLayout } from './score-tab-layout.js';
 import { DEMOS, demoLink } from './demos.js';
 import { FIGURE_GLYPHS } from './figure-glyphs.js';
 
-export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, tools = {}, chords = false, lyrics = false, patterns = false, urlDefaults = {}, initialDemo } = {}) {
+export default function start({ vendorBase = '/vendor/', bindActions = () => {}, settings = false, tools = {}, chords = false, lyrics = false, patterns = false, urlDefaults = {}, initialDemo, discardOnClose = false } = {}) {
 
   const M = window.ScoreModel;
   const STORAGE_KEY = 'scoreEditor.v2';
@@ -294,7 +294,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     tabsBar.querySelectorAll('.score-doc-tab').forEach((node) => node.remove());
     const add = document.getElementById('scoreNewTab');
     // Pro can close even the last tab, leaving only "+"; demo tabs are closable without Pro, while another is open.
-    const closableTab = (one) => proTabs || (openCount() > 1 && Boolean(one.demo));
+    const closableTab = (one) => proTabs || discardOnClose || (openCount() > 1 && Boolean(one.demo));
     editorSection.classList.toggle('is-no-score', !isOpen(active));
     docs.forEach((one, index) => {
       if (!isOpen(index)) return;
@@ -481,10 +481,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Closing only takes the tab off the strip: the score stays stored, and listed in the site menu.
   function closeTab(index) {
     if (!isOpen(index)) return;
-    if (!proTabs && (!docs[index].demo || openCount() < 2)) return;
-    // Demo copies have no entry in the scores menu to reopen them from.
-    if (docs[index].demo) {
-      if (index === active) switchTo(docs.findIndex((_, i) => i !== index && isOpen(i)));
+    if (!proTabs && !discardOnClose && (!docs[index].demo || openCount() < 2)) return;
+    // Demo copies have no entry in the scores menu to reopen them from; with `discardOnClose` (the debugger) every tab is like that.
+    if (docs[index].demo || discardOnClose) {
+      if (index === active) {
+        let next = docs.findIndex((_, i) => i !== index && isOpen(i));
+        if (next < 0) { newTab(); next = docs.length - 1; }
+        switchTo(next);
+      }
       docs.splice(index, 1);
       histories.splice(index, 1);
       if (active > index) active -= 1;

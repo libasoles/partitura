@@ -184,7 +184,7 @@ function main() {
       draw(value);
     },
   };
-  start({ settings: true, chords: true, lyrics: true, patterns: true, urlDefaults: {} });
+  start({ settings: true, chords: true, lyrics: true, patterns: true, urlDefaults: {}, discardOnClose: true });
   draw({ active: 0, scores: [window.scoreEditor.score] });
   // Aplicar JSON: lo escrito reemplaza la partitura abierta por el camino de edicion del editor (se deshace).
   $('#debugApply').addEventListener('click', () => {
