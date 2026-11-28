@@ -12,7 +12,9 @@ const round = (x) => Math.round(x * 1e6) / 1e6;
 // Una entrada por figura del compas: `at` guardado o deducido, `start` real, duracion y voz.
 export function atTimeline(M, score, mi) {
   const measure = M.measures(score)[mi] || [];
-  const capacity = M.capacity(score, mi);
+  // Lo que dura el compas al escribirlo: una anacrusa deducida del contexto dura solo lo escrito (ver `pickupLength`).
+  const pickup = M.pickupLength(score, mi);
+  const capacity = pickup === null ? M.capacity(score, mi) : pickup;
   const hints = M.hints(measure);
   const starts = M.onsets(measure);
   const voiceOf = [];
@@ -30,7 +32,7 @@ export function atTimeline(M, score, mi) {
     n: ev.n,
   }));
   const end = Math.max(0, ...figures.map((f) => f.start + f.dur));
-  return { mi, capacity, end, span: Math.max(capacity, end), voices: Math.max(1, ...figures.map((f) => f.voice)), figures };
+  return { mi, capacity, pickup: pickup !== null, end, span: Math.max(capacity, end), voices: Math.max(1, ...figures.map((f) => f.voice)), figures };
 }
 
 const attr = (text, name) => new RegExp(`${name}="([^"]*)"`).exec(text)?.[1];

@@ -2417,6 +2417,31 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return beats * DIVISIONS * 4 / unit;
   }
 
+  /* Anacrusa deducida del contexto, sin que el usuario la declare. Un compas se entiende como anacrusa cuando
+     - es el primero, o el que sigue a una doble barra (un comienzo de seccion),
+     - lo que se escribio dura menos que su capacidad, y
+     - justo despues viene musica (el compas siguiente tiene figuras).
+     Entonces dura solo lo que se escribio: el hueco es el que se omite al principio (como en la reproduccion, ver
+     `playSlots`), asi que no se rellena con <forward> ni queda un 4/4 casi vacio. Mientras sea lo unico escrito no
+     cuenta: el compas sigue completo para poder seguir escribiendolo. Solo lo usan la exportacion y los graficos; la
+     edicion (`placement`, `problems`) sigue con `capacity`. Un compas final incompleto no es anacrusa: su hueco queda
+     atras. Un `measureDurations` explicito manda. Devuelve la duracion o null. */
+  function pickupLength(score, mi) {
+    if (!score || !Number.isInteger(mi) || mi < 0) return null;
+    if (score.measureDurations && Number.isInteger(score.measureDurations[mi])) return null;
+    if (mi > 0 && !(score.barlines && score.barlines[mi - 1] && score.barlines[mi - 1].double)) return null;
+    const staves = Array.from({ length: stavesOf(score) }, (_, staff) => measures(score, staff));
+    const length = Math.max(0, ...staves.map((all) => (all[mi] ? measureLength(all[mi]) : 0)));
+    if (!(length > 0) || length >= capacity(score, mi)) return null;
+    return staves.some((all) => all[mi + 1] && all[mi + 1].length) ? length : null;
+  }
+
+  // Lo que dura el compas al escribirlo: la anacrusa deducida o su capacidad.
+  function measureSpan(score, mi) {
+    const pickup = pickupLength(score, mi);
+    return pickup === null ? capacity(score, mi) : pickup;
+  }
+
   // No borrar ni recortar figuras al cambiar a un compas mas corto: si lo que suena en algun compas, contado en orden,
   // no entra, el compas no cambia. Las figuras no se tocan: sus inicios musicales no dependen del compas.
   function setMeter(score, meter) {
@@ -3480,7 +3505,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         opening = { wedge: true, t: h.at, xml: dynamic(h.startDyn || (previous && previous.h.endDyn), h.at) + wedge(h.kind === 'cresc' ? 'crescendo' : 'diminuendo') };
         marks.push(opening);
       }
-      if (last === mi) marks.push({ wedge: true, stop: true, begin: opening, t: Number.isInteger(h.to) ? h.to : capacity(score, mi), xml: wedge('stop') + (next ? '' : dynamic(h.endDyn, Number.isInteger(h.to) ? h.to : capacity(score, mi))) });
+      if (last === mi) marks.push({ wedge: true, stop: true, begin: opening, t: Number.isInteger(h.to) ? h.to : measureSpan(score, mi), xml: wedge('stop') + (next ? '' : dynamic(h.endDyn, Number.isInteger(h.to) ? h.to : measureSpan(score, mi))) });
     });
     return marks;
   }
@@ -3512,7 +3537,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const lyricMaps = Array.from({ length: lyricStaves(score) }, (_, staff) => lyricMap(score, staff));
     all.forEach((measure, mi) => {
       const [beats, unit] = meterAt(score, mi).split('/');
-      xml += `<measure number="${mi + 1}" id="m${mi}"${capacity(score, mi) < capacity({ meter: meterAt(score, mi) }) ? ' implicit="yes"' : ''}>`;
+      xml += `<measure number="${mi + 1}" id="m${mi}"${measureSpan(score, mi) < capacity({ meter: meterAt(score, mi) }) ? ' implicit="yes"' : ''}>`;
       if (rowFirsts.has(mi)) xml += '<print new-system="yes"/>';
       if (mi === 0) {
         xml += `<attributes><divisions>${DIVISIONS * mult}</divisions><key><fifths>${fifthsOf(score)}</fifths></key>` +
@@ -3560,11 +3585,11 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         const barreMarks = barre ? [
           { t: barre.at, start: true, xml: `<direction placement="above"><direction-type><words>C ${barre.fret}</words></direction-type></direction>` +
             '<direction placement="above"><direction-type><bracket type="start" number="1" line-end="none" line-type="dashed"/></direction-type></direction>' },
-          ...(barre.span ? [] : [stop(Number.isInteger(barre.to) ? barre.to : capacity(score, mi))]),
-        ] : closing ? [stop(Number.isInteger(closing.to) ? closing.to : capacity(score, mi))] : [];
+          ...(barre.span ? [] : [stop(Number.isInteger(barre.to) ? barre.to : measureSpan(score, mi))]),
+        ] : closing ? [stop(Number.isInteger(closing.to) ? closing.to : measureSpan(score, mi))] : [];
         const stopXml = !barre && closing ? barreMarks[0].xml : barreMarks.length > 1 ? barreMarks[1].xml : '';
         // Los acordes tambien son del renglon: se escriben en negrita sobre el pentagrama de arriba, antes de la figura de su tiempo.
-        const chordMarks = staff ? [] : ((score.chords && score.chords[mi]) || []).filter((chord) => chord.at < capacity(score, mi)).map((chord) => ({
+        const chordMarks = staff ? [] : ((score.chords && score.chords[mi]) || []).filter((chord) => chord.at < measureSpan(score, mi)).map((chord) => ({
           // Si no hay figura en su tiempo, el nombre se escribe en un hueco oculto justo ahi, asi que no se amontona con los demas.
           // Solo si cae dentro de una figura (no en su inicio) se apoya en el inicio de esa figura.
           chord: true, t: measure.some((ev, i) => starts[i] < chord.at && chord.at < starts[i] + length(ev)) ? Math.max(0, ...starts.filter((start) => start <= chord.at)) : chord.at, xml: `<direction placement="above"><direction-type><words font-weight="bold" font-style="normal">${chord.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</words></direction-type></direction>`,
@@ -3578,8 +3603,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         const lanes = voices(measure);
         lanes.forEach((voice, vi, all) => {
           // Una voz mas larga que el compas (no entra) no debe correr a las siguientes: se retrocede lo que se escribio.
-          if (vi > 0) xml += `<backup><duration>${Math.max(capacity(score, mi), all[vi - 1].end) * mult}</duration></backup>`;
-          written = Math.max(capacity(score, mi), voice.end);
+          if (vi > 0) xml += `<backup><duration>${Math.max(measureSpan(score, mi), all[vi - 1].end) * mult}</duration></backup>`;
+          written = Math.max(measureSpan(score, mi), voice.end);
           const indices = voice.groups.flatMap((g) => g.indices);
           const events = indices.map((i) => Object.assign({}, measure[i], { at: starts[i] }));
           const beams = beamStates(events, { meter: meterAt(score, mi) });
@@ -3624,7 +3649,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
             });
             cursor = group.at + group.size;
           });
-          hidden(cursor, capacity(score, mi));
+          hidden(cursor, measureSpan(score, mi));
           if (barreOpen && !barreClosed && vi === all.length - 1) xml += stopXml;
           // Un regulador abierto se cierra al final aunque su fin no caiga en un hueco de ninguna voz.
           if (vi === all.length - 1) wedges.filter((mark) => mark.stop && !mark.done && (!mark.begin || mark.begin.done)).forEach((mark) => { xml += mark.xml; });
@@ -3704,7 +3729,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, recalculateVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, pickupLength, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, recalculateVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, canJoinStaves, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, setTranspose, transposeOf, transposedForDisplay, MAX_TRANSPOSE, tuningOf, tuningLabels, meterOf, meterAt, setMeterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, playOrder, playSlots, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,

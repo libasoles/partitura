@@ -362,7 +362,8 @@ function renderDebug(c, xml) {
     const graphs = [atGraph(data), forwardGraph(forward, data.capacity)];
     graphs.forEach((graph) => { graph.dataset.mi = mi; });
     return h('div', { class: 'measure-debug' },
-      h('h3', {}, 'Compás ' + (mi + 1), h('small', {}, ` · capacidad ${data.capacity} · contenido ${data.end}`)),
+      h('h3', {}, 'Compás ' + (mi + 1), data.pickup ? h('span', { class: 'badge', title: 'Primer compás (o tras una doble barra) incompleto y seguido de música: dura lo escrito, sin forward' }, 'anacrusa') : null,
+        h('small', {}, ` · ${data.pickup ? 'dura' : 'capacidad'} ${data.capacity} · contenido ${data.end}`)),
       h('div', { class: 'graphs' }, graphs),
       h('div', { class: 'tables' },
         table(['#', 'voz', 'figura', 'at', 'inicio real', 'dura', ''], data.figures.map((f) => [

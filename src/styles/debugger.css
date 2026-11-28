@@ -194,3 +194,5 @@ button.play:hover { background: #266044; }
 .tool-glyph { display: flex; height: 2.45rem; align-items: center; justify-content: center; }
 .tool-glyph svg { display: block; overflow: visible; }
 .tool { min-width: 5.4rem; }
+
+.badge { margin-left: 0.5rem; padding: 0.05rem 0.45rem; font-size: 0.7rem; font-weight: 600; color: #ffd9a0; background: #3a2a10; border: 1px solid #6b4a1a; border-radius: 0.7rem; }
