@@ -1,0 +1,38 @@
+---
+import '../styles/debugger.css';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Debugger · Partitura</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <header class="debug-bar">
+      <div class="debug-bar-top">
+        <h1>Debugger</h1>
+        <p>Página interna: cada caso es un compás. Elegí una figura y escribí en el pentagrama; abajo se ve dónde queda según <code>at</code> y según <code>forward</code>.</p>
+        <div class="debug-bar-actions">
+          <button type="button" id="debugAdd">+ Caso</button>
+          <button type="button" id="debugReset" class="danger">Reiniciar casos</button>
+        </div>
+      </div>
+      <div class="debug-tools" id="debugTools" role="toolbar" aria-label="Figuras"></div>
+    </header>
+
+    <main id="debugCases" class="debug-cases" aria-live="polite">Cargando Verovio…</main>
+
+    <aside id="debugLive" class="debug-live" aria-label="Debug en vivo">
+      <h2>Debug en vivo</h2>
+      <div class="live-body"></div>
+    </aside>
+
+    <script>
+      import '../client/debugger.js';
+    </script>
+  </body>
+</html>
