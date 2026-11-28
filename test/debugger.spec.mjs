@@ -49,13 +49,13 @@ test('moving a note in the editor updates the panel', async ({ page }) => {
   await expect(table).toContainText('F4');
 });
 
-test('the real model closes a gap in at, so the graph shows the note where it sounds', async ({ page }) => {
+test('the real model keeps a late voice at 72, so the graph shows it where it sounds', async ({ page }) => {
   await openDebugger(page);
   await loadScore(page, RAW_AT);
   const atGraph = page.locator('#debugMeasures .graph').first();
   await expect(atGraph.locator('.sq')).toHaveCount(2);
   await expect(atGraph.locator('.sq.is-ghost')).toHaveCount(0);
-  await expect(atGraph).not.toContainText('at: 72');
+  await expect(atGraph).toContainText('at: 72');
 });
 
 test('applying the JSON can be undone with the editor history', async ({ page }) => {

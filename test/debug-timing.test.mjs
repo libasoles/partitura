@@ -5,22 +5,24 @@ import { atTimeline, xmlTimeline } from '../src/client/debug-timing.js';
 
 const bar = (...figures) => ({ meter: '4/4', clef: 'treble', fifths: 0, rows: [[figures]] });
 
-test('a lone note asked at 72 is settled at 0: a gap in at lasts nothing', () => {
+test('a lone note asked at 72 stays at 72: `at` is the real start', () => {
   const score = bar();
   const measure = M.measures(score)[0];
   const spot = M.placement(measure, { d: 'q', n: 37 }, 72, score, 0);
-  M.insertNote(measure, { d: 'q', n: 37 }, spot.at);
+  M.insertNote(measure, { d: 'q', n: 37 }, spot.at, M.capacity(score, 0));
   const [figure] = atTimeline(M, score, 0).figures;
-  assert.equal(figure.at, 0);
-  assert.equal(figure.start, 0);
+  assert.equal(figure.at, 72);
+  assert.equal(figure.start, 72);
 });
 
-test('two voices with at 0 and 72: the late voice starts at 0, and at is drawn apart from the real start', () => {
+test('two voices with at 0 and 72: the late voice starts at 72, with a <forward> before it', () => {
   const score = bar({ d: 'q', n: 37, at: 0, v: 1 }, { d: 'q', n: 35, at: 72, v: 2 });
   const [first, late] = atTimeline(M, score, 0).figures;
   assert.equal(first.start, 0);
   assert.equal(late.at, 72);
-  assert.equal(late.start, 0);
+  assert.equal(late.start, 72);
+  const forwards = xmlTimeline(M, score, 0).items.filter((i) => i.kind === 'forward' && i.voice === 2);
+  assert.deepEqual(forwards.map((f) => [f.start, f.dur]), [[0, 72]]);
 });
 
 test('the MusicXML pads each voice to the end of the bar with one <forward>, not hidden rests', () => {

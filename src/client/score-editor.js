@@ -760,7 +760,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       else ev.n = target.n;
       if (item.dead) ev.dead = true;
       if (Number.isFinite(target.beforeAt)) {
-        const placed = M.placeBefore(measure, ev, target.beforeAt, target.n, score, target.mi, target.staff);
+        const placed = M.placeBefore(measure, ev, target.beforeAt, target.n, score, target.mi, target.staff, target.rawT);
         if (!placed.measure) return say('');
         change(() => {
           measure.splice(0, measure.length, ...placed.measure);
@@ -786,7 +786,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       }
       let placedRef = null;
       change(() => {
-        const index = M.insertNote(measure, ev, spot.at);
+        const index = M.insertNote(measure, ev, spot.at, M.capacity(score, target.mi));
         // Con una herramienta activa la figura nueva no queda seleccionada: seleccion y herramienta no conviven.
         selected = activeItem ? null : M.refOf(target.staff, target.mi, index);
         group = [];
@@ -994,22 +994,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // Soltada a la izquierda de la primera columna, la nota se antepone en la voz mas cercana (como un silencio)
     // en vez de sonar a la vez que ella; sin esto no habia como colocarla antes de la primera figura.
     if (target.beforeFirst && others.length) {
-      const trial = others.map((o) => M.clone(o));
-      const starts = M.hints(trial);
-      trial.forEach((o, i) => { o.at = starts[i] * 2; });
-      const first = Math.min(...starts) * 2;
-      const leading = trial.filter((o) => o.at === first);
-      const lead = leading.reduce((a, b) => (!a || Math.abs((b.n ?? target.n) - target.n) < Math.abs((a.n ?? target.n) - target.n) ? b : a), null);
-      const front = M.clone(moved);
-      if (Number.isInteger(lead.v)) front.v = lead.v; else delete front.v;
-      leading.filter((o) => o.v === lead.v).forEach((o) => { o.at += 1; });
-      front.at = first;
-      trial.unshift(front);
-      M.settle(trial);
+      const placed = M.prependFigure(others, moved, target.n, undefined, target.rawT);
       change(() => {
         source[from.mi].splice(from.i, 1);
-        destination.splice(0, destination.length, ...trial);
-        selected = M.refOf(target.staff, target.mi, trial.indexOf(front));
+        destination.splice(0, destination.length, ...placed.measure);
+        selected = M.refOf(target.staff, target.mi, placed.index);
         group = [];
       });
       return true;
@@ -1074,26 +1063,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         return say(t.keepVoiceTiming);
       }
     }
-    // Soltada mas a la derecha de donde terminaria su voz, la nota conserva ese lugar: el compas es una sucesion de
-    // duraciones, asi que el hueco se llena con silencios (sin ellos la figura se pegaria a la anterior).
-    const probe = destination.filter((o) => o !== ev).map((o) => M.clone(o));
-    const probed = M.clone(moved);
-    const probedAt = M.insertAt(probe, probed, spot.at);
-    const gap = Math.max(0, spot.at - M.onsets(probe)[probedAt]);
+    // Soltada mas a la derecha de donde terminaria su voz, la nota conserva ese lugar: `at` es su inicio real, asi que
+    // el hueco que queda detras es tiempo silencioso (se exporta como <forward>), sin silencios dibujados.
     change(() => {
       source[from.mi].splice(from.i, 1);
-      if (gap > 0) {
-        let at = spot.at - gap;
-        for (let left = gap; left > 0;) {
-          const d = ['w', 'h', 'q', 'e', 's', 'f'].find((k) => M.VALUES[k] <= left);
-          if (!d) break;
-          const rest = { d, rest: true };
-          if (Number.isInteger(moved.v)) rest.v = moved.v;
-          M.insertAt(destination, rest, at);
-          at += M.VALUES[d];
-          left -= M.VALUES[d];
-        }
-      }
       // Alinear con otra columna no convierte la nota movida en parte de su acorde.
       selected = M.refOf(target.staff, target.mi, M.insertAt(destination, moved, spot.at));
       group = [];

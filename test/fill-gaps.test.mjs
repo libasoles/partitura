@@ -18,8 +18,8 @@ test('a gap before a voice enters is written as rests, so moving the other voice
   const lower = m.find((ev) => ev.n === 32);
   assert.equal(M.onsets(m)[m.indexOf(lower)], before[3]);
   // The upper quarter can now leave its column without moving the lower note.
-  const rest = m.filter((ev) => ev !== m[2]);
+  const rest = m.filter((ev) => ev !== m[2]).map((ev) => ({ ...ev })); // copias: insertAt reescribe el `at` de lo que recibe
   M.insertAt(rest, { ...m[2] }, 36);
-  assert.equal(M.onsets(rest)[rest.indexOf(lower)], 24);
+  assert.equal(M.onsets(rest)[rest.indexOf(rest.find((ev) => ev.n === 32))], 24);
   assert.equal(M.fillGaps(m), false);
 });
