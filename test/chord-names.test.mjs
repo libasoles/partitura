@@ -47,3 +47,15 @@ test('the chord of a column is picked from the harmony of the whole line', async
   // Dm | E7 | C6/Am7: the sharp seventh of E7 points to A minor.
   assert.equal(pickChords([column(['Dm'], [2, 5, 9]), e7, ambiguous])[2][0], 'Am7/C');
 });
+
+test('note info names an arpeggio like the stacked chord, whatever the order or octave', async () => {
+  const { noteInfo, lookupNames } = await import('../src/client/note-info.js');
+  const stacked = noteInfo([note(28), note(30), note(32)]);
+  const arpeggio = noteInfo([note(32), note(37), note(30), note(28), note(35)]);
+  assert.deepEqual(stacked.chords, ['C']);
+  assert.deepEqual(arpeggio.chords, ['C']);
+  assert.deepEqual(stacked.notes.map((n) => n.label), ['C3', 'E3', 'G3']);
+  assert.equal(noteInfo([note(28), note(35), note(30)]).classes, 2);
+  assert.equal(noteInfo([note(28), note(35), note(30)]).chords.length, 0);
+  assert.deepEqual(lookupNames('C/E'), ['C/E', 'C']);
+});

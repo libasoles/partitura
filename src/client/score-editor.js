@@ -10,6 +10,7 @@ import { chordMarks, hasIntervals, parseTonic, scoreKey, spellTonic, withInterva
 import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
 import { measurePitches, pitchMidi } from './score-notes.js';
+import { lookupNames, noteInfo } from './note-info.js';
 import { applyUrlDefaults } from './url-defaults.js';
 import { createScoresDrawer } from './score-drawer.js';
 import { createTabLayout } from './score-tab-layout.js';
@@ -2988,6 +2989,116 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     chordPopup.style.left = Math.max(8, Math.min(anchor.left + anchor.width / 2 - box.width / 2, window.innerWidth - box.width - 8)) + 'px';
     chordPopup.style.top = Math.max(8, below + box.height > window.innerHeight - 8 ? anchor.top - box.height - 6 : below) + 'px';
   }
+
+  // ---- informacion de las notas elegidas (tecla I) ---------------------------------
+  // Popup anclado a la seleccion: nombres de las notas y, con tres o mas alturas distintas, los acordes que forman
+  // (el grupo, no la columna: sirve para un arpegio). Con guitarra suma la digitacion del diccionario de guitar-chords.
+  let noteInfoPopup = null;
+  let noteInfoToken = 0;
+
+  function buildNoteInfoPopup() {
+    noteInfoPopup = document.createElement('div');
+    noteInfoPopup.id = 'scoreNoteInfo';
+    noteInfoPopup.className = 'score-meter-popup score-note-info';
+    noteInfoPopup.setAttribute('popover', 'auto');
+    noteInfoPopup.setAttribute('role', 'dialog');
+    noteInfoPopup.setAttribute('aria-label', t.noteInfo);
+    document.querySelector('.score-page').appendChild(noteInfoPopup);
+  }
+
+  function selectedNotes() {
+    const cache = new Map();
+    return picks().map((ref) => {
+      const ev = eventAt(ref);
+      if (!ev || ev.rest || typeof ev.n !== 'number') return null;
+      const staff = staffOf(ref);
+      const key = staff + ':' + ref.mi;
+      if (!cache.has(key)) cache.set(key, measurePitches(score, M, M.measures(score, staff)[ref.mi] || [], ref.mi));
+      const pitch = cache.get(key)[ref.i];
+      return pitch && { n: ev.n, midi: pitch.midi, alter: pitch.alter, node: nodeOf(ref) };
+    }).filter(Boolean);
+  }
+
+  function noteInfoSection(title, content) {
+    const section = document.createElement('section');
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    section.append(heading, content);
+    return section;
+  }
+
+  async function openNoteInfo() {
+    const notes = selectedNotes();
+    if (!notes.length) return;
+    if (!noteInfoPopup) buildNoteInfoPopup();
+    const token = ++noteInfoToken;
+    const info = noteInfo(notes);
+    const guitar = M.instrumentOf(score) === 'guitar' && info.chords.length > 0;
+    if (guitar) await loadChords();
+    if (token !== noteInfoToken) return;
+
+    const names = document.createElement('p');
+    names.className = 'score-note-info-notes';
+    names.textContent = info.notes.map((note) => note.label).join('  ');
+    const sections = [noteInfoSection(t.noteInfoNotes, names)];
+
+    const chord = document.createElement('div');
+    chord.className = 'score-note-info-chord';
+    if (info.chords.length) {
+      const main = document.createElement('p');
+      main.className = 'score-note-info-name';
+      main.textContent = info.chords[0];
+      chord.append(main);
+      if (info.chords.length > 1) {
+        const others = document.createElement('p');
+        others.className = 'score-note-info-others';
+        others.textContent = t.noteInfoChordOthers + ': ' + info.chords.slice(1).join(', ');
+        chord.append(others);
+      }
+      if (guitar && chordLib) {
+        const shown = new Set();
+        const diagrams = document.createElement('div');
+        diagrams.className = 'score-note-info-diagrams';
+        info.chords.slice(0, 3).forEach((name) => {
+          const found = lookupNames(name).map((candidate) => chordLib.findChord(chordLib.index, candidate)).find(Boolean);
+          if (!found || shown.has(found.name)) return;
+          shown.add(found.name);
+          const figure = document.createElement('figure');
+          const caption = document.createElement('figcaption');
+          caption.textContent = found.name;
+          figure.append(chordLib.drawDiagram(chordLib.positionsOf(found)[0], t.chordDiagram.replace('{name}', found.name)), caption);
+          diagrams.append(figure);
+        });
+        if (diagrams.children.length) chord.append(diagrams);
+      }
+    } else {
+      const none = document.createElement('p');
+      none.className = 'score-note-info-none';
+      none.textContent = info.classes < 3 ? t.noteInfoNeedThree : t.noteInfoNoChord;
+      chord.append(none);
+    }
+    sections.push(noteInfoSection(t.noteInfoChord, chord));
+    noteInfoPopup.replaceChildren(...sections);
+
+    if (!noteInfoPopup.matches(':popover-open')) noteInfoPopup.showPopover();
+    const rects = notes.map((note) => note.node && note.node.getBoundingClientRect()).filter(Boolean);
+    if (!rects.length) return;
+    const anchor = { left: Math.min(...rects.map((r) => r.left)), right: Math.max(...rects.map((r) => r.right)), top: Math.min(...rects.map((r) => r.top)), bottom: Math.max(...rects.map((r) => r.bottom)) };
+    const box = noteInfoPopup.getBoundingClientRect();
+    const below = anchor.bottom + 8;
+    noteInfoPopup.style.left = Math.max(8, Math.min((anchor.left + anchor.right) / 2 - box.width / 2, window.innerWidth - box.width - 8)) + 'px';
+    noteInfoPopup.style.top = Math.max(8, below + box.height > window.innerHeight - 8 ? anchor.top - box.height - 8 : below) + 'px';
+  }
+
+  // I abre (o cierra) la informacion de las notas elegidas. Sin letra asignada en ningun idioma.
+  document.addEventListener('keydown', (event) => {
+    if (event.code !== 'KeyI' || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey || event.defaultPrevented || event.repeat) return;
+    if (event.target.closest('input, textarea, select, [contenteditable], ascii-tabs, [role="dialog"]:not(.score-note-info), button, a')) return;
+    if (noteInfoPopup && noteInfoPopup.matches(':popover-open')) { event.preventDefault(); noteInfoPopup.hidePopover(); return; }
+    if (activeItem || !selectedNotes().length) return;
+    event.preventDefault();
+    openNoteInfo();
+  });
 
   // ---- reguladores (crescendo y diminuendo) -------------------------------------
   // Un regulador elegido muestra dos asas (debajo de sus extremos) para ensancharlo y, a cada lado, la dinamica de ese extremo:
