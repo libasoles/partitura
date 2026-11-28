@@ -1,5 +1,13 @@
 ---
+import '@fontsource-variable/montserrat';
+import '../styles/global.css';
+import '../styles/editor.css';
 import '../styles/debugger.css';
+import EditorSection from '../components/EditorSection.astro';
+import { renderEmptyStaff } from '../lib/staff.js';
+
+// Página interna: el editor real (el mismo componente y script que el sitio) y, debajo, el panel de at / forward.
+const staff = await renderEmptyStaff(undefined, undefined, { grandStaff: true });
 ---
 
 <!doctype html>
@@ -11,25 +19,26 @@ import '../styles/debugger.css';
     <title>Debugger · Partitura</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
-  <body>
+  <body class="debug-page">
     <header class="debug-bar">
-      <div class="debug-bar-top">
-        <h1>Debugger</h1>
-        <p>Página interna: cada caso es un compás. Elegí una figura y escribí en el pentagrama; abajo se ve dónde queda según <code>at</code> y según <code>forward</code>.</p>
-        <div class="debug-bar-actions">
-          <button type="button" id="debugAdd">+ Caso</button>
-          <button type="button" id="debugReset" class="danger">Reiniciar casos</button>
-        </div>
-      </div>
-      <div class="debug-tools" id="debugTools" role="toolbar" aria-label="Figuras"></div>
+      <h1>Debugger</h1>
+      <p>Página interna: es el editor real de Partitura (cada pestaña es un caso, con partituras guardadas aparte de las del sitio). Abajo, para la partitura abierta, se ve dónde queda cada figura según <code>at</code> y según <code>forward</code>.</p>
     </header>
 
-    <main id="debugCases" class="debug-cases" aria-live="polite">Cargando Verovio…</main>
+    <main class="score-page" id="top">
+      <EditorSection locale="es" staff={staff} />
+    </main>
 
-    <aside id="debugLive" class="debug-live" aria-label="Debug en vivo">
-      <h2>Debug en vivo</h2>
-      <div class="live-body"></div>
-    </aside>
+    <section class="debug-panel" aria-label="Debug de la partitura abierta">
+      <h2>Compases de «<span id="debugTitle"></span>»</h2>
+      <div id="debugMeasures" class="debug-measures"></div>
+      <details class="case-json">
+        <summary>JSON de la partitura (editable; pasa por <code>sanitize</code> como cualquier partitura guardada)</summary>
+        <textarea id="debugJson" class="json" rows="12" spellcheck="false"></textarea>
+        <p id="debugJsonError" class="json-error" hidden></p>
+        <button type="button" id="debugApply">Aplicar</button>
+      </details>
+    </section>
 
     <script>
       import '../client/debugger.js';

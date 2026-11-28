@@ -1,15 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import M from '../src/client/score-model.js';
-import { atTimeline, xmlTimeline, planPlacement } from '../src/client/debug-timing.js';
+import M, { createScoreModel } from '../src/client/score-model.js';
+import { atTimeline, xmlTimeline } from '../src/client/debug-timing.js';
 
 const bar = (...figures) => ({ meter: '4/4', clef: 'treble', fifths: 0, rows: [[figures]] });
 
 test('a lone note asked at 72 is settled at 0: a gap in at lasts nothing', () => {
-  const plan = planPlacement(M, bar(), { d: 'q' }, { mi: 0, t: 72, n: 37 });
-  assert.equal(plan.ok, true);
-  assert.equal(plan.requested, 72);
-  const [figure] = atTimeline(M, plan.trial, 0).figures;
+  const score = bar();
+  const measure = M.measures(score)[0];
+  const spot = M.placement(measure, { d: 'q', n: 37 }, 72, score, 0);
+  M.insertNote(measure, { d: 'q', n: 37 }, spot.at);
+  const [figure] = atTimeline(M, score, 0).figures;
   assert.equal(figure.at, 0);
   assert.equal(figure.start, 0);
 });
@@ -36,9 +37,10 @@ test('a second voice that waits behind a rest starts where the rest ends', () =>
   assert.equal(note.start, 48);
 });
 
-test('a refused placement reports why instead of throwing', () => {
-  const score = bar({ d: 'q', n: 37, at: 0 });
-  const plan = planPlacement(M, score, { d: 'q' }, { mi: 0, t: 0, n: 37 });
-  assert.equal(plan.ok, false);
-  assert.match(plan.reason, /null/);
+test('the MusicXML items say which staff they belong to', () => {
+  const score = { ...bar({ d: 'q', n: 37, at: 0 }), instrument: 'piano', lower: { 0: [{ d: 'q', n: 25, at: 0 }] } };
+  const Grand = createScoreModel({ grandStaff: true });
+  const { items } = xmlTimeline(Grand, score, 0);
+  assert.deepEqual([...new Set(items.map((i) => i.staff))].sort(), [0, 1]);
+  assert.equal(atTimeline(Grand, score, 0, 1).figures.length, 1);
 });
