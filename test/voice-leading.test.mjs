@@ -187,3 +187,13 @@ test('equal total movement favors parallel steps independently of event order', 
     assert.deepEqual(lines(measure), [[[33], [31]], [[31], [29]]]);
   }
 });
+
+test('hidden gaps before a late voice are one <forward>, so Verovio aligns it with the other voices', () => {
+  const score = M.emptyScore();
+  const measure = [{ d: 'h', rest: true }, { d: 'e', rest: true, dot: true }, { d: 'q', n: 37 }];
+  score.rows[0][0] = measure;
+  M.insertNote(measure, { d: 'q', n: 40 }, 66);
+  const xml = M.toMusicXml(score);
+  assert.match(xml, /<forward><duration>66<\/duration><voice>1<\/voice><\/forward>/);
+  assert.doesNotMatch(xml, /<note print-object="no"><rest\/><duration>2<\/duration>/);
+});
