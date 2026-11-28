@@ -234,6 +234,7 @@
     "noteInfoChordOthers": "Também poderia ser",
     "noteInfoNoChord": "Estas notas não formam um acorde conhecido",
     "noteInfoNeedThree": "Escolha pelo menos três notas diferentes para ver o acorde",
+    "noteInfoContext": "Pelo contexto: {before} → este → {after}",
     "play": "Reproduzir",
     "pause": "Pausar",
     "playbackLoading": "Carregando sons…",

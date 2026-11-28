@@ -234,6 +234,7 @@
     "noteInfoChordOthers": "Could also be",
     "noteInfoNoChord": "These notes do not form a known chord",
     "noteInfoNeedThree": "Select at least three different notes to see the chord",
+    "noteInfoContext": "By context: {before} → this → {after}",
     "play": "Play",
     "pause": "Pause",
     "playbackLoading": "Loading sounds…",
