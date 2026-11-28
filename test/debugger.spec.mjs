@@ -122,3 +122,16 @@ test('play runs a playhead over both graphs and stops on edit', async ({ page })
   await first.getByRole('button', { name: '+ Compás' }).click();
   await expect(first.getByRole('button', { name: 'Reproducir el caso' })).toHaveText('▶ Play');
 });
+
+test('an incomplete first bar followed by music is shown as a pickup with no forward', async ({ page }) => {
+  await openDebugger(page);
+  const full = { meter: '4/4', clef: 'treble', fifths: 0, rows: [[[{ d: 'q', n: 37, at: 0 }], [{ d: 'w', n: 37, at: 0 }]]] };
+  const first = await loadScore(page, full);
+  const firstBar = first.locator('.measure-debug').first();
+  await expect(first.locator('g.measure')).toHaveCount(2);
+  await expect(firstBar.locator('.badge')).toHaveText('anacrusa');
+  await expect(firstBar).toContainText('dura 24');
+  await expect(firstBar.locator('.sq.is-forward')).toHaveCount(0);
+  // El compás siguiente es completo: no es anacrusa.
+  await expect(first.locator('.measure-debug').nth(1).locator('.badge')).toHaveCount(0);
+});
