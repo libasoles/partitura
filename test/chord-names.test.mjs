@@ -76,6 +76,17 @@ test('interval names come from the written steps and the semitones', async () =>
   assert.equal(allIntervals([note(28), note(30), note(32), note(35)]).length, 6);
 });
 
+test('intervals are grouped in blocks: neighbours first, then each low note against the rest', async () => {
+  const { intervalBlocks } = await import('../src/client/note-info.js');
+  const show = (notes) => intervalBlocks(notes).map((block) => block.map((i) => [i.low.n, i.high.n]));
+  assert.deepEqual(show([note(28), note(30), note(32)]), [[[30, 32], [28, 30]], [[28, 32]]]);
+  assert.deepEqual(show([note(28), note(30), note(32), note(34)]), [
+    [[32, 34], [30, 32], [28, 30]],
+    [[28, 34], [28, 32]],
+    [[30, 34]],
+  ]);
+});
+
 test('the chord before and after the selection breaks the tie between candidates', async () => {
   const { noteInfo, rankByContext } = await import('../src/client/note-info.js');
   const info = noteInfo([note(28), note(30), note(32), note(33)]); // C E G A
