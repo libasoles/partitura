@@ -72,3 +72,53 @@ test('adding a bar and a second note updates the graphs', async ({ page }) => {
   await expect(first.locator('.measure-debug').first().locator('.graph').nth(1).locator('.sq.is-forward')).toHaveCount(1);
   await expect(first.locator('.measure-debug').first()).toContainText('forward: 72');
 });
+
+const TWO_VOICES = { meter: '4/4', clef: 'treble', fifths: 0, rows: [[[{ d: 'q', n: 37, at: 0, v: 1 }, { d: 'q', n: 35, at: 0, v: 2 }]]] };
+
+async function loadScore(page, score) {
+  const first = page.locator('.case').first();
+  await first.locator('summary').click();
+  await first.locator('textarea.json').fill(JSON.stringify(score));
+  await first.getByRole('button', { name: 'Aplicar' }).click();
+  return first;
+}
+
+test('voices are coloured by default with the editor legend palette, and C turns it off', async ({ page }) => {
+  await openDebugger(page);
+  const first = await loadScore(page, TWO_VOICES);
+  const fill = (voice) => first.locator(`g.note[data-voice="${voice}"] .notehead`).first().evaluate((node) => getComputedStyle(node.querySelector('use, path') || node).fill);
+  await expect(first.locator('g.note[data-voice]')).toHaveCount(2);
+  expect(await fill(1)).toBe('rgb(181, 71, 47)');
+  expect(await fill(2)).toBe('rgb(200, 146, 46)');
+  await page.keyboard.press('c');
+  await expect(page.locator('#toolColors')).toHaveAttribute('aria-pressed', 'false');
+  expect(await fill(1)).not.toBe('rgb(181, 71, 47)');
+});
+
+test('the figure bar draws each figure and the table names it in full', async ({ page }) => {
+  await openDebugger(page);
+  await expect(page.locator('#debugTools button[data-d] svg')).toHaveCount(6);
+  await page.keyboard.press('5'); // blanca
+  const p = await pointAt(page, 0.5);
+  await page.mouse.click(p.x, p.y);
+  const row = page.locator('.case').first().locator('table.values').first().locator('tbody tr').first();
+  await expect(row).toContainText('blanca');
+  await expect(row).not.toContainText(/\bh\b/);
+  await page.keyboard.press('r'); // los botones pasan a mostrar silencios
+  await page.keyboard.press('p');
+  await page.keyboard.press('4');
+  await page.mouse.click(p.x + 120, p.y);
+  await expect(page.locator('.case').first().locator('table.values').first()).toContainText('silencio de negra con puntillo');
+});
+
+test('play runs a playhead over both graphs and stops on edit', async ({ page }) => {
+  await openDebugger(page);
+  const first = await loadScore(page, TWO_VOICES);
+  const play = first.getByRole('button', { name: 'Reproducir el caso' });
+  await expect(play).toHaveText('▶ Play');
+  await play.click();
+  await expect(play).toHaveText('■ Stop');
+  await expect(first.locator('.graph .playhead:not([hidden])').first()).toBeVisible();
+  await first.getByRole('button', { name: '+ Compás' }).click();
+  await expect(first.getByRole('button', { name: 'Reproducir el caso' })).toHaveText('▶ Play');
+});
