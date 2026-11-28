@@ -6394,7 +6394,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         icon.appendChild(glyphFor(item));
         icons.appendChild(icon);
       });
-      if (name === 'voices' && isPro()) {
+      if (name === 'voices') {
         voiceButtons.forEach((button) => {
           const swatch = document.createElement('span');
           swatch.className = 'score-settings-icon score-voice-swatch';
@@ -6402,6 +6402,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
           swatch.textContent = button.textContent;
           icons.appendChild(swatch);
         });
+      }
+      if (name === 'voices' && isPro()) {
         // Pro: unir y separar voces son herramientas de esta categoria, sin casilla propia.
         {
           [['merge', t.restructureJoin], ['split', t.restructureSplit]].forEach(([name, label]) => {
