@@ -785,8 +785,6 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
       }
       let placedRef = null;
       change(() => {
-        // Una sincopa en un compas vacio tiene silencios antes de la nota.
-        measure.push(...M.leadingRests(score, target.mi, target.staff, spot.at));
         const index = M.insertNote(measure, ev, spot.at);
         // Con una herramienta activa la figura nueva no queda seleccionada: seleccion y herramienta no conviven.
         selected = activeItem ? null : M.refOf(target.staff, target.mi, index);
