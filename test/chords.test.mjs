@@ -99,7 +99,7 @@ test('names without a figure at their time keep their own position instead of pi
   M.setChord(score, 0, 48, 'Em');
   const xml = M.toMusicXml(score);
   const measure = xml.slice(xml.indexOf('<measure'));
-  const order = [...measure.matchAll(/<words font-weight="bold"[^>]*>([^<]*)<\/words>|<note print-object="no">/g)].map((m) => m[1] || 'gap');
+  const order = [...measure.matchAll(/<words font-weight="bold"[^>]*>([^<]*)<\/words>|<forward>/g)].map((m) => m[1] || 'gap');
   assert.deepEqual(order.filter((x) => x !== 'gap'), ['A7', 'Ok', 'Em']);
   assert.ok(order.indexOf('Ok') > order.indexOf('A7') + 1 && order.indexOf('gap') < order.indexOf('Ok'), 'a hidden gap separates the names');
 });

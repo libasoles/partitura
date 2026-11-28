@@ -200,7 +200,7 @@ test('every measure of the MusicXML adds up: the cursor never goes before the ba
   for (const xml of [G.toMusicXml(score), G.toMusicXml(G.sanitize({ ...G.emptyScore(), lower: { 0: [{ d: 'w', n: 25 }] } }))]) {
     for (const [, body] of xml.matchAll(/<measure [^>]*>(.*?)<\/measure>/g)) {
       let cursor = 0;
-      for (const [, tag, rest] of body.matchAll(/<(note|backup)[ >](.*?)<\/\1>/g)) {
+      for (const [, tag, rest] of body.matchAll(/<(note|backup|forward)[ >](.*?)<\/\1>/g)) {
         const duration = +rest.match(/<duration>(\d+)<\/duration>/)[1];
         if (tag === 'backup') cursor -= duration;
         else if (!rest.includes('<chord/>')) cursor += duration;

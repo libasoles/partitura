@@ -3584,9 +3584,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
           const events = indices.map((i) => Object.assign({}, measure[i], { at: starts[i] }));
           const beams = beamStates(events, { meter: meterAt(score, mi) });
           const pad = (from, to) => {
-            padding(to - from).forEach((size) => {
-              xml += `<note print-object="no"><rest/><duration>${size * mult}</duration><voice>${voiceBase + vi + 1}</voice>${TYPES[size] ? `<type>${TYPES[size]}</type>` : ''}${staff ? `<staff>${staff + 1}</staff>` : ''}</note>`;
-            });
+            // Un solo <forward>: varios silencios ocultos de duraciones sin figura (p. ej. 16 + 2) hacen que Verovio
+            // calcule mal el tiempo y desplace las notas de las otras voces que empiezan justo despues.
+            if (to > from) xml += `<forward><duration>${(to - from) * mult}</duration><voice>${voiceBase + vi + 1}</voice>${staff ? `<staff>${staff + 1}</staff>` : ''}</forward>`;
           };
           // Inicio y fin de la cejilla se escriben en la primera voz con un hueco (o un limite) justo en ese tiempo.
           const hidden = (from, to) => {
