@@ -25,6 +25,13 @@ test('mientras es lo único escrito sigue siendo un compás completo (se puede s
   assert.deepEqual(forwards(s, 0).map((f) => [f.start, f.dur]), [[24, 72]]);
 });
 
+test('una negra suelta en el pulso 3 del primer compás, con música después, es un compás completo con forward', () => {
+  const s = score([q(37, 48)], whole);
+  assert.equal(M.pickupLength(s, 0), null);
+  assert.doesNotMatch(M.toMusicXml(s), /<measure number="1" id="m0" implicit/);
+  assert.deepEqual(forwards(s, 0).map((f) => [f.start, f.dur]), [[0, 48], [72, 24]]);
+});
+
 test('un primer compás completo no es anacrusa', () => {
   assert.equal(M.pickupLength(score(whole, whole), 0), null);
 });

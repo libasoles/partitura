@@ -373,14 +373,13 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   function placement(others, ev, t, score, mi, preserveVoice = false) {
     const limit = capacity(score, mi);
     const size = length(ev);
-    // Al escribir con un clic la posicion se ajusta a la subdivision de la figura (negra o mas: al pulso; corchea: a la
-    // corchea), asi un clic en el centro de un compas vacio queda en el centro y no en una semicorchea cercana.
-    const fine = gridOf([ev]);
-    const grid = fine === GRID && !preserveVoice ? (size >= 24 ? 24 : size >= 12 ? 12 : GRID) : fine;
+    const grid = gridOf([ev]);
     const starts = hints(others);
     // En un compás ya excedido no hay "ultimo lugar que entra": anclar al final de la capacidad mandaba la figura
     // al medio del compas y desordenaba las voces; puede quedar hasta donde empieza la ultima figura.
-    const ceiling = measureLength(others) > limit ? Math.max(limit - size, ...starts) : limit - size;
+    // Al escribir (sin conservar la voz) no se recorta a `capacidad - duracion`: la figura queda donde se hizo clic y
+    // `closeGaps` (que recibe `limit` al insertar) cierra primero los huecos de la izquierda; al mover se sigue recortando.
+    const ceiling = !preserveVoice ? limit - Math.min(size, grid) : measureLength(others) > limit ? Math.max(limit - size, ...starts) : limit - size;
     const at = Math.max(0, Math.min(Math.max(0, ceiling), tidy(Math.round(t / grid) * grid)));
     // Al mover no se bloquea: la nota puede quedar sobre otra igual (el editor no restringe lo que se escribe).
     if (!preserveVoice && !ev.rest && others.some((o, i) => !o.rest && starts[i] === at && o.n === ev.n && o.acc === ev.acc)) return null;
@@ -2466,6 +2465,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const staves = Array.from({ length: stavesOf(score) }, (_, staff) => measures(score, staff));
     const length = Math.max(0, ...staves.map((all) => (all[mi] ? measureLength(all[mi]) : 0)));
     if (!(length > 0) || length >= capacity(score, mi)) return null;
+    // Con un hueco antes de la primera figura (una negra suelta en el pulso 3) el compas es completo: `<forward>` + figura.
+    const first = Math.min(...staves.filter((all) => all[mi] && all[mi].length).map((all) => Math.min(...onsets(all[mi]))));
+    if (first > 0) return null;
     return staves.some((all) => all[mi + 1] && all[mi + 1].length) ? length : null;
   }
 
