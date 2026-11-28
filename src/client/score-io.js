@@ -115,6 +115,7 @@ const api = (function () {
     const staves = M.stavesOf(score);
     // Pentagramas de abajo (<staff>2..4</staff>), solo los que tiene el sitio; si no, todo va al primero.
     const lowers = Array.from({ length: staves - 1 }, () => ({}));
+    const importedStems = []; // voz (indice) -> 'up' | 'down', segun las notas del archivo
     const barlines = {};
     const navigation = {};
     const shorter = {};
@@ -260,6 +261,9 @@ const api = (function () {
           if (!voices[staff].has(voice)) voices[staff].set(voice, voices[staff].size + 1);
           const v = voices[staff].get(voice);
           if (v <= M.MAX_VOICE) ev.v = v;
+          // La direccion de plica del archivo (por voz del pentagrama de arriba) se respeta al dibujar.
+          const stemDirection = !rest && !staff && text(node, 'stem');
+          if ((stemDirection === 'up' || stemDirection === 'down') && v <= M.MAX_VOICE && !importedStems[v - 1]) importedStems[v - 1] = stemDirection;
           ev.at = Math.round(start * M.DIVISIONS / divisions);
           (staff ? lowerEvents[staff - 1] : events).push(ev);
           const lyric = !rest && !chord && child(node, 'lyric');
@@ -290,6 +294,8 @@ const api = (function () {
     lowerClefs.forEach((changes, k) => { if (Object.keys(changes).length) score[M.CLEF_KEYS[k + 1][1]] = changes; });
     lowers.forEach((lane, k) => { if (Object.keys(lane).length) score[M.LANE_KEYS[k]] = lane; });
     if (Object.keys(shorter).length) score.measureDurations = shorter;
+    // Solo con dos o mas voces (con una sola la plica la decide la altura) y con todas las voces definidas.
+    if (importedStems.length > 1 && Array.from(importedStems, (d) => d).every(Boolean)) score.stems = importedStems;
     M.sanitize(score);
     syllables.forEach(({ mi, at, staff, text }) => M.setLyric(score, mi, at, text, staff));
     chordMarks.forEach(({ mi, at, name }) => M.setChord(score, mi, at, name));
