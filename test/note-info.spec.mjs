@@ -45,7 +45,7 @@ test('the neighbouring measures break the tie between C6 and Am7/C', async ({ pa
   await expect(popup.locator('.score-note-info-context')).toHaveText('Según el contexto: Dm → este → G');
 });
 
-test('I on piano shows the chord without a fingering, and asks for three notes otherwise', async ({ page }) => {
+test('I on piano shows the chord without a fingering', async ({ page }) => {
   await seed(page, 'piano', arpeggio);
   await page.goto('/es/');
   await selectAll(page);
@@ -55,10 +55,27 @@ test('I on piano shows the chord without a fingering, and asks for three notes o
   await expect(popup.locator('svg.chord-diagram')).toHaveCount(0);
 });
 
-test('I with fewer than three different notes explains why there is no chord', async ({ page }) => {
+test('I with two notes shows their interval and no chord section', async ({ page }) => {
   await seed(page, 'piano', [[[{ d: 'h', n: 28, v: 1, at: 0 }, { d: 'h', n: 30, v: 1, at: 48 }]]]);
   await page.goto('/es/');
   await selectAll(page);
   await page.keyboard.press('i');
-  await expect(page.locator('#scoreNoteInfo .score-note-info-none')).toHaveText('Elegí al menos tres notas distintas para ver el acorde');
+  const popup = page.locator('#scoreNoteInfo');
+  await expect(popup.locator('h3')).toHaveText(['Notas', 'Intervalo']);
+  await expect(popup.locator('.score-note-info-intervals li')).toHaveCount(1);
+  await expect(popup.locator('.score-note-info-intervals strong')).toHaveText('3ª mayor');
+  await expect(popup.locator('.score-note-info-semitones')).toHaveText('4 semitonos');
+  await expect(popup).not.toContainText('Acorde');
+});
+
+test('I with several notes lists every interval between them', async ({ page }) => {
+  await seed(page, 'piano', arpeggio);
+  await page.goto('/es/');
+  await selectAll(page);
+  await page.keyboard.press('i');
+  const popup = page.locator('#scoreNoteInfo');
+  await expect(popup.locator('h3')).toHaveText(['Notas', 'Intervalos', 'Acorde']);
+  // C3 E3 G3 (the repeated E is one pitch): three pairs.
+  await expect(popup.locator('.score-note-info-intervals li')).toHaveCount(3);
+  await expect(popup.locator('.score-note-info-intervals strong')).toHaveText(['3ª mayor', '5ª justa', '3ª menor']);
 });

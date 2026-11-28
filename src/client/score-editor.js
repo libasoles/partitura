@@ -10,7 +10,7 @@ import { chordMarks, hasIntervals, neighbourChords, parseTonic, scoreKey, spellT
 import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
 import { measurePitches, pitchMidi } from './score-notes.js';
-import { lookupNames, noteInfo, rankByContext } from './note-info.js';
+import { allIntervals, lookupNames, noteInfo, rankByContext } from './note-info.js';
 import { applyUrlDefaults } from './url-defaults.js';
 import { createScoresDrawer } from './score-drawer.js';
 import { createTabLayout } from './score-tab-layout.js';
@@ -3027,6 +3027,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return section;
   }
 
+  // "3ª mayor", "octava justa", "unísono aumentado"; sin calidad habitual, solo el numero.
+  function intervalName({ number, quality }) {
+    if (number === 1 && quality === 'augmented') return t.noteInfoAugmentedUnison;
+    const word = t.noteInfoIntervalNumbers[number - 1] ?? t.noteInfoIntervalCompound.replace('{n}', number);
+    if (!quality || (quality === 'perfect' && number === 1)) return word;
+    return t.noteInfoIntervalFormat.replace('{number}', word).replace('{quality}', t.noteInfoQualities[quality]);
+  }
+
   async function openNoteInfo() {
     const notes = selectedNotes();
     if (!notes.length) return;
@@ -3035,7 +3043,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     const info = noteInfo(notes);
     // El acorde de antes y el de despues desempatan entre los nombres posibles: se buscan franja a franja desde la
     // seleccion, hasta un compas de distancia, y la busqueda se detiene en cuanto las notas reunidas forman un acorde.
-    const around = neighbourChords(score, M, picks(), analysisVoices());
+    const around = info.chords.length ? neighbourChords(score, M, picks(), analysisVoices()) : { before: null, after: null };
     const key = scoreKey(score, M);
     const ranked = rankByContext(info, around.before, around.after, M.fifthsOf(score), { tonic: key.tonic, mode: key.mode });
     info.chords = ranked.chords;
@@ -3048,9 +3056,35 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     names.textContent = info.notes.map((note) => note.label).join('  ');
     const sections = [noteInfoSection(t.noteInfoNotes, names)];
 
+    // Con dos o mas notas: todos los intervalos entre ellas (con dos, uno solo y sus semitonos).
+    if (info.notes.length >= 2) {
+      const pairs = allIntervals(info.notes);
+      const list = document.createElement('ul');
+      list.className = 'score-note-info-intervals';
+      pairs.forEach((pair) => {
+        const item = document.createElement('li');
+        const between = document.createElement('span');
+        between.className = 'score-note-info-between';
+        between.textContent = pair.low.label + ' – ' + pair.high.label;
+        const name = document.createElement('strong');
+        name.textContent = intervalName(pair);
+        item.append(between, name);
+        if (pairs.length === 1) {
+          const semitones = document.createElement('span');
+          semitones.className = 'score-note-info-semitones';
+          semitones.textContent = Math.abs(pair.semitones) === 1 ? t.noteInfoSemitone : t.noteInfoSemitones.replace('{n}', Math.abs(pair.semitones));
+          item.append(semitones);
+        }
+        list.append(item);
+      });
+      sections.push(noteInfoSection(pairs.length === 1 ? t.noteInfoInterval : t.noteInfoIntervals, list));
+    }
+
     const chord = document.createElement('div');
     chord.className = 'score-note-info-chord';
-    if (info.chords.length) {
+    if (info.classes < 3) {
+      // Con menos de tres alturas distintas no hay acorde: la seccion no se muestra.
+    } else if (info.chords.length) {
       const main = document.createElement('p');
       main.className = 'score-note-info-name';
       main.textContent = info.chords[0];
@@ -3086,10 +3120,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     } else {
       const none = document.createElement('p');
       none.className = 'score-note-info-none';
-      none.textContent = info.classes < 3 ? t.noteInfoNeedThree : t.noteInfoNoChord;
+      none.textContent = t.noteInfoNoChord;
       chord.append(none);
     }
-    sections.push(noteInfoSection(t.noteInfoChord, chord));
+    if (info.classes >= 3) sections.push(noteInfoSection(t.noteInfoChord, chord));
     noteInfoPopup.replaceChildren(...sections);
 
     if (!noteInfoPopup.matches(':popover-open')) noteInfoPopup.showPopover();

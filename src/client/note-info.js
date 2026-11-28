@@ -18,6 +18,31 @@ export function noteInfo(notes) {
   return { notes: list, classes: classes.size, chords: classes.size >= 3 ? chordNames(notes) : [] };
 }
 
+const SIMPLE_SEMITONES = [0, 2, 4, 5, 7, 9, 11];
+const PERFECT = new Set([0, 3, 4]); // unisono, cuarta y quinta (por paso de escala dentro de la octava)
+
+// Intervalo entre dos notas ({ n, midi }): `number` (1 unisono, 2 segunda, ... 8 octava, 9 novena...), `quality`
+// ('perfect' | 'major' | 'minor' | 'augmented' | 'diminished' o null si no tiene nombre habitual) y los semitonos.
+// El numero sale de los pasos de escala escritos y la calidad de los semitonos, asi que do-fa# es una cuarta aumentada.
+export function intervalOf(a, b) {
+  const [low, high] = a.n <= b.n ? [a, b] : [b, a];
+  const steps = high.n - low.n;
+  const semitones = high.midi - low.midi;
+  const simple = steps % 7;
+  const octaves = Math.floor(steps / 7);
+  const diff = semitones - 12 * octaves - SIMPLE_SEMITONES[simple];
+  let quality = null;
+  if (PERFECT.has(simple)) quality = { 0: 'perfect', 1: 'augmented', '-1': 'diminished' }[diff] ?? null;
+  else quality = { 0: 'major', '-1': 'minor', 1: 'augmented', '-2': 'diminished' }[diff] ?? null;
+  return { low, high, number: steps + 1, quality, semitones };
+}
+
+// Todos los intervalos entre las notas (cada par una vez), de la nota mas grave a la mas aguda.
+export function allIntervals(notes) {
+  const sorted = [...notes].sort((a, b) => a.n - b.n || a.midi - b.midi);
+  return sorted.flatMap((low, i) => sorted.slice(i + 1).map((high) => intervalOf(low, high)));
+}
+
 // Reordena los nombres posibles de `info` segun el acorde de antes y el de despues (`before`/`after`: { names, pcs } o null).
 // Usa la misma eleccion por contexto que los nombres de acorde de la partitura, con la tonalidad `key` ({ tonic, mode }) de
 // toda ella. Devuelve los nombres, el elegido primero, y el acorde vecino usado de cada lado.
