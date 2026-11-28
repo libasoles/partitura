@@ -6,10 +6,10 @@
   --line: #2c2f37;
   --text: #e8eaee;
   --muted: #9aa1ae;
-  --v1: #e5646e;
-  --v2: #4a90e2;
-  --v3: #3aa76d;
-  --v4: #e0a030;
+  --v1: #e8765a;
+  --v2: #e3b04b;
+  --v3: #5bb585;
+  --v4: #6a95de;
   --v5: #a97ce0;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
@@ -173,3 +173,24 @@ button.mini { padding: 0 0.4rem; line-height: 1.2; }
 .live-note { margin: 0.3rem 0; padding: 0.3rem 0.5rem; background: #2a1f10; border: 1px solid #6b4a1a; border-radius: 0.3rem; color: #ffcf99; font-size: 0.74rem; }
 .live-graphs { display: grid; gap: 0.6rem; margin-top: 0.5rem; }
 .debug-live .track { height: 2.9rem; }
+
+/* ---- voces en color (misma paleta que la leyenda del editor) ---- */
+.case-stage { --voice-1: #b5472f; --voice-2: #c8922e; --voice-3: #3f7d5a; --voice-4: #3a5f9e; }
+.case-stage [data-voice="1"] { --voice: var(--voice-1); }
+.case-stage [data-voice="2"] { --voice: var(--voice-2); }
+.case-stage [data-voice="3"] { --voice: var(--voice-3); }
+.case-stage [data-voice="4"] { --voice: var(--voice-4); }
+body.has-voices .case-stage :is(g.note, g.rest)[data-voice] * { fill: var(--voice); stroke: var(--voice); }
+body.has-voices .case-stage g.beam[data-voice] > :is(polygon, path) { fill: var(--voice); stroke: var(--voice); }
+
+/* ---- reproducción ---- */
+button.play { min-width: 6.2rem; background: #1f4d36; border-color: #3aa76d; }
+button.play:hover { background: #266044; }
+.graph { position: relative; --lane-label: 3.7rem; }
+.playhead { position: absolute; top: 1.25rem; bottom: 1.1rem; width: 2px; margin-left: -1px; background: #fff; box-shadow: 0 0 6px rgba(255, 255, 255, 0.8); pointer-events: none; z-index: 3; }
+.playhead[hidden] { display: none; }
+
+/* ---- dibujo de la figura en los botones de la barra ---- */
+.tool-glyph { display: flex; height: 2.45rem; align-items: center; justify-content: center; }
+.tool-glyph svg { display: block; overflow: visible; }
+.tool { min-width: 5.4rem; }

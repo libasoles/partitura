@@ -4,6 +4,8 @@
    (debug-timing.js), que sigue el mismo camino de colocacion. */
 import M from './score-model.js';
 import { atTimeline, xmlTimelines, planPlacement } from './debug-timing.js';
+import { createPlayer } from './score-playback.js';
+import { figureGlyph } from './figure-glyphs.js';
 
 const STORAGE = 'partitura.debugger.v1';
 const SCALE = 60;
@@ -41,10 +43,11 @@ let cases = [];
 let tool = null; // { d, rest, dot } o null
 let toolkit = null;
 let serial = 0;
+let colorVoices = true; // las voces se colorean por defecto, con la paleta de la leyenda del editor
 
 function save() {
   try {
-    localStorage.setItem(STORAGE, JSON.stringify({ cases: cases.map(({ id, title, score }) => ({ id, title, score })), tool }));
+    localStorage.setItem(STORAGE, JSON.stringify({ cases: cases.map(({ id, title, score }) => ({ id, title, score })), tool, colorVoices }));
   } catch { /* sin almacenamiento: no pasa nada */ }
 }
 
@@ -53,6 +56,7 @@ function load() {
     const data = JSON.parse(localStorage.getItem(STORAGE) || 'null');
     if (data && Array.isArray(data.cases) && data.cases.length) {
       tool = data.tool && TOOLS.some((t) => t.d === data.tool.d) ? data.tool : null;
+      colorVoices = data.colorVoices !== false;
       return data.cases.map((c) => ({ id: ++serial, title: String(c.title || 'Caso'), score: c.score && c.score.rows ? c.score : fresh() }));
     }
   } catch { /* se arranca de cero */ }
@@ -175,6 +179,85 @@ function locate(c, clientX, clientY) {
   };
 }
 
+// ---- voces: color por numero de leyenda (igual que applyVoices del editor, con todas las voces encendidas) -----------
+
+function applyVoices(c) {
+  const stage = c.stage;
+  M.measures(c.score).forEach((measure, mi) => {
+    M.voices(measure).forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => {
+      const node = stage.querySelector('[id="e' + mi + '-' + i + '"]');
+      if (node) node.dataset.voice = String(M.legendOf(c.score, 0, k));
+    })));
+  });
+  // Las barras toman la voz de la primera nota que agrupan. Las ligaduras quedan sin color: el toolkit compartido
+  // ya cargo otro caso y no se puede preguntar por su nota inicial.
+  stage.querySelectorAll('g.beam').forEach((beam) => {
+    const first = beam.querySelector('g.note[data-voice]');
+    if (first) beam.dataset.voice = first.dataset.voice;
+  });
+}
+
+// ---- reproduccion ----------------------------------------------------------------------------------------------------
+
+let audio = null;
+let player = null;
+let playing = null; // { c, track }
+let frame = 0;
+
+const vendorUrl = (file) => new URL(file, new URL('/vendor/', document.baseURI)).href;
+
+function stopPlayback() {
+  cancelAnimationFrame(frame);
+  if (player) player.stop();
+  playing = null;
+  cases.forEach((c) => {
+    if (!c.play) return; // todavia no se dibujo (renderAll lo llama antes de construir los casos)
+    c.play.textContent = '▶ Play';
+    c.play.disabled = false;
+    c.debug.querySelectorAll('.playhead').forEach((line) => { line.hidden = true; });
+  });
+}
+
+// Una linea vertical recorre los dos graficos de cada compas, en las mismas divisiones del modelo.
+function tickPlayhead() {
+  if (!playing) return;
+  const { c } = playing;
+  const division = 60 / (c.score.tempo || 120) / M.DIVISIONS;
+  const time = player.position / division;
+  const starts = [];
+  let offset = 0;
+  M.measures(c.score).forEach((_, mi) => { starts.push(offset); offset += M.capacity(c.score, mi); });
+  c.debug.querySelectorAll('.graph[data-mi]').forEach((graph) => {
+    const ratio = (time - starts[+graph.dataset.mi]) / +graph.dataset.span;
+    const line = graph.querySelector('.playhead');
+    line.hidden = !(ratio >= 0 && ratio <= 1);
+    if (!line.hidden) line.style.left = `calc(var(--lane-label) + (100% - var(--lane-label)) * ${ratio})`;
+  });
+  frame = requestAnimationFrame(tickPlayhead);
+}
+
+async function togglePlay(c) {
+  const same = playing && playing.c === c;
+  stopPlayback();
+  if (same) return;
+  c.play.disabled = true;
+  c.play.textContent = 'Cargando…';
+  try {
+    audio ||= new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') await audio.resume();
+    player ||= createPlayer(audio, vendorUrl, stopPlayback);
+    const track = await player.prepare(M.clone(c.score), M, null, 4);
+    c.play.disabled = false;
+    c.play.textContent = '■ Stop';
+    playing = { c, track };
+    player.play(track, 0);
+    tickPlayhead();
+  } catch (error) {
+    stopPlayback();
+    c.play.textContent = 'Error: ' + error.message;
+  }
+}
+
 // ---- graficos ---------------------------------------------------------------------------------------------------
 
 const voiceClass = (v) => 'v' + Math.min(Math.max(v, 1), 5);
@@ -209,7 +292,7 @@ export function atGraph(data, highlight) {
     });
     rows.push(lane(v, data.span, boxes));
   }
-  return h('div', { class: 'graph' }, h('div', { class: 'graph-title' }, 'Con at (donde dice el modelo)'), rows, axis(data.span, data.capacity));
+  return h('div', { class: 'graph', 'data-span': data.span }, h('div', { class: 'graph-title' }, 'Con at (donde dice el modelo)'), rows, axis(data.span, data.capacity), h('div', { class: 'playhead', hidden: true }));
 }
 
 // "forward": lo que lee Verovio. Notas y silencios en su inicio, y los <forward> como esperas rayadas.
@@ -223,7 +306,7 @@ export function forwardGraph(timeline, capacity, highlight) {
     const cls = (item.kind === 'note' ? '' : item.kind === 'hidden' ? 'is-hidden' : 'is-rest') + (item.index === highlight && item.kind !== 'hidden' ? ' is-new' : '');
     return box(cls, item.start, item.dur, span, label, `${label} · dura ${item.dur}`);
   })));
-  return h('div', { class: 'graph' }, h('div', { class: 'graph-title' }, 'Con forward (lo que lee Verovio)'), rows, axis(span, capacity));
+  return h('div', { class: 'graph', 'data-span': span }, h('div', { class: 'graph-title' }, 'Con forward (lo que lee Verovio)'), rows, axis(span, capacity), h('div', { class: 'playhead', hidden: true }));
 }
 
 function table(head, rows) {
@@ -242,15 +325,23 @@ function snapshot(c) {
 }
 
 function commit(c, score, { record = true } = {}) {
+  if (playing && playing.c === c) stopPlayback(); // lo que suena ya no es lo que se ve
   if (record) snapshot(c);
   c.score = score;
   save();
   renderCase(c);
 }
 
-function figureLabel(f) {
-  return (f.rest ? 'silencio ' : '') + (f.d || '?') + (f.dot ? '.' : '') + (f.rest ? '' : ' ' + pitchName(f.n));
+const FIGURE_NAMES = { w: 'redonda', h: 'blanca', q: 'negra', e: 'corchea', s: 'semicorchea', f: 'fusa' };
+
+// "blanca con puntillo C5", "silencio de negra": el nombre de la figura, no la letra del modelo.
+function figureName({ d, dot, rest, n }) {
+  const name = FIGURE_NAMES[d] || '?';
+  const dots = dot === 2 ? ' con doble puntillo' : dot ? ' con puntillo' : '';
+  return rest ? `silencio de ${name}${dots}` : `${name}${dots} ${pitchName(n)}`;
 }
+
+const figureLabel = figureName;
 
 function renderDebug(c, xml) {
   const total = measureCount(c.score);
@@ -268,9 +359,11 @@ function renderDebug(c, xml) {
         commit(c, score);
       },
     }, '×');
+    const graphs = [atGraph(data), forwardGraph(forward, data.capacity)];
+    graphs.forEach((graph) => { graph.dataset.mi = mi; });
     return h('div', { class: 'measure-debug' },
       h('h3', {}, 'Compás ' + (mi + 1), h('small', {}, ` · capacidad ${data.capacity} · contenido ${data.end}`)),
-      h('div', { class: 'graphs' }, atGraph(data), forwardGraph(forward, data.capacity)),
+      h('div', { class: 'graphs' }, graphs),
       h('div', { class: 'tables' },
         table(['#', 'voz', 'figura', 'at', 'inicio real', 'dura', ''], data.figures.map((f) => [
           f.i, f.voice, figureLabel(f), f.at + (f.saved ? '' : '*'), h('span', { class: f.start !== f.at ? 'differs' : '' }, f.start), f.dur, removable(f),
@@ -293,6 +386,7 @@ function renderCase(c) {
   c.stage.appendChild(c.marker);
   c.marker.hidden = true;
   measureLayout(c);
+  applyVoices(c);
   renderDebug(c, drawn.xml);
   c.undo.disabled = !(c.history && c.history.length);
   c.json.value = JSON.stringify(c.score, null, 1);
@@ -307,6 +401,7 @@ function buildCase(c) {
     const previous = c.history && c.history.pop();
     if (previous) commit(c, JSON.parse(previous), { record: false });
   } }, 'Deshacer');
+  c.play = h('button', { type: 'button', class: 'play', 'aria-label': 'Reproducir el caso', onclick: () => togglePlay(c) }, '▶ Play');
   c.json = h('textarea', { class: 'json', rows: '8', spellcheck: 'false' });
   const error = h('p', { class: 'json-error', hidden: true });
   const edit = (change) => () => { const score = M.clone(c.score); if (change(score) !== false) commit(c, score); };
@@ -314,6 +409,7 @@ function buildCase(c) {
     h('header', { class: 'case-head' },
       h('input', { class: 'case-title', value: c.title, 'aria-label': 'Título del caso', oninput: (e) => { c.title = e.target.value; save(); } }),
       h('div', { class: 'case-actions' },
+        c.play,
         h('button', { type: 'button', onclick: edit((s) => M.addMeasure(s, s.rows.length - 1)) }, '+ Compás'),
         h('button', { type: 'button', onclick: edit((s) => { const n = measureCount(s); return n > 1 ? M.removeMeasureAt(s, n - 1) : false; }) }, '− Compás'),
         h('button', { type: 'button', onclick: () => commit(c, fresh()) }, 'Limpiar'),
@@ -403,7 +499,7 @@ function showLive(info) {
   const { c, target, plan } = info;
   const rows = [
     row('Caso', `${c.title} · compás ${target.mi + 1}`),
-    row('Figura', `${tool.rest ? 'silencio ' : ''}${tool.d}${tool.dot ? '.' : ''} (dura ${M.length({ d: tool.d, dot: tool.dot ? 1 : 0 })}) · n ${target.n} ${pitchName(target.n)}`),
+    row('Figura', `${figureName({ d: tool.d, dot: tool.dot ? 1 : 0, rest: tool.rest, n: target.n })} (dura ${M.length({ d: tool.d, dot: tool.dot ? 1 : 0 })}) · n ${target.n}`),
     row('x → tiempo', `${Math.round(target.rawT * 100) / 100}`),
     row('tiempo ajustado', `${Math.round(target.t * 100) / 100}${target.beforeAt != null ? ` · intercala antes de at ${target.beforeAt}` : ''}`),
   ];
@@ -431,17 +527,29 @@ function showLive(info) {
 
 // ---- barra de figuras -------------------------------------------------------------------------------------------
 
+// El dibujo de la figura (o el silencio, si esa herramienta esta encendida) sobre su nombre y su duracion.
+function glyph(markup) {
+  const node = h('span', { class: 'tool-glyph', 'aria-hidden': 'true' });
+  node.innerHTML = markup;
+  return node;
+}
+
+const DOT_GLYPH = '<svg viewBox="0 0 30 32" width="22" height="39" fill="currentColor" aria-hidden="true"><circle cx="15" cy="16" r="3.6"/></svg>';
+
 function renderToolbar() {
   const bar = $('#debugTools');
+  const kind = tool && tool.rest ? 'rest' : 'note';
   bar.replaceChildren(
     ...TOOLS.map((t) => h('button', {
       type: 'button', class: 'tool', 'data-d': t.d, 'aria-pressed': String(Boolean(tool) && tool.d === t.d), title: `${t.label} · tecla ${t.key}`,
       onclick: () => chooseTool(tool && tool.d === t.d ? null : { d: t.d, rest: Boolean(tool && tool.rest), dot: Boolean(tool && tool.dot) }, t.d),
-    }, h('span', { class: 'tool-name' }, t.label), h('span', { class: 'tool-value' }, String(M.VALUES[t.d])))),
+    }, glyph(figureGlyph(kind, t.d, { size: 0.7 })), h('span', { class: 'tool-name' }, t.label), h('span', { class: 'tool-value' }, String(M.VALUES[t.d])))),
     h('span', { class: 'sep' }),
-    h('button', { type: 'button', class: 'tool', id: 'toolRest', 'aria-pressed': String(Boolean(tool && tool.rest)), title: 'Silencio · tecla R', onclick: () => modifier('rest') }, h('span', { class: 'tool-name' }, 'Silencio'), h('span', { class: 'tool-value' }, 'R')),
-    h('button', { type: 'button', class: 'tool', id: 'toolDot', 'aria-pressed': String(Boolean(tool && tool.dot)), title: 'Puntillo · tecla P', onclick: () => modifier('dot') }, h('span', { class: 'tool-name' }, 'Puntillo'), h('span', { class: 'tool-value' }, 'P')),
+    h('button', { type: 'button', class: 'tool', id: 'toolRest', 'aria-pressed': String(Boolean(tool && tool.rest)), title: 'Silencio · tecla R', onclick: () => modifier('rest') }, glyph(figureGlyph('rest', tool ? tool.d : 'q', { size: 0.7 })), h('span', { class: 'tool-name' }, 'Silencio'), h('span', { class: 'tool-value' }, 'R')),
+    h('button', { type: 'button', class: 'tool', id: 'toolDot', 'aria-pressed': String(Boolean(tool && tool.dot)), title: 'Puntillo · tecla P', onclick: () => modifier('dot') }, glyph(DOT_GLYPH), h('span', { class: 'tool-name' }, 'Puntillo'), h('span', { class: 'tool-value' }, 'P')),
     h('button', { type: 'button', class: 'tool', 'aria-pressed': String(!tool), title: 'Sin herramienta · Esc', onclick: () => chooseTool(null) }, h('span', { class: 'tool-name' }, 'Ninguna'), h('span', { class: 'tool-value' }, 'Esc')),
+    h('span', { class: 'sep' }),
+    h('button', { type: 'button', class: 'tool', id: 'toolColors', 'aria-pressed': String(colorVoices), title: 'Colorear las voces en el pentagrama · tecla C', onclick: toggleColors }, h('span', { class: 'tool-name' }, 'Voces en color'), h('span', { class: 'tool-value' }, 'C')),
   );
 }
 
@@ -454,6 +562,13 @@ function chooseTool(next) {
   showLive(tool ? null : { idle: 'Sin herramienta: elegí una figura arriba.' });
 }
 
+function toggleColors() {
+  colorVoices = !colorVoices;
+  document.body.classList.toggle('has-voices', colorVoices);
+  $('#toolColors').setAttribute('aria-pressed', String(colorVoices));
+  save();
+}
+
 function modifier(name) {
   if (!tool) tool = { d: 'q', rest: false, dot: false };
   chooseTool({ ...tool, [name]: !tool[name] });
@@ -464,6 +579,7 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') { chooseTool(null); return; }
   const picked = TOOLS.find((t) => t.key === event.key);
   if (picked) { chooseTool({ d: picked.d, rest: Boolean(tool && tool.rest), dot: Boolean(tool && tool.dot) }); return; }
+  if (event.key.toLowerCase() === 'c') toggleColors();
   if (event.key.toLowerCase() === 'r') modifier('rest');
   if (event.key.toLowerCase() === 'p') modifier('dot');
 });
@@ -471,6 +587,7 @@ document.addEventListener('keydown', (event) => {
 // ---- arranque ---------------------------------------------------------------------------------------------------
 
 function renderAll() {
+  stopPlayback();
   const list = $('#debugCases');
   list.replaceChildren(...cases.map((c) => buildCase(c)));
   cases.forEach((c) => renderCase(c));
@@ -481,6 +598,7 @@ async function main() {
   cases = load();
   renderToolbar();
   document.body.classList.toggle('has-tool', Boolean(tool));
+  document.body.classList.toggle('has-voices', colorVoices);
   $('#debugAdd').addEventListener('click', () => { cases.push(newCase('Caso ' + (cases.length + 1))); renderAll(); save(); });
   $('#debugReset').addEventListener('click', () => { cases = [1, 2, 3, 4].map((k) => newCase('Caso ' + k)); renderAll(); save(); });
   showLive(null);
