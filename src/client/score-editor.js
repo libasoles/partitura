@@ -774,7 +774,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         if (item.kind === 'note') previewNote(M.refOf(target.staff, target.mi, placed.index));
         return;
       }
-      const spot = M.placement(measure, ev, target.t, score, target.mi);
+      const spot = M.placement(measure, ev, item.kind === 'note' ? clickTime(target, measure, ev) : target.t, score, target.mi);
       if (!spot) return say(noRoom(ev, target.mi));
       ev.d = spot.d;
       if (spot.dot) ev.dot = true;
@@ -1258,6 +1258,11 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
 
   // ---- dibujo -------------------------------------------------------------
 
+  // Las mismas opciones con las que se dibuja el escenario (la sonda de `clickTime` tiene que repartir el ancho igual).
+  function currentLayoutOptions(width) {
+    return layoutOptions(WIDE_PAGE.matches ? width : Math.max(width, MOBILE_LAYOUT_WIDTH), score.showTabs && tabSpace ? { spacingSystem: Math.min(48, 12 + tabSpace), pageMarginBottom: 60 + tabSpace } : undefined);
+  }
+
   function layoutOptions(width, extra) {
     return Object.assign({
       scale: SCALE,
@@ -1384,7 +1389,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!width) return;
     renderedWidth = width;
     // On a phone the demo keeps the layout the server drew (a wide page scaled down by CSS), not a cramped one at screen width.
-    toolkit.setOptions(layoutOptions(WIDE_PAGE.matches ? width : Math.max(width, MOBILE_LAYOUT_WIDTH), score.showTabs && tabSpace ? { spacingSystem: Math.min(48, 12 + tabSpace), pageMarginBottom: 60 + tabSpace } : undefined));
+    toolkit.setOptions(currentLayoutOptions(width));
     const xml = M.toMusicXml(M.transposedForDisplay(score));
     toolkit.loadData(xml);
     tuningPopup.hidePopover();
@@ -3686,6 +3691,66 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return M.capacity(score, layout.indexOf(m));
   }
 
+  /* Verovio no coloca las figuras en proporcion al tiempo (cada columna tiene un ancho minimo y un hueco ocupa poco), asi
+     que el tiempo que da `timeAt` (lineal) deja la nota dibujada lejos del clic. Para una nota escrita en un lugar libre se
+     busca el tiempo cuya nota se dibuja donde se hizo clic: se prueba (con un toolkit aparte y las mismas opciones del
+     escenario) y se acota por biseccion, a lo sumo PROBES dibujos por clic. Si algo falla vale el tiempo de `timeAt`. */
+  const PROBES = 6;
+  let probeToolkit = null;
+
+  // x (en pixeles del escenario) donde se dibuja el centro de la figura `index` del compas `mi`, tal como quedaria con `trial`.
+  // Verovio da las posiciones en sus unidades, con el origen en el inicio del renglon; la escala sale del dibujo actual.
+  function drawnX(trial, staff, mi, index, ev) {
+    probeToolkit = probeToolkit || newToolkit();
+    probeToolkit.setOptions(currentLayoutOptions(stage.clientWidth));
+    probeToolkit.loadData(M.toMusicXml(M.transposedForDisplay(trial)));
+    const svg = new DOMParser().parseFromString(probeToolkit.renderToSVG(1), 'image/svg+xml');
+    const first = M.rowOf(trial, mi).first;
+    const head = svg.querySelector('[id="' + M.ID_PREFIX[staff] + mi + '-' + index + '"] .notehead use');
+    const line = svg.querySelector('[id="m' + first + '"] > g.staff > path');
+    const x = /translate\(\s*(-?[\d.]+)/.exec(head && head.getAttribute('transform'));
+    const edge = /-?\d+(?:\.\d+)?/.exec((line && line.getAttribute('d')) || '');
+    const natural = naturalLayout[mi];
+    if (!x || !edge || !natural || !(natural.width > 0) || !layout[first]) return null;
+    // La cabeza se dibuja desde su borde izquierdo: sumar la mitad de su ancho (en unidades de Verovio) da el centro.
+    return layout[first].left + (+x[1] + (ev.d === 'w' ? 150 : 106) - +edge[0]) * natural.pixels / natural.width;
+  }
+
+  function clickTime(target, measure, ev) {
+    const m = layout[target.mi];
+    if (!target.free || !toolkit || !m || !(m.right > m.left) || !Number.isFinite(target.rawX)) return target.t;
+    try {
+      const goal = target.rawX;
+      const grid = M.gridOf([ev]);
+      const last = Math.max(0, Math.floor((M.capacity(score, target.mi) - 1) / grid));
+      const known = new Map();
+      const fraction = (i) => {
+        if (known.has(i)) return known.get(i);
+        let value = null;
+        const spot = M.placement(measure, ev, i * grid, score, target.mi);
+        if (spot) {
+          const trial = M.clone(score);
+          const row = M.measures(trial, target.staff)[target.mi];
+          const index = M.insertNote(row, Object.assign({}, ev), spot.at, M.capacity(trial, target.mi));
+          value = drawnX(trial, target.staff, target.mi, index, ev);
+        }
+        known.set(i, value);
+        return value;
+      };
+      let low = 0, high = last, best = null;
+      for (let step = 0; step < PROBES && low <= high; step += 1) {
+        const middle = (low + high) >> 1;
+        const value = fraction(middle);
+        if (value === null) break;
+        if (!best || Math.abs(value - goal) < best.error) best = { i: middle, error: Math.abs(value - goal) };
+        if (value < goal) low = middle + 1; else high = middle - 1;
+      }
+      return best ? best.i * grid : target.t;
+    } catch {
+      return target.t;
+    }
+  }
+
   // Donde queda lo que se suelta en (clientX, clientY): el compas mas cercano, el tono por la altura y el
   // tiempo por la posicion horizontal. Sobre la columna de una nota cercana se alinea con ella.
   function locate(clientX, clientY, skip) {
@@ -3737,7 +3802,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     }
     const next = near ? null : others.filter(i => centers[i] > x).sort((a, b) => centers[a] - centers[b])[0];
     return {
-      mi, staff, n, space, rawT, rawX,
+      mi, staff, n, space, rawT, rawX, free: !near,
       beforeAt: next == null ? null : starts[next],
       beforeFirst: others.length > 0 && x < Math.min(...others.map((i) => centers[i])) - space * 0.8,
       onNote: !!near && !measure[near.i].rest,
