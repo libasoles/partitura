@@ -60,6 +60,22 @@ test('note info names an arpeggio like the stacked chord, whatever the order or 
   assert.deepEqual(lookupNames('C/E'), ['C/E', 'C']);
 });
 
+test('interval names come from the written steps and the semitones', async () => {
+  const { allIntervals, intervalOf } = await import('../src/client/note-info.js');
+  const name = (a, b) => { const i = intervalOf(note(...[].concat(a)), note(...[].concat(b))); return [i.number, i.quality, i.semitones]; };
+  assert.deepEqual(name(28, 30), [3, 'major', 4]);
+  assert.deepEqual(name(28, [30, -1]), [3, 'minor', 3]);
+  assert.deepEqual(name(28, 32), [5, 'perfect', 7]);
+  assert.deepEqual(name(28, [31, 1]), [4, 'augmented', 6]); // do - fa#
+  assert.deepEqual(name(28, [32, -1]), [5, 'diminished', 6]); // do - solb
+  assert.deepEqual(name(28, 35), [8, 'perfect', 12]);
+  assert.deepEqual(name(28, 37), [10, 'major', 16]); // decima
+  assert.deepEqual(name(28, [28, 1]), [1, 'augmented', 1]);
+  assert.deepEqual(name(32, 28), [5, 'perfect', 7]); // the order of the arguments does not matter
+  assert.equal(allIntervals([note(28), note(30), note(32)]).length, 3);
+  assert.equal(allIntervals([note(28), note(30), note(32), note(35)]).length, 6);
+});
+
 test('the chord before and after the selection breaks the tie between candidates', async () => {
   const { noteInfo, rankByContext } = await import('../src/client/note-info.js');
   const info = noteInfo([note(28), note(30), note(32), note(33)]); // C E G A
