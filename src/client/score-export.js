@@ -25,7 +25,7 @@ export default function createExporter(editor) {
   }
 
   function exportMusicXml() {
-    download(new Blob([M.toMusicXml(editor.score())], { type: 'application/vnd.recordare.musicxml+xml' }), downloadFilename(editor.score(), 'musicxml'));
+    download(new Blob([M.toMusicXml(editor.score(), { pickups: true })], { type: 'application/vnd.recordare.musicxml+xml' }), downloadFilename(editor.score(), 'musicxml'));
   }
 
   function exportMidi() {

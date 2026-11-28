@@ -3,33 +3,40 @@ import assert from 'node:assert/strict';
 import M from '../src/client/score-model.js';
 import { xmlTimelines } from '../src/client/debug-timing.js';
 
-// Anacrusa deducida del contexto: un compás corto, sin <forward>, solo cuando es el primero (o sigue a una doble
-// barra) y después viene música. El hueco de un compás final queda atrás.
+// Anacrusa deducida del contexto (primer compás, o tras una doble barra, incompleto y con música detrás). El editor lo
+// dibuja completo (forward detrás, para que Verovio no mueva las figuras); al exportar sale con un forward previo y nada detrás.
 const q = (n, at) => ({ d: 'q', n, at });
 const whole = [{ d: 'w', n: 37, at: 0 }];
 const score = (...bars) => ({ meter: '4/4', clef: 'treble', fifths: 0, rows: [bars] });
 const forwards = (s, mi) => xmlTimelines(M.toMusicXml(s))[mi].items.filter((item) => item.kind === 'forward');
 
-test('el primer compás incompleto seguido de música es una anacrusa: dura lo escrito y no se rellena', () => {
+test('el primer compás incompleto seguido de música es una anacrusa: en el editor sigue completo, con forward detrás', () => {
   const s = score([q(37, 0)], whole);
   assert.equal(M.capacity(s, 0), 96); // la edición sigue viendo un 4/4
   assert.equal(M.pickupLength(s, 0), 24);
-  assert.deepEqual(forwards(s, 0), []);
-  assert.match(M.toMusicXml(s), /<measure number="1" id="m0" implicit="yes">/);
-  assert.doesNotMatch(M.toMusicXml(s), /<measure number="2" id="m1" implicit/);
+  assert.deepEqual(forwards(s, 0).map((f) => [f.start, f.dur]), [[24, 72]]);
+  assert.doesNotMatch(M.toMusicXml(s), /implicit/);
+});
+
+test('al exportar, la anacrusa sale como compás completo: un forward previo y nada detrás', () => {
+  const s = score([q(37, 0)], whole);
+  const xml = M.toMusicXml(s, { pickups: true });
+  assert.deepEqual(xmlTimelines(xml)[0].items.filter((i) => i.kind === 'forward').map((f) => [f.start, f.dur]), [[0, 72]]);
+  assert.doesNotMatch(xml, /implicit/);
+  assert.equal(s.rows[0][0][0].at, 0); // el modelo no cambia
+});
+
+test('una negra en el pulso 3 es una anacrusa: en el editor forward previo y posterior, al exportar solo el previo', () => {
+  const s = score([q(37, 48)], whole);
+  assert.equal(M.pickupLength(s, 0), 72);
+  assert.deepEqual(forwards(s, 0).map((f) => [f.start, f.dur]), [[0, 48], [72, 24]]);
+  assert.deepEqual(xmlTimelines(M.toMusicXml(s, { pickups: true }))[0].items.filter((i) => i.kind === 'forward').map((f) => [f.start, f.dur]), [[0, 72]]);
 });
 
 test('mientras es lo único escrito sigue siendo un compás completo (se puede seguir llenando)', () => {
   const s = score([q(37, 0)], []);
   assert.equal(M.pickupLength(s, 0), null);
   assert.deepEqual(forwards(s, 0).map((f) => [f.start, f.dur]), [[24, 72]]);
-});
-
-test('una negra suelta en el pulso 3 del primer compás, con música después, es un compás completo con forward', () => {
-  const s = score([q(37, 48)], whole);
-  assert.equal(M.pickupLength(s, 0), null);
-  assert.doesNotMatch(M.toMusicXml(s), /<measure number="1" id="m0" implicit/);
-  assert.deepEqual(forwards(s, 0).map((f) => [f.start, f.dur]), [[0, 48], [72, 24]]);
 });
 
 test('un primer compás completo no es anacrusa', () => {
@@ -51,7 +58,7 @@ test('el compás que completa la anacrusa, al final, rellena atrás', () => {
 test('después de una doble barra el compás incompleto con música detrás es una anacrusa', () => {
   const s = { ...score(whole, [q(37, 0)], whole), barlines: { 0: { double: true } } };
   assert.equal(M.pickupLength(s, 1), 24);
-  assert.deepEqual(forwards(s, 1), []);
+  assert.deepEqual(xmlTimelines(M.toMusicXml(s, { pickups: true }))[1].items.filter((i) => i.kind === 'forward').map((f) => [f.start, f.dur]), [[0, 72]]);
   assert.equal(M.pickupLength({ ...s, barlines: {} }, 1), null);
 });
 
