@@ -85,3 +85,15 @@ test('every case starts as one system of two bars, also the ones added with +', 
   await expect(page.locator('#scoreStage g.system')).toHaveCount(1);
   await expect(page.locator('#scoreStage g.measure')).toHaveCount(2);
 });
+
+test('closing a tab discards it: nothing stays stored', async ({ page }) => {
+  await openDebugger(page);
+  const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('partitura.debugger.v2')));
+  await page.locator('#scoreNewTab').click();
+  await expect(page.locator('#scoreTabs .score-doc-tab-close').first()).toBeVisible();
+  await expect.poll(stored).not.toBeNull();
+  const before = (await stored()).scores.length;
+  await page.locator('#scoreTabs .score-doc-tab-close').first().click();
+  await expect.poll(async () => (await stored()).scores.length).toBe(before - 1);
+  expect((await stored()).scores.some((s) => s.closed)).toBe(false);
+});
