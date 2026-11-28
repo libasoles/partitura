@@ -46,3 +46,9 @@ test('the MusicXML items say which staff they belong to', () => {
   assert.deepEqual([...new Set(items.map((i) => i.staff))].sort(), [0, 1]);
   assert.equal(atTimeline(Grand, score, 0, 1).figures.length, 1);
 });
+
+test('a model asked for one row of two bars starts that way; the default is still three rows of four', () => {
+  const small = createScoreModel({ minRows: 1, initialMeasures: 2 });
+  assert.deepEqual(small.emptyScore().rows.map((row) => row.length), [2]);
+  assert.deepEqual(createScoreModel().emptyScore().rows.map((row) => row.length), [4, 4, 4]);
+});

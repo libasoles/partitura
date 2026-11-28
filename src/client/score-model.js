@@ -45,7 +45,7 @@ import { ARCHIVE_CHOIRS } from './choir-sounds.js';
    - `after` (transitorio, no se guarda): marca figuras que van despues de una nueva con su mismo `at` (ver `openTime`).
    - Partituras guardadas antes de contar en orden: si un compas con figuras sin `v` superpuestas por su `at` ya no
      entra contado en orden, `sanitize` le fija las voces de entonces (`legacyVoices`) en vez de perder figuras. */
-export function createScoreModel({ defaultClef = 'treble', grandStaff = false, choir = false } = {}) {
+export function createScoreModel({ defaultClef = 'treble', grandStaff = false, choir = false, minRows = 3, initialMeasures = 4 } = {}) {
 
   const DIVISIONS = 24;
   const MEASURE = 96; // valor por defecto: 4/4
@@ -75,7 +75,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   const MAX_PARTS = 4;
   const DEFAULT_PARTS = 3;
   const PER_ROW = 4;
-  const MIN_ROWS = 3;
+  const MIN_ROWS = minRows; // renglones que siempre hay; un sitio puede pedir menos (el debugger arranca con uno)
   const MAX_FRET = 24;
   const MAX_CHORD_NAME = 16;
   const MAX_LYRIC = 24; // letras de una silaba: tope de caracteres
@@ -1018,12 +1018,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return Math.max(LOWEST, Math.min(HIGHEST, n));
   }
 
-  function emptyRow() {
-    return Array.from({ length: PER_ROW }, () => []);
+  function emptyRow(count = PER_ROW) {
+    return Array.from({ length: count }, () => []);
   }
 
   function emptyScore() {
-    return { meter: '4/4', clef: defaultClef, fifths: 0, rows: Array.from({ length: MIN_ROWS }, emptyRow) };
+    return { meter: '4/4', clef: defaultClef, fifths: 0, rows: Array.from({ length: MIN_ROWS }, () => emptyRow(initialMeasures)) };
   }
 
   // Identidad interna de las figuras: no se serializa ni depende de compas, tiempo o indice.

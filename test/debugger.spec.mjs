@@ -74,3 +74,14 @@ test('the debugger keeps its own scores, apart from the site IndexedDB', async (
   const databases = await page.evaluate(async () => (await indexedDB.databases()).map((db) => db.name));
   expect(databases).not.toContain('partitura');
 });
+
+test('every case starts as one system of two bars, also the ones added with +', async ({ page }) => {
+  await openDebugger(page);
+  await expect(page.locator('#scoreTabs .score-doc-tab')).toHaveCount(4);
+  await expect(page.locator('#scoreStage g.system')).toHaveCount(1);
+  await expect(page.locator('#scoreStage g.measure')).toHaveCount(2);
+  await expect(page.locator('#debugMeasures .measure-debug')).toHaveCount(2);
+  await page.locator('#scoreNewTab').click();
+  await expect(page.locator('#scoreStage g.system')).toHaveCount(1);
+  await expect(page.locator('#scoreStage g.measure')).toHaveCount(2);
+});

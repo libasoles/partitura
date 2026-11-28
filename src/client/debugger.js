@@ -162,7 +162,7 @@ function main() {
   // Pro por URL: el debugger es interno y quiere todo (voces, pestañas, duplicar, letra, patrones...).
   if (!isPro()) history.replaceState(history.state, '', location.pathname + location.search + '#pro');
   // El mismo modelo que `runtime.js` le da al sitio principal.
-  const M = createScoreModel({ defaultClef: 'treble', grandStaff: true, choir: true });
+  const M = createScoreModel({ defaultClef: 'treble', grandStaff: true, choir: true, minRows: 1, initialMeasures: 2 });
   window.ScoreModel = M;
   let frame = 0;
   const draw = (value) => {
@@ -172,8 +172,10 @@ function main() {
       if (score) renderPanel(M, score);
     });
   };
+  // Sin nada guardado: cuatro casos, cada uno con un renglon de dos compases.
+  const stored = readStored() || { active: 0, scores: [1, 2, 3, 4].map((k) => ({ ...M.emptyScore(), title: 'Caso ' + k })) };
   window.ScoreStore = {
-    stored: readStored(),
+    stored,
     flush: () => Promise.resolve(),
     save(value) {
       try { localStorage.setItem(STORAGE, JSON.stringify(value)); } catch { /* sin almacenamiento: no pasa nada */ }
