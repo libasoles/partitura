@@ -2986,13 +2986,21 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 
 .score-note-info-intervals {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.6rem;
   max-height: 12rem;
   margin: 0;
   padding: 0;
   overflow-y: auto;
   list-style: none;
   font-variant-numeric: tabular-nums;
+}
+
+.score-note-info-block {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .score-note-info-intervals li {

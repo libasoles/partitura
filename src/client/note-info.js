@@ -43,6 +43,16 @@ export function allIntervals(notes) {
   return sorted.flatMap((low, i) => sorted.slice(i + 1).map((high) => intervalOf(low, high)));
 }
 
+// Los mismos intervalos en bloques, cada uno de arriba hacia abajo (el mas grave queda abajo, como en el pentagrama):
+// primero las notas contiguas (do-mi, mi-sol, sol-si) y despues, por cada nota grave, su distancia con las que no son
+// su vecina (do-sol, do-si; luego mi-si).
+export function intervalBlocks(notes) {
+  const sorted = [...notes].sort((a, b) => a.n - b.n || a.midi - b.midi);
+  const blocks = [sorted.slice(1).map((high, i) => intervalOf(sorted[i], high))];
+  sorted.forEach((low, i) => blocks.push(sorted.slice(i + 2).map((high) => intervalOf(low, high))));
+  return blocks.filter((block) => block.length).map((block) => block.reverse());
+}
+
 // Reordena los nombres posibles de `info` segun el acorde de antes y el de despues (`before`/`after`: { names, pcs } o null).
 // Usa la misma eleccion por contexto que los nombres de acorde de la partitura, con la tonalidad `key` ({ tonic, mode }) de
 // toda ella. Devuelve los nombres, el elegido primero, y el acorde vecino usado de cada lado.

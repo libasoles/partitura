@@ -77,5 +77,5 @@ test('I with several notes lists every interval between them', async ({ page }) 
   await expect(popup.locator('h3')).toHaveText(['Notas', 'Intervalos', 'Acorde']);
   // C3 E3 G3 (the repeated E is one pitch): three pairs.
   await expect(popup.locator('.score-note-info-intervals li')).toHaveCount(3);
-  await expect(popup.locator('.score-note-info-intervals strong')).toHaveText(['3ª mayor', '5ª justa', '3ª menor']);
+  await expect(popup.locator('.score-note-info-intervals strong')).toHaveText(['3ª menor', '3ª mayor', '5ª justa']);
 });

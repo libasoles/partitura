@@ -10,7 +10,7 @@ import { chordMarks, hasIntervals, neighbourChords, parseTonic, scoreKey, spellT
 import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
 import { measurePitches, pitchMidi } from './score-notes.js';
-import { allIntervals, lookupNames, noteInfo, rankByContext } from './note-info.js';
+import { allIntervals, intervalBlocks, lookupNames, noteInfo, rankByContext } from './note-info.js';
 import { applyUrlDefaults } from './url-defaults.js';
 import { createScoresDrawer } from './score-drawer.js';
 import { createTabLayout } from './score-tab-layout.js';
@@ -3059,23 +3059,28 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // Con dos o mas notas: todos los intervalos entre ellas (con dos, uno solo y sus semitonos).
     if (info.notes.length >= 2) {
       const pairs = allIntervals(info.notes);
-      const list = document.createElement('ul');
+      const list = document.createElement('div');
       list.className = 'score-note-info-intervals';
-      pairs.forEach((pair) => {
-        const item = document.createElement('li');
-        const between = document.createElement('span');
-        between.className = 'score-note-info-between';
-        between.textContent = pair.low.label + ' – ' + pair.high.label;
-        const name = document.createElement('strong');
-        name.textContent = intervalName(pair);
-        item.append(between, name);
-        if (pairs.length === 1) {
-          const semitones = document.createElement('span');
-          semitones.className = 'score-note-info-semitones';
-          semitones.textContent = Math.abs(pair.semitones) === 1 ? t.noteInfoSemitone : t.noteInfoSemitones.replace('{n}', Math.abs(pair.semitones));
-          item.append(semitones);
-        }
-        list.append(item);
+      intervalBlocks(info.notes).forEach((block) => {
+        const group = document.createElement('ul');
+        group.className = 'score-note-info-block';
+        block.forEach((pair) => {
+          const item = document.createElement('li');
+          const between = document.createElement('span');
+          between.className = 'score-note-info-between';
+          between.textContent = pair.low.label + ' – ' + pair.high.label;
+          const name = document.createElement('strong');
+          name.textContent = intervalName(pair);
+          item.append(between, name);
+          if (pairs.length === 1) {
+            const semitones = document.createElement('span');
+            semitones.className = 'score-note-info-semitones';
+            semitones.textContent = Math.abs(pair.semitones) === 1 ? t.noteInfoSemitone : t.noteInfoSemitones.replace('{n}', Math.abs(pair.semitones));
+            item.append(semitones);
+          }
+          group.append(item);
+        });
+        list.append(group);
       });
       sections.push(noteInfoSection(pairs.length === 1 ? t.noteInfoInterval : t.noteInfoIntervals, list));
     }
