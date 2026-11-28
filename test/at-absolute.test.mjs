@@ -24,6 +24,12 @@ test('1. una nota escrita en el centro de un compás vacío se queda donde se hi
   assert.deepEqual(M.onsets(measure), [48]);
 });
 
+test('1. un clic cerca del centro de un compás vacío ajusta una negra al pulso, no a una semicorchea', () => {
+  const measure = [];
+  write(measure, { d: 'q', n: 37 }, 43);
+  assert.deepEqual(at(measure), [48]);
+});
+
 test('1. una nota a la izquierda no mueve a la central: el hueco entre ambas se conserva', () => {
   const measure = [];
   write(measure, { d: 'q', n: 37 }, 48);

@@ -373,7 +373,10 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   function placement(others, ev, t, score, mi, preserveVoice = false) {
     const limit = capacity(score, mi);
     const size = length(ev);
-    const grid = gridOf([ev]);
+    // Al escribir con un clic la posicion se ajusta a la subdivision de la figura (negra o mas: al pulso; corchea: a la
+    // corchea), asi un clic en el centro de un compas vacio queda en el centro y no en una semicorchea cercana.
+    const fine = gridOf([ev]);
+    const grid = fine === GRID && !preserveVoice ? (size >= 24 ? 24 : size >= 12 ? 12 : GRID) : fine;
     const starts = hints(others);
     // En un compás ya excedido no hay "ultimo lugar que entra": anclar al final de la capacidad mandaba la figura
     // al medio del compas y desordenaba las voces; puede quedar hasta donde empieza la ultima figura.
