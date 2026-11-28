@@ -66,6 +66,14 @@
 - `src/client/score-export.js` — importar/exportar (MusicXML, MIDI, PDF): chunk que se pide la primera vez que se usa el menú del sitio.
 - **Importar por arrastre**: `site-actions.js` muestra `#scoreDropzone` al arrastrar archivos sobre la página: borde punteado y fondo translúcido, verde para MusicXML/MIDI y naranja para otros tipos. Comparte los formatos del selector (`score-file-types.js`); si el navegador oculta el nombre durante el arrastre, usa el MIME y valida la extensión al soltar. Un MIME vacío se acepta (el sistema no suele registrar uno para `.musicxml`); solo se rechaza un MIME conocido que no sea de partitura. Cada archivo aceptado abre una pestaña nueva, conservando título y autor de MusicXML y el nombre de secuencia/pista de MIDI; sin título usa el nombre del archivo.
 
+### Debugger interno (`/debugger/`)
+
+- Página de uso interno, **no indexable**: `noindex, nofollow`, fuera del sitemap (`filter` en `astro.config.mjs`), sin Analytics ni `Base.astro`, y sin enlaces desde el sitio. No usa `score-editor.js`: dibuja con Verovio (`src/client/debugger.js`, estilos en `src/styles/debugger.css`).
+- Cada **caso** es una partitura de un compás (`rows: [[[]]]`) con título editable, `+ Compás` / `− Compás`, limpiar, deshacer, duplicar, quitar y un JSON editable (sirve para probar un `at` que el editor no genera). Se guarda en `localStorage` (`partitura.debugger.v1`). Una barra fija arriba elige la figura (`1`–`6`, `R` silencio, `P` puntillo, `Esc` ninguna) y vale para todos los casos.
+- Debajo de cada compás hay dos gráficos de cuadrados por voz, con sus valores: **con `at`** (cada figura donde dice su `at`; si el modelo la empieza en otro lugar, un cuadro punteado marca su inicio real) y **con `forward`** (lo que lee Verovio: se recorre el MusicXML de `toMusicXml` como un lector, con `<note>`, `<forward>` y `<backup>`). Se recalculan al cambiar el compás.
+- Con una figura elegida y el cursor sobre un pentagrama, la caja «Debug en vivo» (abajo a la derecha) muestra el tiempo de la x, el `at` pedido a `placement`, el `at` resultante tras `settle`, la voz, los `forward` y ambos gráficos con la figura nueva resaltada, sin tocar el caso. Avisa cuando el `at` pedido y el inicio real difieren (un hueco en `at` no dura nada).
+- `src/client/debug-timing.js` es la parte pura (sin DOM): `atTimeline`, `xmlTimeline` y `planPlacement`, que sigue el mismo camino que el clic del editor (`placement` → `insertNote` / `placeRest`, o `placeBefore` al intercalar). Si el editor cambia cómo coloca figuras, actualizar `planPlacement` y el cálculo de `locate` de `debugger.js`. Tests: `test/debug-timing.test.mjs` y `test/debugger.spec.mjs`.
+
 ### Editor compartido
 
 - Este repositorio también distribuye el editor que guitar-chords consume como dependencia de build desde GitHub, fijada a un commit. Ver `docs/shared-editor.md`.

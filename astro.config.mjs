@@ -42,6 +42,8 @@ export default defineConfig({
   build: { inlineStylesheets: 'always' },
   integrations: [
     sitemap({
+      // El debugger es una página interna (noindex): no se publica en el sitemap.
+      filter: (page) => !new URL(page).pathname.startsWith('/debugger/'),
       lastmod: new Date(),
       serialize(item) {
         const path = new URL(item.url).pathname;
