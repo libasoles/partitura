@@ -2994,6 +2994,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
   // Popup anclado a la seleccion: nombres de las notas y, con tres o mas alturas distintas, los acordes que forman
   // (el grupo, no la columna: sirve para un arpegio). Con guitarra suma la digitacion del diccionario de guitar-chords.
   let noteInfoPopup = null;
+  let noteInfoNodes = [];
   let noteInfoToken = 0;
 
   function buildNoteInfoPopup() {
@@ -3127,7 +3128,14 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     noteInfoPopup.replaceChildren(...sections);
 
     if (!noteInfoPopup.matches(':popover-open')) noteInfoPopup.showPopover();
-    const rects = notes.map((note) => note.node && note.node.getBoundingClientRect()).filter(Boolean);
+    noteInfoNodes = notes.map((note) => note.node).filter(Boolean);
+    placeNoteInfo();
+  }
+
+  // El popup sigue a la seleccion al hacer scroll o redimensionar.
+  function placeNoteInfo() {
+    if (!noteInfoPopup || !noteInfoPopup.matches(':popover-open')) return;
+    const rects = noteInfoNodes.filter((node) => node.isConnected).map((node) => node.getBoundingClientRect());
     if (!rects.length) return;
     const anchor = { left: Math.min(...rects.map((r) => r.left)), right: Math.max(...rects.map((r) => r.right)), top: Math.min(...rects.map((r) => r.top)), bottom: Math.max(...rects.map((r) => r.bottom)) };
     const box = noteInfoPopup.getBoundingClientRect();
@@ -3135,6 +3143,8 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     noteInfoPopup.style.left = Math.max(8, Math.min((anchor.left + anchor.right) / 2 - box.width / 2, window.innerWidth - box.width - 8)) + 'px';
     noteInfoPopup.style.top = Math.max(8, below + box.height > window.innerHeight - 8 ? anchor.top - box.height - 8 : below) + 'px';
   }
+  window.addEventListener('scroll', placeNoteInfo, { passive: true, capture: true });
+  window.addEventListener('resize', placeNoteInfo);
 
   // I abre (o cierra) la informacion de las notas elegidas. Sin letra asignada en ningun idioma.
   document.addEventListener('keydown', (event) => {
