@@ -81,6 +81,7 @@
 - Este repositorio también distribuye el editor que guitar-chords consume como dependencia de build desde GitHub, fijada a un commit. Ver `docs/shared-editor.md`.
 - La lógica se mantiene en `src/client/`; `runtime.js` arranca el editor con opciones por sitio. Los controles de importar/exportar se conectan con `bindActions`; su ubicación, el HTML y los estilos pertenecen a cada sitio.
 - `scripts/build-editor.mjs` compila el adaptador del consumidor y sus chunks y vendors locales. `scripts/build-package.mjs` genera los adaptadores CommonJS en `prepare`.
+- **Tablatura al importar MusicXML**: `parseMusicXml` detecta el pentagrama `<clef><sign>TAB</sign>`, no vuelca sus notas a la notación y guarda sus `<string>/<fret>` en `score.tabs` (clave `compás:inicio`, cuerda 1 primero) con `score.showTabs = true`. Con `<staff-tuning>` conocido fija `score.tuning`; si no coincide con ningún `TUNINGS`, descarta la tablatura. Sin pentagrama TAB todo sigue igual. Test: `test/import-tabs.test.mjs`.
 - Conservar los defaults propios: clave de sol y guardado con debounce aquí; clave de guitarra y guardado inmediato en guitar-chords. No sobrescribir claves explícitas de partituras guardadas.
 
 ### Ajustes (engranaje)

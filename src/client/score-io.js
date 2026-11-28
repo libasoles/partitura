@@ -82,6 +82,28 @@ const api = (function () {
     return text(root, 'root-step') + alter(root, 'root-alter') + suffix + (bass && text(bass, 'bass-step') ? '/' + text(bass, 'bass-step') + alter(bass, 'bass-alter') : '');
   }
 
+  const TUNING_STEP = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  // Guarda la tablatura del archivo en score.tabs. La afinacion (<staff-tuning>, linea 1 = cuerda mas grave) debe ser una conocida;
+  // sin ella se asume estandar, y con otra desconocida se descarta la tablatura para no mostrar trastes incorrectos.
+  function importTabs(score, tabs, part, number, M) {
+    const details = Array.from(part.getElementsByTagName('staff-details')).find((d) => (d.getAttribute('number') || '1') === number);
+    const tunings = details ? children(details, 'staff-tuning') : [];
+    if (tunings.length === 6) {
+      const opens = [];
+      tunings.forEach((t) => {
+        const line = parseInt(t.getAttribute('line'), 10);
+        opens[6 - line] = 12 * (parseInt(text(t, 'tuning-octave'), 10) + 1) + TUNING_STEP[text(t, 'tuning-step')] + (parseFloat(text(t, 'tuning-alter')) || 0);
+      });
+      const known = M.TUNINGS.find((t) => t.opens.every((midi, i) => midi === opens[i]));
+      if (!known) return;
+      if (known.id !== M.TUNINGS[0].id) score.tuning = known.id;
+    }
+    const clean = M.sanitizeTabs(tabs, score.rows.reduce((sum, row) => sum + row.length, 0));
+    if (!Object.keys(clean).length) return;
+    score.tabs = clean;
+    score.showTabs = true;
+  }
+
   function parseMusicXml(source, M, parser = new DOMParser()) {
     const doc = parser.parseFromString(source, 'application/xml');
     if (doc.querySelector('parsererror')) throw new Error('xml');
@@ -128,6 +150,10 @@ const api = (function () {
     const currentLowerClefs = Array.from({ length: staves - 1 }, (_, k) => M.clefOf(score, k + 1));
     let currentFifths = 0;
     const grand = staves > 1;
+    // Pentagrama de tablatura (<clef><sign>TAB</sign>): no es notacion, solo aporta los trastes originales a `score.tabs`.
+    const tabClef = Array.from(part.getElementsByTagName('clef')).find((c) => text(c, 'sign') === 'TAB');
+    const tabNumber = tabClef ? (tabClef.getAttribute('number') || '1') : null;
+    const tabs = {};
 
     children(part, 'measure').forEach((measureNode, mi) => {
       const events = [];
@@ -210,6 +236,17 @@ const api = (function () {
           if (!chord && !grace) cursor += duration;
           reach = Math.max(reach, cursor);
           if (grace) return;
+          if (tabNumber !== null && (text(node, 'staff') || '1') === tabNumber) {
+            const notations = child(node, 'notations');
+            const technical = notations && child(notations, 'technical');
+            const string = technical ? parseInt(text(technical, 'string'), 10) : 0;
+            const fret = technical ? parseInt(text(technical, 'fret'), 10) : -1;
+            if (string >= 1 && string <= 6 && fret >= 0) {
+              const key = mi + ':' + Math.round(start * M.DIVISIONS / divisions);
+              (tabs[key] = tabs[key] || Array(6).fill(null))[string - 1] = fret;
+            }
+            return;
+          }
           const size = duration * M.DIVISIONS / divisions;
           const rest = !!child(node, 'rest');
           const ev = {};
@@ -299,6 +336,7 @@ const api = (function () {
     M.sanitize(score);
     syllables.forEach(({ mi, at, staff, text }) => M.setLyric(score, mi, at, text, staff));
     chordMarks.forEach(({ mi, at, name }) => M.setChord(score, mi, at, name));
+    if (tabNumber !== null) importTabs(score, tabs, part, tabNumber, M);
     return score;
   }
 
