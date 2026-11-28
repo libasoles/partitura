@@ -25,11 +25,11 @@ async function drag(page, id, dx) {
   return page.evaluate(() => window.lastSavedScore?.scores[0].rows[0][0] ?? []);
 }
 
-test('dropping the last note further right inside the bar leaves a rest in the gap', async ({ page }) => {
+test('dropping the last note further right inside the bar keeps it where it was dropped, with no rest drawn in the gap', async ({ page }) => {
   await open(page, [{ d: 'e', n: 40, v: 1, at: 0 }, { d: 'q', n: 38, v: 1, at: 12 }]);
   const bar = await drag(page, 'e0-1', 120);
   expect(bar.map(e => e.d)).toContain('q');
-  expect(bar.some(e => e.rest)).toBe(true);
+  expect(bar.some(e => e.rest)).toBe(false);
   const last = bar[bar.length - 1];
   expect(last.rest).toBeUndefined();
   expect(last.at).toBeGreaterThan(12);

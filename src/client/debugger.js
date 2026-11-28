@@ -1,5 +1,5 @@
 /* debugger.js — Pagina interna /debugger/ (no indexada). Casos de un compas para ver, con los mismos metodos del modelo
-   que usa el editor, donde queda cada figura: segun `at` (pista de orden) y segun el MusicXML (<note> y <forward>).
+   que usa el editor, donde queda cada figura: segun `at` (inicio de la figura) y segun el MusicXML (<note> y <forward>).
    No usa score-editor.js: dibuja con Verovio, mide el SVG como el editor (`locate`) y escribe con `planPlacement`
    (debug-timing.js), que sigue el mismo camino de colocacion. */
 import M from './score-model.js';
@@ -519,7 +519,7 @@ function showLive(info) {
     row('at resultante', figure ? String(figure.at) : '—'),
     row('inicio real', figure ? `${figure.start} · voz ${figure.voice}` : '—', moved ? 'warn' : ''),
   );
-  if (moved) rows.push(h('p', { class: 'live-note' }, `⚠ Se pidió at ${plan.requested} y el modelo la empieza en ${figure.start}: un hueco en at no dura nada.`));
+  if (moved) rows.push(h('p', { class: 'live-note' }, `⚠ Se pidió at ${plan.requested} y empieza en ${figure.start}: choca con lo anterior de su voz y se empuja (o se cerró un hueco para que entre en el compás).`));
   const waits = timeline.items.filter((item) => item.kind === 'forward');
   rows.push(row('forward', waits.length ? waits.map((w) => `voz ${w.voice}: ${w.dur} desde ${w.start}`).join(' · ') : 'ninguno'));
   rows.push(h('div', { class: 'live-graphs' }, atGraph(data, plan.index), forwardGraph(timeline, data.capacity, plan.index)));

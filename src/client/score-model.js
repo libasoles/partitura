@@ -14,10 +14,11 @@ import { ARCHIVE_CHOIRS } from './choir-sounds.js';
    - `n`: altura como numero diatonico, la misma que escribe el MusicXML (C4 = 35, E4 = 37, la linea inferior de la
      clave de sol; con la clave de guitarra la linea inferior es 30, una octava mas grave). En un silencio es
      opcional y solo indica a que altura se dibuja.
-   - `at`: pista de orden, en divisiones de negra (24 por negra). Opcional: sin `at` la figura sigue a la anterior.
-     NO es el inicio real ni ocupa tiempo: solo ordena las figuras de una misma voz y alinea las de voces distintas
-     (las que comparten `at` empiezan juntas). `settle` lo reescribe con el inicio musical, sin huecos; el editor y
-     `sanitize` asientan cada compas, asi que en una partitura guardada `at` coincide con el tiempo que se ve.
+   - `at`: inicio de la figura dentro del compas, en divisiones de negra (24 por negra). Opcional: sin `at` la figura
+     sigue a la anterior. Es donde el usuario la escribio: un hueco antes o entre figuras es tiempo real (silencio
+     invisible, se exporta como <forward>). Las figuras de voces distintas que comparten `at` empiezan juntas. Dentro
+     de una voz no puede haber solapamientos: la figura que choca con la anterior empieza donde esta termina (empuje).
+     `settle` reescribe `at` con el inicio resuelto; el editor y `sanitize` asientan cada compas.
    - `v`: identidad de voz guardada. La numeracion inicial va de agudo a grave; un cruce no cambia la identidad.
      Opcional: sin `v` se infiere por continuidad melodica (ver docs/voice-leading.md).
    - `acc` (# b n), `tie`, `slur`, `beam` ('join' | 'break'): alteracion, ligaduras y barrado manual.
@@ -34,12 +35,14 @@ import { ARCHIVE_CHOIRS } from './choir-sounds.js';
      anteriores y a las siguientes voces declaradas; la altura inicial solo inicia/desempata las identidades.
      La coincidencia de ritmo no prueba identidad de voz. Un acorde de notacion requiere una decision explicita
      (misma `v`, inicio y duracion); se conserva esa decision en partituras guardadas e importadas.
-   - Tiempo: cada voz suena en orden, cada figura pegada a la anterior de su voz; la primera empieza en 0. Un hueco en
-     `at` (antes de la primera figura o entre dos) no dura nada. Solo se espera para alinear: las figuras de voces
-     distintas con el mismo `at` empiezan juntas, cuando termina la ultima de las que vienen antes. Un compas con una
-     negra sola dura 24, caiga donde caiga.
+   - Tiempo: una figura empieza en max(su `at`, el fin de lo anterior en su voz); las que comparten `at` en voces
+     distintas empiezan juntas, cuando termina la ultima de las que vienen antes (las voces alineadas se esperan y se
+     empujan juntas). Sin colision, `at` se respeta, y los huecos que haya mas adelante absorben el empuje.
+     `closeGaps(measure, limit)` (tras `settle`): si el compas se pasa de `limit` (la capacidad), cierra huecos de
+     derecha a izquierda, solo lo necesario, y solo tiempo en que no suena ninguna voz; sin huecos queda excedido.
    - El largo del compas es el de su voz mas larga; eso es lo que se compara con la capacidad del compas. Al exportar,
-     los silencios ocultos (print-object="no") solo rellenan esas esperas de alineacion y el final del compas.
+     el hueco entre una figura y la anterior (o el final del compas) se escribe como un solo <forward>.
+   - `after` (transitorio, no se guarda): marca figuras que van despues de una nueva con su mismo `at` (ver `openTime`).
    - Partituras guardadas antes de contar en orden: si un compas con figuras sin `v` superpuestas por su `at` ya no
      entra contado en orden, `sanitize` le fija las voces de entonces (`legacyVoices`) en vez de perder figuras. */
 export function createScoreModel({ defaultClef = 'treble', grandStaff = false, choir = false } = {}) {
@@ -124,7 +127,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return Number.isInteger(ev.v) && ev.v >= 1 && ev.v <= MAX_VOICE ? ev.v : 0;
   }
 
-  // `at` de cada figura como pista de orden: una figura sin `at` sigue a la anterior.
+  // `at` de cada figura (su inicio): una figura sin `at` sigue a la anterior.
   function hints(measure) {
     let cursor = 0;
     return measure.map((ev) => {
@@ -251,6 +254,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   // Voces y tiempos de `arrange` para una asignacion de lineas melodicas.
   function layout(measure, hint, lane) {
+    // `after` (transitorio, lo pone openTime y lo borra settle) manda una figura despues de las demas que tienen su mismo
+    // `at`: tiene el mismo inicio minimo, pero otro orden, asi que no se funde con ellas en un acorde ni se separa de voz.
+    const order = (i) => hint[i] + (measure[i].after ? 1e-6 : 0);
     // Dentro de una voz no empiezan juntas dos figuras que no forman acorde: queda la mas aguda y las demas bajan una voz.
     const top = (list) => (measure[list[0]].rest ? -Infinity : Math.max(...list.map((i) => measure[i].n)));
     for (let k = 0; k <= Math.max(...lane); k += 1) {
@@ -258,8 +264,8 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       measure.forEach((ev, i) => {
         if (lane[i] !== k) return;
         const key = ev.rest ? 'r' + i : 'n' + length(ev);
-        if (!at.has(hint[i])) at.set(hint[i], new Map());
-        const keys = at.get(hint[i]);
+        if (!at.has(order(i))) at.set(order(i), new Map());
+        const keys = at.get(order(i));
         if (!keys.has(key)) keys.set(key, []);
         keys.get(key).push(i);
       });
@@ -273,21 +279,21 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     // Conservar la identidad explicita aunque una voz intermedia no tenga figuras.
     const used = Array.from({ length: Math.max(...lane) + 1 }, (_, k) => k);
     const lanes = used.map(() => ({ end: 0, groups: [] }));
-    measure.map((ev, i) => i).sort((a, b) => hint[a] - hint[b] || a - b).forEach((i) => {
+    measure.map((ev, i) => i).sort((a, b) => order(a) - order(b) || a - b).forEach((i) => {
       const voice = lanes[used.indexOf(lane[i])];
       const last = voice.groups[voice.groups.length - 1];
       const ev = measure[i];
-      if (last && !ev.rest && !last.rest && last.hint === hint[i] && last.size === length(ev)) last.indices.push(i);
-      else voice.groups.push({ hint: hint[i], at: 0, size: length(ev), rest: !!ev.rest, v: ev.v, indices: [i] });
+      if (last && !ev.rest && !last.rest && last.order === order(i) && last.size === length(ev)) last.indices.push(i);
+      else voice.groups.push({ hint: hint[i], order: order(i), at: 0, size: length(ev), rest: !!ev.rest, v: ev.v, indices: [i] });
     });
     // Tiempo: cada voz suena en orden y sin huecos; solo las figuras con la misma pista `at` se esperan para empezar juntas.
     const starts = [];
-    const pending = lanes.flatMap((voice) => voice.groups.map((g) => ({ g, voice }))).sort((a, b) => a.g.hint - b.g.hint);
+    const pending = lanes.flatMap((voice) => voice.groups.map((g) => ({ g, voice }))).sort((a, b) => a.g.order - b.g.order);
     for (let p = 0; p < pending.length;) {
       let q = p;
-      while (q < pending.length && pending[q].g.hint === pending[p].g.hint) q += 1;
+      while (q < pending.length && pending[q].g.order === pending[p].g.order) q += 1;
       const batch = pending.slice(p, q);
-      const start = Math.max(...batch.map((item) => item.voice.end));
+      const start = Math.max(batch[0].g.hint, ...batch.map((item) => item.voice.end));
       batch.forEach(({ g, voice }) => {
         g.at = start;
         voice.end = tidy(start + g.size);
@@ -332,15 +338,38 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   // Reescribe `at` con el inicio musical (sin huecos) y, si hay varias voces, fija `v` en todas, para que agregar,
   // quitar o alargar otra figura no las mueva ni las reparta distinto.
+  // OJO: se usa como callback de `forEach` (que pasa el indice como 2º argumento): no agregarle parametros.
   function settle(measure) {
     const { lanes, starts } = arrange(measure);
-    measure.forEach((ev, i) => { ev.at = starts[i]; });
+    measure.forEach((ev, i) => { ev.at = starts[i]; delete ev.after; });
     if (lanes.length > 1) lanes.forEach((voice, k) => voice.groups.forEach((g) => g.indices.forEach((i) => { measure[i].v = k + 1; })));
     return measure;
   }
 
-  // Lugar `at` (pista de orden, en la cuadricula) para soltar `ev` en el tiempo `t`; null si repite una nota que ya
-  // suena ahi o si el compas, contado en orden, ya no la admite.
+  /* Despues de `settle`: si el compas ya asentado (`at` = inicio real) se pasa de `limit`, cierra huecos hasta que entre: de derecha a
+     izquierda (el mas cercano al final que desborda primero), solo lo necesario, y moviendo todo lo que sigue a cada hueco.
+     Un hueco es tiempo en que no suena ninguna voz; si en otra voz suena algo no se toca, para no desalinear las voces.
+     Si no quedan huecos, el compas se queda excedido (se permite y se marca en `problems`). */
+  function closeGaps(measure, limit) {
+    for (let over = tidy(measureLength(measure) - limit); over > 0;) {
+      const starts = onsets(measure);
+      const spans = measure.map((ev, i) => [starts[i], tidy(starts[i] + length(ev))]).sort((a, b) => a[0] - b[0]);
+      const gaps = [];
+      let reach = 0;
+      spans.forEach(([from, to]) => {
+        if (from > reach) gaps.push([reach, from]);
+        reach = Math.max(reach, to);
+      });
+      const gap = gaps[gaps.length - 1];
+      if (!gap) return;
+      const shift = Math.min(tidy(gap[1] - gap[0]), over);
+      measure.forEach((ev) => { if (ev.at >= gap[1]) ev.at = tidy(ev.at - shift); });
+      over = tidy(measureLength(measure) - limit);
+    }
+  }
+
+  // Lugar `at` (en la cuadricula) para soltar `ev` en el tiempo `t`; null si repite una nota que ya suena ahi (misma
+  // altura y mismo inicio, con cualquier duracion) o si ya no cabe otra voz.
   function placement(others, ev, t, score, mi, preserveVoice = false) {
     const limit = capacity(score, mi);
     const size = length(ev);
@@ -364,22 +393,23 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
   // Inserta varias figuras ([[ev, at], ...]) cada una antes de la primera que tiene un `at` mayor, y recien entonces
   // asienta el compas (`settle`: `at` pasa a ser el inicio real, sin huecos). Las figuras que quedan conservan su `at`
   // hasta el final: si se acaba de sacar una figura (mover), su lugar en el orden sigue disponible. Devuelve los indices.
-  function insertMany(measure, list) {
+  function insertMany(measure, list, limit) {
     const h = hints(measure);
     measure.forEach((o, i) => { o.at = h[i]; });
     list.forEach(([ev, at]) => {
       ev.at = at;
-      let index = measure.findIndex((o) => o.at > at);
+      let index = measure.findIndex((o) => o.at > at || (o.at === at && o.after));
       if (index < 0) index = measure.length;
       measure.splice(index, 0, ev);
     });
     settle(measure);
+    if (limit !== undefined) closeGaps(measure, limit);
     return list.map(([ev]) => measure.indexOf(ev));
   }
 
   // Inserta `ev` en el tiempo `at` (el de la partitura tal como se ve), antes de la primera figura que empieza despues.
-  function insertAt(measure, ev, at) {
-    return insertMany(measure, [[ev, at]])[0];
+  function insertAt(measure, ev, at, limit) {
+    return insertMany(measure, [[ev, at]], limit)[0];
   }
 
   function linksInSelection(score, refs) {
@@ -3057,14 +3087,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const underRest = at === first && ref && !ref.rest && leading.some((o) => o.rest && pitch(o) > n);
     if (others.length && (beforeFirst || underRest)) {
       rest.v = ref.v;
-      // Solo separar del silencio la primera columna de esa voz. Correr todas las voces
-      // desplaza tambien la melodia y puede desbordar un compas que si admite el silencio.
-      // Duplicar las pistas de orden deja un entero entre columnas, aun con fusas o tresillos.
-      others.forEach((o) => { o.at *= 2; });
-      leading.filter((o) => o.v === ref.v).forEach((o) => { o.at += 1; });
-      rest.at = first * 2;
+      // Solo separar del silencio la primera columna de esa voz: las demas voces que empiezan ahi se quedan.
+      openTime(others, first, ref.v);
+      rest.at = first;
       others.unshift(rest);
       settle(others);
+      closeGaps(others, capacity(score, mi));
       if (measureLength(others) > Infinity) return { full: true };
       return { measure: others, index: 0 };
     }
@@ -3089,15 +3117,23 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
       rest.v = target + 1;
       rest.n = restPitch(others, rest, at, n, bottomLine(score, mi, staff) + 4);
     }
-    const index = insertAt(others, rest, at);
+    const index = insertAt(others, rest, at, capacity(score, mi));
     if (!clash.length) settleVoices(others);
     if (measureLength(others) > Infinity) return { full: true };
     return { measure: others, index };
   }
 
+  /* Deja lugar en `at` para una figura nueva de la voz `voice`: la columna de esa voz que empieza ahi pasa a ir despues
+     de la nueva (`after`), y `layout` la corre lo necesario. Lo posterior se corre solo si choca, y los huecos mas
+     adelante absorben el empuje; las alineaciones con otras voces se conservan. Las figuras de otras voces que empiezan
+     justo en `at` se quedan y empiezan junto con la nueva. `settle` borra el marcador. */
+  function openTime(measure, at, voice) {
+    measure.forEach((o) => { if (o.at === at && o.v === voice) o.after = true; });
+  }
+
   // Una nota nueva continua una linea libre o abre otra; compartir duracion no la convierte en acorde.
   // La union en acorde se pide explicitamente con la seleccion.
-  function insertNote(measure, ev, at) {
+  function insertNote(measure, ev, at, limit) {
     if (measure.length && !savedVoice(ev)) {
       settleVoices(measure);
       const h = hints(measure);
@@ -3110,12 +3146,12 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
         ev.v = voice;
       }
     }
-    return insertAt(measure, ev, at);
+    return insertAt(measure, ev, at, limit);
   }
 
   // Intercalar en una linea: separar la columna de destino sin perder los acordes
   // ni las alineaciones posteriores con otras voces.
-  function insertBefore(measure, ev, at, n, defaultN) {
+  function insertBefore(measure, ev, at, n, defaultN, limit, t) {
     settleVoices(measure);
     const h = hints(measure);
     const column = measure.filter((o, i) => h[i] === at);
@@ -3123,14 +3159,46 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const distance = (o) => Math.abs((o.n ?? defaultN) - n);
     const closest = column.reduce((a, b) => distance(b) < distance(a) ? b : a);
     ev.v = closest.v;
-    measure.forEach((o, i) => { o.at = h[i] * 2 + (h[i] === at && o.v === ev.v ? 1 : 0); });
-    return insertAt(measure, ev, at * 2);
+    measure.forEach((o, i) => { o.at = h[i]; });
+    // Si esa voz tiene tiempo libre antes de la columna, la nota queda donde se hizo clic (`t`), pegada a lo anterior o a
+    // la columna si no cabe del todo; solo sin hueco se intercala (la columna pasa a ir despues).
+    const free = Math.max(0, ...measure.filter((o) => o.v === ev.v && o.at < at).map((o) => o.at + length(o)));
+    if (Number.isFinite(t) && free < at) {
+      const grid = gridOf([ev]);
+      const place = Math.max(free, Math.min(tidy(Math.round(t / grid) * grid), at - length(ev)));
+      if (place < at) return insertAt(measure, ev, place, limit);
+    }
+    openTime(measure, at, ev.v);
+    return insertAt(measure, ev, at, limit);
   }
 
-  function placeBefore(measure, ev, at, n, score, mi, staff = 0) {
+  // Antepone `ev` a la primera columna, en la voz de la nota mas cercana en altura a `n` (como un silencio): sin esto no
+  // habria como escribir una nota antes de la primera figura sin que suene a la vez. Devuelve { measure, index } sobre
+  // una copia; la columna que ocupaba ese lugar en esa voz pasa a ir despues (`openTime`).
+  function prependFigure(measure, ev, n, limit, t) {
+    const trial = measure.map((o) => clone(o));
+    const starts = hints(trial);
+    trial.forEach((o, i) => { o.at = starts[i]; });
+    const first = Math.min(...starts);
+    const leading = trial.filter((o) => o.at === first);
+    const lead = leading.reduce((a, b) => (!a || Math.abs((b.n ?? n) - n) < Math.abs((a.n ?? n) - n) ? b : a), null);
+    const front = clone(ev);
+    if (Number.isInteger(lead.v)) front.v = lead.v; else delete front.v;
+    // Con hueco delante de la primera columna la nota queda donde se solto (si cabe); sin hueco se antepone.
+    const grid = gridOf([ev]);
+    const place = first > 0 && Number.isFinite(t) ? Math.max(0, Math.min(tidy(Math.round(t / grid) * grid), first - length(ev))) : first;
+    if (place >= first) openTime(trial, first, lead.v);
+    front.at = place;
+    trial.unshift(front);
+    settle(trial);
+    if (limit !== undefined) closeGaps(trial, limit);
+    return { measure: trial, index: trial.indexOf(front) };
+  }
+
+  function placeBefore(measure, ev, at, n, score, mi, staff = 0, t) {
     const trial = clone(measure);
     const added = clone(ev);
-    const index = insertBefore(trial, added, at, n, bottomLine(score, mi, staff) + 4);
+    const index = insertBefore(trial, added, at, n, bottomLine(score, mi, staff) + 4, capacity(score, mi), t);
     if (index === null || measureLength(trial) > Infinity) return { full: true };
     return { measure: trial, index };
   }
@@ -3729,7 +3797,7 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   return {
     voicesText, TUPLETS, tupletSize, DIVISIONS, MEASURE, METERS, CLEFS, GRID, PER_ROW, MIN_ROWS, MAX_VOICE, BOTTOM_LINE, LOWEST, HIGHEST, VALUES, ACCIDENTALS,
-    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, pickupLength, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, insertNote, restPitch, settleVoices, mergeVoices, recalculateVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
+    captureTabReferences, restoreTabReferences, copySelection, pasteSelection, patternFrom, patternFromMeasure, applyPattern, cleanPattern, patternDegrees, duplicateVertical, duplicateVoice, fillGaps, voiceNumbers, duplicateSelection, pickupLength, length, dropBrokenTuplets, gridOf, hints, onsets, settle, placement, fillWithRests, insertAt, insertMany, placeRest, placeBefore, prependFigure, closeGaps, insertNote, restPitch, settleVoices, mergeVoices, recalculateVoices, voices, measureLength, clampPitch, emptyRow, emptyScore, clone, measures, rowStarts, rowOf, moveMeasure, addMeasure, insertMeasure, removeMeasure, removeMeasureAt, fits, problems, canDot, dotStart, dotPlan,
     CLEF_KEYS, LANE_KEYS, stavesOf, partsOf, guitarPartsOf, setGuitarParts, voicePerStaff, legendOf, legendsOf, selectedEvents, restructurable, canJoinStaves, joinStaves, splitStaff, registerOf, soundOf, setSound, CHOIR_SOUNDS, intervalModeOf, setIntervalMode, tonicOf, setTonic, setParts, setRegister, REGISTERS, NO_REGISTER, DEFAULT_REGISTERS, MIN_PARTS, MAX_PARTS, ID_PREFIX, get choir() { return choir; }, enableChoir() { choir = true; }, everyMeasure, pruneLower, staffOf, refOf, sameRef, LOWER_CLEF,
     TUNINGS, INSTRUMENTS, refineTempo, MIN_TEMPO, MAX_TEMPO, instrumentOf, setInstrument, setTool, setTempo, setTranspose, transposeOf, transposedForDisplay, MAX_TRANSPOSE, tuningOf, tuningLabels, meterOf, meterAt, setMeterAt, clefOf, clefAt, setClef, fifthsOf, bottomLine, keyAt, setKey, pruneKeys, keyAlter, capacity, setMeter, setNavigation, removeNavigation, navigationEndings, playOrder, playSlots, setBarline, removeBarline, setBarre, removeBarre, chordAt, setChord, removeChord, moveChord, MAX_CHORD_NAME, lyricAt, setLyric, moveLyric, mergeLyrics, tiedLyricSpots, removeLyric, nextLyricSpot, lyricSpots, distributeLyrics, lyricStaves, parseLyric, MAX_LYRIC, MAX_CHORD_VARIANTS, HAIRPINS, DYNAMICS, setDynamic, hairpinFits, findHairpin, setHairpin, removeHairpin, setHairpinDynamic, MAX_FRET, sanitize, sanitizeTabs, attacks, toMusicXml,
     links, selectionActions, applySelection, sequence,

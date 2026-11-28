@@ -30,24 +30,25 @@ test('the sticky figure bar stays in view while scrolling the cases', async ({ p
   await expect(page.locator('#debugTools')).toBeInViewport();
 });
 
-test('a note written far to the right of an empty bar starts at 0 and the live box says why', async ({ page }) => {
+test('a note written far to the right of an empty bar stays where it was clicked, with a <forward> before it', async ({ page }) => {
   await openDebugger(page);
   await page.keyboard.press('4');
   const p = await pointAt(page, 0.8);
   await page.mouse.move(p.x, p.y);
   const live = page.locator('#debugLive');
   await expect(live).toContainText('at pedido');
-  await expect(live).toContainText('Se pidió at 72');
-  await expect(live.locator('.live-row.warn')).toContainText('0');
+  await expect(live.locator('.live-note')).toHaveCount(0); // nada choca: no hay aviso
   await page.mouse.click(p.x, p.y);
   const first = page.locator('.case').first();
   await expect(first.locator('table.values').first().locator('tbody tr')).toHaveCount(1);
-  // Ya asentada: el at pedido (72) se perdió y la nota está en 0.
-  await expect(first.locator('table.values').first().locator('tbody tr').first()).toContainText(/0\s*0\s*24/);
+  // `at` es el inicio real: la nota se queda donde se hizo clic (no vuelve a 0) y el forward va delante.
+  const row = first.locator('table.values').first().locator('tbody tr').first();
+  await expect(row).not.toContainText(/\b0\s+0\s+24\b/);
   await expect(first.locator('.graph').first().locator('.sq')).toHaveCount(1);
+  await expect(first.locator('.measure-debug').first().locator('.graph').nth(1).locator('.sq.is-forward').first()).toBeVisible();
 });
 
-test('a raw at that the model ignores is drawn twice: where at says and where the model starts it', async ({ page }) => {
+test('a late voice at 72 starts at 72: no dashed twin, and a <forward> before it', async ({ page }) => {
   await openDebugger(page);
   const first = page.locator('.case').first();
   const raw = { meter: '4/4', clef: 'treble', fifths: 0, rows: [[[{ d: 'q', n: 37, at: 0, v: 1 }, { d: 'q', n: 35, at: 72, v: 2 }]]] };
@@ -55,7 +56,7 @@ test('a raw at that the model ignores is drawn twice: where at says and where th
   await first.locator('textarea.json').fill(JSON.stringify(raw));
   await first.getByRole('button', { name: 'Aplicar' }).click();
   const atGraph = first.locator('.graph').first();
-  await expect(atGraph.locator('.sq.is-ghost')).toHaveCount(1);
+  await expect(atGraph.locator('.sq.is-ghost')).toHaveCount(0);
   await expect(atGraph).toContainText('at: 72');
   await expect(first.locator('.graph').nth(1).locator('.sq.is-forward')).toHaveCount(2);
 });
@@ -69,8 +70,8 @@ test('adding a bar and a second note updates the graphs', async ({ page }) => {
   await page.keyboard.press('4');
   const p = await pointAt(page, 0.25);
   await page.mouse.click(p.x, p.y);
-  await expect(first.locator('.measure-debug').first().locator('.graph').nth(1).locator('.sq.is-forward')).toHaveCount(1);
-  await expect(first.locator('.measure-debug').first()).toContainText('forward: 72');
+  await expect(first.locator('.measure-debug').first().locator('.graph').nth(1).locator('.sq.is-forward').first()).toBeVisible();
+  await expect(first.locator('.measure-debug').first()).toContainText('forward:');
 });
 
 const TWO_VOICES = { meter: '4/4', clef: 'treble', fifths: 0, rows: [[[{ d: 'q', n: 37, at: 0, v: 1 }, { d: 'q', n: 35, at: 0, v: 2 }]]] };

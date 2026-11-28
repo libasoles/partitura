@@ -138,9 +138,9 @@ test('forming a chord cannot change durations or consume only part of an existin
     { n: 35, d: 'e', v: 1, at: 0 }, { n: 28, d: 'e', v: 2, at: 0 },
     { n: 29, d: 'e', v: 2, at: 12 },
   ]);
-  const saved = structuredClone(continuation);
-  assert.equal(M.applySelection(continuation, refs, 'joinChord'), false, 'the remaining bass must not jump to time zero');
-  assert.deepEqual(continuation, saved);
+  // `at` es el inicio real: el bajo que queda conserva su tiempo (12) aunque su voz ya no tenga nada antes.
+  assert.equal(M.applySelection(continuation, refs, 'joinChord'), true, 'the remaining bass keeps its time');
+  assert.deepEqual(M.onsets(continuation.rows[0][0]), [0, 0, 12]);
 });
 
 const crossingExamples = [

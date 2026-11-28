@@ -1,7 +1,7 @@
 /* debug-timing.js — Datos para la pagina interna /debugger/. Sin DOM: los usa el navegador y los tests.
 
    Dos vistas del mismo compas:
-   - `atTimeline`: lo que dice el modelo. Cada figura con su `at` (pista de orden guardada o deducida), su inicio real
+   - `atTimeline`: lo que dice el modelo. Cada figura con su `at` (inicio guardado o deducido), su inicio real
      (`start`, el que calcula `arrange`) y su duracion. Si `at` != `start`, el `at` es una pista que el modelo ignora.
    - `xmlTimeline`: lo que se le entrega a Verovio. Se lee el MusicXML que escribe `toMusicXml` y se recorre igual que
      un lector: cada <note> avanza el cursor, <forward> lo adelanta sin escribir nada y <backup> lo retrocede.
@@ -105,6 +105,6 @@ export function planPlacement(M, score, tool, target) {
     index = placed.index;
     return { ok: true, trial, index, mi, ev, requested, path: 'placement → placeRest' };
   }
-  index = M.insertNote(measure, Object.assign({}, ev, { d: spot.d, ...(spot.dot ? { dot: true } : {}) }), spot.at);
+  index = M.insertNote(measure, Object.assign({}, ev, { d: spot.d, ...(spot.dot ? { dot: true } : {}) }), spot.at, M.capacity(trial, mi));
   return { ok: true, trial, index, mi, ev, requested, path: 'placement → insertNote → settle' };
 }
