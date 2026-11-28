@@ -2990,6 +2990,7 @@ body.score-moving-measure, body.score-moving-measure * { cursor: grabbing !impor
 }
 
 .score-note-info-others,
+.score-note-info-context,
 .score-note-info-none {
   font-size: 0.8rem;
   color: var(--ink-soft);

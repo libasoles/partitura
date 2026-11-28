@@ -59,3 +59,19 @@ test('note info names an arpeggio like the stacked chord, whatever the order or 
   assert.equal(noteInfo([note(28), note(35), note(30)]).chords.length, 0);
   assert.deepEqual(lookupNames('C/E'), ['C/E', 'C']);
 });
+
+test('the chord before and after the selection breaks the tie between candidates', async () => {
+  const { noteInfo, rankByContext } = await import('../src/client/note-info.js');
+  const info = noteInfo([note(28), note(30), note(32), note(33)]); // C E G A
+  assert.deepEqual(info.chords, ['C6', 'Am7/C']);
+  const column = (...steps) => { const notes = steps.map((n) => note(n)); return { names: chordNames(notes), pcs: notes.map((x) => x.midi % 12) }; };
+  const key = { tonic: 0, mode: 'maj' };
+  const dm = column(29, 31, 33), g7 = column(32, 34, 36, 38), g = column(32, 34, 36), c = column(28, 30, 32);
+  // Dm -> ? -> G7 reads as the sixth degree; G -> ? -> C reads as a tonic sixth chord.
+  assert.deepEqual(rankByContext(info, dm, g7, 0, key).chords, ['Am7/C', 'C6']);
+  assert.deepEqual(rankByContext(info, g, c, 0, key).chords, ['C6', 'Am7/C']);
+  assert.deepEqual([rankByContext(info, dm, g7, 0, key).before, rankByContext(info, dm, g7, 0, key).after], ['Dm', 'G7']);
+  // One neighbour is enough, and none leaves the list as it was.
+  assert.equal(rankByContext(info, dm, null, 0, key).after, null);
+  assert.deepEqual(rankByContext(info, null, null, 0, key).chords, info.chords);
+});

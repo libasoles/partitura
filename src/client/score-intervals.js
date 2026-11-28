@@ -173,6 +173,48 @@ export function chordMarks(score, M, selectedVoices) {
   return marks;
 }
 
+// The chord on each side of a selection (`refs`: figure references). Starting at the notes nearest to the selection, it
+// sweeps outwards one vertical strip (one start time) at a time, accumulating the notes met, and stops on the first strip
+// where they already form a chord, so it only goes as far as it needs; never more than one measure away. Notes inside the
+// selection's own span are skipped. Returns { before, after }, each { names, pcs } or null.
+export function neighbourChords(score, M, refs, selectedVoices) {
+  const chosen = new Set(refs.map((ref) => `${M.staffOf(ref)}:${ref.mi}:${ref.i}`));
+  const origins = [];
+  let origin = 0;
+  M.measures(score).forEach((_, mi) => { origins.push(origin); origin += M.capacity(score, mi); });
+  const notes = [];
+  M.measures(score).forEach((_, mi) => {
+    for (let staff = 0; staff < M.stavesOf(score); staff++) {
+      const measure = M.measures(score, staff)[mi] || [];
+      const starts = M.onsets(measure);
+      const pitches = measurePitches(score, M, measure, mi);
+      const included = M.selectedEvents(score, staff, measure, selectedVoices);
+      measure.forEach((note, i) => {
+        if (note.rest || (included && !included.has(i))) return;
+        notes.push({ at: origins[mi] + starts[i], picked: chosen.has(`${staff}:${mi}:${i}`), midi: pitches[i].midi, alter: pitches[i].alter, n: note.n });
+      });
+    }
+  });
+  const picked = notes.filter((note) => note.picked);
+  if (!picked.length) return { before: null, after: null };
+  const first = Math.min(...picked.map((note) => note.at));
+  const last = Math.max(...picked.map((note) => note.at));
+  const sweep = (candidates) => {
+    const gathered = [];
+    let chord = null;
+    for (const at of [...new Set(candidates.map((note) => note.at))]) {
+      gathered.push(...candidates.filter((note) => note.at === at));
+      const names = chordNames(gathered);
+      if (names.length) { chord = { names, pcs: [...new Set(gathered.map(({ midi }) => mod12(midi)))] }; break; }
+    }
+    return chord;
+  };
+  const length = M.capacity(score, Math.max(0, origins.filter((start) => start <= first).length - 1));
+  const before = notes.filter((note) => !note.picked && note.at < first && note.at >= first - length).sort((a, b) => b.at - a.at);
+  const after = notes.filter((note) => !note.picked && note.at > last && note.at <= last + length).sort((a, b) => a.at - b.at);
+  return { before: sweep(before), after: sweep(after) };
+}
+
 // Editor-only directions let the engraver reserve room above beams and high notes.
 // The stored score and the exported MusicXML keep their original notation.
 export function withIntervals(xml, score, M, selectedVoices, { intervals = true, chords = false } = {}) {

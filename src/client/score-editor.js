@@ -6,11 +6,11 @@ import { ARCHIVE_CHOIRS } from './choir-sounds.js';
 // in parallel with them instead of after them.
 import { getSetting, setSetting } from './settings.js';
 import { createToolState } from './tool-state.js';
-import { chordMarks, hasIntervals, parseTonic, scoreKey, spellTonic, withIntervals } from './score-intervals.js';
+import { chordMarks, hasIntervals, neighbourChords, parseTonic, scoreKey, spellTonic, withIntervals } from './score-intervals.js';
 import { isPro } from './pro.js';
 import { lyricSyllables } from './lyrics-text.js';
 import { measurePitches, pitchMidi } from './score-notes.js';
-import { lookupNames, noteInfo } from './note-info.js';
+import { lookupNames, noteInfo, rankByContext } from './note-info.js';
 import { applyUrlDefaults } from './url-defaults.js';
 import { createScoresDrawer } from './score-drawer.js';
 import { createTabLayout } from './score-tab-layout.js';
@@ -3033,6 +3033,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     if (!noteInfoPopup) buildNoteInfoPopup();
     const token = ++noteInfoToken;
     const info = noteInfo(notes);
+    // El acorde de antes y el de despues desempatan entre los nombres posibles: se buscan franja a franja desde la
+    // seleccion, hasta un compas de distancia, y la busqueda se detiene en cuanto las notas reunidas forman un acorde.
+    const around = neighbourChords(score, M, picks(), analysisVoices());
+    const key = scoreKey(score, M);
+    const ranked = rankByContext(info, around.before, around.after, M.fifthsOf(score), { tonic: key.tonic, mode: key.mode });
+    info.chords = ranked.chords;
     const guitar = M.instrumentOf(score) === 'guitar' && info.chords.length > 0;
     if (guitar) await loadChords();
     if (token !== noteInfoToken) return;
@@ -3054,6 +3060,12 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         others.className = 'score-note-info-others';
         others.textContent = t.noteInfoChordOthers + ': ' + info.chords.slice(1).join(', ');
         chord.append(others);
+      }
+      if (ranked.before || ranked.after) {
+        const context = document.createElement('p');
+        context.className = 'score-note-info-context';
+        context.textContent = t.noteInfoContext.replace('{before}', ranked.before || '·').replace('{after}', ranked.after || '·');
+        chord.append(context);
       }
       if (guitar && chordLib) {
         const shown = new Set();
