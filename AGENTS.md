@@ -114,6 +114,12 @@ Con voces elegidas en la leyenda y la herramienta Voces activa, play reproduce s
 - **Guardar**: Shift+S guarda las figuras elegidas o, sin ninguna, el compás elegido con un click. No agrega duplicados. El menú contextual no ofrece «Guardar como patrón»: el título «Patrones» lleva a la derecha un icono de info (`.score-library-info`) que despliega el atajo y un enlace al tutorial `patterns` (`patternsTutorialUrl`, de `EditorPage.astro`).
 - **Aplicar**: cada patrón tiene dos zonas arrastrables y clickeables. La izquierda (grados) conserva la relación entre notas y la primera queda en la altura donde se suelta; la derecha (figuras) usa solo el ritmo y todas las notas van a una misma altura. Arrastrar muestra un fantasma por figura (`patternGhost`). Un click, sin arrastrar, escribe el patrón en el compás elegido, desde su inicio y en la línea del medio.
 
+### Información de las notas (tecla I)
+
+- Con notas elegidas, <kbd>I</kbd> abre `#scoreNoteInfo`, un popup anclado a la selección (otra <kbd>I</kbd> lo cierra; ignora silencios y no actúa con una herramienta activa ni en campos de texto). Muestra las notas con octava (de grave a aguda) y, con **tres o más clases de altura distintas**, los acordes posibles (`noteInfo`, `src/client/note-info.js`, sobre `chordNames`). Con menos explica por qué no hay acorde.
+- Se calcula sobre el **grupo** de notas, no sobre columnas: un arpegio (acorde roto) da el mismo nombre que el acorde en columna. No existe un diccionario de arpegios en guitar-chords (solo acordes con digitación); no hace falta porque el nombre sale de las clases de altura.
+- Con guitarra suma el diagrama del diccionario de `guitar-chords` (hasta 3 nombres, primera digitación; un bajo "C/E" busca primero ese nombre y si no está, "C"). Con piano no hay diagrama. Tests: `test/chord-names.test.mjs` y `test/note-info.spec.mjs`.
+
 ### Acordes (guitarra)
 
 - **Modelo**: `score.chords[mi]` es la lista, ordenada por `at`, de `{ at, name, variant? }` (un acorde por tiempo y compás; `variant` es la digitación elegida y 0 no se guarda). Mismo patrón que `barres`: está en `BY_MEASURE`, se parte con `setBarline`, `setMeter` quita los que ya no caben y `sanitize` descarta lo inválido. Una partitura con acordes se infiere de guitarra (`instrumentOf`).
