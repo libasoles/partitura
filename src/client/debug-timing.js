@@ -12,9 +12,9 @@ const round = (x) => Math.round(x * 1e6) / 1e6;
 // Una entrada por figura del compas: `at` guardado o deducido, `start` real, duracion y voz.
 export function atTimeline(M, score, mi, staff = 0) {
   const measure = M.measures(score, staff)[mi] || [];
-  // Lo que dura el compas al escribirlo: una anacrusa deducida del contexto dura solo lo escrito (ver `pickupLength`).
+  // El editor siempre dibuja el compas completo; `pickup` solo avisa que al exportar seria una anacrusa (ver `pickupLength`).
   const pickup = M.pickupLength(score, mi);
-  const capacity = pickup === null ? M.capacity(score, mi) : pickup;
+  const capacity = M.capacity(score, mi);
   const hints = M.hints(measure);
   const starts = M.onsets(measure);
   const voiceOf = [];

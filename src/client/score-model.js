@@ -377,7 +377,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     const starts = hints(others);
     // En un compás ya excedido no hay "ultimo lugar que entra": anclar al final de la capacidad mandaba la figura
     // al medio del compas y desordenaba las voces; puede quedar hasta donde empieza la ultima figura.
-    const ceiling = measureLength(others) > limit ? Math.max(limit - size, ...starts) : limit - size;
+    // Al escribir (sin conservar la voz) no se recorta a `capacidad - duracion`: la figura queda donde se hizo clic y
+    // `closeGaps` (que recibe `limit` al insertar) cierra primero los huecos de la izquierda; al mover se sigue recortando.
+    const ceiling = !preserveVoice ? limit - Math.min(size, grid) : measureLength(others) > limit ? Math.max(limit - size, ...starts) : limit - size;
     const at = Math.max(0, Math.min(Math.max(0, ceiling), tidy(Math.round(t / grid) * grid)));
     // Al mover no se bloquea: la nota puede quedar sobre otra igual (el editor no restringe lo que se escribe).
     if (!preserveVoice && !ev.rest && others.some((o, i) => !o.rest && starts[i] === at && o.n === ev.n && o.acc === ev.acc)) return null;
@@ -2468,8 +2470,28 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
 
   // Lo que dura el compas al escribirlo: la anacrusa deducida o su capacidad.
   function measureSpan(score, mi) {
-    const pickup = pickupLength(score, mi);
-    return pickup === null ? capacity(score, mi) : pickup;
+    return capacity(score, mi);
+  }
+
+  // Para exportar: cada anacrusa deducida pasa a ser un compas completo con la musica pegada al final (un solo
+  // <forward> delante y nada detras). Devuelve una copia; el modelo y el editor no cambian.
+  function alignPickups(score) {
+    let copy = null;
+    const total = measures(score).length;
+    for (let mi = 0; mi < total; mi += 1) {
+      const length = pickupLength(score, mi);
+      if (length === null) continue;
+      const delta = capacity(score, mi) - length;
+      copy = copy || structuredClone(score);
+      for (let staff = 0; staff < MAX_PARTS; staff += 1) {
+        const measure = measures(copy, staff)[mi];
+        if (!measure) continue;
+        const starts = hints(measure);
+        measure.forEach((ev, i) => { ev.at = tidy(starts[i] + delta); });
+      }
+      ['chords', 'lyrics', 'dynamics'].forEach((key) => ((copy[key] && copy[key][mi]) || []).forEach((item) => { item.at = tidy(item.at + delta); }));
+    }
+    return copy || score;
   }
 
   // No borrar ni recortar figuras al cambiar a un compas mas corto: si lo que suena en algun compas, contado en orden,
@@ -3578,7 +3600,9 @@ export function createScoreModel({ defaultClef = 'treble', grandStaff = false, c
     return marks;
   }
 
-  function toMusicXml(score) {
+  // `options.pickups`: al exportar, las anacrusas deducidas salen como compas completo con un <forward> previo.
+  function toMusicXml(score, options) {
+    if (options && options.pickups) score = alignPickups(score);
     const all = measures(score);
     const staves = stavesOf(score);
     const clefXml = (name, staff) => {

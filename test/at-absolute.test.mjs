@@ -24,6 +24,24 @@ test('1. una nota escrita en el centro de un compás vacío se queda donde se hi
   assert.deepEqual(M.onsets(measure), [48]);
 });
 
+test('1. el clic se respeta exacto (cuadrícula de semicorchea), sin ajustar al pulso', () => {
+  const measure = [];
+  write(measure, { d: 'q', n: 37 }, 43);
+  assert.deepEqual(at(measure), [42]);
+});
+
+test('1. una negra pedida tan a la derecha que no entra se corre a la izquierda, lo justo', () => {
+  const measure = [];
+  write(measure, { d: 'q', n: 37 }, 90);
+  assert.deepEqual(at(measure), [72]);
+});
+
+test('3. una negra al final que no entra cierra el hueco de la izquierda: se corre ella, no la anterior', () => {
+  const measure = [{ d: 'q', n: 40, at: 24 }];
+  write(measure, { d: 'q', n: 37 }, 90);
+  assert.deepEqual(measure.map((ev) => [ev.n, ev.at]).sort((a, b) => a[1] - b[1]), [[40, 24], [37, 72]]);
+});
+
 test('1. una nota a la izquierda no mueve a la central: el hueco entre ambas se conserva', () => {
   const measure = [];
   write(measure, { d: 'q', n: 37 }, 48);

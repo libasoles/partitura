@@ -150,8 +150,8 @@ function renderPanel(M, source) {
     });
     const first = atTimeline(M, score, mi, 0);
     return h('div', { class: 'measure-debug' },
-      h('h3', {}, 'Compás ' + (mi + 1), first.pickup ? h('span', { class: 'badge', title: 'Primer compás (o tras una doble barra) incompleto y seguido de música: dura lo escrito, sin forward' }, 'anacrusa') : null,
-        h('small', {}, ` · ${first.pickup ? 'dura' : 'capacidad'} ${first.capacity} · contenido ${first.end}`)),
+      h('h3', {}, 'Compás ' + (mi + 1), first.pickup ? h('span', { class: 'badge', title: 'Primer compás (o tras una doble barra) incompleto y seguido de música: al exportar MusicXML sale con un forward previo y nada detrás' }, 'anacrusa') : null,
+        h('small', {}, ` · capacidad ${first.capacity} · contenido ${first.end}`)),
       parts);
   }));
 }
