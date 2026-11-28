@@ -242,7 +242,7 @@
     "noteInfoAugmentedUnison": "uníssono aumentado",
     "noteInfoSemitone": "1 semitom",
     "noteInfoSemitones": "{n} semitons",
-    "noteInfoContext": "Pelo contexto: {before} → este → {after}",
+    "noteInfoContext": "Pelo contexto: {before} → {this} → {after}",
     "play": "Reproduzir",
     "pause": "Pausar",
     "playbackLoading": "Carregando sons…",

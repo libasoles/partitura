@@ -42,7 +42,7 @@ test('the neighbouring measures break the tie between C6 and Am7/C', async ({ pa
   const popup = page.locator('#scoreNoteInfo');
   await expect(popup.locator('.score-note-info-name')).toHaveText('Am7/C');
   await expect(popup.locator('.score-note-info-others')).toContainText('C6');
-  await expect(popup.locator('.score-note-info-context')).toHaveText('Según el contexto: Dm → este → G');
+  await expect(popup.locator('.score-note-info-context')).toHaveText('Según el contexto: Dm → Am7/C → G');
 });
 
 test('I on piano shows the chord without a fingering', async ({ page }) => {

@@ -242,7 +242,7 @@
     "noteInfoAugmentedUnison": "augmented unison",
     "noteInfoSemitone": "1 semitone",
     "noteInfoSemitones": "{n} semitones",
-    "noteInfoContext": "By context: {before} → this → {after}",
+    "noteInfoContext": "By context: {before} → {this} → {after}",
     "play": "Play",
     "pause": "Pause",
     "playbackLoading": "Loading sounds…",

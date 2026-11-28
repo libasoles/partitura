@@ -3045,6 +3045,7 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     // El acorde de antes y el de despues desempatan entre los nombres posibles: se buscan franja a franja desde la
     // seleccion, hasta un compas de distancia, y la busqueda se detiene en cuanto las notas reunidas forman un acorde.
     const around = info.chords.length ? neighbourChords(score, M, picks(), analysisVoices()) : { before: null, after: null };
+    const ambiguous = info.chords.length > 1;
     const key = scoreKey(score, M);
     const ranked = rankByContext(info, around.before, around.after, M.fifthsOf(score), { tonic: key.tonic, mode: key.mode });
     info.chords = ranked.chords;
@@ -3096,10 +3097,10 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
         others.textContent = t.noteInfoChordOthers + ': ' + info.chords.slice(1).join(', ');
         chord.append(others);
       }
-      if (ranked.before || ranked.after) {
+      if (ambiguous && (ranked.before || ranked.after)) {
         const context = document.createElement('p');
         context.className = 'score-note-info-context';
-        context.textContent = t.noteInfoContext.replace('{before}', ranked.before || '·').replace('{after}', ranked.after || '·');
+        context.textContent = t.noteInfoContext.replace('{before}', ranked.before || '·').replace('{this}', info.chords[0]).replace('{after}', ranked.after || '·');
         chord.append(context);
       }
       if (guitar && chordLib) {

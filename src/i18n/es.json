@@ -238,7 +238,7 @@
     "noteInfoAugmentedUnison": "unísono aumentado",
     "noteInfoSemitone": "1 semitono",
     "noteInfoSemitones": "{n} semitonos",
-    "noteInfoContext": "Según el contexto: {before} → este → {after}",
+    "noteInfoContext": "Según el contexto: {before} → {this} → {after}",
     "play": "Reproducir",
     "pause": "Pausar",
     "playbackLoading": "Cargando sonidos…",
