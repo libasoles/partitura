@@ -7032,5 +7032,20 @@ export default function start({ vendorBase = '/vendor/', bindActions = () => {},
     return change(() => M.recalculateVoices(score));
   }
 
-  window.scoreEditor = { get score() { return score; }, render, fix, get ghostOffset() { return ghostOffset; }, set ghostOffset(value) { ghostOffset = value; } };
+  // Para el debugger: reemplaza el contenido de la partitura abierta (conserva su identidad y titulo); se guarda, se
+  // dibuja y se deshace como una edicion, pero sin `settle`, para poder probar un `at` que el editor no genera.
+  function apply(data) {
+    const next = M.sanitize(data);
+    const keep = Object.fromEntries(['uid', 'title', 'author', 'closed', 'folder', 'demo', 'demoId'].filter((key) => key in score).map((key) => [key, score[key]]));
+    clearBarSelection();
+    selectedBeam = null;
+    selectedLink = null;
+    const before = M.clone(score);
+    M.pruneLower(before);
+    Object.keys(score).forEach((key) => { delete score[key]; });
+    Object.assign(score, next, keep);
+    recordChange(before);
+  }
+
+  window.scoreEditor = { get score() { return score; }, render, fix, apply, get ghostOffset() { return ghostOffset; }, set ghostOffset(value) { ghostOffset = value; } };
 }
